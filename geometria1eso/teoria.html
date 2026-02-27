@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teoria · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --radius:  14px;
+      --tr:      .25s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.2rem; color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--blue); box-shadow: 0 0 10px var(--blue);
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: .9rem; font-weight: 400; transition: color var(--tr);
+      position: relative;
+    }
+    .nav-links a.active { color: var(--green); }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -4px; left: 0;
+      width: 0; height: 2px; background: var(--green);
+      transition: width var(--tr); border-radius: 2px;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active::after,
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── HEADER ── */
+    .page-header {
+      padding: 5rem 2rem 3rem;
+      max-width: 1100px; margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .8rem; color: var(--muted); margin-bottom: 1.5rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb span { color: var(--green); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: -.02em; margin-bottom: .75rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--green); }
+    .page-header p { color: var(--muted); font-size: 1rem; line-height: 1.7; max-width: 560px; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex; gap: 2.5rem;
+      padding: 1.5rem 0 0;
+    }
+    .stat { display: flex; flex-direction: column; gap: .2rem; }
+    .stat-num {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.6rem; color: var(--text);
+    }
+    .stat-label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    /* ── MAIN CONTENT ── */
+    .content {
+      max-width: 1100px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── BLOC TEMÀTIC ── */
+    .bloc {
+      margin-bottom: 4rem;
+    }
+    .bloc-header {
+      display: flex; align-items: center; gap: 1.2rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .bloc-num {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--b-color);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--b-color);
+      border-radius: 100px;
+      padding: .3rem .9rem;
+      white-space: nowrap;
+    }
+    .bloc-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 1.3rem;
+    }
+    .bloc-count {
+      margin-left: auto;
+      font-size: .8rem; color: var(--muted);
+    }
+
+    /* ── CAPSULES GRID ── */
+    .capsules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── CAPSULA CARD ── */
+    .capsula {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      display: flex; flex-direction: column; gap: .9rem;
+      transition: all var(--tr);
+      position: relative;
+      overflow: hidden;
+    }
+    .capsula::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--b-color, var(--blue));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform var(--tr);
+    }
+    .capsula:hover {
+      border-color: var(--b-color, var(--blue));
+      transform: translateY(-4px);
+      box-shadow: 0 16px 32px rgba(0,0,0,.35);
+    }
+    .capsula:hover::before { transform: scaleX(1); }
+
+    .capsula-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .capsula-meta {
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .capsula-tag {
+      font-size: .72rem; font-weight: 500;
+      color: var(--b-color, var(--blue));
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .capsula-status {
+      margin-left: auto;
+      font-size: .72rem;
+      padding: .2rem .6rem;
+      border-radius: 100px;
+    }
+    .capsula-status.available {
+      background: rgba(61,255,160,.12);
+      color: var(--green);
+      border: 1px solid rgba(61,255,160,.25);
+    }
+    .capsula-status.soon {
+      background: rgba(122,127,168,.1);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .capsula h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 1rem; line-height: 1.3;
+    }
+    .capsula p {
+      font-size: .85rem; color: var(--muted);
+      line-height: 1.55; flex: 1;
+    }
+    .capsula-arrow {
+      font-size: .85rem; color: var(--muted);
+      transition: all var(--tr);
+      align-self: flex-end;
+    }
+    .capsula:hover .capsula-arrow {
+      color: var(--b-color, var(--blue));
+      transform: translate(3px, -3px);
+    }
+    .capsula.disabled {
+      opacity: .5; pointer-events: none; cursor: default;
+    }
+
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .5s ease, transform .5s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+      .page-header { padding: 3rem 1.5rem 2rem; }
+      .content { padding: 2rem 1.5rem 4rem; }
+      .stats-bar { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <ul class="nav-links">
+    <li><a href="index.html#temes">Temes</a></li>
+    <li><a href="teoria.html" class="active">Teoria</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+    <li><a href="recursos.html">Material</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a>
+    <span>›</span>
+    <span>Teoria</span>
+  </div>
+  <h1>Càpsules de <em>teoria</em></h1>
+  <p>Conceptes geomètrics explicats de forma visual i interactiva. Manipula les figures, experimenta amb els valors i construeix intuïció real — no memorització.</p>
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-num">12</span>
+      <span class="stat-label">Càpsules totals</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num" style="color:var(--green)">1</span>
+      <span class="stat-label">Disponibles</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">3</span>
+      <span class="stat-label">Blocs temàtics</span>
+    </div>
+  </div>
+</div>
+
+<main class="content">
+
+  <!-- BLOC 01 -->
+  <section class="bloc reveal" style="--b-color: var(--blue)">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 01</span>
+      <span class="bloc-title">Rectes i Angles</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/angles.html" class="capsula" style="--b-color:var(--blue)">
+        <div class="capsula-icon">📐</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Angles</span>
+          <span class="capsula-status available">Disponible</span>
+        </div>
+        <h3>Tipus d'angles</h3>
+        <p>Arrossega el raig i descobreix com canvia el tipus d'angle en temps real: agut, recte, obtús, pla i complet.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <div class="capsula disabled" style="--b-color:var(--blue)">
+        <div class="capsula-icon">↔️</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Angles</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Angles complementaris i suplementaris</h3>
+        <p>Visualitza per què dos angles sumen 90° o 180° i com es relacionen geomètricament.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--blue)">
+        <div class="capsula-icon">🔀</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Rectes</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Rectes paral·leles i transversal</h3>
+        <p>Mou la transversal i observa com els angles alterns, corresponents i consecutius es transformen junts.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--blue)">
+        <div class="capsula-icon">🔺</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Polígons</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Angles interiors d'un polígon</h3>
+        <p>Mou els vèrtexs d'un triangle o quadrilàter i comprova que la suma dels angles interiors sempre és constant.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BLOC 02 -->
+  <section class="bloc reveal" style="--b-color: var(--yellow); transition-delay:.1s">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 02</span>
+      <span class="bloc-title">Figures i Cossos</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <div class="capsula disabled" style="--b-color:var(--yellow)">
+        <div class="capsula-icon">🔷</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Triangles</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Tipus de triangles</h3>
+        <p>Mou els vèrtexs i veu com el triangle es reclassifica automàticament per costats i per angles.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--yellow)">
+        <div class="capsula-icon">🪞</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Simetria</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Simetria axial</h3>
+        <p>Desplaça l'eix de simetria i observa el reflex de la figura en temps real.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--yellow)">
+        <div class="capsula-icon">📐</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Pitàgores</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Teorema de Pitàgores</h3>
+        <p>Animació dels quadrats sobre els costats i demostració visual que a² + b² = c².</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--yellow)">
+        <div class="capsula-icon">⬡</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Polígons</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Polígons regulars i el cercle</h3>
+        <p>Slider del nombre de costats (3 → ∞): observa com el polígon s'aproxima al cercle i entén π.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BLOC 03 -->
+  <section class="bloc reveal" style="--b-color: var(--coral); transition-delay:.2s">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 03</span>
+      <span class="bloc-title">Mesures, Àrees i Perímetres</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <div class="capsula disabled" style="--b-color:var(--coral)">
+        <div class="capsula-icon">🔺</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Àrees</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Àrea del triangle</h3>
+        <p>Animació que mostra per què l'àrea és base × altura ÷ 2, transformant el triangle en un rectangle.</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--coral)">
+        <div class="capsula-icon">⭕</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Cercle</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Àrea del cercle</h3>
+        <p>Els sectors del cercle es reordenen fins a formar un rectangle i apareix la fórmula π·r².</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--coral)">
+        <div class="capsula-icon">📏</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Unitats</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>Canvis d'unitat de superfície</h3>
+        <p>Representació visual d'1 m² dividit en cm²: per què 1 m² = 10.000 cm² i no 100 cm².</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+      <div class="capsula disabled" style="--b-color:var(--coral)">
+        <div class="capsula-icon">🔵</div>
+        <div class="capsula-meta">
+          <span class="capsula-tag">Cercle</span>
+          <span class="capsula-status soon">Pròximament</span>
+        </div>
+        <h3>El número π</h3>
+        <p>Animació del "desplegament" de la circumferència sobre una recta: d'on ve 3.14159…</p>
+        <span class="capsula-arrow">↗</span>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.85rem;max-width:100%">
+  <span>GeoMat · Geometria 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
