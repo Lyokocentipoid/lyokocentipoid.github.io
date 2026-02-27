@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rectes i Angles · Nivell 2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper:  #faf6ee;
+      --paper2: #f3ede0;
+      --grid:   rgba(180,195,220,0.45);
+      --margin: #e8b4b8;
+      --ink:    #2a2035;
+      --ink2:   #3d3050;
+      --red:    #c0392b;
+      --green:  #1a7a4a;
+      --blue:   #1a4a8a;
+      --pencil: #7a6e60;
+      --hole:   #d4c8b8;
+      --radius: 4px;
+      --shadow: 4px 4px 0px rgba(80,60,40,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #d8cfc4;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(140,120,100,0.12) 31px, rgba(140,120,100,0.12) 32px),
+        repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(140,120,100,0.08) 31px, rgba(140,120,100,0.08) 32px);
+      min-height: 100vh;
+      font-family: 'Patrick Hand', cursive;
+      color: var(--ink);
+      padding: 2rem 1rem 5rem;
+    }
+
+    .page-wrap { max-width: 820px; margin: 0 auto; position: relative; }
+
+    /* ── PAPER SHEET ── */
+    .paper-sheet {
+      background: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px),
+        repeating-linear-gradient(90deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px),
+        linear-gradient(90deg, transparent 59px, var(--margin) 59px, var(--margin) 61px, transparent 61px);
+      border-radius: 2px;
+      box-shadow: 3px 3px 0 #c4b9aa, 6px 6px 0 #b8aa99, 9px 9px 0 rgba(100,80,60,0.1);
+      padding: 2rem 2.5rem 2.5rem 4.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .paper-sheet::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 40px;
+      background: repeating-linear-gradient(to bottom, transparent, transparent 48px, var(--hole) 48px, var(--hole) 68px);
+      z-index: 2;
+    }
+    .paper-sheet::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3rem;
+      background: linear-gradient(to bottom, rgba(200,190,175,0.3), transparent);
+    }
+    .holes {
+      position: absolute; left: 13px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: space-around;
+      padding: 40px 0; z-index: 3; pointer-events: none;
+    }
+    .hole {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #d8cfc4; border: 2px solid #bfb3a4;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* ── NAME SCREEN ── */
+    #nameScreen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 3rem 1rem 2rem;
+      animation: fadeIn 0.5s ease;
+    }
+    .name-card {
+      background: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px);
+      border: 2.5px solid var(--ink2);
+      border-radius: 4px; padding: 2.5rem 2.5rem 2rem;
+      max-width: 420px; width: 100%;
+      box-shadow: 6px 6px 0 rgba(50,40,30,0.25);
+      transform: rotate(-0.5deg);
+      text-align: center;
+    }
+    .name-title {
+      font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700;
+      color: var(--ink); margin-bottom: 0.3rem;
+    }
+    .name-subtitle {
+      font-family: 'Patrick Hand', cursive; font-size: 0.9rem;
+      color: var(--pencil); margin-bottom: 1.8rem; line-height: 1.5;
+    }
+    .name-label {
+      font-family: 'Caveat', cursive; font-size: 1rem; font-weight: 700;
+      color: var(--blue); text-align: left; display: block; margin-bottom: 0.4rem;
+    }
+    #playerNameInput {
+      width: 100%; background: transparent; border: none;
+      border-bottom: 2.5px solid var(--ink); outline: none;
+      font-family: 'Caveat', cursive; font-size: 1.4rem; font-weight: 600;
+      color: var(--ink); padding: 0.3rem 0.4rem; text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    #playerNameInput::placeholder { color: #c8bfb0; font-size: 1.2rem; }
+    #playerNameInput:focus { border-bottom-color: var(--blue); }
+    #startBtn {
+      font-family: 'Caveat', cursive; font-size: 1.2rem; font-weight: 700;
+      background: var(--blue); color: #fff; border: none;
+      padding: 0.7rem 2.2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    #startBtn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(80,60,40,0.2); }
+
+    /* ── MAIN CONTENT ── */
+    #mainContent { display: none; }
+    #mainContent.show { display: block; animation: fadeIn 0.4s ease; }
+
+    /* ── HEADER ── */
+    .nb-header {
+      position: relative; margin-bottom: 2rem; padding-bottom: 1rem;
+      border-bottom: 2.5px solid var(--margin);
+      animation: fadeIn 0.5s ease both;
+    }
+    .nb-subject {
+      font-family: 'Caveat', cursive; font-size: 0.85rem; font-weight: 700;
+      color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .nb-title {
+      font-family: 'Caveat', cursive; font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 700; line-height: 1; color: var(--ink);
+    }
+    .nb-title span { color: var(--blue); }
+    .nb-student {
+      font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 600;
+      color: var(--pencil); margin-top: 0.3rem;
+    }
+    .nb-student em { color: var(--ink); font-style: normal; font-weight: 700; }
+    .nb-subtitle {
+      font-family: 'Patrick Hand', cursive; font-size: 0.9rem;
+      color: var(--pencil); margin-top: 0.2rem;
+    }
+
+    /* ── STAMP ── */
+    .stamp {
+      position: absolute; top: 0; right: 0;
+      width: 90px; height: 90px;
+      border: 3px solid var(--red); border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--red); transform: rotate(12deg);
+      font-family: 'Caveat', cursive; font-weight: 700;
+      opacity: 0.75; line-height: 1.1;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .stamp-label { font-size: 0.6rem; margin-bottom: 1px; }
+    .stamp-score { display: flex; align-items: baseline; gap: 1px; }
+    .stamp-num   { font-size: 2.4rem; font-weight: 700; line-height: 1; transition: all 0.3s ease; }
+    .stamp-denom { font-size: 1rem; font-weight: 700; opacity: 0.7; }
+    @keyframes stampBump { 0%{transform:rotate(12deg) scale(1)} 40%{transform:rotate(10deg) scale(1.25)} 100%{transform:rotate(12deg) scale(1)} }
+    .stamp.bump { animation: stampBump 0.4s ease; }
+
+    /* ── PROGRESS DOTS ── */
+    .progress-box {
+      background: var(--paper2); border: 1.5px dashed var(--pencil);
+      border-radius: var(--radius); padding: 0.8rem 1rem;
+      margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;
+      animation: fadeIn 0.5s 0.1s ease both;
+    }
+    .progress-label {
+      font-family: 'Caveat', cursive; font-size: 0.9rem; font-weight: 700;
+      color: var(--pencil); white-space: nowrap; min-width: 90px;
+    }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+    .dot-ball {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: transparent; border: 2px solid #bfb3a4;
+      transition: all 0.3s ease; position: relative;
+    }
+    .dot-ball.done {
+      background: var(--green); border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(26,122,74,0.2);
+    }
+    .dot-ball.done::after {
+      content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #fff; font-weight: 700;
+    }
+    .dot-ball.pop { animation: popDot 0.35s ease; }
+    #progressCount {
+      font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      color: var(--blue); white-space: nowrap;
+    }
+
+    /* ── INSTRUCTIONS ── */
+    .instructions-box {
+      background: #fff9e6; border: 1.5px solid #f0d070;
+      border-left: 4px solid #e8a820; border-radius: var(--radius);
+      padding: 0.9rem 1.1rem; margin-bottom: 1.8rem;
+      font-size: 0.93rem; color: #6a5a30; line-height: 1.6;
+      animation: fadeIn 0.5s 0.15s ease both;
+    }
+    .instructions-box strong { color: #8a6020; }
+
+    /* ── ROUND LABEL ── */
+    #roundLabel {
+      font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      color: var(--pencil); margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    #roundLabel::before { content: '→'; color: var(--red); font-size: 1.2rem; }
+
+    /* ── CARDS ── */
+    .exercises { display: flex; flex-direction: column; gap: 1.6rem; }
+    .card {
+      position: relative; background: transparent;
+      border-left: 3px solid var(--blue);
+      padding: 1rem 1.2rem 1rem 1.4rem;
+      transition: border-color 0.3s;
+    }
+    .card.correct { border-left-color: var(--green); }
+    .card.wrong   { border-left-color: var(--red); }
+
+    .card-num {
+      position: absolute; top: -6px; left: -14px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Caveat', cursive; font-size: 0.85rem; font-weight: 700;
+      box-shadow: var(--shadow); transition: background 0.3s;
+    }
+    .card.correct .card-num { background: var(--green); }
+    .card.wrong   .card-num { background: var(--red); }
+
+    .card-tag {
+      display: inline-block; font-family: 'Caveat', cursive;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--blue);
+      border-bottom: 2px dotted currentColor;
+      margin-bottom: 0.6rem; padding-bottom: 1px;
+    }
+    .card.wrong   .card-tag { color: var(--red); }
+    .card.correct .card-tag { color: var(--green); }
+    .card-difficulty { float: right; font-size: 0.75rem; color: #c8a030; margin-top: 1px; }
+
+    .sentence {
+      font-family: 'Patrick Hand', cursive; font-size: 1.05rem;
+      line-height: 1.9; color: var(--ink); margin-bottom: 0.5rem;
+    }
+
+    /* context block for problems */
+    .problem-ctx {
+      font-family: 'Patrick Hand', cursive; font-size: 0.93rem;
+      color: #4a3f6b; background: rgba(26,74,138,0.06);
+      border-left: 3px solid var(--blue); border-radius: 0 4px 4px 0;
+      padding: 0.5rem 0.8rem; margin-bottom: 0.7rem; line-height: 1.6;
+    }
+
+    input[type="text"] {
+      display: inline-block; width: 76px;
+      background: transparent; border: none;
+      border-bottom: 2.5px solid var(--ink);
+      color: var(--blue); font-family: 'Caveat', cursive;
+      font-size: 1.1rem; font-weight: 600; text-align: center;
+      padding: 0.1rem 0.3rem; outline: none;
+      transition: border-color 0.2s; vertical-align: baseline;
+    }
+    input[type="text"]::placeholder { color: #bfb3a4; font-size: 1rem; }
+    input[type="text"]:focus { border-bottom-color: var(--blue); }
+    input.correct-input { border-bottom-color: var(--green); color: var(--green); }
+    input.wrong-input   { border-bottom-color: var(--red);   color: var(--red);   }
+    input:disabled { opacity: 0.85; cursor: default; }
+
+    .hint {
+      font-family: 'Caveat', cursive; font-size: 0.95rem; font-weight: 600;
+      color: var(--pencil); background: rgba(180,160,120,0.08);
+      border: 1.5px dashed var(--pencil); border-radius: var(--radius);
+      padding: 0; margin-top: 0.5rem;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+    }
+    .hint.visible { max-height: 160px; opacity: 1; padding: 0.45rem 0.8rem; }
+    .hint::before { content: '📝 '; }
+
+    .feedback {
+      font-family: 'Caveat', cursive; font-size: 1rem; font-weight: 700;
+      margin-top: 0.5rem; min-height: 1.4rem;
+      opacity: 0; transform: translateY(4px);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok   { color: var(--green); }
+    .feedback.err  { color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn-row { margin-top: 2rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+
+    #checkBtn {
+      font-family: 'Caveat', cursive; font-size: 1.2rem; font-weight: 700;
+      background: var(--blue); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    #checkBtn::before { content: '✏️ '; }
+    #checkBtn:hover  { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(80,60,40,0.2); }
+    #checkBtn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(80,60,40,0.15); }
+    #checkBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: var(--shadow); }
+
+    #retryBtn {
+      display: none; font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      background: transparent; color: var(--pencil);
+      border: 2px dashed var(--pencil); padding: 0.55rem 1.6rem;
+      border-radius: var(--radius); cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #retryBtn::before { content: '↺ '; }
+    #retryBtn:hover { color: var(--red); border-color: var(--red); }
+
+    #scoreBox {
+      margin-top: 1rem; font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      opacity: 0; transform: translateY(8px); transition: opacity 0.35s, transform 0.35s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 2rem; color: var(--blue); display: block; line-height: 1; }
+    #scoreBox .score-msg { color: var(--pencil); font-size: 1rem; }
+
+    /* ── CELEBRATION ── */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(50,40,30,0.75);
+      justify-content: center; align-items: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.3s ease; }
+    .celeb-paper {
+      background: var(--paper);
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px);
+      border: 3px solid var(--ink2); border-radius: 4px;
+      padding: 2rem 2.5rem 2rem; max-width: 420px; width: 90%;
+      text-align: center; box-shadow: 8px 8px 0 rgba(50,40,30,0.35);
+      transform: rotate(-1.5deg); position: relative;
+    }
+    .celeb-paper::before {
+      content: '⭐'; position: absolute; top: -18px; left: 50%;
+      transform: translateX(-50%); font-size: 2.2rem;
+    }
+    .celeb-name   { font-family: 'Caveat', cursive; font-size: 1rem; font-weight: 600; color: var(--pencil); margin-bottom: 0.2rem; }
+    .celeb-title  { font-family: 'Caveat', cursive; font-size: 2.2rem; font-weight: 700; color: var(--ink); margin-bottom: 0.3rem; }
+    .celeb-stamp  {
+      display: inline-block; border: 3px solid var(--red); border-radius: 4px;
+      color: var(--red); font-family: 'Caveat', cursive;
+      font-size: 1.5rem; font-weight: 700;
+      padding: 0.2rem 1rem; margin: 0.6rem 0 0.4rem;
+      transform: rotate(-3deg);
+    }
+    .celeb-score-note { font-family: 'Patrick Hand', cursive; font-size: 0.82rem; color: var(--pencil); margin-bottom: 0.2rem; }
+    .celeb-score-note.bonus { color: var(--green); font-weight: 700; }
+    .celeb-sub    { font-family: 'Patrick Hand', cursive; font-size: 0.92rem; color: var(--pencil); margin: 0.8rem 0 1.3rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+      transition: transform 0.12s;
+    }
+    #celebCloseBtn:hover { transform: translate(-1px,-1px); }
+
+    /* ── CONFETTI ── */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* ── FINAL SCREEN ── */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeIn 0.6s ease; }
+    .final-wrap {
+      display: inline-block; background: var(--paper);
+      border: 3px solid var(--ink); border-radius: 4px;
+      padding: 3rem 3rem 2.5rem;
+      box-shadow: 8px 8px 0 rgba(50,40,30,0.3); transform: rotate(0.5deg);
+    }
+    .final-name  { font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 600; color: var(--pencil); margin-bottom: 0.5rem; }
+    .final-grade {
+      font-family: 'Caveat', cursive; font-size: 4.5rem; font-weight: 700;
+      color: var(--red); line-height: 1;
+      border: 4px solid var(--red); border-radius: 50%;
+      width: 110px; height: 110px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 0.8rem; transform: rotate(-5deg);
+    }
+    .final-grade .grade-num   { font-size: 3.2rem; line-height: 1; }
+    .final-grade .grade-denom { font-size: 1rem; opacity: 0.6; line-height: 1; }
+    .final-title { font-family: 'Caveat', cursive; font-size: 2rem; font-weight: 700; color: var(--ink); }
+    .final-sub   { font-family: 'Patrick Hand', cursive; font-size: 0.95rem; color: var(--pencil); margin: 0.5rem 0 1.5rem; line-height: 1.6; }
+    .final-note  { font-family: 'Caveat', cursive; font-size: 0.85rem; color: var(--pencil); margin-bottom: 1.2rem; font-style: italic; }
+    #reloadBtn {
+      font-family: 'Caveat', cursive; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+    }
+    #reloadBtn:hover { background: var(--blue); }
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+    @keyframes slideIn   { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes popDot    { 0%{transform:scale(1)} 50%{transform:scale(1.5)} 100%{transform:scale(1)} }
+  </style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Celebration overlay -->
+<div id="celebration">
+  <div class="celeb-paper">
+    <div class="celeb-name" id="celebName"></div>
+    <div class="celeb-title">Molt bé! 🎉</div>
+    <div class="celeb-stamp">3 / 3 ✓</div>
+    <div class="celeb-score-note bonus" id="celebScoreNote"></div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Seguim →</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- ── NAME SCREEN ── -->
+  <div id="nameScreen">
+    <div class="name-card">
+      <div class="name-title">📐 Rectes i Angles II</div>
+      <div class="name-subtitle">Matemàtiques · 1r ESO<br>Geometria avançada: angles, figures i problemes</div>
+      <label class="name-label" for="playerNameInput">✏️ Escriu el teu nom per començar:</label>
+      <input type="text" id="playerNameInput" placeholder="El teu nom aquí…" maxlength="30" autocomplete="off">
+      <button id="startBtn" onclick="startGame()">Comencem! →</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="mainContent">
+  <div class="paper-sheet">
+
+    <div class="holes">
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="nb-header">
+      <div class="nb-subject">Matemàtiques · 1r ESO</div>
+      <div class="nb-title">Rectes i <span>Angles II</span></div>
+      <div class="nb-student">Alumne/a: <em id="headerName"></em></div>
+      <div class="nb-subtitle">Angles, figures geomètriques i problemes aplicats</div>
+      <div class="stamp">
+        <div class="stamp-label">Nota</div>
+        <div class="stamp-score">
+          <div class="stamp-num" id="stampNum">0</div>
+          <div class="stamp-denom">/30</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress-box">
+      <div class="progress-label">Exercicis ✓</div>
+      <div id="dotsGrid"></div>
+      <div id="progressCount">0 / 30</div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions-box">
+      💡 Omple els buits i fes clic a <strong>"Comprova"</strong>. Si t'equivoques apareixerà una pista, però <strong>la resposta no et serà donada</strong>. Cada pregunta encertada a la primera suma <strong>1 punt</strong>. Pots reintentar les que has fallat sense perdre els encerts!
+    </div>
+
+    <!-- Round + exercises -->
+    <div id="roundLabel"></div>
+    <div class="exercises" id="exercises"></div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button id="checkBtn" onclick="checkAnswers()">Comprova respostes</button>
+      <div id="scoreBox">
+        <span class="score-num" id="scoreNum"></span>
+        <span class="score-msg" id="scoreMsg"></span>
+      </div>
+      <button id="retryBtn" onclick="retryRound()">Torna-ho a intentar</button>
+    </div>
+
+    <!-- Final screen -->
+    <div id="finalScreen">
+      <div class="final-wrap">
+        <div class="final-name" id="finalName"></div>
+        <div class="final-grade">
+          <div class="grade-num" id="finalGradeNum">—</div>
+          <div class="grade-denom">/ 30</div>
+        </div>
+        <div class="final-title" id="finalTitle">Excel·lent!</div>
+        <div class="final-sub" id="finalSub"></div>
+        <div class="final-note">* Cada pregunta encertada a la primera suma 1 punt. Màxim: 30 punts.</div>
+        <button id="reloadBtn" onclick="location.reload()">Tornar a començar</button>
+      </div>
+    </div>
+
+  </div><!-- /paper-sheet -->
+  </div><!-- /mainContent -->
+
+</div><!-- /page-wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis  ·  Rectes i Angles II  ·  1r ESO
+//   s[]  → string = text pla | ['x'] = negreta | '_' = input
+//   ctx  → (opcional) text de context del problema (string)
+//   stars: 1=★  2=★★  3=★★★
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ── Angles formats per rectes ──────────────────────────────
+  {
+    tag:"Angles i rectes", stars:1,
+    s:['Dues rectes es tallen formant 4 angles. Si un angle mesura 70°, el seu adjacent (suplementari) mesura ','_','°.'],
+    answer:110,
+    hint:"Angles suplementaris sumen 180°. → 180 − 70."
+  },
+  {
+    tag:"Angles i rectes", stars:1,
+    s:['Dues rectes perpendiculars es tallen formant 4 angles rectes. Cada angle mesura ','_','°.'],
+    answer:90,
+    hint:"Perpendicular = 90°. Els 4 angles formats valen 90° cadascun."
+  },
+  {
+    tag:"Angles i rectes", stars:2,
+    s:['Una secant talla dues rectes paral·leles. Un angle intern co-interior (entre les paral·leles, al mateix costat de la secant) mesura 65°. L\'altre angle co-interior mesura ','_','°.'],
+    answer:115,
+    hint:"Els angles co-interiors (conjugats) entre rectes paral·leles sumen 180°. → 180 − 65."
+  },
+  {
+    tag:"Angles i rectes", stars:2,
+    s:['Una secant talla dues paral·leles. Un angle altern intern mesura 48°. L\'altern intern del costat oposat mesura ','_','°.'],
+    answer:48,
+    hint:"Els angles alterns interns entre rectes paral·leles són iguals."
+  },
+  {
+    tag:"Angles i rectes", stars:2,
+    s:['Dues rectes es tallen. Un dels quatre angles mesura 130°. L\'angle oposat pel vèrtex mesura ','_','° i cadascun dels adjacents mesura ','_','°.'],
+    answer:130,
+    hint:"Oposats pel vèrtex: iguals. Adjacent (suplementari): 180 − 130 = 50°. Escriu la resposta de l'oposat pel vèrtex."
+  },
+
+  // ── Bisectriu i mediatriu ───────────────────────────────────
+  {
+    tag:"Bisectriu", stars:1,
+    s:['La bisectriu d\'un angle el divideix en dues parts iguals. Si l\'angle mesura 80°, cada meitat mesura ','_','°.'],
+    answer:40,
+    hint:"Bisectriu = divideix per la meitat. → 80 ÷ 2."
+  },
+  {
+    tag:"Bisectriu", stars:2,
+    s:['La bisectriu d\'un angle recte forma dos angles de ','_','° cadascun.'],
+    answer:45,
+    hint:"Angle recte = 90°. Bisectriu: 90 ÷ 2."
+  },
+  {
+    tag:"Mediatriu", stars:1,
+    s:['La mediatriu d\'un segment de ','_',' cm el talla perpendicularment pel punt mig. Si el segment mesura 14 cm, cada meitat mesura ','_','°... és a dir, ','_',' cm.'],
+    answer:7,
+    hint:"El punt mig divideix el segment en dues parts iguals: 14 ÷ 2."
+  },
+  {
+    tag:"Mediatriu", stars:2,
+    s:['Tots els punts de la mediatriu d\'un segment estan a la mateixa distància dels dos extrems. Si l\'extrem A és a 9 cm d\'un punt de la mediatriu, l\'extrem B és a ','_',' cm del mateix punt.'],
+    answer:9,
+    hint:"La propietat de la mediatriu: qualsevol punt equidista dels dos extrems."
+  },
+
+  // ── Angles en triangles ────────────────────────────────────
+  {
+    tag:"Angles triangle", stars:1,
+    s:['En un triangle, dos angles mesuren 55° i 75°. El tercer angle mesura ','_','°.'],
+    answer:50,
+    hint:"Suma dels angles = 180°. → 180 − 55 − 75."
+  },
+  {
+    tag:"Angles triangle", stars:2,
+    s:['En un triangle isòsceles, l\'angle del vèrtex mesura 100°. Cada angle de la base mesura ','_','°.'],
+    answer:40,
+    hint:"180 − 100 = 80°. Els dos angles de la base són iguals: 80 ÷ 2."
+  },
+  {
+    tag:"Angles triangle", stars:2,
+    s:['En un triangle rectangle, un angle agut és el doble de l\'altre. L\'angle menor mesura ','_','°.'],
+    answer:30,
+    hint:"Els dos angles aguts sumen 90°. Si un és x i l'altre 2x: x + 2x = 90 → x = 30."
+  },
+  {
+    tag:"Angles triangle", stars:3,
+    s:['L\'angle exterior d\'un triangle és igual a la suma dels dos angles interiors no adjacents. Un angle exterior mesura 115°. Un dels angles interiors no adjacents és 60°. L\'altre és ','_','°.'],
+    answer:55,
+    hint:"Angle exterior = suma dels 2 interiors no adjacents. → 115 − 60."
+  },
+  {
+    tag:"Angles triangle", stars:3,
+    ctx:"En un triangle, els angles estan en proporció 1 : 2 : 3.",
+    s:['L\'angle menor mesura ','_','°, el mitjà ','_','°, i el major ','_','°.'],
+    answer:30,
+    hint:"La suma és 180°, i els angles estan en proporció 1:2:3. → 180 ÷ 6 = 30°. Els altres: 60° i 90°. Escriu el valor del menor."
+  },
+
+  // ── Angles en quadrilàters i polígons ─────────────────────
+  {
+    tag:"Polígons", stars:1,
+    s:['En un rectangle, tots els angles mesuren ','_','°.'],
+    answer:90,
+    hint:"Un rectangle té 4 angles rectes de 90°."
+  },
+  {
+    tag:"Polígons", stars:2,
+    s:['En un paral·lelogram, dos angles consecutius sumen ','_','°. Si un angle mesura 70°, el consecutiu mesura ','_','°.'],
+    answer:110,
+    hint:"En un paral·lelogram, angles consecutius son suplementaris: sumen 180°. → 180 − 70."
+  },
+  {
+    tag:"Polígons", stars:2,
+    s:['En un rombe, dos angles oposats mesuren 60° cadascun. Els altres dos angles oposats mesuren ','_','° cadascun.'],
+    answer:120,
+    hint:"Suma total = 360°. Ja tenim 60 + 60 = 120°. Resten 360 − 120 = 240° per als altres dos, iguals: 240 ÷ 2."
+  },
+  {
+    tag:"Polígons", stars:2,
+    s:['La suma dels angles interiors d\'un heptàgon (7 costats) és ','_','°.'],
+    answer:900,
+    hint:"Fórmula: (n − 2) × 180°. → (7 − 2) × 180."
+  },
+  {
+    tag:"Polígons", stars:3,
+    s:['En un octàgon regular (8 costats), cada angle interior mesura ','_','°.'],
+    answer:135,
+    hint:"Suma = (8 − 2) × 180 = 1080°. Cada angle: 1080 ÷ 8."
+  },
+  {
+    tag:"Polígons", stars:3,
+    s:['Un polígon regular té cada angle interior de 144°. Quants costats té? ','_',' costats.'],
+    answer:10,
+    hint:"Cada angle interior = (n−2)×180 ÷ n. Planteja (n−2)×180 = 144n i resol: 180n − 360 = 144n → 36n = 360 → n = 10."
+  },
+
+  // ── Problemes aplicats ─────────────────────────────────────
+  {
+    tag:"Problema", stars:2,
+    ctx:"Un rellotge analògic marca les 3 en punt.",
+    s:['L\'angle format per les agulles del rellotge és de ','_','°.'],
+    answer:90,
+    hint:"A les 3 en punt, les agulles formen un angle recte. La circumferència (360°) dividida en 12 hores: 360 ÷ 12 = 30° per hora. De les 12 a les 3 hi ha 3 hores: 3 × 30 = 90°."
+  },
+  {
+    tag:"Problema", stars:2,
+    ctx:"Un rellotge analògic marca les 6 en punt.",
+    s:['L\'angle format per les agulles del rellotge és de ','_','°.'],
+    answer:180,
+    hint:"A les 6, les dues agulles formen una línia recta (angle pla). 6 × 30° = 180°."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"En una cruïlla, tres carrers es troben en un punt. Els angles que formen entre ells estan en proporció 2 : 3 : 7.",
+    s:['L\'angle major de la cruïlla mesura ','_','°.'],
+    answer:210,
+    hint:"Els tres angles sumen 360°. En proporció 2:3:7, la suma de parts = 12. Cada part = 360 ÷ 12 = 30°. L'angle major = 7 × 30°."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"Una escala forma un angle de 65° amb el terra horitzontal.",
+    s:['L\'angle que forma l\'escala amb la paret vertical és de ','_','°.'],
+    answer:25,
+    hint:"L'escala, la paret i el terra formen un triangle rectangle. Els dos angles aguts han de sumar 90°. → 90 − 65."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"Tres rectes concurrents passen per un mateix punt. Formen 6 angles al voltant del punt.",
+    s:['Si els sis angles són iguals, cada un mesura ','_','°.'],
+    answer:60,
+    hint:"Tres rectes que es tallen en un punt formen 6 angles. La suma total és 360°. → 360 ÷ 6."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"En un triangle ABC, la bisectriu de l'angle A talla BC en el punt D. L'angle A mesura 80° i l'angle B mesura 50°.",
+    s:['L\'angle C del triangle mesura ','_','°. L\'angle que forma la bisectriu AD amb el costat AB mesura ','_','°.'],
+    answer:50,
+    hint:"Angle C = 180 − 80 − 50 = 50°. La bisectriu de A divideix l'angle A per la meitat: 80 ÷ 2 = 40°. Escriu el valor de l'angle C."
+  },
+  {
+    tag:"Problema", stars:2,
+    ctx:"Un terreny té forma de trapezi. Els angles de la base inferior mesuren 70° i 80°.",
+    s:['La suma dels dos angles de la base inferior és ','_','°. Els angles de la base superior, que son suplementaris dels de la base inferior respectivament, sumen ','_','°. Escriu la suma dels angles de la base superior.'],
+    answer:210,
+    hint:"Cada angle de la base superior és suplementari al de la base inferior: 180−70=110° i 180−80=100°. Suma: 110+100 = 210°."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"Un romb té un angle de 60°. Les diagonals d'un rombe es tallen perpendicularment i bisecten els angles.",
+    s:['Cada diagonal bisecta l\'angle de 60°, formant triangles de ','_','° en aquell vèrtex.'],
+    answer:30,
+    hint:"La diagonal bisecta l'angle de 60°: 60 ÷ 2 = 30°."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"Una torre de ràdio és perpendicular al terra. Des d'un punt del terra, el cable tensor forma un angle de 35° amb la torre.",
+    s:['L\'angle que forma el cable tensor amb el terra és de ','_','°.'],
+    answer:55,
+    hint:"La torre, el terra i el cable formen un triangle rectangle. L'angle a la base de la torre és 90°. Els dos angles aguts sumen 90°: 90 − 35."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"En una figura, dues rectes paral·leles r i s estan tallades per una secant t. L'angle que t forma amb r en la intersecció és de 40° (angle agut).",
+    s:['L\'angle altern extern format amb s és de ','_','°, i l\'angle co-interior (entre les paral·leles, mateix costat) amb s és de ','_','°. Escriu l\'angle altern extern.'],
+    answer:40,
+    hint:"Altern extern = igual que l'angle original (rectes paral·leles). Co-interior = suplementari (180−40=140°). Escriu el valor de l'altern extern."
+  },
+  {
+    tag:"Problema", stars:3,
+    ctx:"Un polígon convex té 9 costats (nonàgon).",
+    s:['La suma dels seus angles interiors és ','_','°. Si fos regular, cada angle interior mesuraria ','_','°. Escriu la suma dels angles interiors.'],
+    answer:1260,
+    hint:"Fórmula: (n−2) × 180° = (9−2) × 180 = 7 × 180 = 1260°. Cada angle si fos regular: 1260 ÷ 9 = 140°."
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ESTAT
+// ═══════════════════════════════════════════════════════════════
+const TOTAL = 30, PER = 3;
+let order = [], solved = 0, score = 0, roundIdx = 0;
+let currentEx = [], checked = false;
+let canScore = [true, true, true];
+let locked   = [false, false, false];
+let playerName = '';
+const STARS = ['', '★', '★★', '★★★'];
+
+// ═══════════════════════════════════════════════════════════════
+// NOM I INICI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('playerNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+function startGame() {
+  const raw = document.getElementById('playerNameInput').value.trim();
+  playerName = raw || 'Alumne/a';
+  document.getElementById('nameScreen').style.display = 'none';
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('headerName').textContent = playerName;
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i = TOTAL - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  buildDots();
+  loadRound(0, false);
+}
+
+function buildDots() {
+  const g = document.getElementById('dotsGrid');
+  g.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-ball'; d.id = 'dot' + i;
+    g.appendChild(d);
+  }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved + ' / ' + TOTAL;
+  document.getElementById('stampNum').textContent = score;
+}
+
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el = document.getElementById('dot' + gi);
+      if (!el) return;
+      el.classList.add('done', 'pop');
+      el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+    }, delay * 180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+function loadRound(ri, animate) {
+  checked  = false;
+  canScore = [true, true, true];
+  locked   = [false, false, false];
+  roundIdx = ri;
+
+  const start = ri * PER;
+  currentEx = order.slice(start, start + PER).map(i => BANK[i]);
+
+  document.getElementById('roundLabel').textContent =
+    'Repte ' + (ri + 1) + ' de ' + (TOTAL / PER);
+
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent = '';
+  document.getElementById('scoreMsg').textContent = '';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  document.getElementById('checkBtn').style.display = '';
+
+  const container = document.getElementById('exercises');
+
+  function renderCards() {
+    container.innerHTML = '';
+    currentEx.forEach((ex, i) => {
+      const card = document.createElement('div');
+      card.className = 'card'; card.id = 'card' + i;
+
+      let sentHTML = '';
+      ex.s.forEach(part => {
+        if (part === '_') {
+          sentHTML += '<input type="text" id="ans' + i +
+            '" placeholder="···" autocomplete="off" maxlength="12">';
+        } else if (Array.isArray(part)) {
+          sentHTML += '<strong>' + part[0] + '</strong>';
+        } else {
+          sentHTML += part;
+        }
+      });
+
+      const ctxHTML = ex.ctx
+        ? '<div class="problem-ctx">' + ex.ctx + '</div>'
+        : '';
+
+      card.innerHTML =
+        '<div class="card-num">' + (i + 1) + '</div>' +
+        '<div class="card-tag">' + ex.tag +
+          '<span class="card-difficulty">' + (STARS[ex.stars || 1]) + '</span>' +
+        '</div>' +
+        ctxHTML +
+        '<div class="sentence">' + sentHTML + '</div>' +
+        '<div class="hint" id="hint' + i + '">' + ex.hint + '</div>' +
+        '<div class="feedback" id="fb' + i + '"></div>';
+
+      container.appendChild(card);
+
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(50px)';
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+      }, 60 + i * 90);
+    });
+
+    currentEx.forEach((_, i) => {
+      document.getElementById('ans' + i).addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          let next = i + 1;
+          while (next < PER && locked[next]) next++;
+          const nxt = next < PER ? document.getElementById('ans' + next) : null;
+          if (nxt) nxt.focus(); else checkAnswers();
+        }
+      });
+    });
+
+    setTimeout(() => {
+      const f = document.getElementById('ans0');
+      if (f && !locked[0]) f.focus();
+    }, 350);
+  }
+
+  if (animate && container.children.length > 0) {
+    Array.from(container.children).forEach((card, i) => {
+      card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+      card.style.transitionDelay = (i * 50) + 'ms';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(-55px)';
+    });
+    setTimeout(renderCards, 340);
+  } else {
+    renderCards();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVA
+// ═══════════════════════════════════════════════════════════════
+function checkAnswers() {
+  if (checked) return;
+  const TOL = 0.5;
+  let okThisAttempt = 0;
+  let scoreGained   = 0;
+  let allDone       = true;
+
+  currentEx.forEach((ex, i) => {
+    if (locked[i]) { okThisAttempt++; return; }
+
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const hint = document.getElementById('hint' + i);
+    const val  = parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''));
+
+    if (isNaN(val)) {
+      inp.classList.remove('correct-input', 'wrong-input');
+      card.classList.remove('correct', 'wrong');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ Escriu un número.';
+      hint.classList.add('visible');
+      allDone = false;
+      canScore[i] = false;
+      return;
+    }
+
+    if (Math.abs(val - ex.answer) <= TOL) {
+      okThisAttempt++;
+      locked[i] = true;
+      inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+      inp.disabled = true;
+      card.classList.add('correct'); card.classList.remove('wrong');
+      fb.className = 'feedback ok show';
+      const bonus = canScore[i] ? ' (+1 punt)' : '';
+      fb.textContent = '✓ Correcte!' + bonus;
+      hint.classList.remove('visible');
+      if (canScore[i]) scoreGained++;
+    } else {
+      allDone = false;
+      canScore[i] = false;
+      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      card.classList.add('wrong'); card.classList.remove('correct');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ No és correcte. Revisa la pista!';
+      hint.classList.add('visible');
+    }
+  });
+
+  if (scoreGained > 0) {
+    score += scoreGained;
+    updateCount();
+    const stamp = document.querySelector('.stamp');
+    stamp.classList.remove('bump');
+    void stamp.offsetWidth;
+    stamp.classList.add('bump');
+    stamp.addEventListener('animationend', () => stamp.classList.remove('bump'), { once: true });
+  }
+
+  const pendents = PER - okThisAttempt;
+  let msg = '';
+  if (allDone) {
+    msg = 'Perfecte! Totes encertades! 🏆';
+  } else if (pendents === 1) {
+    msg = 'Queda 1 per corregir. Torna-ho a provar! 💪';
+  } else {
+    msg = 'Queden ' + pendents + ' per corregir. Revisa les pistes! 💪';
+  }
+  document.getElementById('scoreNum').textContent = okThisAttempt + ' / ' + PER;
+  document.getElementById('scoreMsg').textContent = msg;
+  document.getElementById('scoreBox').classList.add('show');
+
+  if (allDone) {
+    checked = true;
+    document.getElementById('checkBtn').disabled = true;
+    for (let i = 0; i < PER; i++) {
+      const h = document.getElementById('hint' + i);
+      if (h) h.classList.remove('visible');
+    }
+    const dotStart = roundIdx * PER;
+    markDots(order.slice(dotStart, dotStart + PER));
+    solved += PER;
+    updateCount();
+    const isLast = (roundIdx + 1) * PER >= TOTAL;
+    if (isLast) setTimeout(showFinal, 800);
+    else         setTimeout(showCelebration, 500);
+  } else {
+    document.getElementById('retryBtn').style.display = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RETRY
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for (let i = 0; i < PER; i++) {
+    if (locked[i]) continue;
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    if (inp)  { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    if (card) card.classList.remove('correct', 'wrong');
+    if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  checked = false;
+  for (let i = 0; i < PER; i++) {
+    if (!locked[i]) { document.getElementById('ans' + i).focus(); break; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebName').textContent = playerName + ',';
+  document.getElementById('celebSub').textContent =
+    'Repte ' + (roundIdx + 1) + ' superat! Prepara\'t per al repte ' + (roundIdx + 2) + '.';
+  const noteEl = document.getElementById('celebScoreNote');
+  noteEl.textContent = 'Nota acumulada: ' + score + ' / 30';
+  noteEl.className = 'celeb-score-note bonus';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti();
+  loadRound(roundIdx + 1, true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FINAL
+// ═══════════════════════════════════════════════════════════════
+function showFinal() {
+  document.getElementById('exercises').style.display  = 'none';
+  document.getElementById('roundLabel').style.display = 'none';
+  document.querySelector('.btn-row').style.display    = 'none';
+  document.getElementById('finalName').textContent     = playerName;
+  document.getElementById('finalGradeNum').textContent = score;
+
+  const titles = [
+    [0,  9,  'Segueix practicant!',     'No t\'amoïnis, la pràctica fa la perfecció. Torna a intentar-ho!'],
+    [10, 18, 'Bé, però pots millorar!', 'Has superat molts reptes. Amb una mica més d\'esforç arribaràs al màxim!'],
+    [19, 26, 'Notable!',                'Molt bon treball, ' + playerName + '! Quasi ho tens tot dominat.'],
+    [27, 30, 'Excel·lent! 🏅',          'Increïble, ' + playerName + '! Domines els angles i la geometria!'],
+  ];
+  const [,, title, sub] = titles.find(([mn, mx]) => score >= mn && score <= mx) || titles[3];
+  document.getElementById('finalTitle').textContent = title;
+  document.getElementById('finalSub').textContent   = sub;
+  document.getElementById('finalScreen').classList.add('show');
+  launchConfetti();
+  setTimeout(stopConfetti, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('confettiCanvas');
+const ctx    = canvas.getContext('2d');
+let particles = [], confettiAF = null;
+function launchConfetti() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  particles = Array.from({ length: 90 }, makeP);
+  if (confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop() { drawConfetti(); confettiAF = requestAnimationFrame(loop); })();
+}
+function stopConfetti() {
+  if (confettiAF) { cancelAnimationFrame(confettiAF); confettiAF = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('show');
+}
+function makeP() {
+  const c = ['#c0392b','#1a4a8a','#1a7a4a','#e8a820','#8a4a8a','#2a8a8a'];
+  return {
+    x: Math.random() * window.innerWidth, y: Math.random() * -200,
+    w: 8 + Math.random() * 8, h: 4 + Math.random() * 5,
+    color: c[Math.floor(Math.random() * c.length)],
+    speed: 2 + Math.random() * 4, angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2, drift: (Math.random() - 0.5) * 1.5,
+  };
+}
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+    if (p.y > canvas.height) Object.assign(p, makeP(), { y: -20 });
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+}
+</script>
+</body>
+</html>
