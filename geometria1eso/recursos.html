@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recursos · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .22s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 10px var(--blue); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: .9rem; font-weight: 400;
+      transition: color var(--tr); position: relative;
+    }
+    .nav-links a.active { color: var(--purple); }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -4px; left: 0;
+      width: 0; height: 2px; background: var(--purple);
+      transition: width var(--tr); border-radius: 2px;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active::after,
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 4rem 2rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--purple); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.02em; margin-bottom: .6rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--purple); }
+    .page-header p { color: var(--muted); font-size: .95rem; line-height: 1.7; max-width: 560px; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 1.5rem 2rem;
+      display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+    }
+    .filter-label { font-size: .78rem; color: var(--muted); margin-right: .4rem; }
+    .filter-btn {
+      padding: .35rem .9rem; border-radius: 100px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .filter-btn:hover { border-color: var(--purple); color: var(--text); }
+    .filter-btn.active {
+      border-color: var(--purple); color: var(--purple);
+      background: rgba(180,127,255,.1);
+    }
+
+    /* ── RESOURCES GRID ── */
+    .resources {
+      flex: 1;
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: .5rem 2rem 4rem;
+    }
+
+    /* ─────────────────────────────────────────────────────
+       RESOURCE CARD
+       Per afegir un nou recurs, copia el bloc entre
+       "RECURS ——" i "—— FI RECURS" i canvia:
+         · data-tag   → etiqueta de filtre (ex: "angles", "àrees", "figures"…)
+         · href       → URL del recurs
+         · .res-tag   → text de l'etiqueta (1 paraula o frase curta)
+         · h3         → títol del recurs
+         · p          → descripció
+         · data-type  → "web" | "pdf" | "applet" | "video" | "activitat"
+    ───────────────────────────────────────────────────── -->
+
+    .res-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin-top: .5rem;
+    }
+
+    .res-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: var(--text);
+      display: flex; flex-direction: column; gap: .85rem;
+      padding: 1.4rem 1.5rem;
+      transition: all var(--tr); position: relative; overflow: hidden;
+    }
+    .res-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--c-color, var(--purple));
+      transform: scaleX(0); transform-origin: left; transition: transform var(--tr);
+    }
+    .res-card:hover {
+      border-color: var(--c-color, var(--purple));
+      transform: translateY(-5px);
+      box-shadow: 0 18px 36px rgba(0,0,0,.35);
+    }
+    .res-card:hover::before { transform: scaleX(1); }
+
+    .res-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .res-tag {
+      font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .09em;
+      color: var(--c-color, var(--purple));
+      background: color-mix(in srgb, var(--c-color, var(--purple)) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--c-color, var(--purple)) 28%, transparent);
+      border-radius: 100px; padding: .22rem .7rem;
+    }
+    .res-type-icon {
+      font-size: .95rem; opacity: .5; transition: opacity var(--tr);
+    }
+    .res-card:hover .res-type-icon { opacity: 1; }
+
+    .res-card h3 {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; line-height: 1.3;
+    }
+    .res-card p {
+      font-size: .84rem; color: var(--muted); line-height: 1.6; flex: 1;
+    }
+    .res-card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: .75rem; color: var(--muted);
+    }
+    .res-domain {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;
+    }
+    .res-arrow {
+      transition: transform var(--tr); font-size: .9rem;
+      color: var(--c-color, var(--purple));
+    }
+    .res-card:hover .res-arrow { transform: translate(3px, -3px); }
+
+    /* Type color mapping */
+    .res-card[data-type="video"]    { --c-color: var(--coral); }
+    .res-card[data-type="applet"]   { --c-color: var(--green); }
+    .res-card[data-type="pdf"]      { --c-color: var(--yellow); }
+    .res-card[data-type="web"]      { --c-color: var(--blue); }
+    .res-card[data-type="activitat"]{ --c-color: var(--purple); }
+
+    /* Hidden by filter */
+    .res-card.filtered { display: none; }
+
+    /* ── SECTION DIVIDER ── */
+    .res-section-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+      padding: 2rem 0 .75rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .res-section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: none; text-align: center; padding: 4rem 2rem; color: var(--muted);
+    }
+    .empty-state.visible { display: block; }
+    .empty-state p { font-size: .9rem; margin-top: .5rem; }
+
+    /* ── ADD NOTE ── */
+    .add-note {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem;
+    }
+    .add-note-box {
+      background: rgba(180,127,255,.05);
+      border: 1px dashed rgba(180,127,255,.25);
+      border-radius: 12px; padding: 1.1rem 1.5rem;
+      font-size: .82rem; color: var(--muted); line-height: 1.7;
+    }
+    .add-note-box strong { color: var(--purple); }
+    .add-note-box code {
+      font-family: 'DM Mono', monospace; font-size: .78rem;
+      background: rgba(255,255,255,.06); border-radius: 4px; padding: .1rem .4rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+      .page-header { padding: 3rem 1.5rem 2rem; }
+      .filter-bar, .resources, .add-note { padding-left: 1.5rem; padding-right: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <ul class="nav-links">
+    <li><a href="index.html#temes">Temes</a></li>
+    <li><a href="teoria.html">Teoria</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+    <li><a href="recursos.html" class="active">Material</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Material general</span>
+  </div>
+  <h1>Material <em>general</em></h1>
+  <p>Recull d'enllaços, applets, vídeos i documents externs per aprofundir en els continguts de geometria. Filtrats per tipus o per tema.</p>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Filtrar per:</span>
+  <button class="filter-btn active" onclick="filterBy('tot')">Tot</button>
+  <button class="filter-btn" onclick="filterBy('video')">📹 Vídeos</button>
+  <button class="filter-btn" onclick="filterBy('applet')">🎮 Applets</button>
+  <button class="filter-btn" onclick="filterBy('pdf')">📄 PDFs</button>
+  <button class="filter-btn" onclick="filterBy('web')">🌐 Webs</button>
+  <button class="filter-btn" onclick="filterBy('activitat')">✏️ Activitats</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     RECURSOS
+     Per afegir un nou recurs, copia una .res-card i ajusta:
+       · data-tag  → paraula clau del tema (per filtre futur)
+       · data-type → "video" | "applet" | "pdf" | "web" | "activitat"
+       · href      → URL
+       · .res-tag  → etiqueta visible (tema breu)
+       · h3        → títol
+       · p         → descripció
+     L'apartat "Afegeix aquí" marca on enganxar cada tipus.
+═══════════════════════════════════════════════════════ -->
+<div class="resources">
+
+  <!-- ── ACTIVITATS INTERACTIVES ─────────────────────── -->
+  <div class="res-section-title">Activitats interactives</div>
+  <div class="res-grid">
+
+    <!-- RECURS —————————————————————————————————————— -->
+    <a href="https://wordwall.net/es/resource/63176275/angles"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="activitat" data-tag="angles">
+      <div class="res-card-top">
+        <span class="res-tag">Angles</span>
+        <span class="res-type-icon">✏️</span>
+      </div>
+      <h3>Wordwall: Tipus d'angles</h3>
+      <p>Activitat interactiva per identificar i classificar angles: aguts, rectes, obtusos i plans. Ideal per repassar.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">wordwall.net</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    <!-- —— FI RECURS —————————————————————————————————— -->
+
+    <!-- RECURS —————————————————————————————————————— -->
+    <a href="https://es.educaplay.com/recursos-educativos/12115189-els_angles_i_les_rectes.html"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="activitat" data-tag="angles rectes">
+      <div class="res-card-top">
+        <span class="res-tag">Angles · Rectes</span>
+        <span class="res-type-icon">✏️</span>
+      </div>
+      <h3>Educaplay: Els angles i les rectes</h3>
+      <p>Activitat de repàs sobre la classificació dels angles i la relació entre rectes: paral·leles, secants i perpendiculars.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">educaplay.com</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    <!-- —— FI RECURS —————————————————————————————————— -->
+
+    <!-- ✦ AFEGEIX AQUÍ noves activitats interactives ✦ -->
+
+  </div>
+
+  <!-- ── PDFs ─────────────────────────────────────────── -->
+  <div class="res-section-title">Documents PDF</div>
+  <div class="res-grid">
+
+    <!-- RECURS —————————————————————————————————————— -->
+    <a href="https://proyectodescartes.org/EDAD/materiales_didacticos/EDAD_1eso_cat_geometria_plana-JS/1quincena8.pdf"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="pdf" data-tag="geometria angles">
+      <div class="res-card-top">
+        <span class="res-tag">Geometria plana</span>
+        <span class="res-type-icon">📄</span>
+      </div>
+      <h3>Proyecto Descartes: Geometria plana (1r ESO)</h3>
+      <p>Document del Proyecto Descartes sobre geometria plana per a 1r ESO en català. Inclou teoria, exemples i exercicis.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">proyectodescartes.org</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    <!-- —— FI RECURS —————————————————————————————————— -->
+
+    <!-- RECURS —————————————————————————————————————— -->
+    <a href="https://www.cefax.org/digitals/primer/mates/anglesirectes.pdf"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="pdf" data-tag="angles rectes">
+      <div class="res-card-top">
+        <span class="res-tag">Angles · Rectes</span>
+        <span class="res-type-icon">📄</span>
+      </div>
+      <h3>Cefax: Angles i rectes</h3>
+      <p>Full de treball en PDF sobre angles i rectes per a 1r ESO. Exercicis de mesura, classificació i relació entre rectes.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">cefax.org</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    <!-- —— FI RECURS —————————————————————————————————— -->
+
+    <!-- ✦ AFEGEIX AQUÍ nous PDFs ✦ -->
+
+  </div>
+
+  <!-- ── VÍDEOS ────────────────────────────────────────── -->
+  <div class="res-section-title">Vídeos</div>
+  <div class="res-grid">
+
+    <!-- ✦ AFEGEIX AQUÍ nous vídeos ✦ -->
+
+    <!-- Exemple de vídeo (elimina aquest comentari i descomenta per usar):
+    <a href="https://www.youtube.com/watch?v=XXXXX"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="video" data-tag="angles">
+      <div class="res-card-top">
+        <span class="res-tag">Angles</span>
+        <span class="res-type-icon">📹</span>
+      </div>
+      <h3>Títol del vídeo</h3>
+      <p>Descripció breu del vídeo.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">youtube.com</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    -->
+
+    <div style="grid-column:1/-1; padding:1.5rem; text-align:center; color:var(--muted); font-size:.85rem; border:1px dashed var(--border); border-radius:12px;">
+      Encara no hi ha vídeos afegits. Descomenta l'exemple al codi i afegeix-ne!
+    </div>
+
+  </div>
+
+  <!-- ── APPLETS ───────────────────────────────────────── -->
+  <div class="res-section-title">Applets i eines interactives</div>
+  <div class="res-grid">
+
+    <!-- ✦ AFEGEIX AQUÍ nous applets (GeoGebra, Desmos…) ✦ -->
+
+    <!-- Exemple d'applet (elimina aquest comentari i descomenta per usar):
+    <a href="https://www.geogebra.org/m/XXXXX"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="applet" data-tag="figures">
+      <div class="res-card-top">
+        <span class="res-tag">Figures</span>
+        <span class="res-type-icon">🎮</span>
+      </div>
+      <h3>Títol de l'applet</h3>
+      <p>Descripció breu de l'applet.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">geogebra.org</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    -->
+
+    <div style="grid-column:1/-1; padding:1.5rem; text-align:center; color:var(--muted); font-size:.85rem; border:1px dashed var(--border); border-radius:12px;">
+      Encara no hi ha applets afegits. Descomenta l'exemple al codi i afegeix-ne!
+    </div>
+
+  </div>
+
+  <!-- ── WEBS ──────────────────────────────────────────── -->
+  <div class="res-section-title">Webs de referència</div>
+  <div class="res-grid">
+
+    <!-- ✦ AFEGEIX AQUÍ noves webs de referència ✦ -->
+
+    <!-- Exemple de web (elimina aquest comentari i descomenta per usar):
+    <a href="https://www.exemple.com"
+       target="_blank" rel="noopener"
+       class="res-card" data-type="web" data-tag="mesures">
+      <div class="res-card-top">
+        <span class="res-tag">Mesures</span>
+        <span class="res-type-icon">🌐</span>
+      </div>
+      <h3>Títol de la web</h3>
+      <p>Descripció breu de la web.</p>
+      <div class="res-card-footer">
+        <span class="res-domain">exemple.com</span>
+        <span class="res-arrow">↗</span>
+      </div>
+    </a>
+    -->
+
+    <div style="grid-column:1/-1; padding:1.5rem; text-align:center; color:var(--muted); font-size:.85rem; border:1px dashed var(--border); border-radius:12px;">
+      Encara no hi ha webs afegides. Descomenta l'exemple al codi i afegeix-ne!
+    </div>
+
+  </div>
+
+</div>
+<!-- ═══ FI RECURSOS ══════════════════════════════════════ -->
+
+<!-- Nota d'ajuda per a l'editor -->
+<div class="add-note">
+  <div class="add-note-box">
+    <strong>📝 Com afegir un recurs nou:</strong> busca la secció corresponent (Activitats, PDFs, Vídeos, Applets o Webs) i copia un bloc <code>&lt;a class="res-card"&gt;</code> existent just a sobre del comentari <code>✦ AFEGEIX AQUÍ ✦</code>. Canvia <code>href</code>, <code>data-tag</code>, <code>data-type</code>, l'etiqueta, el títol i la descripció. Guarda i llest!
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Geometria 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ── FILTER ──
+function filterBy(type) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  document.querySelectorAll('.res-card').forEach(card => {
+    if (type === 'tot') {
+      card.classList.remove('filtered');
+    } else {
+      card.classList.toggle('filtered', card.dataset.type !== type);
+    }
+  });
+
+  // Show/hide section titles and empty grids
+  document.querySelectorAll('.res-grid').forEach(grid => {
+    const visible = grid.querySelectorAll('.res-card:not(.filtered)').length;
+    grid.previousElementSibling.style.display = (visible === 0 && type !== 'tot') ? 'none' : '';
+  });
+}
+</script>
+</body>
+</html>
