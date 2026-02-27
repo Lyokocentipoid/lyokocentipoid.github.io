@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angles interiors d'un polígon · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--green); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--green); background: rgba(61,255,160,.1); border: 1px solid rgba(61,255,160,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--green); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--yellow); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* ── CANVAS ── */
+    .canvas-col { display: flex; flex-direction: column; gap: 1.25rem; }
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 4/3;
+      transition: border-color var(--tr);
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+    .canvas-hint {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted);
+      background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: .3rem 1rem; pointer-events: none; white-space: nowrap;
+      transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* ── SUM BADGE ── */
+    .sum-badge {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.1rem 1.5rem; display: flex; align-items: center; gap: 1.25rem;
+      transition: border-color var(--tr), box-shadow var(--tr);
+    }
+    .sum-badge.pulse {
+      border-color: var(--yellow);
+      box-shadow: 0 0 24px rgba(245,200,66,.15);
+    }
+    .sum-number {
+      font-family: 'DM Mono', monospace; font-size: 2.6rem; font-weight: 500;
+      color: var(--yellow); line-height: 1; min-width: 90px;
+      transition: color .15s;
+    }
+    .sum-info { flex: 1; }
+    .sum-label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: .25rem; }
+    .sum-formula {
+      font-family: 'DM Mono', monospace; font-size: .82rem;
+      color: var(--yellow); background: rgba(245,200,66,.1);
+      border: 1px solid rgba(245,200,66,.25); border-radius: 6px;
+      padding: .2rem .6rem; display: inline-block;
+    }
+
+    /* ── SIDE PANEL ── */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    /* ── POLYGON SELECTOR ── */
+    .poly-selector {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .poly-selector-head {
+      padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+    }
+    .poly-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    }
+    .poly-btn {
+      display: flex; flex-direction: column; align-items: center; gap: .3rem;
+      padding: .9rem .5rem; border: none; background: transparent;
+      color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: .78rem; transition: all var(--tr); border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .poly-btn:nth-child(3n) { border-right: none; }
+    .poly-btn:nth-last-child(-n+3) { border-bottom: none; }
+    .poly-btn:hover { background: rgba(255,255,255,.03); color: var(--text); }
+    .poly-btn.active {
+      background: rgba(245,200,66,.08); color: var(--yellow);
+      box-shadow: inset 0 0 0 1px rgba(245,200,66,.2);
+    }
+    .poly-btn .poly-icon { font-size: 1.4rem; line-height: 1; }
+    .poly-btn .poly-n { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--yellow); opacity: 0; transition: opacity var(--tr); }
+    .poly-btn.active .poly-n { opacity: 1; }
+
+    /* ── ANGLE LIST ── */
+    .angle-list-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .angle-list-head {
+      padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+    }
+    .angle-list { padding: .75rem 1.25rem; display: flex; flex-direction: column; gap: .5rem; max-height: 240px; overflow-y: auto; }
+    .angle-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .45rem .75rem; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: all var(--tr); cursor: pointer;
+    }
+    .angle-item:hover { border-color: var(--yellow); }
+    .angle-item.active-vertex {
+      border-color: var(--yellow);
+      background: rgba(245,200,66,.07);
+    }
+    .angle-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .angle-item-label { font-size: .8rem; color: var(--muted); flex: 1; }
+    .angle-item-deg {
+      font-family: 'DM Mono', monospace; font-size: .9rem; color: var(--yellow);
+    }
+
+    /* ── FREE MODE TOGGLE ── */
+    .free-toggle {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .free-toggle label { font-size: .85rem; color: var(--muted); cursor: pointer; flex: 1; line-height: 1.4; }
+    .free-toggle label strong { color: var(--text); font-weight: 500; }
+    .toggle-switch {
+      width: 40px; height: 22px; background: var(--border); border-radius: 11px;
+      position: relative; cursor: pointer; flex-shrink: 0; transition: background var(--tr);
+    }
+    .toggle-switch.on { background: var(--yellow); }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 16px; height: 16px; border-radius: 50%; background: #fff;
+      transition: transform var(--tr);
+    }
+    .toggle-switch.on::after { transform: translateX(18px); }
+
+    /* ── TABLE ── */
+    .table-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .table-box-head {
+      padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th {
+      padding: .55rem .9rem; text-align: left; font-size: .72rem;
+      color: var(--muted); font-weight: 400; text-transform: uppercase; letter-spacing: .07em;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: .55rem .9rem; border-bottom: 1px solid rgba(42,47,80,.5); }
+    tr:last-child td { border-bottom: none; }
+    tr.highlight-row td { color: var(--yellow); background: rgba(245,200,66,.05); }
+    td:last-child { font-family: 'DM Mono', monospace; color: var(--yellow); }
+
+    /* ── INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 01 · Angles</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Angles interiors d'un polígon</span>
+  </div>
+  <h1>Angles <em>interiors</em> d'un polígon</h1>
+  <p>Selecciona un polígon regular o activa el mode lliure per moure els vèrtexs. Comprova que la suma dels angles interiors és sempre la mateixa sigui quin sigui el polígon — i descobreix la fórmula.</p>
+</div>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-col">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mainCanvas"></canvas>
+      <div class="canvas-hint" id="hint">Arrossega un vèrtex per deformar el polígon</div>
+    </div>
+
+    <div class="sum-badge" id="sumBadge">
+      <div class="sum-number" id="sumDisplay">540°</div>
+      <div class="sum-info">
+        <div class="sum-label">Suma dels angles interiors</div>
+        <div class="sum-formula" id="formulaDisplay">(5 − 2) × 180° = 540°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="side-panel">
+
+    <!-- Polygon selector -->
+    <div class="poly-selector">
+      <div class="poly-selector-head">Tria el polígon</div>
+      <div class="poly-grid">
+        <button class="poly-btn" onclick="setPolygon(3)">
+          <span class="poly-icon">🔺</span>
+          <span>Triangle</span>
+          <span class="poly-n">n=3</span>
+        </button>
+        <button class="poly-btn" onclick="setPolygon(4)">
+          <span class="poly-icon">🔷</span>
+          <span>Quadrilàter</span>
+          <span class="poly-n">n=4</span>
+        </button>
+        <button class="poly-btn active" onclick="setPolygon(5)">
+          <span class="poly-icon">⬠</span>
+          <span>Pentàgon</span>
+          <span class="poly-n">n=5</span>
+        </button>
+        <button class="poly-btn" onclick="setPolygon(6)">
+          <span class="poly-icon">⬡</span>
+          <span>Hexàgon</span>
+          <span class="poly-n">n=6</span>
+        </button>
+        <button class="poly-btn" onclick="setPolygon(7)">
+          <span class="poly-icon">🔹</span>
+          <span>Heptàgon</span>
+          <span class="poly-n">n=7</span>
+        </button>
+        <button class="poly-btn" onclick="setPolygon(8)">
+          <span class="poly-icon">🔸</span>
+          <span>Octàgon</span>
+          <span class="poly-n">n=8</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Free mode -->
+    <div class="free-toggle" id="freeToggleRow">
+      <label for="freeToggle">
+        <strong>Mode lliure</strong><br>
+        Arrossega els vèrtexs per deformar el polígon i comprova que la suma no canvia.
+      </label>
+      <div class="toggle-switch" id="freeToggle" onclick="toggleFree()"></div>
+    </div>
+
+    <!-- Angle list -->
+    <div class="angle-list-box">
+      <div class="angle-list-head">Angles individuals</div>
+      <div class="angle-list" id="angleList"></div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-box">
+      <div class="table-box-head">Fórmula: (n − 2) × 180°</div>
+      <table>
+        <thead>
+          <tr><th>Polígon</th><th>n</th><th>Suma</th></tr>
+        </thead>
+        <tbody id="formulaTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">✂️</span>
+    <div class="insight-text">
+      <h4>Per què (n−2) × 180°?</h4>
+      <p>Tot polígon es pot dividir en triangles traçant diagonals des d'un vèrtex. Un polígon de n costats genera sempre n−2 triangles, cadascun amb 180°.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔄</span>
+    <div class="insight-text">
+      <h4>La forma no importa</h4>
+      <p>Tant si el polígon és regular com irregular, còncau o convex, la suma dels angles interiors depèn únicament del nombre de costats.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">∞</span>
+    <div class="insight-text">
+      <h4>Cap al cercle</h4>
+      <p>A mesura que n augmenta, la suma creix sense límit. Però cada angle individual s'acosta a 180°, fins que el polígon s'aproxima a un cercle.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 01 · Rectes i Angles</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const POLY_NAMES = ['','','','Triangle','Quadrilàter','Pentàgon','Hexàgon','Heptàgon','Octàgon','Ennèàgon','Decàgon'];
+const VERTEX_COLORS = ['#3dffa0','#3d8bff','#ff5f6d','#f5c842','#b47fff','#ff9f43','#48dbfb','#ff6b9d'];
+
+let nSides    = 5;
+let freeMode  = false;
+let vertices  = [];        // [{x,y}] in canvas px
+let dragIdx   = -1;
+let activeV   = -1;        // highlighted vertex index
+let hinted    = false;
+
+// ─────────────────────────────────────────
+// CANVAS
+// ─────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr  = devicePixelRatio;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  buildRegular(nSides);
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────
+// BUILD REGULAR POLYGON
+// ─────────────────────────────────────────
+function buildRegular(n) {
+  const cx = W * .5, cy = H * .5;
+  const r  = Math.min(W, H) * .36;
+  vertices = [];
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n;
+    vertices.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+  }
+  activeV = -1;
+  draw();
+  updateUI();
+}
+
+// ─────────────────────────────────────────
+// GEOMETRY
+// ─────────────────────────────────────────
+function interiorAngle(i) {
+  const n  = vertices.length;
+  const A  = vertices[(i - 1 + n) % n];
+  const B  = vertices[i];
+  const C  = vertices[(i + 1) % n];
+  const ax = A.x - B.x, ay = A.y - B.y;
+  const cx = C.x - B.x, cy2= C.y - B.y;
+  let angle = Math.atan2(ax * cy2 - ay * cx, ax * cx + ay * cy2) * 180 / Math.PI;
+  if (angle < 0) angle += 360;
+  // For convex polygons take the interior (< 180) version
+  if (angle > 180) angle = 360 - angle;
+  return angle;
+}
+
+function sumAngles() {
+  return vertices.reduce((s, _, i) => s + interiorAngle(i), 0);
+}
+
+// ─────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const dpr = devicePixelRatio;
+  const n   = vertices.length;
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W/8) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H/6) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  // Triangle decomposition lines (subtle)
+  if (n > 3) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245,200,66,0.12)'; ctx.lineWidth = 1 * dpr;
+    ctx.setLineDash([5 * dpr, 5 * dpr]);
+    for (let i = 2; i < n - 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(vertices[0].x, vertices[0].y);
+      ctx.lineTo(vertices[i].x, vertices[i].y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  // Polygon fill
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0].x, vertices[0].y);
+  for (let i = 1; i < n; i++) ctx.lineTo(vertices[i].x, vertices[i].y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(245,200,66,0.05)'; ctx.fill();
+  ctx.restore();
+
+  // Angle arcs at each vertex
+  vertices.forEach((v, i) => {
+    const prev = vertices[(i - 1 + n) % n];
+    const next = vertices[(i + 1) % n];
+    const col  = VERTEX_COLORS[i % VERTEX_COLORS.length];
+    const ang  = interiorAngle(i);
+    const isActive = (i === activeV);
+
+    // Arc
+    const a1 = Math.atan2(prev.y - v.y, prev.x - v.x);
+    const a2 = Math.atan2(next.y - v.y, next.x - v.x);
+    const arcR = 22 * dpr;
+
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(v.x, v.y);
+    ctx.arc(v.x, v.y, arcR, a1, a2, false);
+    ctx.closePath();
+    ctx.fillStyle = col + (isActive ? '40' : '20'); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, arcR, a1, a2, false);
+    ctx.strokeStyle = col + (isActive ? 'ff' : '88');
+    ctx.lineWidth   = (isActive ? 2 : 1.5) * dpr;
+    ctx.shadowColor = col; ctx.shadowBlur = isActive ? 8 : 0;
+    ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+    // Angle label
+    const midA  = (a1 + a2) / 2;
+    // ensure label is inside polygon: check dot product
+    const lR    = arcR + 18 * dpr;
+    const lx    = v.x + Math.cos(midA) * lR;
+    const ly    = v.y + Math.sin(midA) * lR;
+    ctx.save();
+    ctx.font = `bold ${11 * dpr}px 'DM Mono', monospace`;
+    ctx.fillStyle   = isActive ? col : col + 'aa';
+    ctx.textAlign   = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = col; ctx.shadowBlur = isActive ? 6 : 0;
+    ctx.fillText(Math.round(ang) + '°', lx, ly);
+    ctx.shadowBlur  = 0; ctx.restore();
+  });
+
+  // Polygon edges
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(vertices[0].x, vertices[0].y);
+  for (let i = 1; i < n; i++) ctx.lineTo(vertices[i].x, vertices[i].y);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(245,200,66,0.7)'; ctx.lineWidth = 2 * dpr;
+  ctx.shadowColor = 'rgba(245,200,66,0.3)'; ctx.shadowBlur = 6;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Vertices dots
+  vertices.forEach((v, i) => {
+    const col = VERTEX_COLORS[i % VERTEX_COLORS.length];
+    const isActive = (i === activeV);
+    ctx.beginPath(); ctx.arc(v.x, v.y, (freeMode ? 7 : 5) * dpr, 0, Math.PI * 2);
+    ctx.fillStyle   = col;
+    ctx.shadowColor = col; ctx.shadowBlur = isActive ? 14 : 6;
+    ctx.fill(); ctx.shadowBlur = 0;
+    if (freeMode) {
+      ctx.beginPath(); ctx.arc(v.x, v.y, 10 * dpr, 0, Math.PI * 2);
+      ctx.strokeStyle = col + '44'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+    }
+  });
+}
+
+// ─────────────────────────────────────────
+// UI UPDATE
+// ─────────────────────────────────────────
+function updateUI() {
+  const n   = vertices.length;
+  const sum = Math.round(sumAngles());
+  const expected = (n - 2) * 180;
+
+  document.getElementById('sumDisplay').textContent   = sum + '°';
+  document.getElementById('formulaDisplay').textContent = `(${n} − 2) × 180° = ${expected}°`;
+
+  // Pulse badge
+  const badge = document.getElementById('sumBadge');
+  badge.classList.remove('pulse');
+  void badge.offsetWidth;
+  badge.classList.add('pulse');
+
+  // Angle list
+  const list = document.getElementById('angleList');
+  list.innerHTML = '';
+  vertices.forEach((_, i) => {
+    const ang = Math.round(interiorAngle(i));
+    const col = VERTEX_COLORS[i % VERTEX_COLORS.length];
+    const item = document.createElement('div');
+    item.className = 'angle-item' + (i === activeV ? ' active-vertex' : '');
+    item.innerHTML = `
+      <div class="angle-dot" style="background:${col}"></div>
+      <span class="angle-item-label">Vèrtex V<sub>${i+1}</sub></span>
+      <span class="angle-item-deg">${ang}°</span>
+    `;
+    item.addEventListener('click', () => { activeV = (activeV === i) ? -1 : i; draw(); updateUI(); });
+    list.appendChild(item);
+  });
+
+  // Table highlight
+  document.querySelectorAll('#formulaTable tr').forEach(tr => {
+    tr.classList.toggle('highlight-row', +tr.dataset.n === n);
+  });
+}
+
+// Build static table
+function buildTable() {
+  const tbody = document.getElementById('formulaTable');
+  [3,4,5,6,7,8].forEach(n => {
+    const tr = document.createElement('tr');
+    tr.dataset.n = n;
+    tr.innerHTML = `<td>${POLY_NAMES[n]}</td><td>${n}</td><td>${(n-2)*180}°</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ─────────────────────────────────────────
+// POLYGON SELECTOR
+// ─────────────────────────────────────────
+function setPolygon(n) {
+  nSides = n;
+  document.querySelectorAll('.poly-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.poly-btn')[n - 3].classList.add('active');
+  buildRegular(n);
+}
+
+// ─────────────────────────────────────────
+// FREE MODE
+// ─────────────────────────────────────────
+function toggleFree() {
+  freeMode = !freeMode;
+  const toggle = document.getElementById('freeToggle');
+  toggle.classList.toggle('on', freeMode);
+  const hint = document.getElementById('hint');
+  if (freeMode) {
+    hint.textContent = 'Arrossega un vèrtex per deformar el polígon';
+    hint.classList.toggle('hidden', hinted);
+    canvas.style.cursor = 'grab';
+    wrap.style.borderColor = 'var(--yellow)';
+  } else {
+    hint.classList.add('hidden');
+    canvas.style.cursor = 'default';
+    wrap.style.borderColor = '';
+    buildRegular(nSides); // reset to regular
+  }
+  draw();
+}
+
+// ─────────────────────────────────────────
+// DRAG
+// ─────────────────────────────────────────
+function pointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr  = devicePixelRatio;
+  const src  = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left) * dpr,
+    y: (src.clientY - rect.top)  * dpr
+  };
+}
+
+function nearestVertex(px, py, threshold) {
+  let best = -1, bestD = threshold;
+  vertices.forEach((v, i) => {
+    const d = Math.hypot(v.x - px, v.y - py);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (!freeMode) return;
+  const { x, y } = pointerPos(e);
+  dragIdx = nearestVertex(x, y, 28 * devicePixelRatio);
+  if (dragIdx >= 0) { canvas.style.cursor = 'grabbing'; activeV = dragIdx; }
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+});
+canvas.addEventListener('mousemove', e => {
+  if (dragIdx < 0 || !freeMode) return;
+  const { x, y } = pointerPos(e);
+  vertices[dragIdx] = { x, y };
+  draw(); updateUI();
+});
+canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = freeMode ? 'grab' : 'default'; });
+canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
+
+canvas.addEventListener('touchstart', e => {
+  if (!freeMode) return;
+  e.preventDefault();
+  const { x, y } = pointerPos(e);
+  dragIdx = nearestVertex(x, y, 40 * devicePixelRatio);
+  if (dragIdx >= 0) activeV = dragIdx;
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  if (dragIdx < 0 || !freeMode) return;
+  e.preventDefault();
+  const { x, y } = pointerPos(e);
+  vertices[dragIdx] = { x, y };
+  draw(); updateUI();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { dragIdx = -1; });
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+buildTable();
+resize();
+</script>
+</body>
+</html>
