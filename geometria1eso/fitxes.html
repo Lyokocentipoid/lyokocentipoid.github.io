@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitxes · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .22s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 10px var(--blue); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: .9rem;
+      transition: color var(--tr); position: relative;
+    }
+    .nav-links a.active { color: var(--coral); }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -4px; left: 0;
+      width: 0; height: 2px; background: var(--coral);
+      transition: width var(--tr); border-radius: 2px;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active::after, .nav-links a:hover::after { width: 100%; }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 4rem 2rem 2.5rem; border-bottom: 1px solid var(--border);
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--coral); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.02em; margin-bottom: .6rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--coral); }
+    .page-header p { color: var(--muted); font-size: .95rem; line-height: 1.7; max-width: 560px; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 1.5rem 2rem; display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+    }
+    .filter-label { font-size: .78rem; color: var(--muted); margin-right: .4rem; }
+    .filter-btn {
+      padding: .35rem .9rem; border-radius: 100px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .filter-btn:hover { border-color: var(--coral); color: var(--text); }
+    .filter-btn.active { border-color: var(--coral); color: var(--coral); background: rgba(255,95,109,.1); }
+
+    /* ── FITXES ── */
+    .fitxes {
+      flex: 1; max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: .5rem 2rem 4rem;
+    }
+
+    .fitxes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: .5rem;
+    }
+
+    /* ─────────────────────────────────────────────────────
+       FITXA CARD
+       Per afegir una nova fitxa, copia el bloc entre
+       "FITXA ——" i "—— FI FITXA" i canvia:
+         · data-bloc  → "bloc1" | "bloc2" | "bloc3"
+         · data-nivell→ "basic" | "mitja" | "avançat"
+         · href       → ruta al fitxer HTML (o URL externa)
+         · .fitxa-tag → tema de la fitxa (1-2 paraules)
+         · h3         → títol de la fitxa
+         · p          → descripció curta
+         · .fitxa-num → número de fitxa (F-01, F-02…)
+    ───────────────────────────────────────────────────── -->
+
+    .fitxa-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      text-decoration: none; color: var(--text);
+      display: flex; flex-direction: column; gap: .8rem;
+      padding: 1.4rem 1.5rem; transition: all var(--tr);
+      position: relative; overflow: hidden;
+    }
+    .fitxa-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--f-color, var(--coral));
+      transform: scaleX(0); transform-origin: left; transition: transform var(--tr);
+    }
+    .fitxa-card:hover {
+      border-color: var(--f-color, var(--coral));
+      transform: translateY(-5px);
+      box-shadow: 0 18px 36px rgba(0,0,0,.35);
+    }
+    .fitxa-card:hover::before { transform: scaleX(1); }
+
+    /* Bloc colors */
+    .fitxa-card[data-bloc="bloc1"] { --f-color: var(--blue); }
+    .fitxa-card[data-bloc="bloc2"] { --f-color: var(--yellow); }
+    .fitxa-card[data-bloc="bloc3"] { --f-color: var(--coral); }
+
+    .fitxa-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .fitxa-tag {
+      font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .09em;
+      color: var(--f-color, var(--coral));
+      background: color-mix(in srgb, var(--f-color, var(--coral)) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--f-color, var(--coral)) 28%, transparent);
+      border-radius: 100px; padding: .22rem .7rem;
+    }
+    .fitxa-nivell {
+      font-size: .7rem; color: var(--muted);
+      display: flex; align-items: center; gap: .3rem;
+    }
+    .fitxa-num {
+      position: absolute; top: 1.1rem; right: 1.3rem;
+      font-family: 'DM Mono', monospace; font-size: .7rem;
+      color: var(--muted); opacity: .5;
+    }
+    .fitxa-card h3 {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; line-height: 1.3;
+      padding-right: 2rem;
+    }
+    .fitxa-card p {
+      font-size: .83rem; color: var(--muted); line-height: 1.6; flex: 1;
+    }
+    .fitxa-card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .fitxa-dots {
+      display: flex; gap: .3rem;
+    }
+    .fitxa-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--f-color, var(--coral)); opacity: .3;
+    }
+    .fitxa-dots span.on { opacity: 1; }
+    .fitxa-arrow {
+      font-size: .9rem; color: var(--f-color, var(--coral));
+      transition: transform var(--tr);
+    }
+    .fitxa-card:hover .fitxa-arrow { transform: translate(3px, -3px); }
+
+    /* Nivell: basic=1 dot, mitja=2, avançat=3 */
+    .fitxa-card[data-nivell="basic"]   .fitxa-dots span:nth-child(1) { opacity: 1; }
+    .fitxa-card[data-nivell="mitja"]   .fitxa-dots span:nth-child(-n+2) { opacity: 1; }
+    .fitxa-card[data-nivell="avançat"] .fitxa-dots span { opacity: 1; }
+
+    .fitxa-card.filtered { display: none; }
+
+    /* ── SECTION DIVIDER ── */
+    .fitxa-section-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+      padding: 2rem 0 .75rem; display: flex; align-items: center; gap: .75rem;
+    }
+    .fitxa-section-title .bloc-badge {
+      font-size: .7rem; padding: .2rem .7rem; border-radius: 100px;
+      border: 1px solid; font-weight: 600;
+    }
+    .fitxa-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── ADD NOTE ── */
+    .add-note {
+      max-width: 1100px; margin: 0 auto; width: 100%; padding: 0 2rem 3rem;
+    }
+    .add-note-box {
+      background: rgba(255,95,109,.05); border: 1px dashed rgba(255,95,109,.25);
+      border-radius: 12px; padding: 1.1rem 1.5rem;
+      font-size: .82rem; color: var(--muted); line-height: 1.7;
+    }
+    .add-note-box strong { color: var(--coral); }
+    .add-note-box code {
+      font-family: 'DM Mono', monospace; font-size: .78rem;
+      background: rgba(255,255,255,.06); border-radius: 4px; padding: .1rem .4rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+      .page-header { padding: 3rem 1.5rem 2rem; }
+      .filter-bar, .fitxes, .add-note { padding-left: 1.5rem; padding-right: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <ul class="nav-links">
+    <li><a href="index.html#temes">Temes</a></li>
+    <li><a href="teoria.html">Teoria</a></li>
+    <li><a href="fitxes.html" class="active">Fitxes</a></li>
+    <li><a href="recursos.html">Material</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Fitxes de problemes</span>
+  </div>
+  <h1>Fitxes de <em>problemes</em></h1>
+  <p>Col·lecció de fitxes per reforçar cada apartat del temari. Cada fitxa s'obre en una nova pàgina. Els punts indiquen el nivell de dificultat.</p>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Filtrar per:</span>
+  <button class="filter-btn active" onclick="filterBy('tot')">Tot</button>
+  <button class="filter-btn" onclick="filterBy('bloc1')" style="--hc:var(--blue)">📐 Rectes i angles</button>
+  <button class="filter-btn" onclick="filterBy('bloc2')" style="--hc:var(--yellow)">🔷 Figures i cossos</button>
+  <button class="filter-btn" onclick="filterBy('bloc3')" style="--hc:var(--coral)">📏 Mesures i àrees</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FITXES
+     Per afegir una nova fitxa, copia un bloc .fitxa-card
+     just a sobre del comentari ✦ AFEGEIX AQUÍ ✦
+     del bloc corresponent i ajusta els camps.
+
+     data-bloc:   "bloc1" (blau) | "bloc2" (groc) | "bloc3" (coral)
+     data-nivell: "basic" | "mitja" | "avançat"
+     href:        ruta al fitxer HTML, ex: "fitxes/f-01-angles.html"
+                  o bé una URL externa
+═══════════════════════════════════════════════════════ -->
+
+<div class="fitxes">
+
+  <!-- ── BLOC 01: RECTES I ANGLES ─────────────────────── -->
+  <div class="fitxa-section-title">
+    <span class="bloc-badge" style="color:var(--blue);border-color:rgba(61,139,255,.4)">Bloc 01</span>
+    Rectes i Angles
+  </div>
+  <div class="fitxes-grid" id="grid-bloc1">
+
+    <!-- FITXA ————————————————————————————————————————— -->
+    <a href="fitxes/f-01-tipus-angles.html"
+       class="fitxa-card" data-bloc="bloc1" data-nivell="basic">
+      <span class="fitxa-num">F-01</span>
+      <div class="fitxa-card-top">
+        <span class="fitxa-tag">Angles</span>
+      </div>
+      <h3>Identifica els tipus d'angles</h3>
+      <p>Classifica angles com a aguts, rectes, obtusos, plans i complets a partir de la seva mesura.</p>
+      <div class="fitxa-card-footer">
+        <div class="fitxa-dots"><span></span><span></span><span></span></div>
+        <span class="fitxa-arrow">↗</span>
+      </div>
+    </a>
+    <!-- —— FI FITXA ——————————————————————————————————— -->
+
+    <!-- ✦ AFEGEIX AQUÍ noves fitxes del Bloc 01 ✦ -->
+
+  </div>
+
+  <!-- ── BLOC 02: FIGURES I COSSOS ────────────────────── -->
+  <div class="fitxa-section-title">
+    <span class="bloc-badge" style="color:var(--yellow);border-color:rgba(245,200,66,.4)">Bloc 02</span>
+    Figures i Cossos
+  </div>
+  <div class="fitxes-grid" id="grid-bloc2">
+
+    <!-- ✦ AFEGEIX AQUÍ noves fitxes del Bloc 02 ✦ -->
+
+    <div style="grid-column:1/-1; padding:1.5rem; text-align:center; color:var(--muted); font-size:.85rem; border:1px dashed var(--border); border-radius:12px;">
+      Encara no hi ha fitxes del Bloc 02. Afegeix-ne seguint les instruccions al peu de pàgina.
+    </div>
+
+  </div>
+
+  <!-- ── BLOC 03: MESURES, ÀREES I PERÍMETRES ─────────── -->
+  <div class="fitxa-section-title">
+    <span class="bloc-badge" style="color:var(--coral);border-color:rgba(255,95,109,.4)">Bloc 03</span>
+    Mesures, Àrees i Perímetres
+  </div>
+  <div class="fitxes-grid" id="grid-bloc3">
+
+    <!-- ✦ AFEGEIX AQUÍ noves fitxes del Bloc 03 ✦ -->
+
+    <div style="grid-column:1/-1; padding:1.5rem; text-align:center; color:var(--muted); font-size:.85rem; border:1px dashed var(--border); border-radius:12px;">
+      Encara no hi ha fitxes del Bloc 03. Afegeix-ne seguint les instruccions al peu de pàgina.
+    </div>
+
+  </div>
+
+</div>
+<!-- ═══ FI FITXES ═════════════════════════════════════════ -->
+
+<div class="add-note">
+  <div class="add-note-box">
+    <strong>📝 Com afegir una fitxa nova:</strong> busca el bloc corresponent (Bloc 01, 02 o 03), copia un bloc <code>&lt;a class="fitxa-card"&gt;</code> existent just a sobre del comentari <code>✦ AFEGEIX AQUÍ ✦</code>. Canvia <code>href</code> (ruta al teu HTML), <code>data-nivell</code> (<code>basic</code> / <code>mitja</code> / <code>avançat</code>), l'etiqueta, el títol, la descripció i el número de fitxa. Els punts de dificultat es pinten sols segons <code>data-nivell</code>.
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Geometria 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+function filterBy(bloc) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.querySelectorAll('.fitxa-card').forEach(card => {
+    if (bloc === 'tot') card.classList.remove('filtered');
+    else card.classList.toggle('filtered', card.dataset.bloc !== bloc);
+  });
+  // Show/hide section titles
+  ['bloc1','bloc2','bloc3'].forEach(b => {
+    const grid = document.getElementById('grid-' + b);
+    const visible = grid.querySelectorAll('.fitxa-card:not(.filtered)').length;
+    const title   = grid.previousElementSibling;
+    title.style.display = (bloc !== 'tot' && bloc !== b) ? 'none' : '';
+  });
+}
+</script>
+</body>
+</html>
