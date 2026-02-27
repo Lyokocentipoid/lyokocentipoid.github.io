@@ -1,1 +1,769 @@
 <!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --bg:       #0d0f1a;
+      --surface:  #151828;
+      --card:     #1c2038;
+      --border:   #2a2f50;
+
+      --blue:     #3d8bff;
+      --yellow:   #f5c842;
+      --coral:    #ff5f6d;
+      --green:    #3dffa0;
+      --purple:   #b47fff;
+
+      --text:     #e8eaf6;
+      --muted:    #7a7fa8;
+
+      --radius:   16px;
+      --transition: .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GEOMETRIC BACKGROUND ── */
+    .geo-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .geo-bg svg {
+      width: 100%; height: 100%;
+      opacity: .07;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -.02em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .nav-logo .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      display: inline-block;
+      box-shadow: 0 0 12px var(--blue);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .95rem;
+      font-weight: 400;
+      transition: color var(--transition);
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0;
+      width: 0; height: 2px;
+      background: var(--blue);
+      transition: width var(--transition);
+      border-radius: 2px;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── LAYOUT ── */
+    main {
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 7rem 2rem 5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(61,139,255,.15);
+      color: var(--blue);
+      border: 1px solid rgba(61,139,255,.3);
+      border-radius: 100px;
+      padding: .3rem 1rem;
+      font-size: .8rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent-blue  { color: var(--blue); }
+    .hero h1 .accent-yellow{ color: var(--yellow); }
+    .hero h1 .accent-coral { color: var(--coral); }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 440px;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.6rem;
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: .95rem;
+      text-decoration: none;
+      transition: all var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(61,139,255,.4);
+    }
+    .btn-primary:hover {
+      background: #5fa3ff;
+      box-shadow: 0 0 36px rgba(61,139,255,.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      transform: translateY(-2px);
+    }
+
+    /* ── HERO VISUAL ── */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-canvas {
+      width: 340px;
+      height: 340px;
+      position: relative;
+    }
+
+    .hero-canvas canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 60px rgba(61,139,255,.15);
+    }
+
+    /* ── SECTION TITLES ── */
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      letter-spacing: -.02em;
+      margin-bottom: .75rem;
+    }
+    .section-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 3rem;
+      max-width: 520px;
+    }
+
+    /* ── TEMES (BLOCS PRINCIPALS) ── */
+    #temes {
+      padding: 5rem 0;
+    }
+
+    .temes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .tema-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .tema-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, var(--blue));
+    }
+
+    .tema-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent, var(--blue));
+      box-shadow: 0 20px 40px rgba(0,0,0,.4), 0 0 0 1px var(--accent, var(--blue));
+    }
+
+    .tema-card[data-color="blue"]   { --accent: var(--blue); }
+    .tema-card[data-color="yellow"] { --accent: var(--yellow); }
+    .tema-card[data-color="coral"]  { --accent: var(--coral); }
+
+    .tema-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+    }
+
+    .tema-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: .75rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--accent, var(--blue));
+      margin-bottom: .5rem;
+    }
+
+    .tema-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: .75rem;
+    }
+
+    .tema-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .tema-card ul li {
+      color: var(--muted);
+      font-size: .88rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .tema-card ul li::before {
+      content: '→';
+      color: var(--accent, var(--blue));
+      font-size: .75rem;
+    }
+
+    /* ── SECCIONS GRID ── */
+    #seccions {
+      padding: 5rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .seccions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .seccio-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      transition: all var(--transition);
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .seccio-card::after {
+      content: '→';
+      position: absolute;
+      top: 2rem; right: 2rem;
+      font-size: 1.2rem;
+      color: var(--muted);
+      transition: all var(--transition);
+    }
+
+    .seccio-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--s-color, var(--green));
+      box-shadow: 0 0 30px rgba(0,0,0,.3);
+    }
+
+    .seccio-card:hover::after {
+      color: var(--s-color, var(--green));
+      transform: translate(4px, -4px);
+    }
+
+    .seccio-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(255,255,255,.05);
+      border-radius: 100px;
+      padding: .3rem .8rem;
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--s-color, var(--green));
+      width: fit-content;
+    }
+
+    .seccio-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .seccio-card p {
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.6;
+    }
+
+    .seccio-card[data-s="teoria"]  { --s-color: var(--green); }
+    .seccio-card[data-s="fitxes"]  { --s-color: var(--coral); }
+    .seccio-card[data-s="recursos"]{ --s-color: var(--purple); }
+    .seccio-card[data-s="jocs"]    { --s-color: var(--yellow); }
+
+    /* Secció gran (teoria) */
+    .seccio-card.big {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      gap: 3rem;
+      padding: 3rem;
+    }
+
+    .seccio-card.big .seccio-text { flex: 1; }
+    .seccio-card.big .seccio-preview {
+      flex: 0 0 200px;
+      height: 140px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      opacity: .6;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    /* ── SCROLL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; padding: 4rem 1.5rem 3rem; }
+      .hero-visual { display: none; }
+      .seccions-grid { grid-template-columns: 1fr; }
+      .seccio-card.big { flex-direction: column; gap: 1.5rem; }
+      .seccio-card.big .seccio-preview { display: none; }
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Geometric background -->
+<div class="geo-bg">
+  <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- Grid lines -->
+    <g stroke="#ffffff" stroke-width=".5" fill="none">
+      <line x1="0" y1="150" x2="1400" y2="150"/>
+      <line x1="0" y1="300" x2="1400" y2="300"/>
+      <line x1="0" y1="450" x2="1400" y2="450"/>
+      <line x1="0" y1="600" x2="1400" y2="600"/>
+      <line x1="0" y1="750" x2="1400" y2="750"/>
+      <line x1="200" y1="0" x2="200" y2="900"/>
+      <line x1="400" y1="0" x2="400" y2="900"/>
+      <line x1="600" y1="0" x2="600" y2="900"/>
+      <line x1="800" y1="0" x2="800" y2="900"/>
+      <line x1="1000" y1="0" x2="1000" y2="900"/>
+      <line x1="1200" y1="0" x2="1200" y2="900"/>
+    </g>
+    <!-- Diagonal lines -->
+    <g stroke="#3d8bff" stroke-width=".8" fill="none" opacity=".6">
+      <line x1="0" y1="0" x2="1400" y2="900"/>
+      <line x1="0" y1="450" x2="1400" y2="0"/>
+    </g>
+    <!-- Circles -->
+    <circle cx="1100" cy="150" r="200" stroke="#f5c842" stroke-width="1" fill="none"/>
+    <circle cx="200" cy="700" r="150" stroke="#ff5f6d" stroke-width="1" fill="none"/>
+    <!-- Triangle -->
+    <polygon points="700,50 900,350 500,350" stroke="#3dffa0" stroke-width="1" fill="none"/>
+    <!-- Dots on intersections -->
+    <g fill="#3d8bff">
+      <circle cx="400" cy="300" r="3"/>
+      <circle cx="800" cy="600" r="3"/>
+      <circle cx="600" cy="450" r="3"/>
+      <circle cx="1000" cy="150" r="3"/>
+    </g>
+    <g fill="#f5c842">
+      <circle cx="200" cy="150" r="3"/>
+      <circle cx="1200" cy="450" r="3"/>
+    </g>
+    <!-- Right angle marks -->
+    <g stroke="#b47fff" stroke-width="1" fill="none">
+      <path d="M 400 300 L 420 300 L 420 320"/>
+      <path d="M 800 600 L 820 600 L 820 580"/>
+    </g>
+  </svg>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="dot"></span>
+    GeoMat 1r ESO
+  </a>
+  <ul class="nav-links">
+    <li><a href="#temes">Temes</a></li>
+    <li><a href="#seccions">Recursos</a></li>
+    <li><a href="teoria.html">Teoria</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-tag">Matemàtiques · 1r ESO</span>
+      <h1>
+        La <span class="accent-blue">geometria</span><br>
+        feta <span class="accent-yellow">visual</span><br>
+        i <span class="accent-coral">interactiva</span>
+      </h1>
+      <p>Explora rectes, figures, cossos i mesures amb càpsules interactives pensades per entendre, no per memoritzar.</p>
+      <div class="hero-actions">
+        <a href="#temes" class="btn btn-primary">Comença a explorar →</a>
+        <a href="teoria.html" class="btn btn-ghost">Càpsules de teoria</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-canvas">
+        <canvas id="heroCanvas" width="340" height="340"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEMES PRINCIPALS -->
+  <section id="temes">
+    <div class="container">
+      <div class="reveal">
+        <p class="tema-num" style="color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;">Continguts del curs</p>
+        <h2 class="section-title">Tres blocs temàtics</h2>
+        <p class="section-sub">Tot el temari de geometria de 1r d'ESO, organitzat en blocs clars amb recursos específics per a cada apartat.</p>
+      </div>
+      <div class="temes-grid">
+
+        <div class="tema-card reveal" data-color="blue" style="transition-delay:.1s">
+          <div class="tema-icon">📐</div>
+          <p class="tema-num">Bloc 01</p>
+          <h3>Rectes i Angles</h3>
+          <ul>
+            <li>Elements bàsics de geometria</li>
+            <li>Relació entre rectes</li>
+            <li>Tipus d'angles</li>
+            <li>Operacions amb angles</li>
+            <li>Angles a les figures 2D</li>
+          </ul>
+        </div>
+
+        <div class="tema-card reveal" data-color="yellow" style="transition-delay:.2s">
+          <div class="tema-icon">🔷</div>
+          <p class="tema-num">Bloc 02</p>
+          <h3>Figures i Cossos</h3>
+          <ul>
+            <li>Polígons i figures planes</li>
+            <li>Simetries</li>
+            <li>Teorema de Pitàgores</li>
+            <li>Cossos de revolució</li>
+          </ul>
+        </div>
+
+        <div class="tema-card reveal" data-color="coral" style="transition-delay:.3s">
+          <div class="tema-icon">📏</div>
+          <p class="tema-num">Bloc 03</p>
+          <h3>Mesures, Àrees i Perímetres</h3>
+          <ul>
+            <li>Mesura de magnituds</li>
+            <li>Sistema mètric decimal</li>
+            <li>Canvis d'unitat</li>
+            <li>Superfícies: triangles, quadrilàters, cercles…</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIONS DEL WEB -->
+  <section id="seccions">
+    <div class="container">
+      <div class="reveal">
+        <h2 class="section-title">Explora els recursos</h2>
+        <p class="section-sub">Diferents formats per aprendre, practicar i consolidar els conceptes de geometria.</p>
+      </div>
+      <div class="seccions-grid">
+
+        <a href="teoria.html" class="seccio-card big reveal" data-s="teoria">
+          <div class="seccio-text">
+            <span class="seccio-badge">✦ Interactiu</span>
+            <h3>Càpsules de Teoria</h3>
+            <p>Representacions visuals i interactives dels conceptes clau. Manipula figures, explora propietats i entén la geometria de forma intuïtiva — sense necessitat de llegir un capítol sencer.</p>
+          </div>
+          <div class="seccio-preview">⬡</div>
+        </a>
+
+        <a href="fitxes.html" class="seccio-card reveal" data-s="fitxes" style="transition-delay:.1s">
+          <span class="seccio-badge">✎ Pràctica</span>
+          <h3>Fitxes de Problemes</h3>
+          <p>Col·lecció de fitxes imprimibles i digitals per reforçar cada apartat del temari, amb problemes progressius.</p>
+        </a>
+
+        <a href="recursos.html" class="seccio-card reveal" data-s="recursos" style="transition-delay:.2s">
+          <span class="seccio-badge">⬡ Recursos</span>
+          <h3>Material General</h3>
+          <p>Vídeos, applets externs, esquemes i material complementari per aprofundir en els continguts.</p>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>GeoMat · Geometria 1r ESO · Matemàtiques</span>
+  <span>Creat per al Departament de Matemàtiques</span>
+</footer>
+
+<script>
+  // ── HERO CANVAS: animated geometry ──
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+
+  const colors = ['#3d8bff', '#f5c842', '#ff5f6d', '#3dffa0', '#b47fff'];
+  let t = 0;
+
+  function drawHero() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Background subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 34) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 34) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Rotating triangle
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(t * 0.3);
+    const r = 110;
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+      i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+              : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#3d8bff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#3d8bff';
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Counter-rotating square
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-t * 0.2);
+    const sq = 75;
+    ctx.beginPath();
+    ctx.rect(-sq, -sq, sq * 2, sq * 2);
+    ctx.strokeStyle = '#f5c842';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#f5c842';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Pulsing circle
+    const pulse = 45 + Math.sin(t * 2) * 5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, pulse, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ff5f6d';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#ff5f6d';
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Orbiting dot
+    const ox = cx + Math.cos(t * 1.5) * 115;
+    const oy = cy + Math.sin(t * 1.5) * 115;
+    ctx.beginPath();
+    ctx.arc(ox, oy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#3dffa0';
+    ctx.shadowColor = '#3dffa0';
+    ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Angle arc (pedagogical element)
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    ctx.arc(0, 0, 130, -Math.PI / 2, -Math.PI / 2 + t * 0.5, false);
+    ctx.strokeStyle = 'rgba(180,127,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    t += 0.01;
+    requestAnimationFrame(drawHero);
+  }
+  drawHero();
+
+  // ── SCROLL REVEAL ──
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
