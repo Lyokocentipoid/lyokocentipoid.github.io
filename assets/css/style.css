@@ -5,9 +5,30 @@
   box-sizing: border-box;
 }
 
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* =============================================
+   CANVAS DE PARTÍCULES (fons)
+   ============================================= */
+#particles-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* No interfereix amb clics */
+  z-index: 0;
+}
+
+/* =============================================
+   GRADIENT ANIMAT DE FONS
+   ============================================= */
 body {
-  font-family: 'Poppins', sans-serif; /* Moderna i fresca */
-  background: linear-gradient(135deg, #e0f7fa, #b2ebf2); /* Gradient fresc blau-verd */
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(-45deg, #e0f7fa, #b2ebf2, #c8f0e8, #80deea);
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite, fadeIn 1.5s ease-in-out;
   color: #2c3e50;
   display: flex;
   flex-direction: column;
@@ -15,13 +36,18 @@ body {
   justify-content: center;
   min-height: 100vh;
   padding: 2rem;
-  animation: fadeIn 1.5s ease-in-out; /* Animació inicial de fade-in */
 }
 
-/* Google Fonts (carrega automàticament) */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+/* Tota la pàgina per sobre del canvas */
+header,
+#projectes {
+  position: relative;
+  z-index: 1;
+}
 
-/* Header amb foto i nom */
+/* =============================================
+   HEADER
+   ============================================= */
 header {
   text-align: center;
   margin-bottom: 3rem;
@@ -30,25 +56,27 @@ header {
 .foto-rodona {
   width: 150px;
   height: 150px;
-  border-radius: 50%; /* Rodona perfecta */
+  border-radius: 50%;
   object-fit: cover;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transició suau */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .foto-rodona:hover {
-  transform: scale(1.1) rotate(5deg); /* Escala + rotació en hover */
+  transform: scale(1.1) rotate(5deg);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 h1 {
   font-size: 2.5rem;
   margin-top: 1rem;
-  animation: slideDown 1s ease-out, pulse 2s infinite; /* Slide des de dalt + puls subtil */
-  color: #00796b; /* Verd fresc */
+  animation: slideDown 1s ease-out, pulse 2s infinite;
+  color: #00796b;
 }
 
-/* Secció de projectes */
+/* =============================================
+   SECCIÓ PROJECTES
+   ============================================= */
 #projectes {
   width: 100%;
   max-width: 800px;
@@ -62,21 +90,23 @@ h2 {
 }
 
 .projecte-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.75); /* lleugerament translúcid per veure el fons animat */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Moviment en hover */
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
   text-decoration: none;
   color: inherit;
   display: block;
 }
 
 .projecte-card:hover {
-  transform: translateY(-5px); /* Aixeca una mica */
+  transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  background: #f1f8e9; /* Canvi de color subtil */
+  background: rgba(241, 248, 233, 0.88);
 }
 
 .projecte-card h3 {
@@ -89,24 +119,36 @@ h2 {
   color: #555;
 }
 
-/* Animacions @keyframes */
+/* =============================================
+   ANIMACIONS @keyframes
+   ============================================= */
+
+/* Gradient en moviment continu */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideDown {
   from { transform: translateY(-50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.02); }
   100% { transform: scale(1); }
 }
 
-/* Responsive per mòbils */
+/* =============================================
+   RESPONSIVE
+   ============================================= */
 @media (max-width: 600px) {
   h1 { font-size: 2rem; }
   .foto-rodona { width: 120px; height: 120px; }
