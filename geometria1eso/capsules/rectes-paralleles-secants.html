@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rectes paral·leles i secants · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.1rem; color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--green); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--green);
+      background: rgba(61,255,160,.1); border: 1px solid rgba(61,255,160,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--green); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--green); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 640px; }
+
+    /* ── MODE SELECTOR ── */
+    .mode-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem;
+      display: flex; gap: .75rem; flex-wrap: wrap;
+    }
+    .mode-btn {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .6rem 1.2rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem; font-weight: 400;
+      cursor: pointer;
+      transition: all var(--tr);
+    }
+    .mode-btn:hover { border-color: var(--m-color); color: var(--text); }
+    .mode-btn.active {
+      border-color: var(--m-color);
+      background: color-mix(in srgb, var(--m-color) 12%, var(--card));
+      color: var(--m-color);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--m-color) 20%, transparent);
+    }
+    .mode-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--m-color);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 2rem;
+    }
+
+    /* ── CANVAS ── */
+    .canvas-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      cursor: crosshair;
+      transition: border-color var(--tr);
+      aspect-ratio: 4/3;
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; }
+
+    .canvas-hint {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted);
+      background: rgba(13,15,26,.75); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: .3rem 1rem; pointer-events: none; white-space: nowrap;
+      transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* ── SIDE PANEL ── */
+    .side-panel {
+      display: flex; flex-direction: column; gap: 1.25rem;
+    }
+
+    .info-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color var(--tr);
+    }
+    .info-box-head {
+      padding: 1rem 1.25rem .75rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .75rem;
+    }
+    .info-box-icon { font-size: 1.2rem; }
+    .info-box-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem;
+    }
+    .info-box-body { padding: 1rem 1.25rem; }
+
+    /* ── ANGLE READINGS (secants) ── */
+    .angles-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+    .angle-chip {
+      border-radius: 10px;
+      padding: .7rem .9rem;
+      border: 1px solid var(--border);
+      transition: all var(--tr);
+      cursor: pointer;
+    }
+    .angle-chip:hover { border-color: var(--a-color); transform: translateY(-2px); }
+    .angle-chip.lit {
+      background: color-mix(in srgb, var(--a-color) 10%, transparent);
+      border-color: var(--a-color);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--a-color) 15%, transparent);
+    }
+    .chip-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .25rem; }
+    .chip-deg {
+      font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 500;
+      color: var(--a-color); line-height: 1;
+    }
+    .chip-name { font-size: .72rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── RELATION CARDS ── */
+    .relation-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .9rem 1.1rem;
+      display: flex; gap: .8rem; align-items: flex-start;
+      cursor: pointer;
+      transition: all var(--tr);
+    }
+    .relation-card:hover { border-color: var(--r-color); transform: translateX(3px); }
+    .relation-card.active {
+      border-color: var(--r-color);
+      background: color-mix(in srgb, var(--r-color) 8%, var(--card));
+    }
+    .rel-badge {
+      width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+      background: color-mix(in srgb, var(--r-color) 20%, transparent);
+      border: 1px solid var(--r-color);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; color: var(--r-color);
+      font-family: 'DM Mono', monospace;
+    }
+    .rel-info h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .2rem; }
+    .rel-info p { font-size: .75rem; color: var(--muted); line-height: 1.5; }
+    .rel-rule {
+      font-family: 'DM Mono', monospace; font-size: .75rem;
+      color: var(--r-color); margin-top: .25rem;
+    }
+
+    /* ── PARALLEL NOTE ── */
+    .parallel-note {
+      background: color-mix(in srgb, var(--blue) 7%, var(--card));
+      border: 1px solid color-mix(in srgb, var(--blue) 25%, transparent);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .parallel-note .big { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: .5rem; }
+    .parallel-note p { font-size: .83rem; color: var(--muted); line-height: 1.6; }
+    .parallel-note strong { color: var(--blue); }
+
+    /* ── PERP NOTE ── */
+    .perp-note {
+      background: color-mix(in srgb, var(--yellow) 7%, var(--card));
+      border: 1px solid color-mix(in srgb, var(--yellow) 25%, transparent);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .perp-note .big { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; margin-bottom: .5rem; }
+    .perp-note p { font-size: .83rem; color: var(--muted); line-height: 1.6; }
+    .perp-note strong { color: var(--yellow); }
+
+    /* ── SLIDER ── */
+    .slider-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1rem 1.25rem;
+    }
+    .slider-label { font-size: .78rem; color: var(--muted); margin-bottom: .6rem; }
+    .slider-row { display: flex; align-items: center; gap: .75rem; }
+    input[type=range] {
+      flex: 1; appearance: none; height: 4px;
+      border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--blue); box-shadow: 0 0 8px var(--blue);
+      cursor: grab; transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+    .slider-val {
+      font-family: 'DM Mono', monospace; font-size: .85rem;
+      color: var(--blue); min-width: 38px; text-align: right;
+    }
+
+    /* ── INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem;
+      display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.1rem 1.25rem;
+      display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── HIDDEN ── */
+    .hidden { display: none !important; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between;
+      color: var(--muted); font-size: .82rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header, .mode-bar { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 01 · Rectes</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Rectes paral·leles i secants</span>
+  </div>
+  <h1>Rectes <em>paral·leles</em> i <em>secants</em></h1>
+  <p>Explora les tres relacions possibles entre dues rectes: paral·leles, secants i perpendiculars. En mode secant, arrossega per canviar l'angle de tall i observa com es relacionen els quatre angles que es formen.</p>
+</div>
+
+<!-- MODE BAR -->
+<div class="mode-bar">
+  <button class="mode-btn" id="btnParallel" style="--m-color:var(--blue)" onclick="setMode('parallel')">
+    <span class="mode-dot"></span> Paral·leles
+  </button>
+  <button class="mode-btn active" id="btnSecant" style="--m-color:var(--green)" onclick="setMode('secant')">
+    <span class="mode-dot"></span> Secants
+  </button>
+  <button class="mode-btn" id="btnPerp" style="--m-color:var(--yellow)" onclick="setMode('perp')">
+    <span class="mode-dot"></span> Perpendiculars
+  </button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="mainCanvas"></canvas>
+    <div class="canvas-hint" id="hint">Arrossega per canviar l'angle de tall</div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <!-- SECANT: angle readings -->
+    <div id="secantPanel">
+      <div class="info-box" style="margin-bottom:1.25rem">
+        <div class="info-box-head">
+          <span class="info-box-icon">📐</span>
+          <span class="info-box-title">Els quatre angles</span>
+        </div>
+        <div class="info-box-body">
+          <div class="angles-grid">
+            <div class="angle-chip" id="chipA" style="--a-color:var(--green)" onclick="highlightPair('oposats')">
+              <div class="chip-label">Angle α</div>
+              <div class="chip-deg" id="degA">—</div>
+              <div class="chip-name" id="nameA">—</div>
+            </div>
+            <div class="angle-chip" id="chipB" style="--a-color:var(--coral)" onclick="highlightPair('adjacents')">
+              <div class="chip-label">Angle β</div>
+              <div class="chip-deg" id="degB">—</div>
+              <div class="chip-name" id="nameB">—</div>
+            </div>
+            <div class="angle-chip" id="chipC" style="--a-color:var(--green)" onclick="highlightPair('oposats')">
+              <div class="chip-label">Angle α'</div>
+              <div class="chip-deg" id="degC">—</div>
+              <div class="chip-name" id="nameC">—</div>
+            </div>
+            <div class="angle-chip" id="chipD" style="--a-color:var(--coral)" onclick="highlightPair('adjacents')">
+              <div class="chip-label">Angle β'</div>
+              <div class="chip-deg" id="degD">—</div>
+              <div class="chip-name" id="nameD">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slider-wrap" style="margin-bottom:1.25rem">
+        <div class="slider-label">Angle de tall de les dues rectes</div>
+        <div class="slider-row">
+          <input type="range" id="angleSlider" min="10" max="170" value="55" />
+          <span class="slider-val" id="sliderVal">55°</span>
+        </div>
+      </div>
+
+      <div class="relation-card active" id="relOposats" style="--r-color:var(--green)" onclick="highlightPair('oposats')">
+        <div class="rel-badge">α</div>
+        <div class="rel-info">
+          <h4>Angles oposats pel vèrtex</h4>
+          <p>Es formen a banda i banda del punt de tall. Sempre són iguals.</p>
+          <div class="rel-rule">α = α' · β = β'</div>
+        </div>
+      </div>
+
+      <div class="relation-card" id="relAdjacents" style="--r-color:var(--coral); margin-top:.75rem" onclick="highlightPair('adjacents')">
+        <div class="rel-badge">β</div>
+        <div class="rel-info">
+          <h4>Angles adjacents</h4>
+          <p>Comparteixen un raig i formen junts una recta. Sempre suplementaris.</p>
+          <div class="rel-rule">α + β = 180°</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARALLEL NOTE -->
+    <div id="parallelPanel" class="parallel-note hidden">
+      <div class="big">∥ Rectes paral·leles</div>
+      <p>Dues rectes paral·leles <strong>mai es tallen</strong>. Mantenen sempre la mateixa distància entre elles, fins a l'infinit.<br><br>No es formen angles, perquè no hi ha cap punt de tall.</p>
+    </div>
+
+    <!-- PERP NOTE -->
+    <div id="perpPanel" class="perp-note hidden">
+      <div class="big">⊥ Rectes perpendiculars</div>
+      <p>Les rectes perpendiculars es tallen formant <strong>quatre angles rectes de 90°</strong>. És un cas especial de rectes secants.<br><br>El símbol ⊥ indica perpendicularitat.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">↕️</span>
+    <div class="insight-text">
+      <h4>Oposats pel vèrtex</h4>
+      <p>Quan dues rectes es tallen, sempre formen dos parells d'angles iguals. Canvia l'angle de tall i comprova que α sempre és igual a α'.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">➕</span>
+    <div class="insight-text">
+      <h4>Adjacents i suplementaris</h4>
+      <p>Els angles adjacents (veïns) sempre sumen 180°. Formen un angle pla perquè junts cobreixen una recta sencera.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⊥</span>
+    <div class="insight-text">
+      <h4>Perpendiculars: cas especial</h4>
+      <p>Quan α = β = 90°, les rectes són perpendiculars. És l'únic cas on els quatre angles són iguals alhora.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 01 · Rectes i Angles</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+let mode       = 'secant';   // 'parallel' | 'secant' | 'perp'
+let angleDeg   = 55;         // angle of secant line (1–179)
+let highlight  = 'oposats';  // 'oposats' | 'adjacents' | null
+let dragging   = false;
+let hinted     = false;
+
+// ─────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr  = devicePixelRatio;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────
+const COL_A = '#3dffa0';  // α, α' (oposats)
+const COL_B = '#ff5f6d';  // β, β' (adjacents)
+const COL_LINE1 = '#3d8bff';
+const COL_LINE2 = '#b47fff';
+const COL_MUTED = 'rgba(232,234,246,0.25)';
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const dpr = devicePixelRatio;
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W / 8) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H / 6) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  ctx.restore();
+
+  if (mode === 'parallel') drawParallel(dpr);
+  else if (mode === 'perp') drawSecant(90, dpr);
+  else drawSecant(angleDeg, dpr);
+}
+
+function drawParallel(dpr) {
+  const y1 = H * 0.38, y2 = H * 0.62;
+  const margin = W * 0.08;
+
+  // Distance arrow
+  ctx.save();
+  ctx.strokeStyle = 'rgba(61,139,255,0.3)';
+  ctx.lineWidth = 1 * dpr;
+  ctx.setLineDash([4 * dpr, 4 * dpr]);
+  ctx.beginPath(); ctx.moveTo(W * 0.82, y1); ctx.lineTo(W * 0.82, y2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Label "d constant"
+  ctx.save();
+  ctx.font = `${11 * dpr}px 'DM Mono', monospace`;
+  ctx.fillStyle = 'rgba(61,139,255,0.6)';
+  ctx.textAlign = 'center';
+  ctx.fillText('d', W * 0.86, (y1 + y2) / 2);
+  ctx.restore();
+
+  // Lines
+  drawLine(0, y1, W, y1, COL_LINE1, 2.5, dpr);
+  drawLine(0, y2, W, y2, COL_LINE2, 2.5, dpr);
+
+  // Direction arrows
+  drawArrowHead(W * 0.9, y1, 0, COL_LINE1, dpr);
+  drawArrowHead(W * 0.9, y2, 0, COL_LINE2, dpr);
+
+  // Labels
+  label(ctx, W * 0.06, y1 - 14 * dpr, 'r', COL_LINE1, 13 * dpr, dpr);
+  label(ctx, W * 0.06, y2 - 14 * dpr, 's', COL_LINE2, 13 * dpr, dpr);
+
+  // ∥ symbol
+  ctx.save();
+  ctx.font = `bold ${20 * dpr}px serif`;
+  ctx.fillStyle = 'rgba(61,139,255,0.5)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('∥', W * 0.5, (y1 + y2) / 2);
+  ctx.restore();
+}
+
+function drawSecant(aDeg, dpr) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rad = aDeg * Math.PI / 180;
+  const len = Math.max(W, H) * 0.7;
+
+  // The two "lines" are actually the two half-lines from cx,cy
+  // Line r: horizontal
+  // Line s: at angle aDeg from horizontal
+
+  // Four angle sectors
+  // α = aDeg (top-right), α' = aDeg (bottom-left) [oposats]
+  // β = 180-aDeg (top-left), β' = 180-aDeg (bottom-right) [adjacents]
+  const alpha = aDeg;
+  const beta  = 180 - aDeg;
+
+  const isOposats   = highlight === 'oposats';
+  const isAdjacents = highlight === 'adjacents';
+
+  // Arc radius
+  const arcR = Math.min(W, H) * 0.18;
+
+  // ── Sector fills ──
+  // Sector α (from 0 to -rad, i.e. top-right)
+  drawSector(ctx, cx, cy, arcR, 0, -rad, isOposats ? COL_A + '30' : COL_A + '12', dpr);
+  // Sector β (from -rad to -π, i.e. top-left)
+  drawSector(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? COL_B + '30' : COL_B + '12', dpr);
+  // Sector α' (from -π to -(π+rad) = bottom-left)
+  drawSector(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? COL_A + '30' : COL_A + '12', dpr);
+  // Sector β' (from -(π+rad) to -2π, i.e. bottom-right)
+  drawSector(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? COL_B + '30' : COL_B + '12', dpr);
+
+  // ── Arc strokes ──
+  drawArc(ctx, cx, cy, arcR, 0, -rad, isOposats ? COL_A : COL_A + '66', isOposats ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? COL_B : COL_B + '66', isAdjacents ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? COL_A : COL_A + '66', isOposats ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? COL_B : COL_B + '66', isAdjacents ? 2 : 1.5, dpr);
+
+  // Right-angle marks if perp
+  if (Math.abs(aDeg - 90) < 1) {
+    const s = 14 * dpr;
+    ctx.save(); ctx.strokeStyle = COL_A; ctx.lineWidth = 1.5 * dpr;
+    ctx.beginPath(); ctx.moveTo(cx + s, cy); ctx.lineTo(cx + s, cy - s); ctx.lineTo(cx, cy - s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - s, cy); ctx.lineTo(cx - s, cy + s); ctx.lineTo(cx, cy + s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + s, cy); ctx.lineTo(cx + s, cy + s); ctx.lineTo(cx, cy + s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - s, cy); ctx.lineTo(cx - s, cy - s); ctx.lineTo(cx, cy - s); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Lines ──
+  // Line r: horizontal
+  drawLine(cx - len, cy, cx + len, cy, COL_LINE1, 2, dpr);
+  // Line s: at angle
+  const dx = Math.cos(-rad) * len, dy = Math.sin(-rad) * len;
+  drawLine(cx - dx, cy - dy, cx + dx, cy + dy, COL_LINE2, 2, dpr);
+
+  // Line labels
+  label(ctx, cx - len * 0.88, cy - 14 * dpr, 'r', COL_LINE1, 12 * dpr, dpr);
+  label(ctx, cx + Math.cos(-rad) * len * 0.88 - 10 * dpr,
+             cy + Math.sin(-rad) * len * 0.88 - 14 * dpr, 's', COL_LINE2, 12 * dpr, dpr);
+
+  // ── Angle labels on arcs ──
+  const lR = arcR + 22 * dpr;
+  const aAlpha = -(rad / 2);
+  const aBeta  = -(rad + (Math.PI - rad) / 2);
+  const aAlphaP = -(Math.PI + rad / 2);
+  const aBetaP  = -(Math.PI + rad + (Math.PI - rad) / 2);
+
+  const showA = alpha >= 20;
+  const showB = beta  >= 20;
+
+  if (showA) {
+    const col = isOposats ? COL_A : COL_A + 'aa';
+    label(ctx, cx + Math.cos(aAlpha) * lR, cy + Math.sin(aAlpha) * lR, Math.round(alpha) + '°', col, 11 * dpr, dpr);
+    label(ctx, cx + Math.cos(aAlphaP) * lR, cy + Math.sin(aAlphaP) * lR, Math.round(alpha) + '°', col, 11 * dpr, dpr);
+  }
+  if (showB) {
+    const col = isAdjacents ? COL_B : COL_B + 'aa';
+    label(ctx, cx + Math.cos(aBeta) * lR, cy + Math.sin(aBeta) * lR, Math.round(beta) + '°', col, 11 * dpr, dpr);
+    label(ctx, cx + Math.cos(aBetaP) * lR, cy + Math.sin(aBetaP) * lR, Math.round(beta) + '°', col, 11 * dpr, dpr);
+  }
+
+  // ── Origin dot ──
+  ctx.beginPath(); ctx.arc(cx, cy, 5 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = '#e8eaf6'; ctx.shadowColor = '#e8eaf6'; ctx.shadowBlur = 8;
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+
+// ─────────────────────────────────────────
+// CANVAS HELPERS
+// ─────────────────────────────────────────
+function drawLine(x1, y1, x2, y2, color, lw, dpr) {
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color; ctx.lineWidth = lw * dpr; ctx.lineCap = 'round';
+  ctx.shadowColor = color; ctx.shadowBlur = 6;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+}
+function drawArrowHead(x, y, angle, color, dpr) {
+  const s = 9 * dpr;
+  ctx.save(); ctx.fillStyle = color;
+  ctx.translate(x, y); ctx.rotate(angle);
+  ctx.beginPath(); ctx.moveTo(s, 0); ctx.lineTo(-s, -s * 0.6); ctx.lineTo(-s, s * 0.6);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function drawSector(ctx, cx, cy, r, startA, endA, color) {
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, startA, endA, true);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.restore();
+}
+function drawArc(ctx, cx, cy, r, startA, endA, color, lw, dpr) {
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, startA, endA, true);
+  ctx.strokeStyle = color; ctx.lineWidth = lw * dpr;
+  ctx.shadowColor = color; ctx.shadowBlur = 4;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+}
+function label(ctx, x, y, text, color, size, dpr) {
+  ctx.save();
+  ctx.font = `bold ${size}px 'DM Mono', monospace`;
+  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = color; ctx.shadowBlur = 5;
+  ctx.fillText(text, x, y); ctx.shadowBlur = 0; ctx.restore();
+}
+
+// ─────────────────────────────────────────
+// UI UPDATE
+// ─────────────────────────────────────────
+function angleName(d) {
+  d = Math.round(d);
+  if (d < 90)  return 'Agut';
+  if (d === 90) return 'Recte';
+  return 'Obtús';
+}
+
+function updateSecantUI(a) {
+  const b = 180 - a;
+  document.getElementById('degA').textContent  = Math.round(a) + '°';
+  document.getElementById('nameA').textContent = angleName(a);
+  document.getElementById('degB').textContent  = Math.round(b) + '°';
+  document.getElementById('nameB').textContent = angleName(b);
+  document.getElementById('degC').textContent  = Math.round(a) + '°';
+  document.getElementById('nameC').textContent = angleName(a);
+  document.getElementById('degD').textContent  = Math.round(b) + '°';
+  document.getElementById('nameD').textContent = angleName(b);
+  document.getElementById('angleSlider').value = Math.round(a);
+  document.getElementById('sliderVal').textContent = Math.round(a) + '°';
+}
+
+function highlightPair(type) {
+  highlight = type;
+  document.getElementById('relOposats').classList.toggle('active',   type === 'oposats');
+  document.getElementById('relAdjacents').classList.toggle('active', type === 'adjacents');
+  document.getElementById('chipA').classList.toggle('lit', type === 'oposats');
+  document.getElementById('chipC').classList.toggle('lit', type === 'oposats');
+  document.getElementById('chipB').classList.toggle('lit', type === 'adjacents');
+  document.getElementById('chipD').classList.toggle('lit', type === 'adjacents');
+  draw();
+}
+
+function setMode(m) {
+  mode = m;
+  ['parallel','secant','perp'].forEach(id => {
+    document.getElementById('btn' + id.charAt(0).toUpperCase() + id.slice(1))
+      .classList.toggle('active', id === m);
+  });
+  document.getElementById('secantPanel').classList.toggle('hidden',   m !== 'secant');
+  document.getElementById('parallelPanel').classList.toggle('hidden', m !== 'parallel');
+  document.getElementById('perpPanel').classList.toggle('hidden',     m !== 'perp');
+
+  const hint = document.getElementById('hint');
+  if (m === 'secant') {
+    hint.textContent = 'Arrossega per canviar l\'angle de tall';
+    hint.classList.toggle('hidden', hinted);
+    wrap.style.cursor = 'crosshair';
+  } else {
+    hint.classList.add('hidden');
+    wrap.style.cursor = 'default';
+  }
+  draw();
+}
+
+// ─────────────────────────────────────────
+// DRAG INTERACTION (secant mode)
+// ─────────────────────────────────────────
+function angleFromPointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr  = devicePixelRatio;
+  const cx   = W * 0.5, cy = H * 0.5;
+  let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const x = (clientX - rect.left) * dpr - cx;
+  const y = (clientY - rect.top)  * dpr - cy;
+  let deg = -Math.atan2(y, x) * 180 / Math.PI;
+  if (deg < 0) deg += 360;
+  if (deg > 180) deg = 360 - deg;       // fold to 0–180
+  return Math.max(10, Math.min(170, deg));
+}
+
+function onStart(e) {
+  if (mode !== 'secant') return;
+  dragging = true;
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+  angleDeg = angleFromPointer(e);
+  updateSecantUI(angleDeg);
+  draw();
+}
+function onMove(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  angleDeg = angleFromPointer(e);
+  updateSecantUI(angleDeg);
+  draw();
+}
+function onEnd() { dragging = false; }
+
+canvas.addEventListener('mousedown',  onStart);
+canvas.addEventListener('mousemove',  onMove);
+canvas.addEventListener('mouseup',    onEnd);
+canvas.addEventListener('mouseleave', onEnd);
+canvas.addEventListener('touchstart', onStart, { passive: false });
+canvas.addEventListener('touchmove',  onMove,  { passive: false });
+canvas.addEventListener('touchend',   onEnd);
+
+// Slider
+document.getElementById('angleSlider').addEventListener('input', function () {
+  angleDeg = +this.value;
+  updateSecantUI(angleDeg);
+  draw();
+});
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+resize();
+setMode('secant');
+updateSecantUI(angleDeg);
+highlightPair('oposats');
+</script>
+</body>
+</html>
