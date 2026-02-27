@@ -1,0 +1,113 @@
+/* Reset bàsic i estils globals */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif; /* Moderna i fresca */
+  background: linear-gradient(135deg, #e0f7fa, #b2ebf2); /* Gradient fresc blau-verd */
+  color: #2c3e50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  animation: fadeIn 1.5s ease-in-out; /* Animació inicial de fade-in */
+}
+
+/* Google Fonts (carrega automàticament) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* Header amb foto i nom */
+header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.foto-rodona {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%; /* Rodona perfecta */
+  object-fit: cover;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transició suau */
+}
+
+.foto-rodona:hover {
+  transform: scale(1.1) rotate(5deg); /* Escala + rotació en hover */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-top: 1rem;
+  animation: slideDown 1s ease-out, pulse 2s infinite; /* Slide des de dalt + puls subtil */
+  color: #00796b; /* Verd fresc */
+}
+
+/* Secció de projectes */
+#projectes {
+  width: 100%;
+  max-width: 800px;
+}
+
+h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  animation: fadeIn 2s ease-in-out;
+}
+
+.projecte-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Moviment en hover */
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.projecte-card:hover {
+  transform: translateY(-5px); /* Aixeca una mica */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background: #f1f8e9; /* Canvi de color subtil */
+}
+
+.projecte-card h3 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.projecte-card p {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* Animacions @keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Responsive per mòbils */
+@media (max-width: 600px) {
+  h1 { font-size: 2rem; }
+  .foto-rodona { width: 120px; height: 120px; }
+}
