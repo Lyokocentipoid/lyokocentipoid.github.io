@@ -4,12 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portfoli de Lyokocentipoid</title>
-  <link rel="stylesheet" href="/assets/css/style.css"> <!-- Enllaç al CSS -->
+  <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
+
+  <!-- Canvas per a les partícules -->
+  <canvas id="particles-canvas"></canvas>
+
   <header>
     <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
     <h1>Lyokocentipoid</h1>
+    <p>Creador web | Entusiasta de la geometria i més</p>
   </header>
 
   <section id="projectes">
@@ -18,7 +23,90 @@
       <h3>Geometria de 1r ESO</h3>
       <p>Explora conceptes bàsics de geometria per a estudiants de primer d'ESO. Amb exemples interactius i animacions.</p>
     </a>
-    <!-- Afegeix més cards aquí quan tinguis més projectes, ex: <a href="/altre-projecte/" class="projecte-card">... -->
+    <!-- Afegeix més cards aquí quan tinguis més projectes -->
   </section>
+
+  <script>
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let particles = [];
+    const NUM_PARTICLES = 38;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function randomBetween(a, b) {
+      return a + Math.random() * (b - a);
+    }
+
+    // Colors harmoniosos amb la paleta blau-verd
+    const COLORS = [
+      'rgba(0, 121, 107, 0.18)',   // verd fosc suau
+      'rgba(0, 188, 212, 0.15)',   // cian
+      'rgba(178, 235, 242, 0.25)', // blau molt clar
+      'rgba(224, 247, 250, 0.3)',  // quasi blanc blavós
+      'rgba(100, 210, 190, 0.18)',
+    ];
+
+    class Particle {
+      constructor() { this.reset(); }
+
+      reset() {
+        this.x = randomBetween(0, canvas.width);
+        this.y = randomBetween(0, canvas.height);
+        this.r = randomBetween(18, 80);
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.speedX = randomBetween(-0.25, 0.25);
+        this.speedY = randomBetween(-0.4, -0.1); // pugen lentament
+        this.opacity = randomBetween(0.4, 1);
+        this.opacityDir = Math.random() > 0.5 ? 0.003 : -0.003;
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.opacity += this.opacityDir;
+
+        if (this.opacity >= 1 || this.opacity <= 0.2) this.opacityDir *= -1;
+
+        // Si surt per dalt, reapareix per baix
+        if (this.y + this.r < 0) {
+          this.y = canvas.height + this.r;
+          this.x = randomBetween(0, canvas.width);
+        }
+        if (this.x - this.r > canvas.width) this.x = -this.r;
+        if (this.x + this.r < 0) this.x = canvas.width + this.r;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        // Contorn molt subtil
+        ctx.strokeStyle = this.color.replace(/[\d.]+\)$/, '0.3)');
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < NUM_PARTICLES; i++) particles.push(new Particle());
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+
 </body>
 </html>
