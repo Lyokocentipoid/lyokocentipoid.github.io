@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- Canvas per a les partícules -->
+  <!-- Canvas per a les partícules (fons fix) -->
   <canvas id="particles-canvas"></canvas>
 
   <header>
@@ -31,7 +31,7 @@
     const ctx = canvas.getContext('2d');
 
     let particles = [];
-    const NUM_PARTICLES = 38;
+    const NUM_PARTICLES = 80;
 
     function resize() {
       canvas.width = window.innerWidth;
@@ -44,41 +44,29 @@
       return a + Math.random() * (b - a);
     }
 
-    // Colors harmoniosos amb la paleta blau-verd
-    const COLORS = [
-      'rgba(0, 121, 107, 0.18)',   // verd fosc suau
-      'rgba(0, 188, 212, 0.15)',   // cian
-      'rgba(178, 235, 242, 0.25)', // blau molt clar
-      'rgba(224, 247, 250, 0.3)',  // quasi blanc blavós
-      'rgba(100, 210, 190, 0.18)',
-    ];
-
     class Particle {
-      constructor() { this.reset(); }
+      constructor() { this.reset(true); }
 
-      reset() {
+      reset(initial = false) {
         this.x = randomBetween(0, canvas.width);
-        this.y = randomBetween(0, canvas.height);
-        this.r = randomBetween(18, 80);
-        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
-        this.speedX = randomBetween(-0.25, 0.25);
-        this.speedY = randomBetween(-0.4, -0.1); // pugen lentament
-        this.opacity = randomBetween(0.4, 1);
-        this.opacityDir = Math.random() > 0.5 ? 0.003 : -0.003;
+        // Si és l'inici, distribueix per tota la pantalla; si no, reapareix per baix
+        this.y = initial ? randomBetween(0, canvas.height) : canvas.height + 5;
+        this.r = randomBetween(0.8, 2.5);
+        this.speedX = randomBetween(-0.4, 0.4);
+        this.speedY = randomBetween(-0.6, -1.8);  // velocitats variades cap amunt
+        this.angle = randomBetween(0, Math.PI * 2);
+        this.twinkleSpeed = randomBetween(0.01, 0.04);
       }
 
       update() {
         this.x += this.speedX;
         this.y += this.speedY;
-        this.opacity += this.opacityDir;
 
-        if (this.opacity >= 1 || this.opacity <= 0.2) this.opacityDir *= -1;
+        // Parpelleig suau amb sinus
+        this.angle += this.twinkleSpeed;
+        this.opacity = 0.3 + 0.7 * Math.abs(Math.sin(this.angle));
 
-        // Si surt per dalt, reapareix per baix
-        if (this.y + this.r < 0) {
-          this.y = canvas.height + this.r;
-          this.x = randomBetween(0, canvas.width);
-        }
+        if (this.y + this.r < 0) this.reset();
         if (this.x - this.r > canvas.width) this.x = -this.r;
         if (this.x + this.r < 0) this.x = canvas.width + this.r;
       }
@@ -86,14 +74,24 @@
       draw() {
         ctx.save();
         ctx.globalAlpha = this.opacity;
+
+        // Resplendor exterior (glow)
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
+        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0.4, 'rgba(220, 240, 255, 0.4)');
+        glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+
+        // Nucli brillant
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
         ctx.fill();
-        // Contorn molt subtil
-        ctx.strokeStyle = this.color.replace(/[\d.]+\)$/, '0.3)');
-        ctx.lineWidth = 1;
-        ctx.stroke();
+
         ctx.restore();
       }
     }
