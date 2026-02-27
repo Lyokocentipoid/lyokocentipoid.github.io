@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angles complementaris i suplementaris · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.1rem; color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back {
+      color: var(--muted); text-decoration: none; font-size: .85rem;
+      display: flex; align-items: center; gap: .4rem;
+      transition: color var(--tr);
+    }
+    .nav-back:hover { color: var(--green); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--green);
+      background: rgba(61,255,160,.1);
+      border: 1px solid rgba(61,255,160,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--green); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--green); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 600px; }
+
+    /* ── MAIN PANELS ── */
+    .panels {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 2rem;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color var(--tr);
+    }
+    .panel:hover { border-color: var(--p-color); }
+
+    /* Panel header strip */
+    .panel-head {
+      padding: 1.25rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .panel-head::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--p-color);
+    }
+    .panel-tag {
+      font-size: .72rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--p-color);
+      margin-bottom: .4rem;
+    }
+    .panel-head h2 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.2rem; margin-bottom: .25rem;
+    }
+    .panel-head .formula {
+      font-family: 'DM Mono', monospace;
+      font-size: .85rem;
+      color: var(--p-color);
+      background: color-mix(in srgb, var(--p-color) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--p-color) 25%, transparent);
+      border-radius: 6px;
+      padding: .2rem .6rem;
+      display: inline-block;
+      margin-top: .3rem;
+    }
+
+    /* Canvas zone */
+    .panel-canvas-wrap {
+      position: relative;
+      background: var(--surface);
+      cursor: crosshair;
+    }
+    .panel-canvas-wrap canvas {
+      display: block;
+      width: 100%; height: 100%;
+    }
+
+    /* Degrees row */
+    .panel-degs {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: .5rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .deg-block { display: flex; flex-direction: column; gap: .2rem; }
+    .deg-block.right { align-items: flex-end; }
+    .deg-label {
+      font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    }
+    .deg-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 2rem; font-weight: 500;
+      line-height: 1;
+      transition: color .1s;
+    }
+    .deg-name {
+      font-size: .75rem; color: var(--muted);
+    }
+    .deg-sum {
+      text-align: center;
+    }
+    .deg-sum .sum-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.1rem; font-weight: 500;
+      color: var(--p-color);
+    }
+    .deg-sum .sum-label {
+      font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em;
+    }
+    .sum-ok { color: var(--green) !important; }
+    .sum-err { color: var(--coral) !important; }
+
+    /* Slider zone */
+    .panel-slider {
+      padding: .75rem 1.5rem 1.25rem;
+      display: flex; flex-direction: column; gap: .5rem;
+      border-top: 1px solid var(--border);
+    }
+    .slider-row { display: flex; align-items: center; gap: .75rem; }
+    .slider-row label { font-size: .78rem; color: var(--muted); min-width: 18px; }
+    input[type=range] {
+      flex: 1;
+      appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--p-color, var(--blue));
+      box-shadow: 0 0 8px var(--p-color, var(--blue));
+      cursor: grab;
+      transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+    .slider-row .val-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      color: var(--p-color);
+      min-width: 36px; text-align: right;
+    }
+
+    /* Note strip */
+    .panel-note {
+      padding: .75rem 1.5rem;
+      background: color-mix(in srgb, var(--p-color) 6%, var(--surface));
+      border-top: 1px solid color-mix(in srgb, var(--p-color) 20%, transparent);
+      font-size: .8rem; color: var(--muted); line-height: 1.55;
+    }
+    .panel-note strong { color: var(--p-color); }
+
+    /* ── BOTTOM INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+      display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: .9rem; margin-bottom: .3rem;
+    }
+    .insight-text p { font-size: .8rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--muted); font-size: .82rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 820px) {
+      .panels { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 01 · Angles</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Complementaris i suplementaris</span>
+  </div>
+  <h1>Angles <em>complementaris</em> i <em>suplementaris</em></h1>
+  <p>Arrossega els sliders o directament el canvas per explorar com dos angles es complementen o se suplementen. Observa que quan un creix, l'altre decreix per mantenir la suma constant.</p>
+</div>
+
+<!-- PANELS -->
+<div class="panels">
+
+  <!-- ── PANEL COMPLEMENTARIS ── -->
+  <div class="panel" id="panelComp" style="--p-color: var(--green)">
+    <div class="panel-head">
+      <div class="panel-tag">Complementaris</div>
+      <h2>Sumen 90°</h2>
+      <span class="formula">α + β = 90°</span>
+    </div>
+
+    <div class="panel-canvas-wrap" id="wrapComp" style="height:260px">
+      <canvas id="canvasComp"></canvas>
+    </div>
+
+    <div class="panel-degs">
+      <div class="deg-block">
+        <span class="deg-label">Angle α</span>
+        <span class="deg-value" id="compAlphaDeg" style="color:var(--green)">45°</span>
+        <span class="deg-name" id="compAlphaName">Agut</span>
+      </div>
+      <div class="deg-sum">
+        <div class="sum-val sum-ok" id="compSum">= 90°</div>
+        <div class="sum-label">Suma</div>
+      </div>
+      <div class="deg-block right">
+        <span class="deg-label">Angle β</span>
+        <span class="deg-value" id="compBetaDeg" style="color:var(--purple)">45°</span>
+        <span class="deg-name" id="compBetaName">Agut</span>
+      </div>
+    </div>
+
+    <div class="panel-slider" style="--p-color: var(--green)">
+      <div class="slider-row">
+        <label style="color:var(--green)">α</label>
+        <input type="range" id="sliderCompAlpha" min="1" max="89" value="45" />
+        <span class="val-tag" id="sliderCompAlphaVal">45°</span>
+      </div>
+    </div>
+
+    <div class="panel-note">
+      <strong>💡 Fixa't:</strong> els angles complementaris sempre són <strong>aguts</strong> (menys de 90°). No pot existir un angle complementari d'un angle de 90° o més.
+    </div>
+  </div>
+
+  <!-- ── PANEL SUPLEMENTARIS ── -->
+  <div class="panel" id="panelSupl" style="--p-color: var(--coral)">
+    <div class="panel-head">
+      <div class="panel-tag">Suplementaris</div>
+      <h2>Sumen 180°</h2>
+      <span class="formula">α + β = 180°</span>
+    </div>
+
+    <div class="panel-canvas-wrap" id="wrapSupl" style="height:260px">
+      <canvas id="canvasSupl"></canvas>
+    </div>
+
+    <div class="panel-degs">
+      <div class="deg-block">
+        <span class="deg-label">Angle α</span>
+        <span class="deg-value" id="suplAlphaDeg" style="color:var(--coral)">90°</span>
+        <span class="deg-name" id="suplAlphaName">Recte</span>
+      </div>
+      <div class="deg-sum">
+        <div class="sum-val sum-ok" id="suplSum">= 180°</div>
+        <div class="sum-label">Suma</div>
+      </div>
+      <div class="deg-block right">
+        <span class="deg-label">Angle β</span>
+        <span class="deg-value" id="suplBetaDeg" style="color:var(--yellow)">90°</span>
+        <span class="deg-name" id="suplBetaName">Recte</span>
+      </div>
+    </div>
+
+    <div class="panel-slider" style="--p-color: var(--coral)">
+      <div class="slider-row">
+        <label style="color:var(--coral)">α</label>
+        <input type="range" id="sliderSuplAlpha" min="1" max="179" value="90" />
+        <span class="val-tag" id="sliderSuplAlphaVal">90°</span>
+      </div>
+    </div>
+
+    <div class="panel-note">
+      <strong>💡 Fixa't:</strong> els angles suplementaris poden ser aguts i obtusos, o tots dos rectes. Però mai tots dos obtusos: la suma sobrepassaria 180°.
+    </div>
+  </div>
+
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🔗</span>
+    <div class="insight-text">
+      <h4>Connexió entre tots dos</h4>
+      <p>Si dos angles són complementaris, la seva suma (90°) és el suplementari d'un angle recte. La relació s'encadena.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔺</span>
+    <div class="insight-text">
+      <h4>Als triangles</h4>
+      <p>En un triangle rectangle, els dos angles aguts sempre són complementaris: junts sumen 90°, la resta dels 180° totals.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">📐</span>
+    <div class="insight-text">
+      <h4>Angles adjacents</h4>
+      <p>Quan dues rectes es tallen, els angles adjacents sempre són suplementaris: formen junts un angle pla (180°).</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 01 · Rectes i Angles</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+function angleName(d) {
+  d = Math.round(d);
+  if (d === 0)   return 'Nul';
+  if (d < 90)    return 'Agut';
+  if (d === 90)  return 'Recte';
+  if (d < 180)   return 'Obtús';
+  if (d === 180) return 'Pla';
+  return 'Còncau';
+}
+
+// ─────────────────────────────────────────
+// GENERIC PANEL RENDERER
+// ─────────────────────────────────────────
+function makePanel({ canvasId, wrapId, total,
+                     colorA, colorB,
+                     onAlpha,   // callback(alphaDeg)
+                   }) {
+  const wrap   = document.getElementById(wrapId);
+  const canvas = document.getElementById(canvasId);
+  const ctx    = canvas.getContext('2d');
+  let W, H, cx, cy, R;
+  let alphaDeg = total / 2;
+  let dragging = false;
+
+  function resize() {
+    const rect = wrap.getBoundingClientRect();
+    const dpr  = devicePixelRatio;
+    canvas.width  = rect.width  * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width  = rect.width  + 'px';
+    canvas.style.height = rect.height + 'px';
+    W = canvas.width; H = canvas.height;
+    // origin: bottom-left area, centred horizontally
+    cx = W * 0.5;
+    cy = H * 0.72;
+    R  = Math.min(W, H) * 0.42;
+    draw();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const dpr    = devicePixelRatio;
+    const alpha  = alphaDeg * Math.PI / 180;
+    const totRad = total    * Math.PI / 180;
+    const beta   = (total - alphaDeg) * Math.PI / 180;
+
+    // Subtle grid
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += W/8)  { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += H/6)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.restore();
+
+    // ── Arc fills ──
+    // Beta arc (right side, from 0 to totRad, but only up to alpha = where the divider is)
+    // We draw: arc A from 0..alpha, arc B from alpha..total (both CCW)
+
+    // Arc A fill
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R * 0.52, 0, -alpha, true);
+    ctx.closePath();
+    ctx.fillStyle = colorA + '22';
+    ctx.fill();
+    ctx.restore();
+
+    // Arc B fill
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R * 0.52, -alpha, -totRad, true);
+    ctx.closePath();
+    ctx.fillStyle = colorB + '22';
+    ctx.fill();
+    ctx.restore();
+
+    // Arc A stroke
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.52, 0, -alpha, true);
+    ctx.strokeStyle = colorA + 'cc';
+    ctx.lineWidth = 2 * dpr;
+    ctx.stroke();
+    ctx.restore();
+
+    // Arc B stroke
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.52, -alpha, -totRad, true);
+    ctx.strokeStyle = colorB + 'cc';
+    ctx.lineWidth = 2 * dpr;
+    ctx.stroke();
+    ctx.restore();
+
+    // ── Rays ──
+    // Ray 0 (fixed, horizontal right)
+    drawRay(ctx, cx, cy, 0, R, '#e8eaf6', 2.5, dpr, false);
+    // Ray total (fixed: top for comp=90, left for supl=180)
+    drawRay(ctx, cx, cy, -totRad, R, '#e8eaf6', 2.5, dpr, false);
+    // Ray alpha (movable divider)
+    drawRay(ctx, cx, cy, -alpha, R * 1.05, colorA, 2.5, dpr, true);
+
+    // ── Degree labels on arcs ──
+    const rLabel = R * 0.52 + 26 * dpr;
+    // Label A
+    const aA = -(alpha / 2);
+    const lAx = cx + Math.cos(aA) * rLabel;
+    const lAy = cy + Math.sin(aA) * rLabel;
+    drawLabel(ctx, lAx, lAy, Math.round(alphaDeg) + '°', colorA, 13 * dpr, dpr);
+
+    // Label B
+    const aB = -(alpha + beta / 2);
+    const lBx = cx + Math.cos(aB) * rLabel;
+    const lBy = cy + Math.sin(aB) * rLabel;
+    drawLabel(ctx, lBx, lBy, Math.round(total - alphaDeg) + '°', colorB, 13 * dpr, dpr);
+
+    // ── Right-angle square if total=90 ──
+    if (total === 90) {
+      const s = 18 * dpr;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - s);
+      ctx.lineTo(cx + s, cy - s);
+      ctx.lineTo(cx + s, cy);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── Origin dot ──
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8eaf6';
+    ctx.shadowColor = '#e8eaf6';
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function drawRay(ctx, ox, oy, angle, len, color, lw, dpr, arrow) {
+    const ex = ox + Math.cos(angle) * len;
+    const ey = oy + Math.sin(angle) * len;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = color; ctx.lineWidth = lw * dpr; ctx.lineCap = 'round';
+    ctx.shadowColor = color; ctx.shadowBlur = 5;
+    ctx.stroke(); ctx.shadowBlur = 0;
+    if (arrow) {
+      const aLen = 11 * dpr, aAng = Math.PI / 6;
+      const dir  = Math.atan2(ey - oy, ex - ox);
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - aLen * Math.cos(dir - aAng), ey - aLen * Math.sin(dir - aAng));
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - aLen * Math.cos(dir + aAng), ey - aLen * Math.sin(dir + aAng));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawLabel(ctx, x, y, text, color, size, dpr) {
+    ctx.save();
+    ctx.font = `bold ${size}px 'DM Mono', monospace`;
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    ctx.fillText(text, x, y);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  function angleFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr  = devicePixelRatio;
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const x = (clientX - rect.left) * dpr - cx;
+    const y = (clientY - rect.top)  * dpr - cy;
+    let deg = -Math.atan2(y, x) * 180 / Math.PI;
+    if (deg < 0) deg += 360;
+    return Math.max(1, Math.min(total - 1, deg > 180 ? total - 1 : deg));
+  }
+
+  function setAlpha(deg) {
+    alphaDeg = Math.max(1, Math.min(total - 1, deg));
+    draw();
+    onAlpha(alphaDeg);
+  }
+
+  canvas.addEventListener('mousedown',  e => { dragging = true; setAlpha(angleFromPointer(e)); });
+  canvas.addEventListener('mousemove',  e => { if (dragging) setAlpha(angleFromPointer(e)); });
+  canvas.addEventListener('mouseup',    () => dragging = false);
+  canvas.addEventListener('mouseleave', () => dragging = false);
+  canvas.addEventListener('touchstart', e => { dragging = true; setAlpha(angleFromPointer(e)); }, { passive: false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (dragging) setAlpha(angleFromPointer(e)); }, { passive: false });
+  canvas.addEventListener('touchend',   () => dragging = false);
+
+  window.addEventListener('resize', resize);
+  resize();
+  return { setAlpha, resize };
+}
+
+// ─────────────────────────────────────────
+// COMPLEMENTARIS PANEL
+// ─────────────────────────────────────────
+const sliderCA     = document.getElementById('sliderCompAlpha');
+const sliderCAval  = document.getElementById('sliderCompAlphaVal');
+const compAlphaDeg = document.getElementById('compAlphaDeg');
+const compAlphaName= document.getElementById('compAlphaName');
+const compBetaDeg  = document.getElementById('compBetaDeg');
+const compBetaName = document.getElementById('compBetaName');
+const compSum      = document.getElementById('compSum');
+
+function updateCompUI(alpha) {
+  const beta = 90 - alpha;
+  compAlphaDeg.textContent  = Math.round(alpha) + '°';
+  compAlphaName.textContent = angleName(alpha);
+  compBetaDeg.textContent   = Math.round(beta)  + '°';
+  compBetaName.textContent  = angleName(beta);
+  sliderCA.value            = Math.round(alpha);
+  sliderCAval.textContent   = Math.round(alpha) + '°';
+  compSum.textContent       = '= 90°';
+}
+
+const panelComp = makePanel({
+  canvasId: 'canvasComp', wrapId: 'wrapComp',
+  total: 90,
+  colorA: '#3dffa0', colorB: '#b47fff',
+  onAlpha: updateCompUI,
+});
+
+sliderCA.addEventListener('input', () => {
+  panelComp.setAlpha(+sliderCA.value);
+});
+
+updateCompUI(45);
+
+// ─────────────────────────────────────────
+// SUPLEMENTARIS PANEL
+// ─────────────────────────────────────────
+const sliderSA     = document.getElementById('sliderSuplAlpha');
+const sliderSAval  = document.getElementById('sliderSuplAlphaVal');
+const suplAlphaDeg = document.getElementById('suplAlphaDeg');
+const suplAlphaName= document.getElementById('suplAlphaName');
+const suplBetaDeg  = document.getElementById('suplBetaDeg');
+const suplBetaName = document.getElementById('suplBetaName');
+const suplSum      = document.getElementById('suplSum');
+
+function updateSuplUI(alpha) {
+  const beta = 180 - alpha;
+  suplAlphaDeg.textContent  = Math.round(alpha) + '°';
+  suplAlphaName.textContent = angleName(alpha);
+  suplBetaDeg.textContent   = Math.round(beta)  + '°';
+  suplBetaName.textContent  = angleName(beta);
+  sliderSA.value            = Math.round(alpha);
+  sliderSAval.textContent   = Math.round(alpha) + '°';
+  suplSum.textContent       = '= 180°';
+}
+
+const panelSupl = makePanel({
+  canvasId: 'canvasSupl', wrapId: 'wrapSupl',
+  total: 180,
+  colorA: '#ff5f6d', colorB: '#f5c842',
+  onAlpha: updateSuplUI,
+});
+
+sliderSA.addEventListener('input', () => {
+  panelSupl.setAlpha(+sliderSA.value);
+});
+
+updateSuplUI(90);
+</script>
+</body>
+</html>
