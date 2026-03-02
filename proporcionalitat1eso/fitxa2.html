@@ -145,7 +145,7 @@
       color: var(--pencil); margin-top: 0.2rem;
     }
 
-    /* ── STAMP (redesigned, bigger "30") ── */
+    /* ── STAMP ── */
     .stamp {
       position: absolute; top: 0; right: 0;
       width: 90px; height: 90px;
@@ -427,7 +427,6 @@
     @keyframes exitLeft  { from{opacity:1;transform:translateX(0)}     to{opacity:0;transform:translateX(-60px)} }
     @keyframes enterRight{ from{opacity:0;transform:translateX(50px)}  to{opacity:1;transform:translateX(0)} }
 
-    /* stamp bump when score increases */
     @keyframes stampBump { 0%{transform:rotate(12deg) scale(1)} 40%{transform:rotate(10deg) scale(1.25)} 100%{transform:rotate(12deg) scale(1)} }
     .stamp.bump { animation: stampBump 0.4s ease; }
   </style>
@@ -536,7 +535,7 @@
 <script>
 
 // ═══════════════════════════════════════════════════════════════
-// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// MÒDUL DE REGISTRE
 // ═══════════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
 const FITXA_NOM       = '1ESO_Proporcionalitat_Fitxa2';
@@ -570,7 +569,8 @@ function _enviarRegistre(nom, puntuacio, total) {
   }).catch(() => {});
 }
 // ═══════════════════════════════════════════════════════════════
-  
+
+
 // ═══════════════════════════════════════════════════════════════
 // BANK — 30 exercicis
 // ═══════════════════════════════════════════════════════════════
@@ -651,35 +651,36 @@ const BANK = [
   // ── Descompte — ★★ ──────────────────────────────────────────
   {
     tag:"Descompte", stars:2,
-    s:['Una jaqueta costa ',['120 €'],'. Té un descompte del ',['25%'],', és a dir, es redueix el preu en un 25%. Preu final: ','_',' €.'],
+    s:['Una jaqueta costa ',['120 €'],'. Té un descompte del ',['25%'],'. Preu final: ','_',' €.'],
     answer:90,
     hint:"Descompte = 25% de 120 = 30 €. Preu final = 120 − 30."
   },
   {
     tag:"Descompte", stars:2,
-    s:['Unes sabatilles esportives costen ',['80 €'],'. Amb un descompte del ',['15%'],' (es redueix el preu un 15%), el preu final és ','_',' €.'],
+    s:['Unes sabatilles costen ',['80 €'],'. Amb un descompte del ',['15%'],', el preu final és ','_',' €.'],
     answer:68,
     hint:"Descompte = 15% de 80 = 12 €. Preu final = 80 − 12."
   },
   {
     tag:"Descompte", stars:2,
-    s:['Un ordinador portàtil val ',['650 €'],'. Hi ha una rebaixa del ',['20%'],' (20% menys del preu original). Preu final: ','_',' €.'],
-    answer:520,
-    hint:"Descompte = 20% de 650 = 130 €. Preu final = 650 − 130."
+    s:['Un ordinador portàtil val ',['500 €'],'. Hi ha una rebaixa del ',['20%'],'. Preu final: ','_',' €.'],
+    answer:400,
+    hint:"Descompte = 20% de 500 = 100 €. Preu final = 500 − 100."
   },
 
   // ── IVA — ★★ ────────────────────────────────────────────────
+  // SIMPLIFICAT: % d'IVA que donin resultat sencer
   {
     tag:"IVA", stars:2,
-    s:['Un telèfon val ',['380 €'],' sense IVA. L\'IVA és del ',['21%'],' (s\'afegeix al preu base). Preu final amb IVA: ','_',' €.'],
-    answer:459.8,
-    hint:"IVA = 21% de 380 = 79,80 €. Preu final = 380 + 79,80."
+    s:['Un telèfon val ',['200 €'],' sense IVA. L\'IVA és del ',['10%'],'. Preu final amb IVA: ','_',' €.'],
+    answer:220,
+    hint:"IVA = 10% de 200 = 20 €. Preu final = 200 + 20."
   },
   {
     tag:"IVA", stars:2,
-    s:['Una bicicleta val ',['420 €'],' sense IVA. Amb un IVA del ',['21%'],' afegit al preu, el total és ','_',' €.'],
-    answer:508.2,
-    hint:"IVA = 21% de 420 = 88,20 €. Preu final = 420 + 88,20."
+    s:['Una bicicleta val ',['300 €'],' sense IVA. Amb un IVA del ',['10%'],', el total és ','_',' €.'],
+    answer:330,
+    hint:"IVA = 10% de 300 = 30 €. Preu final = 300 + 30."
   },
   {
     tag:"IVA", stars:2,
@@ -717,15 +718,16 @@ const BANK = [
   },
   {
     tag:"Problema compost", stars:3,
-    s:['Una botiga compra sabatilles per ',['50 €'],' i les ven amb un benefici del ',['70%'],' sobre el cost. Quin és el preu de venda? ','_',' €.'],
-    answer:85,
-    hint:"Benefici = 70% de 50 = 35 €. Preu de venda = cost + benefici."
+    s:['Una botiga compra sabatilles per ',['50 €'],' i les ven amb un benefici del ',['40%'],' sobre el cost. Quin és el preu de venda? ','_',' €.'],
+    answer:70,
+    hint:"Benefici = 40% de 50 = 20 €. Preu de venda = cost + benefici."
   },
+  // SIMPLIFICAT: dos descomptes amb números rodons (sense 21%)
   {
     tag:"Problema compost", stars:3,
-    s:['Un jersei val ',['90 €'],'. Primer s\'aplica un descompte del ',['20%'],' i després un segon descompte del ',['10%'],' sobre el preu ja rebaixat. Preu final: ','_',' €.'],
-    answer:64.8,
-    hint:"Pas 1: preu rebaixat = 90 − 20% de 90. Pas 2: aplica el 10% de descompte sobre el resultat anterior."
+    s:['Un jersei val ',['100 €'],'. Primer s\'aplica un descompte del ',['20%'],' i després un segon descompte del ',['10%'],' sobre el preu ja rebaixat. Preu final: ','_',' €.'],
+    answer:72,
+    hint:"Pas 1: preu rebaixat = 100 − 20% de 100 = 80 €. Pas 2: aplica el 10% de descompte sobre 80 €."
   },
   {
     tag:"Problema compost", stars:3,
@@ -733,17 +735,19 @@ const BANK = [
     answer:60,
     hint:"Converteix els minuts a hores: 40 ÷ 60. Llavors: km = velocitat × temps en hores."
   },
+  // SIMPLIFICAT: percentatge d'impostos i estalvi amb números rodons
   {
     tag:"Problema compost", stars:3,
-    s:['Una empresa té un benefici de ',['48.000 €'],'. Paga el ',['25%'],' d\'impostos i, amb el que queda, estalvia el ',['30%'],'. Quant estalvia? ','_',' €.'],
-    answer:10800,
-    hint:"Pas 1: benefici net = 48000 − 25% de 48000. Pas 2: estalvi = 30% del benefici net."
+    s:['Una empresa té un benefici de ',['40.000 €'],'. Paga el ',['25%'],' d\'impostos i, amb el que queda, estalvia el ',['20%'],'. Quant estalvia? ','_',' €.'],
+    answer:6000,
+    hint:"Pas 1: benefici net = 40000 − 25% de 40000 = 30000 €. Pas 2: estalvi = 20% de 30000."
   },
+  // SIMPLIFICAT: descompte + IVA amb % que no dona decimals
   {
     tag:"Problema compost", stars:3,
-    s:['En una botiga hi ha un descompte del ',['30%'],' sobre el preu original. El preu resultant, ja reduït, s\'incrementa amb l\'IVA del ',['21%'],'. Una camisa originalment val ',['60 €'],'. Preu final: ','_',' €.'],
-    answer:50.82,
-    hint:"Pas 1: preu rebaixat = 60 − 30% de 60. Pas 2: preu final = preu rebaixat + 21% del preu rebaixat."
+    s:['Una camisa val originalment ',['50 €'],'. S\'aplica un descompte del ',['20%'],' i després s\'afegeix un IVA del ',['10%'],'. Preu final: ','_',' €.'],
+    answer:44,
+    hint:"Pas 1: preu rebaixat = 50 − 20% de 50 = 40 €. Pas 2: preu final = 40 + 10% de 40."
   },
   {
     tag:"Problema compost", stars:3,
@@ -759,9 +763,9 @@ const BANK = [
   },
   {
     tag:"Problema compost", stars:3,
-    s:['Un cotxe consumeix ',['7 L per cada 100 km'],'. El dipòsit és de ',['42 L'],'. Si la gasolina costa ',['1,80 €/L'],', quant costa omplir el dipòsit? ','_',' €.'],
-    answer:75.6,
-    hint:"Cost = litres del dipòsit × preu per litre = 42 × 1,80."
+    s:['Un cotxe consumeix ',['7 L per cada 100 km'],'. El dipòsit és de ',['42 L'],'. Si la gasolina costa ',['2 €/L'],', quant costa omplir el dipòsit? ','_',' €.'],
+    answer:84,
+    hint:"Cost = litres del dipòsit × preu per litre = 42 × 2."
   },
 ];
 
@@ -771,9 +775,7 @@ const BANK = [
 const TOTAL = 30, PER = 3;
 let order = [], solved = 0, score = 0, roundIdx = 0;
 let currentEx = [], checked = false;
-// canScore[i] = true mentre l'exercici i no ha estat fallat encara
 let canScore = [true, true, true];
-// locked[i] = true quan l'exercici i ja ha estat encertat (bloca el camp)
 let locked = [false, false, false];
 let playerName = '';
 
@@ -834,7 +836,9 @@ function markDots(indices) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// CARREGAR REPTE  (opcionalment amb animació de sortida)
+// CARREGAR REPTE
+// ── FIX: renderCards() sempre s'executa, ja sigui amb o sense
+//         animació, per evitar que el contenidor quedi buit.
 // ═══════════════════════════════════════════════════════════════
 const STARS = ['', '★', '★★', '★★★'];
 
@@ -889,7 +893,7 @@ function loadRound(ri, animate) {
 
       container.appendChild(card);
 
-      // Staggered enter-from-right animation
+      // Animació d'entrada
       card.style.opacity = '0';
       card.style.transform = 'translateX(50px)';
       setTimeout(() => {
@@ -903,7 +907,6 @@ function loadRound(ri, animate) {
     currentEx.forEach((_, i) => {
       document.getElementById('ans' + i).addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-          // Skip locked (already correct) inputs
           let next = i + 1;
           while (next < PER && locked[next]) next++;
           const nxt = next < PER ? document.getElementById('ans' + next) : null;
@@ -913,14 +916,15 @@ function loadRound(ri, animate) {
     });
 
     setTimeout(() => {
-      // Focus first unlocked input
       const f = document.getElementById('ans0');
       if (f) f.focus();
     }, 350);
   }
 
+  // ── FIX: si hi ha animació de sortida, esperem que acabi i llavors
+  //         sempre cridem renderCards() — independentment de si hi havia
+  //         targetes o no, per evitar que el contenidor quedi buit.
   if (animate && container.children.length > 0) {
-    // Animate existing cards out to the left, then render new ones
     Array.from(container.children).forEach((card, i) => {
       card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
       card.style.transitionDelay = (i * 50) + 'ms';
@@ -929,22 +933,22 @@ function loadRound(ri, animate) {
     });
     setTimeout(renderCards, 340);
   } else {
+    // Sense animació de sortida: renderitza immediatament
     renderCards();
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// COMPROVA  — puntuació per exercici individual
+// COMPROVA
 // ═══════════════════════════════════════════════════════════════
 function checkAnswers() {
   if (checked) return;
   const TOL = 0.11;
-  let okThisAttempt = 0;    // encerts en aquest intent concret
-  let scoreGained   = 0;    // punts nous guanyats ara
-  let allDone       = true; // tots els exercicis estan encertats?
+  let okThisAttempt = 0;
+  let scoreGained   = 0;
+  let allDone       = true;
 
   currentEx.forEach((ex, i) => {
-    // Si ja estava encertat i bloquejat, no el tornem a avaluar
     if (locked[i]) { okThisAttempt++; return; }
 
     const inp  = document.getElementById('ans'  + i);
@@ -967,11 +971,10 @@ function checkAnswers() {
     }
 
     if (Math.abs(val - ex.answer) <= TOL) {
-      // ✓ Encertat
       okThisAttempt++;
       locked[i] = true;
       inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
-      inp.disabled = true; // bloca el camp
+      inp.disabled = true;
       card.classList.add('correct'); card.classList.remove('wrong');
       fb.className = 'feedback ok show';
       const bonus = canScore[i] ? ' (+1 punt)' : '';
@@ -979,9 +982,8 @@ function checkAnswers() {
       hint.classList.remove('visible');
       if (canScore[i]) scoreGained++;
     } else {
-      // ✗ Error
       allDone = false;
-      canScore[i] = false; // ja no pot sumar punt
+      canScore[i] = false;
       inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
       card.classList.add('wrong'); card.classList.remove('correct');
       fb.className = 'feedback err show';
@@ -990,19 +992,16 @@ function checkAnswers() {
     }
   });
 
-  // Aplica punts guanyats ara
   if (scoreGained > 0) {
     score += scoreGained;
     updateCount();
-    // Petita animació al segell
     const stamp = document.querySelector('.stamp');
     stamp.classList.remove('bump');
-    void stamp.offsetWidth; // reflow
+    void stamp.offsetWidth;
     stamp.classList.add('bump');
     stamp.addEventListener('animationend', () => stamp.classList.remove('bump'), { once: true });
   }
 
-  // Missatge de resum
   const pendents = PER - okThisAttempt;
   let msg = '';
   if (allDone) {
@@ -1019,12 +1018,10 @@ function checkAnswers() {
   if (allDone) {
     checked = true;
     document.getElementById('checkBtn').disabled = true;
-    // Amaga totes les pistes
     for (let i = 0; i < PER; i++) {
       const h = document.getElementById('hint' + i);
       if (h) h.classList.remove('visible');
     }
-    // Marca boles
     const dotStart = roundIdx * PER;
     markDots(order.slice(dotStart, dotStart + PER));
     solved += PER;
@@ -1039,24 +1036,22 @@ function checkAnswers() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// RETRY  — manté camps encertats blocats
+// RETRY
 // ═══════════════════════════════════════════════════════════════
 function retryRound() {
   for (let i = 0; i < PER; i++) {
-    if (locked[i]) continue; // no toca els ja encertats
+    if (locked[i]) continue;
     const inp  = document.getElementById('ans'  + i);
     const fb   = document.getElementById('fb'   + i);
     const card = document.getElementById('card' + i);
     if (inp)  { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
     if (card) card.classList.remove('correct', 'wrong');
     if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
-    // pistes dels errors es mantenen visibles
   }
   document.getElementById('scoreBox').classList.remove('show');
   document.getElementById('retryBtn').style.display = 'none';
   document.getElementById('checkBtn').disabled = false;
   checked = false;
-  // Focus al primer camp no bloquejat
   for (let i = 0; i < PER; i++) {
     if (!locked[i]) { document.getElementById('ans' + i).focus(); break; }
   }
@@ -1081,7 +1076,7 @@ function showCelebration() {
 function nextRound() {
   document.getElementById('celebration').classList.remove('show');
   stopConfetti();
-  loadRound(roundIdx + 1, true); // true = animació de transició
+  loadRound(roundIdx + 1, true);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
