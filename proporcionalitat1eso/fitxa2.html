@@ -534,6 +534,43 @@
 </div><!-- /page-wrap -->
 
 <script>
+
+// ═══════════════════════════════════════════════════════════════
+// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = '1ESO_Proporcionalitat_Fitxa2';
+
+const _startTime = Date.now();
+const _primeres_respostes = {};
+
+function _registrarPrimeraResposta(idxGlobal, valor) {
+  if (!(idxGlobal in _primeres_respostes)) {
+    _primeres_respostes[idxGlobal] = valor;
+  }
+}
+
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({ length: total }, (_, i) =>
+    _primeres_respostes[i] !== undefined ? String(_primeres_respostes[i]) : ''
+  );
+  const payload = {
+    fitxa:              FITXA_NOM,
+    timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
+    nom:                nom,
+    puntuacio:          puntuacio,
+    total:              total,
+    minuts:             Math.round((Date.now() - _startTime) / 60000),
+    primeres_respostes: respostes,
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+// ═══════════════════════════════════════════════════════════════
+  
 // ═══════════════════════════════════════════════════════════════
 // BANK — 30 exercicis
 // ═══════════════════════════════════════════════════════════════
@@ -914,6 +951,8 @@ function checkAnswers() {
     const fb   = document.getElementById('fb'   + i);
     const card = document.getElementById('card' + i);
     const hint = document.getElementById('hint' + i);
+    const idxGlobal = roundIdx * PER + i;
+    _registrarPrimeraResposta(idxGlobal, inp.value.trim());
     const val  = parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''));
 
     if (isNaN(val)) {
@@ -1068,6 +1107,7 @@ function showFinal() {
   document.getElementById('finalSub').textContent   = sub;
 
   document.getElementById('finalScreen').classList.add('show');
+  _enviarRegistre(playerName, score, TOTAL);
   launchConfetti();
   setTimeout(stopConfetti, 6000);
 }
