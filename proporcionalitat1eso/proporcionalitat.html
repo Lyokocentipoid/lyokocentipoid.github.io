@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProporMat · Proporcionalitat i Percentatges</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0d0f1a;
+      --surface:  #151828;
+      --card:     #1c2038;
+      --border:   #2a2f50;
+
+      --blue:     #3d8bff;
+      --yellow:   #f5c842;
+      --coral:    #ff5f6d;
+      --green:    #3dffa0;
+      --purple:   #b47fff;
+
+      --text:     #e8eaf6;
+      --muted:    #7a7fa8;
+
+      --radius:   16px;
+      --transition: .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── GEOMETRIC BACKGROUND ── */
+    .geo-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .geo-bg svg {
+      width: 100%; height: 100%;
+      opacity: .07;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -.02em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .nav-logo .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--yellow);
+      display: inline-block;
+      box-shadow: 0 0 12px var(--yellow);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .95rem;
+      font-weight: 400;
+      transition: color var(--transition);
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 0;
+      width: 0; height: 2px;
+      background: var(--yellow);
+      transition: width var(--transition);
+      border-radius: 2px;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── LAYOUT ── */
+    main {
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 7rem 2rem 5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(245,200,66,.12);
+      color: var(--yellow);
+      border: 1px solid rgba(245,200,66,.3);
+      border-radius: 100px;
+      padding: .3rem 1rem;
+      font-size: .8rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      line-height: 1.15;
+      letter-spacing: -.01em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent-yellow { color: var(--yellow); }
+    .hero h1 .accent-coral  { color: var(--coral); }
+    .hero h1 .accent-green  { color: var(--green); }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 440px;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.6rem;
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: .95rem;
+      text-decoration: none;
+      transition: all var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--yellow);
+      color: #0d0f1a;
+      box-shadow: 0 0 24px rgba(245,200,66,.35);
+    }
+    .btn-primary:hover {
+      background: #ffd84a;
+      box-shadow: 0 0 36px rgba(245,200,66,.55);
+      transform: translateY(-2px);
+    }
+
+    /* ── HERO VISUAL ── */
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hero-canvas {
+      width: 340px;
+      height: 340px;
+      position: relative;
+    }
+
+    .hero-canvas canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 60px rgba(245,200,66,.12);
+    }
+
+    /* ── SECTION TITLES ── */
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      letter-spacing: -.02em;
+      margin-bottom: .75rem;
+    }
+    .section-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 3rem;
+      max-width: 520px;
+    }
+
+    /* ── FITXES ── */
+    #fitxes {
+      padding: 5rem 0 6rem;
+    }
+
+    .fitxes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .fitxa-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .fitxa-header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 1.75rem 2rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+
+    .fitxa-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--f-color, var(--yellow));
+    }
+
+    .fitxa-header:hover {
+      background: #1e2440;
+    }
+
+    .fitxa-header-left { flex: 1; }
+
+    .fitxa-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(255,255,255,.05);
+      border-radius: 100px;
+      padding: .25rem .75rem;
+      font-size: .75rem;
+      font-weight: 500;
+      color: var(--f-color, var(--yellow));
+      margin-bottom: .75rem;
+    }
+
+    .fitxa-header h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      margin-bottom: .4rem;
+    }
+
+    .fitxa-header p {
+      color: var(--muted);
+      font-size: .85rem;
+      line-height: 1.5;
+    }
+
+    .fitxa-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition);
+      color: var(--muted);
+      font-size: 1rem;
+      margin-top: .2rem;
+    }
+
+    .fitxa-header.open .fitxa-toggle {
+      background: rgba(255,255,255,.1);
+      color: var(--f-color, var(--yellow));
+      transform: rotate(45deg);
+    }
+
+    /* Iframe container */
+    .fitxa-body {
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height .45s cubic-bezier(.4,0,.2,1);
+      background: var(--surface);
+    }
+
+    .fitxa-body.open {
+      max-height: 640px;
+    }
+
+    .fitxa-body iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+      display: block;
+      background: #fff;
+    }
+
+    /* Placeholder */
+    .fitxa-placeholder {
+      height: 600px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .fitxa-placeholder .ph-icon {
+      font-size: 2.5rem;
+      opacity: .4;
+    }
+
+    .fitxa-placeholder a {
+      color: var(--f-color, var(--yellow));
+      text-decoration: none;
+      font-weight: 500;
+      border: 1px solid var(--f-color, var(--yellow));
+      padding: .5rem 1.2rem;
+      border-radius: 100px;
+      font-size: .85rem;
+      transition: all var(--transition);
+    }
+
+    .fitxa-placeholder a:hover {
+      background: rgba(245,200,66,.1);
+    }
+
+    .fitxa-wrapper[data-f="1"] .fitxa-header { --f-color: var(--yellow); }
+    .fitxa-wrapper[data-f="1"] .fitxa-placeholder { --f-color: var(--yellow); }
+    .fitxa-wrapper[data-f="2"] .fitxa-header { --f-color: var(--coral); }
+    .fitxa-wrapper[data-f="2"] .fitxa-placeholder { --f-color: var(--coral); }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    /* ── SCROLL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; padding: 4rem 1.5rem 3rem; }
+      .hero-visual { display: none; }
+      .fitxes-grid { grid-template-columns: 1fr; }
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Geometric background -->
+<div class="geo-bg">
+  <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#ffffff" stroke-width=".5" fill="none">
+      <line x1="0" y1="150" x2="1400" y2="150"/>
+      <line x1="0" y1="300" x2="1400" y2="300"/>
+      <line x1="0" y1="450" x2="1400" y2="450"/>
+      <line x1="0" y1="600" x2="1400" y2="600"/>
+      <line x1="0" y1="750" x2="1400" y2="750"/>
+      <line x1="200" y1="0" x2="200" y2="900"/>
+      <line x1="400" y1="0" x2="400" y2="900"/>
+      <line x1="600" y1="0" x2="600" y2="900"/>
+      <line x1="800" y1="0" x2="800" y2="900"/>
+      <line x1="1000" y1="0" x2="1000" y2="900"/>
+      <line x1="1200" y1="0" x2="1200" y2="900"/>
+    </g>
+    <g stroke="#f5c842" stroke-width=".8" fill="none" opacity=".6">
+      <line x1="0" y1="0" x2="1400" y2="900"/>
+      <line x1="1400" y1="0" x2="0" y2="900"/>
+    </g>
+    <!-- Ratio bar visual -->
+    <rect x="300" y="200" width="300" height="30" stroke="#f5c842" stroke-width="1" fill="none"/>
+    <rect x="300" y="200" width="195" height="30" stroke="#3dffa0" stroke-width="1" fill="none" opacity=".5"/>
+    <!-- Big % sign outline -->
+    <circle cx="950" cy="250" r="60" stroke="#f5c842" stroke-width="1.5" fill="none"/>
+    <circle cx="1090" cy="450" r="60" stroke="#f5c842" stroke-width="1.5" fill="none"/>
+    <line x1="880" y1="480" x2="1160" y2="220" stroke="#f5c842" stroke-width="1.5"/>
+    <!-- Proportion arrows -->
+    <line x1="100" y1="600" x2="400" y2="600" stroke="#3dffa0" stroke-width="1"/>
+    <line x1="100" y1="650" x2="200" y2="650" stroke="#ff5f6d" stroke-width="1"/>
+    <g fill="#f5c842">
+      <circle cx="400" cy="300" r="3"/>
+      <circle cx="800" cy="150" r="3"/>
+      <circle cx="600" cy="600" r="3"/>
+    </g>
+    <g fill="#3dffa0">
+      <circle cx="200" cy="450" r="3"/>
+      <circle cx="1200" cy="300" r="3"/>
+    </g>
+  </svg>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="dot"></span>
+    ProporMat 1r ESO
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Inici</a></li>
+    <li><a href="#fitxes">Fitxes</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-tag">Matemàtiques · 1r ESO</span>
+      <h1>
+        <span class="accent-yellow">Proporcions</span>,<br>
+        regles de 3<br>
+        i <span class="accent-coral">percentatges</span>
+      </h1>
+      <p>Dues fitxes per practicar proporcionalitat directa i inversa, i tot el que necessites saber de percentatges: augments, disminucions i problemes aplicats.</p>
+      <div class="hero-actions">
+        <a href="#fitxes" class="btn btn-primary">Obre les fitxes →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-canvas">
+        <canvas id="heroCanvas" width="340" height="340"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- FITXES -->
+  <section id="fitxes">
+    <div class="container">
+      <div class="reveal">
+        <h2 class="section-title">Fitxes de pràctica</h2>
+        <p class="section-sub">Fes clic per obrir cada fitxa directament aquí. Podràs treballar-les sense sortir de la pàgina.</p>
+      </div>
+
+      <div class="fitxes-grid">
+
+        <!-- FITXA 1 -->
+        <div class="fitxa-wrapper reveal" data-f="1" style="transition-delay:.1s">
+          <div class="fitxa-header" id="toggle-1" onclick="toggleFitxa(1)">
+            <div class="fitxa-header-left">
+              <span class="fitxa-badge">⇄ Proporcionalitat</span>
+              <h3>Fitxa 1 · Regla de tres</h3>
+              <p>Proporcionalitat directa i inversa. Resolució de problemes amb regla de tres simple i composta.</p>
+            </div>
+            <div class="fitxa-toggle" id="icon-1">+</div>
+          </div>
+          <div class="fitxa-body" id="body-1">
+            <div class="fitxa-placeholder" id="placeholder-1">
+              <span class="ph-icon">⇄</span>
+              <span>L'enllaç de la fitxa s'afegirà aquí</span>
+              <a href="#" onclick="return false;">Obrir fitxa externament ↗</a>
+            </div>
+            <!-- Quan tinguis l'URL, substitueix el placeholder per:
+            <iframe src="URL_DE_LA_FITXA" allowfullscreen></iframe>
+            -->
+          </div>
+        </div>
+
+        <!-- FITXA 2 -->
+        <div class="fitxa-wrapper reveal" data-f="2" style="transition-delay:.2s">
+          <div class="fitxa-header" id="toggle-2" onclick="toggleFitxa(2)">
+            <div class="fitxa-header-left">
+              <span class="fitxa-badge">% Percentatges</span>
+              <h3>Fitxa 2 · Percentatges</h3>
+              <p>Càlcul de percentatges, augments i disminucions percentuals. Problemes de context real.</p>
+            </div>
+            <div class="fitxa-toggle" id="icon-2">+</div>
+          </div>
+          <div class="fitxa-body" id="body-2">
+            <div class="fitxa-placeholder" id="placeholder-2">
+              <span class="ph-icon">%</span>
+              <span>L'enllaç de la fitxa s'afegirà aquí</span>
+              <a href="#" onclick="return false;">Obrir fitxa externament ↗</a>
+            </div>
+            <!-- Quan tinguis l'URL, substitueix el placeholder per:
+            <iframe src="URL_DE_LA_FITXA" allowfullscreen></iframe>
+            -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>ProporMat · Proporcionalitat i Percentatges · 1r ESO</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+  // ── TOGGLE FITXES ──
+  function toggleFitxa(n) {
+    const body = document.getElementById('body-' + n);
+    const header = document.getElementById('toggle-' + n);
+    const icon = document.getElementById('icon-' + n);
+    const isOpen = body.classList.contains('open');
+
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+  }
+
+  // ── HERO CANVAS: % animation ──
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+
+  let t = 0;
+
+  // Draw a clean % symbol using canvas primitives
+  function drawPercent(x, y, size, alpha, rotation) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = '#f5c842';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#f5c842';
+    ctx.shadowBlur = 10;
+
+    // Top-left circle
+    ctx.beginPath();
+    ctx.arc(-size * 0.22, -size * 0.22, size * 0.18, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Bottom-right circle
+    ctx.beginPath();
+    ctx.arc(size * 0.22, size * 0.22, size * 0.18, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Diagonal line
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.4, size * 0.4);
+    ctx.lineTo(size * 0.4, -size * 0.4);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawHero() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Background subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 34) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 34) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // --- PROPORTION BARS (background) ---
+    const barY = cy + 60;
+    const barW = 160;
+    // Total bar
+    ctx.beginPath();
+    ctx.rect(cx - barW / 2, barY, barW, 14);
+    ctx.strokeStyle = 'rgba(245,200,66,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Animated fill bar
+    const fillRatio = 0.55 + Math.sin(t * 0.8) * 0.2;
+    ctx.beginPath();
+    ctx.rect(cx - barW / 2, barY, barW * fillRatio, 14);
+    ctx.fillStyle = 'rgba(245,200,66,0.18)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(245,200,66,0.5)';
+    ctx.stroke();
+
+    // Percentage label next to bar
+    const pct = Math.round(fillRatio * 100);
+    ctx.font = '700 12px "Syne", sans-serif';
+    ctx.fillStyle = 'rgba(245,200,66,0.8)';
+    ctx.textAlign = 'left';
+    ctx.fillText(pct + '%', cx + barW / 2 + 10, barY + 11);
+    ctx.textAlign = 'center';
+
+    // --- ORBITING SMALL % symbols ---
+    const orbitR = 115;
+    for (let i = 0; i < 3; i++) {
+      const angle = (i / 3) * Math.PI * 2 + t * 0.4;
+      const ox = cx + Math.cos(angle) * orbitR;
+      const oy = cy + Math.sin(angle) * orbitR;
+      const alpha = 0.3 + 0.2 * Math.sin(t + i);
+      drawPercent(ox, oy, 20, alpha, angle + Math.PI / 4);
+    }
+
+    // --- BIG CENTRAL % ---
+    const bigScale = 1 + Math.sin(t * 1.2) * 0.04;
+    drawPercent(cx, cy - 20, 70 * bigScale, 0.9, 0);
+
+    // --- Outer ring ---
+    ctx.beginPath();
+    ctx.arc(cx, cy, 130, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(245,200,66,0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // --- Animated arc (progress ring) ---
+    const arcProgress = (Math.sin(t * 0.6) * 0.5 + 0.5);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 130, -Math.PI / 2, -Math.PI / 2 + arcProgress * Math.PI * 2, false);
+    ctx.strokeStyle = 'rgba(245,200,66,0.35)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#f5c842';
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // --- Dot at arc tip ---
+    const dotAngle = -Math.PI / 2 + arcProgress * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(dotAngle) * 130, cy + Math.sin(dotAngle) * 130, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#f5c842';
+    ctx.shadowColor = '#f5c842';
+    ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // --- Coral accent: small circle counter-orbit ---
+    const ca = -t * 0.7;
+    const cox = cx + Math.cos(ca) * 90;
+    const coy = cy + Math.sin(ca) * 90;
+    ctx.beginPath();
+    ctx.arc(cox, coy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff5f6d';
+    ctx.shadowColor = '#ff5f6d';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fill();
+
+    t += 0.012;
+    requestAnimationFrame(drawHero);
+  }
+  drawHero();
+
+  // ── SCROLL REVEAL ──
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
