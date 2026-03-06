@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simetria axial · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--purple); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--purple); background: rgba(180,127,255,.1); border: 1px solid rgba(180,127,255,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--purple); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--purple); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 600px; }
+
+    /* SHAPE SELECTOR BAR */
+    .shape-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem;
+      display: flex; gap: .65rem; flex-wrap: wrap; align-items: center;
+    }
+    .shape-label { font-size: .78rem; color: var(--muted); margin-right: .25rem; }
+    .shape-btn {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .4rem 1rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .shape-btn:hover { border-color: var(--purple); color: var(--text); }
+    .shape-btn.active {
+      border-color: var(--purple); color: var(--purple);
+      background: rgba(180,127,255,.1);
+      box-shadow: 0 0 14px rgba(180,127,255,.15);
+    }
+
+    /* MAIN LAYOUT */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* CANVAS */
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 4/3;
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+    .canvas-hint {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted);
+      background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: .3rem 1rem; pointer-events: none; white-space: nowrap; transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .info-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .info-box-head {
+      padding: .9rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .info-box-icon { font-size: 1.1rem; }
+    .info-box-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-box-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .75rem; }
+
+    .axis-control { display: flex; flex-direction: column; gap: .5rem; }
+    .axis-row { display: flex; align-items: center; justify-content: space-between; }
+    .axis-name { font-size: .82rem; color: var(--muted); }
+    .axis-val {
+      font-family: 'DM Mono', monospace; font-size: .88rem; color: var(--purple);
+    }
+    input[type=range] {
+      width: 100%; appearance: none; height: 4px;
+      border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+      cursor: grab; transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+
+    /* Symmetry properties */
+    .prop-list { display: flex; flex-direction: column; gap: .5rem; }
+    .prop-item {
+      display: flex; align-items: flex-start; gap: .75rem;
+      padding: .65rem .9rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .prop-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .35rem; }
+    .prop-text { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+    .prop-text strong { color: var(--text); font-weight: 500; }
+
+    /* Segment counter */
+    .seg-counter {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .65rem;
+    }
+    .seg-chip {
+      border-radius: 10px; padding: .65rem .85rem;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .seg-chip-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .2rem; }
+    .seg-chip-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; color: var(--purple); }
+
+    /* INSIGHTS */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header, .shape-bar { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 02 · Figures</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Simetria axial</span>
+  </div>
+  <h1>Simetria <em>axial</em></h1>
+  <p>Gira l'eix de simetria i observa com la figura simètrica es transforma en temps real. Cada punt de la figura original té el seu simètric a la mateixa distància de l'eix, a l'altra banda.</p>
+</div>
+
+<!-- SHAPE SELECTOR -->
+<div class="shape-bar">
+  <span class="shape-label">Figura:</span>
+  <button class="shape-btn active" onclick="setShape('triangle')">🔺 Triangle</button>
+  <button class="shape-btn" onclick="setShape('quadrat')">🔷 Quadrat</button>
+  <button class="shape-btn" onclick="setShape('pentagon')">⬠ Pentàgon</button>
+  <button class="shape-btn" onclick="setShape('lletra-f')">🔤 Lletra F</button>
+  <button class="shape-btn" onclick="setShape('fletxa')">➤ Fletxa</button>
+</div>
+
+<div class="main-layout">
+
+  <!-- CANVAS -->
+  <div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mainCanvas"></canvas>
+      <div class="canvas-hint" id="hint">Arrossega l'eix de simetria per girar-lo</div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <!-- Axis control -->
+    <div class="info-box">
+      <div class="info-box-head">
+        <span class="info-box-icon">🪞</span>
+        <span class="info-box-title">Eix de simetria</span>
+      </div>
+      <div class="info-box-body">
+        <div class="axis-control">
+          <div class="axis-row">
+            <span class="axis-name">Angle de l'eix</span>
+            <span class="axis-val" id="axisAngleVal">0°</span>
+          </div>
+          <input type="range" id="axisSlider" min="0" max="179" value="0" />
+        </div>
+        <div class="seg-counter">
+          <div class="seg-chip">
+            <div class="seg-chip-label">Vèrtexs orig.</div>
+            <div class="seg-chip-val" id="vertCount">—</div>
+          </div>
+          <div class="seg-chip">
+            <div class="seg-chip-label">Vèrtexs simèt.</div>
+            <div class="seg-chip-val" id="vertCountSym">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Properties -->
+    <div class="info-box">
+      <div class="info-box-head">
+        <span class="info-box-icon">📋</span>
+        <span class="info-box-title">Propietats</span>
+      </div>
+      <div class="info-box-body">
+        <div class="prop-list">
+          <div class="prop-item">
+            <div class="prop-dot" style="background:var(--purple)"></div>
+            <div class="prop-text"><strong>Distàncies iguals.</strong> Cada punt i el seu simètric estan a la mateixa distància de l'eix.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-dot" style="background:var(--green)"></div>
+            <div class="prop-text"><strong>Angle recte.</strong> El segment que uneix cada punt amb el seu simètric és perpendicular a l'eix.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-dot" style="background:var(--coral)"></div>
+            <div class="prop-text"><strong>Figura congruent.</strong> La figura simètrica té la mateixa forma i mida que l'original.</div>
+          </div>
+          <div class="prop-item" id="propOnAxis" style="display:none">
+            <div class="prop-dot" style="background:var(--yellow)"></div>
+            <div class="prop-text"><strong>Punt sobre l'eix.</strong> Els punts que cauen sobre l'eix coincideixen amb el seu simètric.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🦋</span>
+    <div class="insight-text">
+      <h4>Simetria a la natura</h4>
+      <p>Les papallones, les fulles i moltes flors tenen un eix de simetria. La simetria és un dels patrons més habituals en la natura.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔤</span>
+    <div class="insight-text">
+      <h4>Lletres simètriques</h4>
+      <p>Les lletres A, H, I, M, O, T, U, V, W, X, Y tenen almenys un eix de simetria. Prova-ho amb la lletra F, que no en té cap.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">∞</span>
+    <div class="insight-text">
+      <h4>Eixos múltiples</h4>
+      <p>Un quadrat té 4 eixos de simetria, un hexàgon en té 6. El cercle en té infinits. Com més eixos, més simètrica és la figura.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 02 · Figures i Cossos</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// SHAPES (normalized 0..1)
+// ─────────────────────────────────────────
+const SHAPES = {
+  triangle: [ [.5,.15], [.15,.82], [.85,.82] ],
+  quadrat:  [ [.2,.2], [.8,.2], [.8,.8], [.2,.8] ],
+  pentagon: (() => {
+    const pts = [];
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI/2 + (2*Math.PI*i)/5;
+      pts.push([.5 + .35*Math.cos(a), .5 + .38*Math.sin(a)]);
+    }
+    return pts;
+  })(),
+  'lletra-f': [
+    [.28,.15],[.72,.15],[.72,.28],[.42,.28],
+    [.42,.44],[.66,.44],[.66,.57],[.42,.57],
+    [.42,.85],[.28,.85]
+  ],
+  fletxa: [
+    [.5,.12],[.82,.48],[.64,.48],
+    [.64,.85],[.36,.85],[.36,.48],[.18,.48]
+  ],
+};
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+let shape     = 'triangle';
+let axisAngle = 0;   // degrees 0-179
+let draggingAxis = false;
+let hinted    = false;
+
+// ─────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+let W, H, dpr;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  dpr = devicePixelRatio;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────
+// GEOMETRY
+// ─────────────────────────────────────────
+function toCanvas(pts) {
+  return pts.map(([rx, ry]) => ({ x: rx * W, y: ry * H }));
+}
+
+function reflectPoint(px, py, cx, cy, angleDegrees) {
+  // Reflect (px, py) across line through (cx, cy) at angleDegrees
+  const a = angleDegrees * Math.PI / 180;
+  const dx = px - cx, dy = py - cy;
+  const cos2 = Math.cos(2 * a), sin2 = Math.sin(2 * a);
+  return {
+    x: cx + dx * cos2 + dy * sin2,
+    y: cy + dx * sin2 - dy * cos2,
+  };
+}
+
+function getReflected(pts) {
+  const cx = W / 2, cy = H / 2;
+  return pts.map(p => reflectPoint(p.x, p.y, cx, cy, axisAngle));
+}
+
+function isOnAxis(p, cx, cy, tol = 6) {
+  // Distance from point to the axis line
+  const a = axisAngle * Math.PI / 180;
+  const dx = p.x - cx, dy = p.y - cy;
+  const dist = Math.abs(-Math.sin(a) * dx + Math.cos(a) * dy);
+  return dist < tol * dpr;
+}
+
+// ─────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W/8) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H/6) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  const cx = W / 2, cy = H / 2;
+  const pts = toCanvas(SHAPES[shape]);
+  const ref = getReflected(pts);
+  const n   = pts.length;
+
+  // Symmetry segments (dotted lines connecting each point to its mirror)
+  ctx.save();
+  ctx.setLineDash([4 * dpr, 4 * dpr]);
+  ctx.strokeStyle = 'rgba(180,127,255,.28)'; ctx.lineWidth = 1 * dpr;
+  pts.forEach((p, i) => {
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ref[i].x, ref[i].y); ctx.stroke();
+  });
+  ctx.setLineDash([]); ctx.restore();
+
+  // Midpoints on axis (small marks)
+  pts.forEach((p, i) => {
+    const mx = (p.x + ref[i].x) / 2, my = (p.y + ref[i].y) / 2;
+    ctx.beginPath(); ctx.arc(mx, my, 3 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(180,127,255,.5)'; ctx.fill();
+  });
+
+  // Reflected figure (ghost)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(ref[0].x, ref[0].y);
+  for (let i = 1; i < n; i++) ctx.lineTo(ref[i].x, ref[i].y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(180,127,255,.1)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(180,127,255,.6)'; ctx.lineWidth = 2 * dpr;
+  ctx.setLineDash([6 * dpr, 4 * dpr]);
+  ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  // Reflected vertices
+  ref.forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(180,127,255,.7)';
+    ctx.shadowColor = 'var(--purple)'; ctx.shadowBlur = 8;
+    ctx.fill(); ctx.shadowBlur = 0;
+  });
+
+  // Original figure (solid)
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < n; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(72,219,251,.1)'; ctx.fill();
+  ctx.strokeStyle = '#48dbfb'; ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = '#48dbfb'; ctx.shadowBlur = 8;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Original vertices
+  pts.forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = '#48dbfb';
+    ctx.shadowColor = '#48dbfb'; ctx.shadowBlur = 10;
+    ctx.fill(); ctx.shadowBlur = 0;
+  });
+
+  // Axis of symmetry
+  const a = axisAngle * Math.PI / 180;
+  const axLen = Math.max(W, H) * 0.75;
+  const ax1 = { x: cx - Math.cos(a) * axLen, y: cy - Math.sin(a) * axLen };
+  const ax2 = { x: cx + Math.cos(a) * axLen, y: cy + Math.sin(a) * axLen };
+
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(ax1.x, ax1.y); ctx.lineTo(ax2.x, ax2.y);
+  ctx.strokeStyle = '#b47fff'; ctx.lineWidth = 2 * dpr;
+  ctx.shadowColor = '#b47fff'; ctx.shadowBlur = 14;
+  ctx.setLineDash([10 * dpr, 6 * dpr]);
+  ctx.stroke(); ctx.setLineDash([]); ctx.shadowBlur = 0; ctx.restore();
+
+  // Axis label
+  const labelX = cx + Math.cos(a) * axLen * 0.72;
+  const labelY = cy + Math.sin(a) * axLen * 0.72;
+  ctx.save();
+  ctx.font = `bold ${11 * dpr}px 'DM Mono', monospace`;
+  ctx.fillStyle = '#b47fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#b47fff'; ctx.shadowBlur = 6;
+  ctx.fillText('eix', labelX, labelY - 12 * dpr);
+  ctx.shadowBlur = 0; ctx.restore();
+
+  // Axis handle (draggable dot)
+  const hx = cx + Math.cos(a) * axLen * 0.55;
+  const hy = cy + Math.sin(a) * axLen * 0.55;
+  ctx.beginPath(); ctx.arc(hx, hy, 9 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = '#b47fff';
+  ctx.shadowColor = '#b47fff'; ctx.shadowBlur = 16;
+  ctx.fill(); ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(hx, hy, 13 * dpr, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(180,127,255,.3)'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+
+  // Check if any vertex is on axis
+  const anyOnAxis = pts.some(p => isOnAxis(p, cx, cy));
+  document.getElementById('propOnAxis').style.display = anyOnAxis ? 'flex' : 'none';
+
+  // Update UI
+  document.getElementById('vertCount').textContent    = n;
+  document.getElementById('vertCountSym').textContent = n;
+}
+
+// ─────────────────────────────────────────
+// INTERACTION
+// ─────────────────────────────────────────
+function angleFromPointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  const dx   = (src.clientX - rect.left) * dpr - W / 2;
+  const dy   = (src.clientY - rect.top)  * dpr - H / 2;
+  let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+  if (deg < 0) deg += 180;
+  if (deg >= 180) deg -= 180;
+  return Math.round(deg);
+}
+
+function isNearHandle(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  const px   = (src.clientX - rect.left) * dpr;
+  const py   = (src.clientY - rect.top)  * dpr;
+  const cx = W / 2, cy = H / 2;
+  const a  = axisAngle * Math.PI / 180;
+  const axLen = Math.max(W, H) * 0.75;
+  const hx = cx + Math.cos(a) * axLen * 0.55;
+  const hy = cy + Math.sin(a) * axLen * 0.55;
+  return Math.hypot(px - hx, py - hy) < 24 * dpr;
+}
+
+canvas.addEventListener('mousedown', e => {
+  // Click anywhere on canvas to start rotating axis
+  draggingAxis = true;
+  canvas.style.cursor = 'grabbing';
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+  axisAngle = angleFromPointer(e);
+  syncSlider();
+  draw();
+});
+canvas.addEventListener('mousemove', e => {
+  if (!draggingAxis) {
+    canvas.style.cursor = 'grab';
+    return;
+  }
+  axisAngle = angleFromPointer(e);
+  syncSlider();
+  draw();
+});
+canvas.addEventListener('mouseup',    () => { draggingAxis = false; canvas.style.cursor = 'grab'; });
+canvas.addEventListener('mouseleave', () => { draggingAxis = false; });
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault(); draggingAxis = true;
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+  axisAngle = angleFromPointer(e); syncSlider(); draw();
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  if (!draggingAxis) return; e.preventDefault();
+  axisAngle = angleFromPointer(e); syncSlider(); draw();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { draggingAxis = false; });
+
+// Slider
+document.getElementById('axisSlider').addEventListener('input', function () {
+  axisAngle = +this.value;
+  document.getElementById('axisAngleVal').textContent = axisAngle + '°';
+  draw();
+});
+
+function syncSlider() {
+  document.getElementById('axisSlider').value = axisAngle;
+  document.getElementById('axisAngleVal').textContent = axisAngle + '°';
+}
+
+// ─────────────────────────────────────────
+// SHAPE SWITCHER
+// ─────────────────────────────────────────
+function setShape(name) {
+  shape = name;
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  event.target.closest('.shape-btn').classList.add('active');
+  draw();
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+canvas.style.cursor = 'grab';
+resize();
+syncSlider();
+</script>
+</body>
+</html>
