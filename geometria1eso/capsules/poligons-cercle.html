@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polígons regulars i el cercle · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --teal:    #48dbfb;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--yellow); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--yellow); background: rgba(245,200,66,.1); border: 1px solid rgba(245,200,66,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--yellow); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--yellow); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    /* SIDES SELECTOR */
+    .sides-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem;
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    }
+    .sides-label { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .sides-btns  { display: flex; gap: .45rem; flex-wrap: wrap; }
+    .side-btn {
+      min-width: 2.4rem; padding: .38rem .65rem; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Mono', monospace; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr); text-align: center;
+    }
+    .side-btn:hover { border-color: var(--yellow); color: var(--text); }
+    .side-btn.active {
+      border-color: var(--yellow); color: var(--yellow);
+      background: rgba(245,200,66,.1);
+      box-shadow: 0 0 12px rgba(245,200,66,.15);
+    }
+    .side-btn.many { border-color: var(--teal); color: var(--teal); background: rgba(72,219,251,.08); }
+    .side-btn.many:hover, .side-btn.many.active { border-color: var(--teal); color: var(--teal); background: rgba(72,219,251,.15); box-shadow: 0 0 12px rgba(72,219,251,.2); }
+
+    /* MAIN LAYOUT: two canvases side by side + panel */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 1fr 300px; gap: 1.25rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    .canvas-col { display: flex; flex-direction: column; gap: .75rem; }
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 1/1;
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+    .canvas-label {
+      position: absolute; top: .85rem; left: 50%; transform: translateX(-50%);
+      font-size: .72rem; font-weight: 500; text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); background: rgba(13,15,26,.7); backdrop-filter: blur(6px);
+      border: 1px solid var(--border); border-radius: 100px; padding: .2rem .75rem;
+      white-space: nowrap;
+    }
+
+    /* metric chips below each canvas */
+    .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .metric-chip {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: .6rem .8rem;
+    }
+    .metric-chip-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .2rem; }
+    .metric-chip-val   { font-family: 'DM Mono', monospace; font-size: .95rem; }
+    .metric-chip-sub   { font-family: 'DM Mono', monospace; font-size: .68rem; color: var(--muted); margin-top: .1rem; }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .info-head {
+      padding: .85rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .75rem; }
+
+    /* polygon name badge */
+    .poly-name-row { display: flex; align-items: center; gap: .75rem; }
+    .poly-name {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem;
+      color: var(--yellow); transition: color .3s;
+    }
+    .poly-sides-badge {
+      font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .09em;
+      background: rgba(245,200,66,.1); color: var(--yellow); border: 1px solid rgba(245,200,66,.25);
+      border-radius: 100px; padding: .18rem .65rem; transition: all .3s;
+    }
+
+    /* formula rows */
+    .formula-list { display: flex; flex-direction: column; gap: .5rem; }
+    .formula-row {
+      display: flex; align-items: flex-start; gap: .75rem;
+      padding: .6rem .85rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .formula-icon { font-size: .9rem; margin-top: .1rem; flex-shrink: 0; }
+    .formula-content { flex: 1; min-width: 0; }
+    .formula-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .2rem; }
+    .formula-expr  { font-family: 'DM Mono', monospace; font-size: .82rem; color: var(--text); line-height: 1.4; }
+    .formula-val   { font-family: 'DM Mono', monospace; font-size: .88rem; margin-top: .15rem; }
+
+    /* π comparison bar */
+    .pi-section { display: flex; flex-direction: column; gap: .65rem; }
+    .pi-label-row { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); }
+    .pi-bar-wrap { background: var(--surface); border-radius: 6px; height: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .pi-bar-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
+    .pi-val-row { display: flex; justify-content: space-between; align-items: center; }
+    .pi-approx { font-family: 'DM Mono', monospace; font-size: .85rem; }
+    .pi-real   { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); }
+
+    /* INSIGHTS */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p  { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 960px) {
+      .main-layout { grid-template-columns: 1fr 1fr; }
+      .side-panel  { grid-column: 1 / -1; }
+      .insights    { grid-template-columns: 1fr; }
+      nav, .page-header, .sides-bar, .main-layout, .insights { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+    @media (max-width: 580px) {
+      .main-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 02 · Figures</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Polígons regulars i el cercle</span>
+  </div>
+  <h1>Polígons regulars <em>i el cercle</em></h1>
+  <p>Un polígon regular té tots els costats iguals i tots els angles iguals. Quan augmenta el nombre de costats, el polígon s'assembla cada vegada més a un cercle — fins que, en el límit, <em>és</em> un cercle.</p>
+</div>
+
+<!-- SIDES SELECTOR -->
+<div class="sides-bar">
+  <span class="sides-label">Nombre de costats:</span>
+  <div class="sides-btns" id="sidesBar"></div>
+</div>
+
+<div class="main-layout">
+
+  <!-- POLYGON CANVAS -->
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="polyCanvas"></canvas>
+      <span class="canvas-label" id="polyLabel">Polígon</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric-chip">
+        <div class="metric-chip-label">Perímetre</div>
+        <div class="metric-chip-val" id="mPerim" style="color:var(--yellow)">—</div>
+        <div class="metric-chip-sub">n × costat</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-chip-label">Angle interior</div>
+        <div class="metric-chip-val" id="mAngle" style="color:var(--yellow)">—</div>
+        <div class="metric-chip-sub">(n−2)×180° / n</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIRCLE CANVAS -->
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="circCanvas"></canvas>
+      <span class="canvas-label">Cercle (radi r)</span>
+    </div>
+    <div class="metrics-row">
+      <div class="metric-chip">
+        <div class="metric-chip-label">Circumferència</div>
+        <div class="metric-chip-val" style="color:var(--teal)">2πr</div>
+        <div class="metric-chip-sub" id="mCirc">—</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-chip-label">Àrea del cercle</div>
+        <div class="metric-chip-val" style="color:var(--teal)">πr²</div>
+        <div class="metric-chip-sub" id="mAreaCirc">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <div class="info-box">
+      <div class="info-head">
+        <span class="info-head-icon">⬡</span>
+        <span class="info-head-title">Propietats del polígon</span>
+      </div>
+      <div class="info-body">
+        <div class="poly-name-row">
+          <span class="poly-name" id="polyName">Quadrilàter</span>
+          <span class="poly-sides-badge" id="polySidesBadge">4 costats</span>
+        </div>
+        <div class="formula-list">
+          <div class="formula-row">
+            <span class="formula-icon">📐</span>
+            <div class="formula-content">
+              <div class="formula-label">Angle interior</div>
+              <div class="formula-expr">(n − 2) × 180° / n</div>
+              <div class="formula-val" id="fAngle" style="color:var(--yellow)">—</div>
+            </div>
+          </div>
+          <div class="formula-row">
+            <span class="formula-icon">📏</span>
+            <div class="formula-content">
+              <div class="formula-label">Perímetre (costat = r)</div>
+              <div class="formula-expr">n × 2r·sin(π/n)</div>
+              <div class="formula-val" id="fPerim" style="color:var(--yellow)">—</div>
+            </div>
+          </div>
+          <div class="formula-row">
+            <span class="formula-icon">⬛</span>
+            <div class="formula-content">
+              <div class="formula-label">Àrea</div>
+              <div class="formula-expr">½ · n · r² · sin(2π/n)</div>
+              <div class="formula-val" id="fArea" style="color:var(--yellow)">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-head">
+        <span class="info-head-icon">π</span>
+        <span class="info-head-title">Aproximació a π</span>
+      </div>
+      <div class="info-body">
+        <div class="pi-section">
+          <p style="font-size:.78rem;color:var(--muted);line-height:1.55">
+            El perímetre del polígon inscrit dividit pel diàmetre s'aproxima a π quan n creix.
+          </p>
+          <div class="pi-label-row">
+            <span>Perim / (2r)</span>
+            <span id="piApproxLabel">—</span>
+          </div>
+          <div class="pi-bar-wrap">
+            <div class="pi-bar-fill" id="piBarFill" style="width:0%;background:var(--yellow)"></div>
+          </div>
+          <div class="pi-val-row">
+            <span class="pi-approx" id="piApprox" style="color:var(--yellow)">—</span>
+            <span class="pi-real">π = 3.14159…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">∞</span>
+    <div class="insight-text">
+      <h4>El cercle com a límit</h4>
+      <p>Un polígon regular de n costats s'assembla cada vegada més a un cercle quan n tendeix a infinit. El cercle és, en certa manera, un polígon de infinits costats iguals.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">π</span>
+    <div class="insight-text">
+      <h4>Com s'aproxima π</h4>
+      <p>Arquímedes va usar polígons de fins a 96 costats per demostrar que π es troba entre 3,1408 i 3,1429. Va ser la millor aproximació de l'antiguitat.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⬡</span>
+    <div class="insight-text">
+      <h4>Polígons a la natura</h4>
+      <p>Els brescs de les abelles són hexàgons regulars perquè maximitzen l'àrea amb el mínim de cera. L'hexàgon regular és el polígon que millor emplena l'espai pla.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 02 · Figures i Cossos</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const POLY_NAMES = {
+  3:'Triangle equilàter', 4:'Quadrat', 5:'Pentàgon', 6:'Hexàgon',
+  7:'Heptàgon', 8:'Octàgon', 9:'Ennàgon', 10:'Decàgon',
+  12:'Dodecàgon', 16:'Hexadecàgon', 32:'32 costats', 64:'64 costats', 96:'96 costats',
+};
+const SIDES_LIST = [3,4,5,6,7,8,9,10,12,16,32,64,96];
+const COL_POLY  = '#f5c842';
+const COL_CIRC  = '#48dbfb';
+
+let nSides = 6;
+let dpr    = devicePixelRatio;
+
+// ─────────────────────────────────────────
+// BUILD SIDES BAR
+// ─────────────────────────────────────────
+function buildBar() {
+  const bar = document.getElementById('sidesBar');
+  bar.innerHTML = SIDES_LIST.map(n => {
+    const many = n >= 16;
+    return `<button class="side-btn${n===nSides?' active':''}${many?' many':''}"
+      onclick="setSides(${n})">${n}</button>`;
+  }).join('');
+}
+
+function setSides(n) {
+  nSides = n;
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.side-btn').forEach(b => {
+    if (+b.textContent === n) b.classList.add('active');
+  });
+  drawAll();
+  updatePanel();
+}
+
+// ─────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────
+function setupCanvas(id) {
+  const wrap = document.getElementById(id).parentElement;
+  const c    = document.getElementById(id);
+  const rect = wrap.getBoundingClientRect();
+  c.width  = rect.width  * dpr;
+  c.height = rect.height * dpr;
+  c.style.width  = rect.width  + 'px';
+  c.style.height = rect.height + 'px';
+  return c;
+}
+
+function resizeAll() {
+  dpr = devicePixelRatio;
+  setupCanvas('polyCanvas');
+  setupCanvas('circCanvas');
+  drawAll();
+}
+window.addEventListener('resize', resizeAll);
+
+// ─────────────────────────────────────────
+// GEOMETRY
+// ─────────────────────────────────────────
+function polyVertices(cx, cy, r, n, rotOffset) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = rotOffset + (2 * Math.PI * i) / n;
+    pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+  }
+  return pts;
+}
+
+// ─────────────────────────────────────────
+// DRAW HELPERS
+// ─────────────────────────────────────────
+function drawGrid(ctx, W, H) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W/8) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H/8) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+}
+
+// ─────────────────────────────────────────
+// POLYGON CANVAS
+// ─────────────────────────────────────────
+function drawPolygon() {
+  const c   = document.getElementById('polyCanvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(ctx, W, H);
+
+  const cx = W/2, cy = H/2;
+  const r  = Math.min(W, H) * 0.37;
+  const n  = nSides;
+  const rot = -Math.PI/2 + (n%2===0 && n!==4 ? Math.PI/n : 0);
+  const pts = polyVertices(cx, cy, r, n, rot);
+
+  // Circumscribed circle (ghost)
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(245,200,66,.15)'; ctx.lineWidth = 1.5*dpr;
+  ctx.setLineDash([5*dpr, 4*dpr]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  // Apothem lines (subtle)
+  if (n <= 12) {
+    pts.forEach((p, i) => {
+      const p2 = pts[(i+1) % n];
+      const mx = (p.x + p2.x)/2, my = (p.y + p2.y)/2;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(mx, my);
+      ctx.strokeStyle = 'rgba(245,200,66,.12)'; ctx.lineWidth = 1*dpr;
+      ctx.setLineDash([4*dpr, 4*dpr]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    });
+  }
+
+  // Centre dot
+  ctx.beginPath(); ctx.arc(cx, cy, 3.5*dpr, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(245,200,66,.4)'; ctx.fill();
+
+  // Polygon fill
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.closePath();
+  ctx.fillStyle = COL_POLY + '14'; ctx.fill();
+  ctx.strokeStyle = COL_POLY; ctx.lineWidth = 2.5*dpr;
+  ctx.shadowColor = COL_POLY; ctx.shadowBlur = n >= 32 ? 14 : 8;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Vertices (only if n ≤ 12)
+  if (n <= 12) {
+    pts.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, 4.5*dpr, 0, Math.PI*2);
+      ctx.fillStyle = COL_POLY; ctx.shadowColor = COL_POLY; ctx.shadowBlur = 8;
+      ctx.fill(); ctx.shadowBlur = 0;
+    });
+  }
+
+  // Angle arc at first vertex (only if n ≤ 10)
+  if (n <= 10) {
+    const P0 = pts[0], P1 = pts[1], Pm = pts[n-1];
+    const a1 = Math.atan2(P1.y-P0.y, P1.x-P0.x);
+    const a2 = Math.atan2(Pm.y-P0.y, Pm.x-P0.x);
+    const arcR = 18*dpr;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(P0.x, P0.y);
+    ctx.arc(P0.x, P0.y, arcR, a1, a2, false);
+    ctx.closePath();
+    ctx.fillStyle = COL_POLY + '30'; ctx.fill();
+    ctx.beginPath(); ctx.arc(P0.x, P0.y, arcR, a1, a2, false);
+    ctx.strokeStyle = COL_POLY + 'aa'; ctx.lineWidth = 1.5*dpr; ctx.stroke(); ctx.restore();
+  }
+
+  // Side label (just one side, if n ≤ 12)
+  if (n <= 12) {
+    const P0 = pts[0], P1 = pts[1];
+    const mx = (P0.x+P1.x)/2, my = (P0.y+P1.y)/2;
+    const dx = P1.x-P0.x, dy = P1.y-P0.y, len = Math.hypot(dx,dy);
+    const nx = -dy/len*18*dpr, ny = dx/len*18*dpr;
+    ctx.save();
+    ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+    ctx.fillStyle = COL_POLY; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor=COL_POLY; ctx.shadowBlur=5;
+    ctx.fillText('costat', mx+nx, my+ny);
+    ctx.shadowBlur=0; ctx.restore();
+  }
+
+  // Update label
+  document.getElementById('polyLabel').textContent = POLY_NAMES[n] || `Polígon de ${n} costats`;
+}
+
+// ─────────────────────────────────────────
+// CIRCLE CANVAS
+// ─────────────────────────────────────────
+function drawCircle() {
+  const c   = document.getElementById('circCanvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(ctx, W, H);
+
+  const cx = W/2, cy = H/2;
+  const r  = Math.min(W, H) * 0.37;
+
+  // Inscribed polygon overlay (ghost, same n)
+  const n   = nSides;
+  const rot = -Math.PI/2 + (n%2===0 && n!==4 ? Math.PI/n : 0);
+  const pts = polyVertices(cx, cy, r, n, rot);
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.closePath();
+  ctx.strokeStyle = COL_POLY + '30'; ctx.lineWidth = 1.5*dpr;
+  ctx.setLineDash([4*dpr,3*dpr]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+  // Radii lines
+  ctx.save();
+  ctx.strokeStyle = 'rgba(72,219,251,.12)'; ctx.lineWidth = 1*dpr;
+  for (let a = 0; a < Math.PI*2; a += Math.PI/6) {
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a)); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Diameter line
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(cx-r, cy); ctx.lineTo(cx+r, cy);
+  ctx.strokeStyle = 'rgba(72,219,251,.25)'; ctx.lineWidth = 1.5*dpr;
+  ctx.setLineDash([6*dpr,4*dpr]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  // diameter label
+  ctx.save();
+  ctx.font = `${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(72,219,251,.5)'; ctx.textAlign='center';
+  ctx.fillText('2r', cx, cy - 8*dpr); ctx.restore();
+
+  // Radius label
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy-r);
+  ctx.strokeStyle = COL_CIRC+'66'; ctx.lineWidth=1.5*dpr; ctx.stroke();
+  ctx.font=`bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle=COL_CIRC; ctx.textAlign='left';
+  ctx.shadowColor=COL_CIRC; ctx.shadowBlur=5;
+  ctx.fillText('r', cx+7*dpr, cy-r/2); ctx.shadowBlur=0; ctx.restore();
+
+  // Circle fill
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = COL_CIRC + '10'; ctx.fill();
+  ctx.strokeStyle = COL_CIRC; ctx.lineWidth = 2.5*dpr;
+  ctx.shadowColor = COL_CIRC; ctx.shadowBlur = 14;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Centre
+  ctx.beginPath(); ctx.arc(cx, cy, 4*dpr, 0, Math.PI*2);
+  ctx.fillStyle = COL_CIRC; ctx.shadowColor = COL_CIRC; ctx.shadowBlur=10;
+  ctx.fill(); ctx.shadowBlur=0;
+
+  // Circumference arc progress (animated = proportional to n as approx)
+  // shows how perimeter/circumference ratio progresses
+  const ratio = Math.min(1, (n * Math.sin(Math.PI/n)) / Math.PI);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r*1.08, -Math.PI/2, -Math.PI/2 + ratio*2*Math.PI);
+  ctx.strokeStyle = COL_POLY; ctx.lineWidth = 3*dpr;
+  ctx.shadowColor = COL_POLY; ctx.shadowBlur = 8;
+  ctx.lineCap = 'round'; ctx.stroke(); ctx.shadowBlur=0; ctx.restore();
+
+  // Update circle metrics
+  const R = 1; // unit radius
+  document.getElementById('mCirc').textContent    = `≈ ${(2*Math.PI*R).toFixed(4)}`;
+  document.getElementById('mAreaCirc').textContent = `≈ ${(Math.PI*R*R).toFixed(4)}`;
+}
+
+// ─────────────────────────────────────────
+// PANEL UPDATE
+// ─────────────────────────────────────────
+function updatePanel() {
+  const n = nSides;
+  const r = 1; // unit radius
+  const angleInt = (n-2)*180/n;
+  const perim    = n * 2 * r * Math.sin(Math.PI/n);
+  const area     = 0.5 * n * r*r * Math.sin(2*Math.PI/n);
+  const piApprox = perim / (2*r);   // = n·sin(π/n)
+
+  document.getElementById('polyName').textContent       = POLY_NAMES[n] || `Polígon de ${n} costats`;
+  document.getElementById('polySidesBadge').textContent = `${n} costats`;
+  document.getElementById('mAngle').textContent         = angleInt.toFixed(2) + '°';
+  document.getElementById('mPerim').textContent         = perim.toFixed(4);
+  document.getElementById('fAngle').textContent         = angleInt.toFixed(2) + '°';
+  document.getElementById('fPerim').textContent         = perim.toFixed(4) + ' (r=1)';
+  document.getElementById('fArea').textContent          = area.toFixed(4) + ' (r=1)';
+
+  // π approximation
+  const pct = Math.min(100, (piApprox / Math.PI) * 100);
+  document.getElementById('piBarFill').style.width = pct + '%';
+  // colour bar: yellow → teal as it gets closer
+  const t = Math.min(1, (pct-50)/50);
+  document.getElementById('piBarFill').style.background = t > 0.9 ? COL_CIRC : COL_POLY;
+  document.getElementById('piApprox').textContent      = piApprox.toFixed(5);
+  document.getElementById('piApproxLabel').textContent = piApprox.toFixed(5);
+
+  // many-sides colour for badge
+  const isMany = n >= 16;
+  const col = isMany ? 'var(--teal)' : 'var(--yellow)';
+  document.getElementById('polyName').style.color = col;
+  document.getElementById('polySidesBadge').style.color = col;
+  document.getElementById('polySidesBadge').style.background = isMany ? 'rgba(72,219,251,.1)' : 'rgba(245,200,66,.1)';
+  document.getElementById('polySidesBadge').style.borderColor = isMany ? 'rgba(72,219,251,.25)' : 'rgba(245,200,66,.25)';
+  document.getElementById('fAngle').style.color = col;
+  document.getElementById('fPerim').style.color  = col;
+  document.getElementById('fArea').style.color   = col;
+  document.getElementById('mAngle').style.color  = col;
+  document.getElementById('mPerim').style.color  = col;
+  document.getElementById('piApprox').style.color = isMany ? COL_CIRC : COL_POLY;
+}
+
+// ─────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────
+function drawAll() { drawPolygon(); drawCircle(); }
+
+buildBar();
+resizeAll();
+updatePanel();
+</script>
+</body>
+</html>
