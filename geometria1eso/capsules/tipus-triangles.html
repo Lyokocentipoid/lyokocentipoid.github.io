@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tipus de triangles · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--yellow); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--yellow); background: rgba(245,200,66,.1); border: 1px solid rgba(245,200,66,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--yellow); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--yellow); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 600px; }
+
+    /* MAIN LAYOUT */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* CANVAS */
+    .canvas-col { display: flex; flex-direction: column; gap: 1.25rem; }
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 4/3; cursor: default;
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; }
+    .canvas-hint {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted);
+      background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: .3rem 1rem; pointer-events: none; white-space: nowrap; transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* CLASSIFICATION BADGE */
+    .classif-badge {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.1rem 1.5rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      transition: border-color var(--tr);
+    }
+    .classif-item { display: flex; flex-direction: column; gap: .25rem; }
+    .classif-axis {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+    }
+    .classif-value {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.15rem;
+      transition: color .2s;
+    }
+    .classif-rule {
+      font-family: 'DM Mono', monospace; font-size: .75rem;
+      padding: .18rem .55rem; border-radius: 6px; display: inline-block; margin-top: .1rem;
+      transition: all .2s;
+    }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .axis-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .axis-head {
+      padding: .85rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .axis-head-icon { font-size: 1rem; }
+    .axis-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .axis-head-sub { font-size: .75rem; color: var(--muted); margin-left: auto; }
+
+    .type-list { padding: .75rem; display: flex; flex-direction: column; gap: .5rem; }
+
+    .type-btn {
+      display: flex; align-items: center; gap: .85rem;
+      padding: .75rem 1rem; border-radius: 10px;
+      border: 1px solid var(--border); background: transparent;
+      cursor: pointer; transition: all var(--tr); text-align: left; width: 100%;
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+    }
+    .type-btn:hover { border-color: var(--t-color); background: color-mix(in srgb, var(--t-color) 6%, transparent); }
+    .type-btn.active {
+      border-color: var(--t-color);
+      background: color-mix(in srgb, var(--t-color) 10%, var(--card));
+      box-shadow: 0 0 16px color-mix(in srgb, var(--t-color) 15%, transparent);
+    }
+    .type-mini-canvas { flex-shrink: 0; }
+    .type-info { flex: 1; min-width: 0; }
+    .type-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .15rem; }
+    .type-desc { font-size: .74rem; color: var(--muted); line-height: 1.4; }
+
+    /* INSIGHTS */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 02 · Figures</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Tipus de triangles</span>
+  </div>
+  <h1>Tipus de <em>triangles</em></h1>
+  <p>Arrossega els vèrtexs per explorar com canvia la classificació. Cada triangle es descriu alhora pels seus <strong>costats</strong> i pels seus <strong>angles</strong>.</p>
+</div>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-col">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mainCanvas"></canvas>
+      <div class="canvas-hint" id="hint">Arrossega un vèrtex per deformar el triangle</div>
+    </div>
+
+    <!-- Doble badge de classificació -->
+    <div class="classif-badge" id="classifBadge">
+      <div class="classif-item">
+        <span class="classif-axis">Per costats</span>
+        <span class="classif-value" id="sideLabel" style="color:var(--yellow)">—</span>
+        <span class="classif-rule" id="sideRule"></span>
+      </div>
+      <div class="classif-item">
+        <span class="classif-axis">Per angles</span>
+        <span class="classif-value" id="angleLabel" style="color:var(--coral)">—</span>
+        <span class="classif-rule" id="angleRule"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="side-panel">
+
+    <!-- Per costats -->
+    <div class="axis-box">
+      <div class="axis-head">
+        <span class="axis-head-icon">📏</span>
+        <span class="axis-head-title">Per costats</span>
+        <span class="axis-head-sub">3 tipus</span>
+      </div>
+      <div class="type-list" id="sideList">
+        <button class="type-btn" id="btn-equilater" style="--t-color:var(--yellow)" onclick="snapTo('equilater')">
+          <canvas class="type-mini-canvas" id="mini-equilater" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Equilàter</div>
+            <div class="type-desc">Els tres costats iguals. Els tres angles de 60°.</div>
+          </div>
+        </button>
+        <button class="type-btn" id="btn-isosceles" style="--t-color:var(--blue)" onclick="snapTo('isosceles')">
+          <canvas class="type-mini-canvas" id="mini-isosceles" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Isòsceles</div>
+            <div class="type-desc">Dos costats iguals. Angles de la base iguals.</div>
+          </div>
+        </button>
+        <button class="type-btn" id="btn-escalene" style="--t-color:var(--purple)" onclick="snapTo('escalene')">
+          <canvas class="type-mini-canvas" id="mini-escalene" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Escalè</div>
+            <div class="type-desc">Els tres costats de diferent longitud.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Per angles -->
+    <div class="axis-box">
+      <div class="axis-head">
+        <span class="axis-head-icon">📐</span>
+        <span class="axis-head-title">Per angles</span>
+        <span class="axis-head-sub">3 tipus</span>
+      </div>
+      <div class="type-list" id="angleList">
+        <button class="type-btn" id="btn-acutangle" style="--t-color:var(--green)" onclick="snapTo('acutangle')">
+          <canvas class="type-mini-canvas" id="mini-acutangle" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Acutangle</div>
+            <div class="type-desc">Els tres angles menors de 90°.</div>
+          </div>
+        </button>
+        <button class="type-btn" id="btn-rectangle" style="--t-color:var(--coral)" onclick="snapTo('rectangle')">
+          <canvas class="type-mini-canvas" id="mini-rectangle" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Rectangle</div>
+            <div class="type-desc">Un angle de 90°. Teorema de Pitàgores.</div>
+          </div>
+        </button>
+        <button class="type-btn" id="btn-obtusangle" style="--t-color:var(--orange, #ff9f43)" onclick="snapTo('obtusangle')" style="--t-color:#ff9f43">
+          <canvas class="type-mini-canvas" id="mini-obtusangle" width="52" height="44"></canvas>
+          <div class="type-info">
+            <div class="type-name">Obtusangle</div>
+            <div class="type-desc">Un angle major de 90°.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🔗</span>
+    <div class="insight-text">
+      <h4>Combinació dels dos eixos</h4>
+      <p>No totes les combinacions són possibles. Un triangle equilàter sempre és acutangle. Un triangle rectangle mai pot ser equilàter.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">∑</span>
+    <div class="insight-text">
+      <h4>Sempre 180°</h4>
+      <p>La suma dels tres angles interiors d'un triangle és sempre 180°, sigui quin sigui el tipus. Prova-ho deformant el triangle.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⊿</span>
+    <div class="insight-text">
+      <h4>El triangle rectangle</h4>
+      <p>És l'únic tipus que compleix el teorema de Pitàgores: a² + b² = c², on c és la hipotenusa (el costat oposat a l'angle recte).</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 02 · Figures i Cossos</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// CONSTANTS & COLORS
+// ─────────────────────────────────────────
+const COL = {
+  equilater:  '#f5c842',
+  isosceles:  '#3d8bff',
+  escalene:   '#b47fff',
+  acutangle:  '#3dffa0',
+  rectangle:  '#ff5f6d',
+  obtusangle: '#ff9f43',
+};
+
+// Preset vertices (normalized 0..1 relative to canvas W/H)
+const PRESETS = {
+  equilater:  [ [.5, .15], [.18, .82], [.82, .82] ],
+  isosceles:  [ [.5, .12], [.2,  .85], [.8,  .85] ],
+  escalene:   [ [.35, .15], [.12, .82], [.78, .75] ],
+  acutangle:  [ [.5, .18], [.15, .80], [.85, .78] ],
+  rectangle:  [ [.22, .22], [.22, .82], [.78, .82] ],
+  obtusangle: [ [.1, .72], [.9, .72], [.72, .22] ],
+};
+
+// ─────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+let W, H, dpr;
+let vertices = [];   // [{x, y}] in canvas px
+let dragIdx  = -1;
+let hinted   = false;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  dpr = devicePixelRatio;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  if (vertices.length === 0) applyPreset('isosceles');
+  else draw();
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────
+// GEOMETRY HELPERS
+// ─────────────────────────────────────────
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function angleDeg(A, B, C) {
+  // angle at B
+  const ax = A.x - B.x, ay = A.y - B.y;
+  const cx = C.x - B.x, cy = C.y - B.y;
+  const dot = ax*cx + ay*cy;
+  const mag = Math.hypot(ax, ay) * Math.hypot(cx, cy);
+  return Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180 / Math.PI;
+}
+
+function classify() {
+  const [A, B, C] = vertices;
+  const ab = dist(A, B), bc = dist(B, C), ca = dist(C, A);
+  const aA = angleDeg(B, A, C);
+  const aB = angleDeg(A, B, C);
+  const aC = angleDeg(B, C, A);
+  const EPS_SIDE  = 0.04;   // tolerance fraction for equal sides
+  const EPS_ANGLE = 1.5;    // degrees tolerance for right angle
+
+  // By sides
+  const ab_bc = Math.abs(ab - bc) / Math.max(ab, bc) < EPS_SIDE;
+  const bc_ca = Math.abs(bc - ca) / Math.max(bc, ca) < EPS_SIDE;
+  const ab_ca = Math.abs(ab - ca) / Math.max(ab, ca) < EPS_SIDE;
+  let sideType, sideRule;
+  if (ab_bc && bc_ca) {
+    sideType = 'equilater'; sideRule = 'a = b = c';
+  } else if (ab_bc || bc_ca || ab_ca) {
+    sideType = 'isosceles'; sideRule = 'a = b ≠ c';
+  } else {
+    sideType = 'escalene'; sideRule = 'a ≠ b ≠ c';
+  }
+
+  // By angles
+  const angles = [aA, aB, aC];
+  const maxA = Math.max(...angles);
+  let angleType, angleRule;
+  if (Math.abs(maxA - 90) < EPS_ANGLE) {
+    angleType = 'rectangle'; angleRule = 'màx angle = 90°';
+  } else if (maxA > 90) {
+    angleType = 'obtusangle'; angleRule = 'màx angle > 90°';
+  } else {
+    angleType = 'acutangle'; angleRule = 'tots els angles < 90°';
+  }
+
+  return { sideType, sideRule, angleType, angleRule, angles: [aA, aB, aC], sides: [ab, bc, ca] };
+}
+
+// ─────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W/8) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H/6) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+
+  if (vertices.length < 3) return;
+  const cl = classify();
+  const [A, B, C] = vertices;
+
+  const sCol = COL[cl.sideType];
+  const aCol = COL[cl.angleType];
+
+  // Fill
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.closePath();
+  const grad = ctx.createLinearGradient(A.x, A.y, C.x, C.y);
+  grad.addColorStop(0, sCol + '18');
+  grad.addColorStop(1, aCol + '18');
+  ctx.fillStyle = grad; ctx.fill(); ctx.restore();
+
+  // Angle arcs
+  [[A,B,C],[B,A,C],[C,A,B]].forEach(([P, O, Q], i) => {
+    const a1 = Math.atan2(P.y - O.y, P.x - O.x);
+    const a2 = Math.atan2(Q.y - O.y, Q.x - O.x);
+    const arcR = 22 * dpr;
+    const ang  = cl.angles[i];
+    const isRight = Math.abs(ang - 90) < 1.5;
+
+    if (isRight) {
+      // Square corner
+      const s = 14 * dpr;
+      const d1x = Math.cos(a1), d1y = Math.sin(a1);
+      const d2x = Math.cos(a2), d2y = Math.sin(a2);
+      ctx.save(); ctx.strokeStyle = aCol; ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(O.x + d1x*s, O.y + d1y*s);
+      ctx.lineTo(O.x + d1x*s + d2x*s, O.y + d1y*s + d2y*s);
+      ctx.lineTo(O.x + d2x*s, O.y + d2y*s);
+      ctx.stroke(); ctx.restore();
+    } else {
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(O.x, O.y);
+      ctx.arc(O.x, O.y, arcR, a1, a2, false);
+      ctx.closePath();
+      ctx.fillStyle = aCol + '28'; ctx.fill();
+      ctx.beginPath(); ctx.arc(O.x, O.y, arcR, a1, a2, false);
+      ctx.strokeStyle = aCol + 'aa'; ctx.lineWidth = 1.5 * dpr;
+      ctx.stroke(); ctx.restore();
+    }
+
+    // Angle label
+    const midA = (a1 + a2) / 2;
+    const lR = arcR + 18 * dpr;
+    ctx.save();
+    ctx.font = `bold ${11 * dpr}px 'DM Mono', monospace`;
+    ctx.fillStyle = aCol; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = aCol; ctx.shadowBlur = 4;
+    ctx.fillText(Math.round(ang) + '°', O.x + Math.cos(midA)*lR, O.y + Math.sin(midA)*lR);
+    ctx.shadowBlur = 0; ctx.restore();
+  });
+
+  // Side tick marks (equal sides) and labels
+  const pairs = [[A,B,0],[B,C,1],[C,A,2]];
+  const sides = cl.sides;
+  const maxS = Math.max(...sides);
+  const counts = [0,0,0];
+  // Map equal groups
+  const EPS = 0.04;
+  const grp = [0,1,2].map(() => -1);
+  let g = 0;
+  for (let i = 0; i < 3; i++) {
+    if (grp[i] >= 0) continue;
+    grp[i] = g;
+    for (let j = i+1; j < 3; j++) {
+      if (Math.abs(sides[i] - sides[j]) / Math.max(sides[i], sides[j]) < EPS) grp[j] = g;
+    }
+    g++;
+  }
+
+  pairs.forEach(([P, Q, idx]) => {
+    const mx = (P.x + Q.x) / 2, my = (P.y + Q.y) / 2;
+    const norm = Math.hypot(Q.x - P.x, Q.y - P.y);
+    const nx = -(Q.y - P.y) / norm * 16 * dpr;
+    const ny = (Q.x - P.x)  / norm * 16 * dpr;
+
+    // Tick marks for equal sides
+    const ticks = [0,1,2].filter(j => grp[j] === grp[idx] && j !== idx).length + 1;
+    if (ticks > 1 || cl.sideType === 'equilater') {
+      for (let k = 0; k < ticks; k++) {
+        const off = (k - (ticks-1)/2) * 7 * dpr;
+        const tdx = (Q.x-P.x)/norm * off, tdy = (Q.y-P.y)/norm * off;
+        const tx1 = mx + tdx + nx*0.5, ty1 = my + tdy + ny*0.5;
+        const tx2 = mx + tdx - nx*0.5, ty2 = my + tdy - ny*0.5;
+        ctx.save(); ctx.beginPath(); ctx.moveTo(tx1,ty1); ctx.lineTo(tx2,ty2);
+        ctx.strokeStyle = sCol; ctx.lineWidth = 2.5 * dpr;
+        ctx.shadowColor = sCol; ctx.shadowBlur = 4;
+        ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+      }
+    }
+  });
+
+  // Edges
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y); ctx.closePath();
+  ctx.strokeStyle = sCol; ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = sCol; ctx.shadowBlur = 8;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Vertex dots
+  vertices.forEach((v, i) => {
+    ctx.beginPath(); ctx.arc(v.x, v.y, 7 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = sCol; ctx.shadowColor = sCol; ctx.shadowBlur = 14;
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(v.x, v.y, 10 * dpr, 0, Math.PI * 2);
+    ctx.strokeStyle = sCol + '44'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+  });
+
+  updateUI(cl);
+  updateSideButtons(cl);
+}
+
+// ─────────────────────────────────────────
+// UI UPDATE
+// ─────────────────────────────────────────
+const SIDE_NAMES  = { equilater:'Equilàter', isosceles:'Isòsceles', escalene:'Escalè' };
+const ANGLE_NAMES = { acutangle:'Acutangle', rectangle:'Rectangle', obtusangle:'Obtusangle' };
+
+function updateUI(cl) {
+  const sEl = document.getElementById('sideLabel');
+  const aEl = document.getElementById('angleLabel');
+  sEl.textContent = SIDE_NAMES[cl.sideType];
+  sEl.style.color = COL[cl.sideType];
+  document.getElementById('sideRule').textContent  = cl.sideRule;
+  document.getElementById('sideRule').style.background = COL[cl.sideType] + '18';
+  document.getElementById('sideRule').style.color = COL[cl.sideType];
+
+  aEl.textContent = ANGLE_NAMES[cl.angleType];
+  aEl.style.color = COL[cl.angleType];
+  document.getElementById('angleRule').textContent  = cl.angleRule;
+  document.getElementById('angleRule').style.background = COL[cl.angleType] + '18';
+  document.getElementById('angleRule').style.color = COL[cl.angleType];
+}
+
+function updateSideButtons(cl) {
+  ['equilater','isosceles','escalene'].forEach(t => {
+    document.getElementById('btn-' + t).classList.toggle('active', t === cl.sideType);
+  });
+  ['acutangle','rectangle','obtusangle'].forEach(t => {
+    document.getElementById('btn-' + t).classList.toggle('active', t === cl.angleType);
+  });
+}
+
+// ─────────────────────────────────────────
+// PRESET SNAP
+// ─────────────────────────────────────────
+function applyPreset(name) {
+  const pts = PRESETS[name];
+  vertices = pts.map(([rx, ry]) => ({ x: rx * W, y: ry * H }));
+  draw();
+}
+
+function snapTo(name) {
+  applyPreset(name);
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+}
+
+// ─────────────────────────────────────────
+// DRAG
+// ─────────────────────────────────────────
+function pointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - rect.left)  * dpr,
+    y: (src.clientY - rect.top)   * dpr,
+  };
+}
+function nearestV(px, py) {
+  let best = -1, bestD = 28 * dpr;
+  vertices.forEach((v, i) => {
+    const d = Math.hypot(v.x - px, v.y - py);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const {x,y} = pointerPos(e);
+  dragIdx = nearestV(x, y);
+  if (dragIdx >= 0) { canvas.style.cursor = 'grabbing'; }
+  if (!hinted && dragIdx >= 0) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+});
+canvas.addEventListener('mousemove', e => {
+  if (dragIdx < 0) { canvas.style.cursor = nearestV(...Object.values(pointerPos(e))) >= 0 ? 'grab' : 'default'; return; }
+  const {x,y} = pointerPos(e);
+  const margin = 12 * dpr;
+  vertices[dragIdx] = { x: Math.max(margin, Math.min(W - margin, x)), y: Math.max(margin, Math.min(H - margin, y)) };
+  draw();
+});
+canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = 'default'; });
+canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const {x,y} = pointerPos(e);
+  dragIdx = nearestV(x, y);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  if (dragIdx < 0) return; e.preventDefault();
+  const {x,y} = pointerPos(e);
+  const margin = 12 * dpr;
+  vertices[dragIdx] = { x: Math.max(margin, Math.min(W - margin, x)), y: Math.max(margin, Math.min(H - margin, y)) };
+  draw();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { dragIdx = -1; });
+
+// ─────────────────────────────────────────
+// MINI CANVASES (thumbnails)
+// ─────────────────────────────────────────
+const MINI_SHAPES = {
+  equilater:  [ [.5,.08], [.08,.88], [.92,.88] ],
+  isosceles:  [ [.5,.06], [.1,.90], [.9,.90]   ],
+  escalene:   [ [.3,.10], [.05,.88], [.88,.78]  ],
+  acutangle:  [ [.5,.10], [.08,.86], [.92,.82]  ],
+  rectangle:  [ [.1,.1],  [.1,.88],  [.9,.88]   ],
+  obtusangle: [ [.02,.75],[.98,.75], [.78,.1]    ],
+};
+
+function drawMini(id, name, strokeCol) {
+  const c = document.getElementById('mini-' + id);
+  if (!c) return;
+  const cx = c.getContext('2d');
+  const w = c.width, h = c.height;
+  cx.clearRect(0,0,w,h);
+  const pts = MINI_SHAPES[name].map(([rx,ry]) => [rx*w, ry*h]);
+  cx.beginPath(); cx.moveTo(...pts[0]); cx.lineTo(...pts[1]); cx.lineTo(...pts[2]); cx.closePath();
+  cx.fillStyle = strokeCol + '18'; cx.fill();
+  cx.strokeStyle = strokeCol; cx.lineWidth = 2; cx.stroke();
+  // right angle mark for rectangle
+  if (name === 'rectangle') {
+    const s = 7;
+    cx.strokeStyle = strokeCol; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.moveTo(pts[1][0]+s, pts[1][1]); cx.lineTo(pts[1][0]+s, pts[1][1]-s); cx.lineTo(pts[1][0], pts[1][1]-s); cx.stroke();
+  }
+}
+
+Object.entries({ equilater: COL.equilater, isosceles: COL.isosceles, escalene: COL.escalene,
+                 acutangle: COL.acutangle, rectangle: COL.rectangle, obtusangle: COL.obtusangle
+}).forEach(([k, col]) => drawMini(k, k, col));
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+resize();
+</script>
+</body>
+</html>
