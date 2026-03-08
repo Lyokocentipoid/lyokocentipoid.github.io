@@ -543,16 +543,18 @@ const FITXA_NOM       = '1ESO_Proporcionalitat_Fitxa2';
 const _startTime = Date.now();
 const _primeres_respostes = {};
 
-function _registrarPrimeraResposta(idxGlobal, valor) {
+function _registrarPrimeraResposta(idxGlobal, valor, correcta) {
   if (!(idxGlobal in _primeres_respostes)) {
-    _primeres_respostes[idxGlobal] = valor;
+    _primeres_respostes[idxGlobal] = { valor, correcta };
   }
 }
 
 function _enviarRegistre(nom, puntuacio, total) {
-  const respostes = Array.from({ length: total }, (_, i) =>
-    _primeres_respostes[i] !== undefined ? String(_primeres_respostes[i]) : ''
-  );
+  const respostes = Array.from({ length: total }, (_, i) => {
+    const r = _primeres_respostes[i];
+    if (!r) return '';
+    return (r.correcta ? '✓ ' : '✗ ') + r.valor;
+  });
   const payload = {
     fitxa:              FITXA_NOM,
     timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
@@ -963,7 +965,9 @@ function checkAnswers() {
     const card = document.getElementById('card' + i);
     const hint = document.getElementById('hint' + i);
     const idxGlobal = roundIdx * PER + i;
-    _registrarPrimeraResposta(idxGlobal, inp.value.trim());
+    const esCorrecta = !isNaN(parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''))) &&
+  Math.abs(parseFloat(inp.value.replace(',', '.').replace(/\s/g, '')) - ex.answer) <= TOL;
+_registrarPrimeraResposta(idxGlobal, inp.value.trim(), esCorrecta);
     const val  = parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''));
 
     if (isNaN(val)) {
