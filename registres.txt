@@ -1,0 +1,61 @@
+El que cal fer per a CADA FITXA NOVA
+Canvi 1 — Afegeix el mòdul al principi del <script>
+
+// ═══════════════════════════════════════════════════════════════
+// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = 'NOM_DE_LA_FITXA'; // ← canvia això: serà el nom de la pestanya al Sheets
+
+const _startTime = Date.now();
+const _primeres_respostes = {};
+
+function _registrarPrimeraResposta(idxGlobal, valor, correcta) {
+  if (!(idxGlobal in _primeres_respostes)) {
+    _primeres_respostes[idxGlobal] = { valor, correcta };
+  }
+}
+
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({ length: total }, (_, i) => {
+    const r = _primeres_respostes[i];
+    if (!r) return '';
+    return (r.correcta ? '✓ ' : '✗ ') + r.valor;
+  });
+  const payload = {
+    fitxa:              FITXA_NOM,
+    timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
+    nom:                nom,
+    puntuacio:          puntuacio,
+    total:              total,
+    minuts:             Math.round((Date.now() - _startTime) / 60000),
+    primeres_respostes: respostes,
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+// ═══════════════════════════════════════════════════════════════
+
+Canvi 2 — Dins de checkAnswers(), just abans de const val = parseFloat(...)
+
+const idxGlobal = roundIdx * PER + i;
+const esCorrecta = !isNaN(parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''))) &&
+  Math.abs(parseFloat(inp.value.replace(',', '.').replace(/\s/g, '')) - ex.answer) <= TOL;
+_registrarPrimeraResposta(idxGlobal, inp.value.trim(), esCorrecta);
+
+Canvi 3 — Dins de showFinal(), just abans de launchConfetti()
+
+_enviarRegistre(playerName, score, TOTAL);
+
+
+
+
+Notes importants
+
+FITXA_NOM és l'únic que canvia entre fitxes. Usa noms sense espais ni accents per evitar problemes, per exemple Matematiques_2nESO_Fraccions.
+Cada fitxa nova crearà automàticament una pestanya nova al Sheets amb el seu nom la primera vegada que un alumne la completi.
+El nombre d'exercicis no importa — el mòdul s'adapta automàticament al valor de TOTAL que tingui cada fitxa.
+La URL de l'Apps Script és sempre la mateixa per a totes les fitxes.
