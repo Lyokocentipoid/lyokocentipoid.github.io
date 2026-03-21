@@ -153,3 +153,76 @@ h2 {
   h1 { font-size: 2rem; }
   .foto-rodona { width: 120px; height: 120px; }
 }
+
+
+
+
+/* NOUS ESTILS - ANIMACIONS */
+
+/* Cursor parpellejant per l'efecte d'escriptura */
+.cursor {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Animació d'entrada suau per als enllaços */
+.seccio {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out forwards;
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid blue;
+    transition: all 0.3s ease;
+}
+
+.seccio:nth-child(2) { animation-delay: 0.2s; }
+.seccio:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efecte hover als enllaços */
+.seccio:hover {
+    background-color: rgba(0, 0, 255, 0.1);
+    transform: translateX(10px);
+    box-shadow: 0 0 15px rgba(0, 0, 255, 0.5);
+}
+
+/* Animació de la fletxa */
+.fletxa {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.seccio:hover .fletxa {
+    transform: translateX(5px);
+}
+
+/* Subratllat animat */
+.titol-link {
+    position: relative;
+}
+
+.titol-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: blue;
+    transition: width 0.3s ease;
+}
+
+.seccio:hover .titol-link::after {
+    width: 100%;
+}
