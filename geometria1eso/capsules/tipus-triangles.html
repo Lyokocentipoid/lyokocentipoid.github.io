@@ -333,6 +333,9 @@ const COL = {
 const PRESETS = {
   equilater:  [ [.5, .15], [.18, .82], [.82, .82] ],
   isosceles:  [ [.5, .12], [.2,  .85], [.8,  .85] ],
+  // Isòsceles rectangle: catets iguals, angle recte al vèrtex superior
+  // Canvas aspect 4:3 → catet_horiz=0.32W, catet_vert=0.32*(4/3)H ≈ 0.427H
+  'isosceles-rectangle': [ [.5, .39], [.18, .82], [.82, .82] ],
   escalene:   [ [.35, .15], [.12, .82], [.78, .75] ],
   acutangle:  [ [.5, .18], [.15, .80], [.85, .78] ],
   rectangle:  [ [.22, .22], [.22, .82], [.78, .82] ],
@@ -383,15 +386,17 @@ function classify() {
   const aA = angleDeg(B, A, C);
   const aB = angleDeg(A, B, C);
   const aC = angleDeg(B, C, A);
-  const EPS_SIDE  = 0.04;   // tolerance fraction for equal sides
+  const EPS_SIDE  = 0.02;   // tolerance fraction for equal sides (2%, stricter)
   const EPS_ANGLE = 1.5;    // degrees tolerance for right angle
 
   // By sides
   const ab_bc = Math.abs(ab - bc) / Math.max(ab, bc) < EPS_SIDE;
   const bc_ca = Math.abs(bc - ca) / Math.max(bc, ca) < EPS_SIDE;
   const ab_ca = Math.abs(ab - ca) / Math.max(ab, ca) < EPS_SIDE;
+  // Equilateral: all three sides equal AND all angles within 3° of 60°
+  const allAngles60 = [aA, aB, aC].every(a => Math.abs(a - 60) < 3);
   let sideType, sideRule;
-  if (ab_bc && bc_ca) {
+  if (ab_bc && bc_ca && allAngles60) {
     sideType = 'equilater'; sideRule = 'a = b = c';
   } else if (ab_bc || bc_ca || ab_ca) {
     sideType = 'isosceles'; sideRule = 'a = b ≠ c';
@@ -443,7 +448,9 @@ function draw() {
   ctx.fillStyle = grad; ctx.fill(); ctx.restore();
 
   // Angle arcs
-  [[A,B,C],[B,A,C],[C,A,B]].forEach(([P, O, Q], i) => {
+  // Each tuple: [P, O, Q] → angle at O, paired with cl.angles[i]
+  // cl.angles = [aA, aB, aC] so: angle at A = [B,A,C], at B = [A,B,C], at C = [A,C,B]
+  [[B,A,C],[A,B,C],[A,C,B]].forEach(([P, O, Q], i) => {
     const a1 = Math.atan2(P.y - O.y, P.x - O.x);
     const a2 = Math.atan2(Q.y - O.y, Q.x - O.x);
     const arcR = 22 * dpr;
@@ -575,15 +582,81 @@ function updateSideButtons(cl) {
 }
 
 // ─────────────────────────────────────────
-// PRESET SNAP
+// PRESET SNAP — combo aware
 // ─────────────────────────────────────────
+const SIDE_TYPES  = ['equilater', 'isosceles', 'escalene'];
+const ANGLE_TYPES = ['acutangle', 'rectangle', 'obtusangle'];
+
+// Presets that combine both axes
+const COMBO_PRESETS = {
+  'isosceles+rectangle': 'isosceles-rectangle',
+};
+
+let lastSide  = null;
+let lastAngle = null;
+
 function applyPreset(name) {
+  if (name === 'equilater') {
+    // Compute a geometrically exact equilateral triangle in canvas pixels
+    const cx = W / 2;
+    const side = Math.min(W, H) * 0.62;
+    const h = side * Math.sqrt(3) / 2;
+    const cy = H / 2 + h / 6; // centroid offset so it looks centered
+    vertices = [
+      { x: cx,            y: cy - h * 2/3 },   // top
+      { x: cx - side / 2, y: cy + h / 3   },   // bottom-left
+      { x: cx + side / 2, y: cy + h / 3   },   // bottom-right
+    ];
+    draw();
+    return;
+  }
+  if (name === 'isosceles-rectangle') {
+    // Exact isosceles right triangle: right angle at top, equal legs
+    const cx = W / 2;
+    const leg = Math.min(W, H) * 0.45;
+    const by = H * 0.82;
+    const ty = by - leg;
+    vertices = [
+      { x: cx,          y: ty },   // top (right angle)
+      { x: cx - leg/2,  y: by },   // bottom-left  (but legs are diagonal)
+      { x: cx + leg/2,  y: by },   // bottom-right
+    ];
+    // Actually for isosceles right: legs go from apex to each base vertex
+    // leg = dist(apex, base_vertex). With apex=(cx,ty), base=(cx±d, by):
+    // leg² = d² + (by-ty)² → need d = by-ty so legs are equal and angle at apex = 90°
+    const legLen = (by - ty);
+    vertices = [
+      { x: cx,           y: by - legLen },
+      { x: cx - legLen,  y: by },
+      { x: cx + legLen,  y: by },
+    ];
+    draw();
+    return;
+  }
   const pts = PRESETS[name];
+  if (!pts) return;
   vertices = pts.map(([rx, ry]) => ({ x: rx * W, y: ry * H }));
   draw();
 }
 
 function snapTo(name) {
+  const isSide  = SIDE_TYPES.includes(name);
+  const isAngle = ANGLE_TYPES.includes(name);
+
+  if (isSide)  lastSide  = name;
+  if (isAngle) lastAngle = name;
+
+  // Try combo preset
+  if (lastSide && lastAngle) {
+    const comboKey = lastSide + '+' + lastAngle;
+    if (COMBO_PRESETS[comboKey]) {
+      applyPreset(COMBO_PRESETS[comboKey]);
+      if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+      return;
+    }
+  }
+
+  // Fallback: just apply the clicked preset directly
   applyPreset(name);
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
 }
