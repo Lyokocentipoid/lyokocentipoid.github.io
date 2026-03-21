@@ -384,6 +384,11 @@
         </div>
       </div>
 
+      <div id="perpNoticeSecant" class="perp-note hidden" style="margin-bottom:1.25rem">
+        <div class="big">⊥ Rectes perpendiculars!</div>
+        <p>L'angle de tall és exactament <strong>90°</strong>. Les rectes secants es converteixen en <strong>perpendiculars</strong>: els quatre angles són iguals.</p>
+      </div>
+
       <div class="relation-card active" id="relOposats" style="--r-color:var(--green)" onclick="highlightPair('oposats')">
         <div class="rel-badge">α</div>
         <div class="rel-info">
@@ -404,9 +409,24 @@
     </div>
 
     <!-- PARALLEL NOTE -->
-    <div id="parallelPanel" class="parallel-note hidden">
-      <div class="big">∥ Rectes paral·leles</div>
-      <p>Dues rectes paral·leles <strong>mai es tallen</strong>. Mantenen sempre la mateixa distància entre elles, fins a l'infinit.<br><br>No es formen angles, perquè no hi ha cap punt de tall.</p>
+    <div id="parallelPanel" class="hidden">
+      <div class="slider-wrap" style="margin-bottom:1.25rem">
+        <div class="slider-label">Distància entre les rectes</div>
+        <div class="slider-row">
+          <input type="range" id="distSlider" min="0" max="100" value="50" />
+          <span class="slider-val" id="distVal">50</span>
+        </div>
+      </div>
+
+      <div id="coincidentNotice" class="perp-note hidden" style="margin-bottom:1.25rem">
+        <div class="big">= Rectes coincidents</div>
+        <p>Quan la distància és <strong style="color:var(--yellow)">zero</strong>, les dues rectes s'uneixen en una de sola. Són la mateixa recta i tots els seus punts coincideixen.</p>
+      </div>
+
+      <div class="parallel-note" id="parallelNote">
+        <div class="big">∥ Rectes paral·leles</div>
+        <p>Dues rectes paral·leles <strong>mai es tallen</strong>. Mantenen sempre la mateixa distància entre elles, fins a l'infinit.<br><br>No es formen angles, perquè no hi ha cap punt de tall.</p>
+      </div>
     </div>
 
     <!-- PERP NOTE -->
@@ -452,11 +472,12 @@
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────
-let mode       = 'secant';   // 'parallel' | 'secant' | 'perp'
-let angleDeg   = 55;         // angle of secant line (1–179)
-let highlight  = 'oposats';  // 'oposats' | 'adjacents' | null
-let dragging   = false;
-let hinted     = false;
+let mode        = 'secant';   // 'parallel' | 'secant' | 'perp'
+let angleDeg    = 55;         // angle of secant line (1–179)
+let highlight   = 'oposats';  // 'oposats' | 'adjacents' | null
+let dragging    = false;
+let hinted      = false;
+let parallelDist = 50;        // distance between parallel lines (0–100)
 
 // ─────────────────────────────────────────
 // CANVAS SETUP
@@ -501,12 +522,24 @@ function draw() {
 
   if (mode === 'parallel') drawParallel(dpr);
   else if (mode === 'perp') drawSecant(90, dpr);
-  else drawSecant(angleDeg, dpr);
+  else drawSecant(Math.round(angleDeg), dpr);
 }
 
 function drawParallel(dpr) {
-  const y1 = H * 0.38, y2 = H * 0.62;
-  const margin = W * 0.08;
+  const centerY = H * 0.5;
+  // parallelDist 0–100 maps to 0 .. H*0.28 offset from center
+  const offset = (parallelDist / 100) * H * 0.28;
+  const y1 = centerY - offset;
+  const y2 = centerY + offset;
+  const isCoincident = parallelDist === 0;
+
+  if (isCoincident) {
+    // Draw a single merged line with a glow blending both colors
+    drawLine(0, y1, W, y1, '#ff9f3d', 3, dpr);
+    drawArrowHead(W * 0.9, y1, 0, '#ff9f3d', dpr);
+    label(ctx, W * 0.06, y1 - 14 * dpr, 'r = s', '#ff9f3d', 13 * dpr, dpr);
+    return;
+  }
 
   // Distance arrow
   ctx.save();
@@ -517,7 +550,7 @@ function drawParallel(dpr) {
   ctx.setLineDash([]);
   ctx.restore();
 
-  // Label "d constant"
+  // Label "d"
   ctx.save();
   ctx.font = `${11 * dpr}px 'DM Mono', monospace`;
   ctx.fillStyle = 'rgba(61,139,255,0.6)';
@@ -566,27 +599,29 @@ function drawSecant(aDeg, dpr) {
 
   // Arc radius
   const arcR = Math.min(W, H) * 0.18;
+  const isPerp90 = Math.round(aDeg) === 90;
+  const COL_PERP = '#ff9f3d'; // orange for perpendicular
+
+  // Effective colors depending on perp state
+  const effA = isPerp90 ? COL_PERP : COL_A;
+  const effB = isPerp90 ? COL_PERP : COL_B;
 
   // ── Sector fills ──
-  // Sector α (from 0 to -rad, i.e. top-right)
-  drawSector(ctx, cx, cy, arcR, 0, -rad, isOposats ? COL_A + '30' : COL_A + '12', dpr);
-  // Sector β (from -rad to -π, i.e. top-left)
-  drawSector(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? COL_B + '30' : COL_B + '12', dpr);
-  // Sector α' (from -π to -(π+rad) = bottom-left)
-  drawSector(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? COL_A + '30' : COL_A + '12', dpr);
-  // Sector β' (from -(π+rad) to -2π, i.e. bottom-right)
-  drawSector(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? COL_B + '30' : COL_B + '12', dpr);
+  drawSector(ctx, cx, cy, arcR, 0, -rad, isOposats ? effA + '30' : effA + '12', dpr);
+  drawSector(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? effB + '30' : effB + '12', dpr);
+  drawSector(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? effA + '30' : effA + '12', dpr);
+  drawSector(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? effB + '30' : effB + '12', dpr);
 
   // ── Arc strokes ──
-  drawArc(ctx, cx, cy, arcR, 0, -rad, isOposats ? COL_A : COL_A + '66', isOposats ? 2 : 1.5, dpr);
-  drawArc(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? COL_B : COL_B + '66', isAdjacents ? 2 : 1.5, dpr);
-  drawArc(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? COL_A : COL_A + '66', isOposats ? 2 : 1.5, dpr);
-  drawArc(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? COL_B : COL_B + '66', isAdjacents ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, 0, -rad, isOposats ? effA : effA + '66', isOposats ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -rad, -Math.PI, isAdjacents ? effB : effB + '66', isAdjacents ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -Math.PI, -(Math.PI + rad), isOposats ? effA : effA + '66', isOposats ? 2 : 1.5, dpr);
+  drawArc(ctx, cx, cy, arcR, -(Math.PI + rad), -2 * Math.PI, isAdjacents ? effB : effB + '66', isAdjacents ? 2 : 1.5, dpr);
 
   // Right-angle marks if perp
-  if (Math.abs(aDeg - 90) < 1) {
+  if (isPerp90) {
     const s = 14 * dpr;
-    ctx.save(); ctx.strokeStyle = COL_A; ctx.lineWidth = 1.5 * dpr;
+    ctx.save(); ctx.strokeStyle = COL_PERP; ctx.lineWidth = 1.5 * dpr;
     ctx.beginPath(); ctx.moveTo(cx + s, cy); ctx.lineTo(cx + s, cy - s); ctx.lineTo(cx, cy - s); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx - s, cy); ctx.lineTo(cx - s, cy + s); ctx.lineTo(cx, cy + s); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx + s, cy); ctx.lineTo(cx + s, cy + s); ctx.lineTo(cx, cy + s); ctx.stroke();
@@ -628,8 +663,9 @@ function drawSecant(aDeg, dpr) {
   }
 
   // ── Origin dot ──
+  const dotCol = isPerp90 ? '#ff9f3d' : '#e8eaf6';
   ctx.beginPath(); ctx.arc(cx, cy, 5 * dpr, 0, Math.PI * 2);
-  ctx.fillStyle = '#e8eaf6'; ctx.shadowColor = '#e8eaf6'; ctx.shadowBlur = 8;
+  ctx.fillStyle = dotCol; ctx.shadowColor = dotCol; ctx.shadowBlur = 8;
   ctx.fill(); ctx.shadowBlur = 0;
 }
 
@@ -683,6 +719,7 @@ function angleName(d) {
 
 function updateSecantUI(a) {
   const b = 180 - a;
+  const isPerp = Math.round(a) === 90;
   document.getElementById('degA').textContent  = Math.round(a) + '°';
   document.getElementById('nameA').textContent = angleName(a);
   document.getElementById('degB').textContent  = Math.round(b) + '°';
@@ -693,6 +730,27 @@ function updateSecantUI(a) {
   document.getElementById('nameD').textContent = angleName(b);
   document.getElementById('angleSlider').value = Math.round(a);
   document.getElementById('sliderVal').textContent = Math.round(a) + '°';
+
+  // Perp notice
+  document.getElementById('perpNoticeSecant').classList.toggle('hidden', !isPerp);
+
+  // Change chip colors to orange when perpendicular
+  const chipColor = isPerp ? 'var(--yellow)' : null;
+  ['chipA','chipB','chipC','chipD'].forEach(id => {
+    const el = document.getElementById(id);
+    if (isPerp) {
+      el.style.setProperty('--a-color', '#f5c842');
+    } else {
+      el.style.removeProperty('--a-color');
+    }
+  });
+  // Restore correct colors when not perp
+  if (!isPerp) {
+    document.getElementById('chipA').style.setProperty('--a-color', 'var(--green)');
+    document.getElementById('chipC').style.setProperty('--a-color', 'var(--green)');
+    document.getElementById('chipB').style.setProperty('--a-color', 'var(--coral)');
+    document.getElementById('chipD').style.setProperty('--a-color', 'var(--coral)');
+  }
 }
 
 function highlightPair(type) {
@@ -721,6 +779,11 @@ function setMode(m) {
     hint.textContent = 'Arrossega per canviar l\'angle de tall';
     hint.classList.toggle('hidden', hinted);
     wrap.style.cursor = 'crosshair';
+  } else if (m === 'parallel') {
+    hint.textContent = 'Arrossega amunt i avall per canviar la distància';
+    hint.classList.toggle('hidden', hinted);
+    wrap.style.cursor = 'ns-resize';
+    updateParallelUI(parallelDist);
   } else {
     hint.classList.add('hidden');
     wrap.style.cursor = 'default';
@@ -745,19 +808,39 @@ function angleFromPointer(e) {
   return Math.max(10, Math.min(170, deg));
 }
 
+let dragStartY = 0;
+let dragStartDist = 0;
+
 function onStart(e) {
-  if (mode !== 'secant') return;
+  if (mode !== 'secant' && mode !== 'parallel') return;
   dragging = true;
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
-  angleDeg = angleFromPointer(e);
-  updateSecantUI(angleDeg);
+  if (mode === 'secant') {
+    angleDeg = angleFromPointer(e);
+    updateSecantUI(angleDeg);
+  } else {
+    const rect = canvas.getBoundingClientRect();
+    dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStartDist = parallelDist;
+  }
   draw();
 }
 function onMove(e) {
   if (!dragging) return;
   e.preventDefault();
-  angleDeg = angleFromPointer(e);
-  updateSecantUI(angleDeg);
+  if (mode === 'secant') {
+    angleDeg = angleFromPointer(e);
+    updateSecantUI(angleDeg);
+  } else if (mode === 'parallel') {
+    const rect = canvas.getBoundingClientRect();
+    const curY = e.touches ? e.touches[0].clientY : e.clientY;
+    const dy = curY - dragStartY;
+    // Moving up increases distance, moving down decreases
+    const newDist = Math.max(0, Math.min(100, dragStartDist - Math.round(dy / rect.height * 100)));
+    parallelDist = newDist;
+    document.getElementById('distSlider').value = newDist;
+    updateParallelUI(newDist);
+  }
   draw();
 }
 function onEnd() { dragging = false; }
@@ -770,12 +853,26 @@ canvas.addEventListener('touchstart', onStart, { passive: false });
 canvas.addEventListener('touchmove',  onMove,  { passive: false });
 canvas.addEventListener('touchend',   onEnd);
 
-// Slider
+// Slider (secant angle)
 document.getElementById('angleSlider').addEventListener('input', function () {
   angleDeg = +this.value;
   updateSecantUI(angleDeg);
   draw();
 });
+
+// Slider (parallel distance)
+document.getElementById('distSlider').addEventListener('input', function () {
+  parallelDist = +this.value;
+  updateParallelUI(parallelDist);
+  draw();
+});
+
+function updateParallelUI(d) {
+  const isCoincident = d === 0;
+  document.getElementById('distVal').textContent = d;
+  document.getElementById('coincidentNotice').classList.toggle('hidden', !isCoincident);
+  document.getElementById('parallelNote').classList.toggle('hidden', isCoincident);
+}
 
 // ─────────────────────────────────────────
 // INIT
@@ -784,6 +881,11 @@ resize();
 setMode('secant');
 updateSecantUI(angleDeg);
 highlightPair('oposats');
+// Initialize chip colors
+document.getElementById('chipA').style.setProperty('--a-color', 'var(--green)');
+document.getElementById('chipC').style.setProperty('--a-color', 'var(--green)');
+document.getElementById('chipB').style.setProperty('--a-color', 'var(--coral)');
+document.getElementById('chipD').style.setProperty('--a-color', 'var(--coral)');
 </script>
 </body>
 </html>
