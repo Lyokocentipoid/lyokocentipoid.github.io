@@ -563,57 +563,57 @@ const BANK = [
   {
     tag:"Angles i rectes", stars:1,
     s:['Dues rectes es tallen formant 4 angles. Si un angle mesura 70°, el seu adjacent (suplementari) mesura ','_','°.'],
-    answer:110,
+    answers:[110],
     hint:"Angles suplementaris sumen 180°. → 180 − 70."
   },
   {
     tag:"Angles i rectes", stars:1,
     s:['Dues rectes perpendiculars es tallen formant 4 angles rectes. Cada angle mesura ','_','°.'],
-    answer:90,
+    answers:[90],
     hint:"Perpendicular = 90°. Els 4 angles formats valen 90° cadascun."
   },
   {
     tag:"Angles i rectes", stars:2,
-    s:['Una secant talla dues rectes paral·leles. Un angle intern co-interior (entre les paral·leles, al mateix costat de la secant) mesura 65°. L\'altre angle co-interior mesura ','_','°.'],
-    answer:115,
-    hint:"Els angles co-interiors (conjugats) entre rectes paral·leles sumen 180°. → 180 − 65."
+    s:['Una secant talla dues rectes paral·leles. Un angle co-interior (entre les paral·leles, al mateix costat de la secant) mesura 65°. L\'altre angle co-interior mesura ','_','°.'],
+    answers:[115],
+    hint:"Els angles co-interiors entre rectes paral·leles sumen 180°. → 180 − 65."
   },
   {
     tag:"Angles i rectes", stars:2,
     s:['Una secant talla dues paral·leles. Un angle altern intern mesura 48°. L\'altern intern del costat oposat mesura ','_','°.'],
-    answer:48,
+    answers:[48],
     hint:"Els angles alterns interns entre rectes paral·leles són iguals."
   },
   {
     tag:"Angles i rectes", stars:2,
     s:['Dues rectes es tallen. Un dels quatre angles mesura 130°. L\'angle oposat pel vèrtex mesura ','_','° i cadascun dels adjacents mesura ','_','°.'],
-    answer:130,
-    hint:"Oposats pel vèrtex: iguals. Adjacent (suplementari): 180 − 130 = 50°. Escriu la resposta de l'oposat pel vèrtex."
+    answers:[130, 50],
+    hint:"Oposats pel vèrtex: iguals (130°). Adjacent (suplementari): 180 − 130 = 50°."
   },
 
   // ── Bisectriu i mediatriu ───────────────────────────────────
   {
     tag:"Bisectriu", stars:1,
     s:['La bisectriu d\'un angle el divideix en dues parts iguals. Si l\'angle mesura 80°, cada meitat mesura ','_','°.'],
-    answer:40,
+    answers:[40],
     hint:"Bisectriu = divideix per la meitat. → 80 ÷ 2."
   },
   {
     tag:"Bisectriu", stars:2,
     s:['La bisectriu d\'un angle recte forma dos angles de ','_','° cadascun.'],
-    answer:45,
+    answers:[45],
     hint:"Angle recte = 90°. Bisectriu: 90 ÷ 2."
   },
   {
     tag:"Mediatriu", stars:1,
-    s:['La mediatriu d\'un segment de ','_',' cm el talla perpendicularment pel punt mig. Si el segment mesura 14 cm, cada meitat mesura ','_','°... és a dir, ','_',' cm.'],
-    answer:7,
+    s:['La mediatriu d\'un segment de 14 cm el talla perpendicularment pel punt mig. Cada meitat del segment mesura ','_',' cm.'],
+    answers:[7],
     hint:"El punt mig divideix el segment en dues parts iguals: 14 ÷ 2."
   },
   {
     tag:"Mediatriu", stars:2,
     s:['Tots els punts de la mediatriu d\'un segment estan a la mateixa distància dels dos extrems. Si l\'extrem A és a 9 cm d\'un punt de la mediatriu, l\'extrem B és a ','_',' cm del mateix punt.'],
-    answer:9,
+    answers:[9],
     hint:"La propietat de la mediatriu: qualsevol punt equidista dels dos extrems."
   },
 
@@ -621,71 +621,71 @@ const BANK = [
   {
     tag:"Angles triangle", stars:1,
     s:['En un triangle, dos angles mesuren 55° i 75°. El tercer angle mesura ','_','°.'],
-    answer:50,
+    answers:[50],
     hint:"Suma dels angles = 180°. → 180 − 55 − 75."
   },
   {
     tag:"Angles triangle", stars:2,
     s:['En un triangle isòsceles, l\'angle del vèrtex mesura 100°. Cada angle de la base mesura ','_','°.'],
-    answer:40,
+    answers:[40],
     hint:"180 − 100 = 80°. Els dos angles de la base són iguals: 80 ÷ 2."
   },
   {
     tag:"Angles triangle", stars:2,
     s:['En un triangle rectangle, un angle agut és el doble de l\'altre. L\'angle menor mesura ','_','°.'],
-    answer:30,
+    answers:[30],
     hint:"Els dos angles aguts sumen 90°. Si un és x i l'altre 2x: x + 2x = 90 → x = 30."
   },
   {
     tag:"Angles triangle", stars:3,
     s:['L\'angle exterior d\'un triangle és igual a la suma dels dos angles interiors no adjacents. Un angle exterior mesura 115°. Un dels angles interiors no adjacents és 60°. L\'altre és ','_','°.'],
-    answer:55,
+    answers:[55],
     hint:"Angle exterior = suma dels 2 interiors no adjacents. → 115 − 60."
   },
   {
     tag:"Angles triangle", stars:3,
     ctx:"En un triangle, els angles estan en proporció 1 : 2 : 3.",
     s:['L\'angle menor mesura ','_','°, el mitjà ','_','°, i el major ','_','°.'],
-    answer:30,
-    hint:"La suma és 180°, i els angles estan en proporció 1:2:3. → 180 ÷ 6 = 30°. Els altres: 60° i 90°. Escriu el valor del menor."
+    answers:[30, 60, 90],
+    hint:"La suma és 180°. Proporció 1:2:3 → la unitat val 180÷6 = 30°. Els angles són 30°, 60° i 90°."
   },
 
   // ── Angles en quadrilàters i polígons ─────────────────────
   {
     tag:"Polígons", stars:1,
     s:['En un rectangle, tots els angles mesuren ','_','°.'],
-    answer:90,
+    answers:[90],
     hint:"Un rectangle té 4 angles rectes de 90°."
   },
   {
     tag:"Polígons", stars:2,
-    s:['En un paral·lelogram, dos angles consecutius sumen ','_','°. Si un angle mesura 70°, el consecutiu mesura ','_','°.'],
-    answer:110,
-    hint:"En un paral·lelogram, angles consecutius son suplementaris: sumen 180°. → 180 − 70."
+    s:['En un paral·lelogram, angles consecutius son suplementaris (sumen 180°). Si un angle mesura 70°, el consecutiu mesura ','_','°.'],
+    answers:[110],
+    hint:"Angles consecutius en un paral·lelogram sumen 180°. → 180 − 70."
   },
   {
     tag:"Polígons", stars:2,
     s:['En un rombe, dos angles oposats mesuren 60° cadascun. Els altres dos angles oposats mesuren ','_','° cadascun.'],
-    answer:120,
+    answers:[120],
     hint:"Suma total = 360°. Ja tenim 60 + 60 = 120°. Resten 360 − 120 = 240° per als altres dos, iguals: 240 ÷ 2."
   },
   {
     tag:"Polígons", stars:2,
     s:['La suma dels angles interiors d\'un heptàgon (7 costats) és ','_','°.'],
-    answer:900,
+    answers:[900],
     hint:"Fórmula: (n − 2) × 180°. → (7 − 2) × 180."
   },
   {
     tag:"Polígons", stars:3,
     s:['En un octàgon regular (8 costats), cada angle interior mesura ','_','°.'],
-    answer:135,
+    answers:[135],
     hint:"Suma = (8 − 2) × 180 = 1080°. Cada angle: 1080 ÷ 8."
   },
   {
     tag:"Polígons", stars:3,
     s:['Un polígon regular té cada angle interior de 144°. Quants costats té? ','_',' costats.'],
-    answer:10,
-    hint:"Cada angle interior = (n−2)×180 ÷ n. Planteja (n−2)×180 = 144n i resol: 180n − 360 = 144n → 36n = 360 → n = 10."
+    answers:[10],
+    hint:"Cada angle interior = (n−2)×180 ÷ n. Planteja: (n−2)×180 = 144n → 36n = 360 → n = 10."
   },
 
   // ── Problemes aplicats ─────────────────────────────────────
@@ -693,78 +693,78 @@ const BANK = [
     tag:"Problema", stars:2,
     ctx:"Un rellotge analògic marca les 3 en punt.",
     s:['L\'angle format per les agulles del rellotge és de ','_','°.'],
-    answer:90,
-    hint:"A les 3 en punt, les agulles formen un angle recte. La circumferència (360°) dividida en 12 hores: 360 ÷ 12 = 30° per hora. De les 12 a les 3 hi ha 3 hores: 3 × 30 = 90°."
+    answers:[90],
+    hint:"A les 3 en punt, les agulles formen un angle recte. 360° ÷ 12 hores = 30°/h. De 12 a 3 hi ha 3 hores: 3 × 30 = 90°."
   },
   {
     tag:"Problema", stars:2,
     ctx:"Un rellotge analògic marca les 6 en punt.",
     s:['L\'angle format per les agulles del rellotge és de ','_','°.'],
-    answer:180,
+    answers:[180],
     hint:"A les 6, les dues agulles formen una línia recta (angle pla). 6 × 30° = 180°."
   },
   {
     tag:"Problema", stars:3,
-    ctx:"En una cruïlla, tres carrers es troben en un punt. Els angles que formen entre ells estan en proporció 2 : 3 : 7.",
-    s:['L\'angle major de la cruïlla mesura ','_','°.'],
-    answer:210,
-    hint:"Els tres angles sumen 360°. En proporció 2:3:7, la suma de parts = 12. Cada part = 360 ÷ 12 = 30°. L'angle major = 7 × 30°."
+    ctx:"En una cruïlla, tres carrers es troben en un punt formant 6 angles al voltant. Els tres angles alternats (no adjacents entre ells) estan en proporció 2 : 3 : 7.",
+    s:['L\'angle major d\'aquest grup de tres mesura ','_','°.'],
+    answers:[210],
+    hint:"Els tres angles en proporció 2:3:7 sumen 360°. En proporció la suma de parts = 12. Cada part = 360 ÷ 12 = 30°. L'angle major = 7 × 30° = 210°."
   },
   {
     tag:"Problema", stars:3,
     ctx:"Una escala forma un angle de 65° amb el terra horitzontal.",
     s:['L\'angle que forma l\'escala amb la paret vertical és de ','_','°.'],
-    answer:25,
+    answers:[25],
     hint:"L'escala, la paret i el terra formen un triangle rectangle. Els dos angles aguts han de sumar 90°. → 90 − 65."
   },
   {
     tag:"Problema", stars:3,
     ctx:"Tres rectes concurrents passen per un mateix punt. Formen 6 angles al voltant del punt.",
     s:['Si els sis angles són iguals, cada un mesura ','_','°.'],
-    answer:60,
-    hint:"Tres rectes que es tallen en un punt formen 6 angles. La suma total és 360°. → 360 ÷ 6."
+    answers:[60],
+    hint:"Tres rectes que es tallen en un punt formen 6 angles iguals. La suma total és 360°. → 360 ÷ 6."
   },
   {
     tag:"Problema", stars:3,
     ctx:"En un triangle ABC, la bisectriu de l'angle A talla BC en el punt D. L'angle A mesura 80° i l'angle B mesura 50°.",
-    s:['L\'angle C del triangle mesura ','_','°. L\'angle que forma la bisectriu AD amb el costat AB mesura ','_','°.'],
-    answer:50,
-    hint:"Angle C = 180 − 80 − 50 = 50°. La bisectriu de A divideix l'angle A per la meitat: 80 ÷ 2 = 40°. Escriu el valor de l'angle C."
+    s:['L\'angle C del triangle mesura ','_','° i la bisectriu AD forma un angle de ','_','° amb el costat AB.'],
+    answers:[50, 40],
+    hint:"Angle C = 180 − 80 − 50 = 50°. La bisectriu de A divideix l'angle A per la meitat: 80 ÷ 2 = 40°."
   },
   {
     tag:"Problema", stars:2,
-    ctx:"Un terreny té forma de trapezi. Els angles de la base inferior mesuren 70° i 80°.",
-    s:['La suma dels dos angles de la base inferior és ','_','°. Els angles de la base superior, que son suplementaris dels de la base inferior respectivament, sumen ','_','°. Escriu la suma dels angles de la base superior.'],
-    answer:210,
-    hint:"Cada angle de la base superior és suplementari al de la base inferior: 180−70=110° i 180−80=100°. Suma: 110+100 = 210°."
+    ctx:"Un terreny té forma de trapezi isòsceles. Els angles de la base inferior mesuren 70° cadascun.",
+    s:['Cada angle de la base superior mesura ','_','° (és suplementari al de la base inferior).'],
+    answers:[110],
+    hint:"En un trapezi isòsceles, cada angle superior és suplementari al inferior del mateix costat: 180 − 70 = 110°."
   },
   {
     tag:"Problema", stars:3,
-    ctx:"Un romb té un angle de 60°. Les diagonals d'un rombe es tallen perpendicularment i bisecten els angles.",
-    s:['Cada diagonal bisecta l\'angle de 60°, formant triangles de ','_','° en aquell vèrtex.'],
-    answer:30,
-    hint:"La diagonal bisecta l'angle de 60°: 60 ÷ 2 = 30°."
+    ctx:"Un rombe té un angle de 60°. Les diagonals d'un rombe es tallen perpendicularment i bisecten els angles.",
+    s:['Cada diagonal bisecta l\'angle de 60°, formant triangles amb ','_','° en aquell vèrtex. L\'angle oposat del rombe mesura ','_','°.'],
+    answers:[30, 60],
+    hint:"La diagonal bisecta 60°: 60÷2 = 30°. L'angle oposat en un rombe és igual al de partida: 60°."
   },
   {
     tag:"Problema", stars:3,
     ctx:"Una torre de ràdio és perpendicular al terra. Des d'un punt del terra, el cable tensor forma un angle de 35° amb la torre.",
     s:['L\'angle que forma el cable tensor amb el terra és de ','_','°.'],
-    answer:55,
-    hint:"La torre, el terra i el cable formen un triangle rectangle. L'angle a la base de la torre és 90°. Els dos angles aguts sumen 90°: 90 − 35."
+    answers:[55],
+    hint:"La torre, el terra i el cable formen un triangle rectangle. Els angles aguts sumen 90°: 90 − 35."
   },
   {
     tag:"Problema", stars:3,
-    ctx:"En una figura, dues rectes paral·leles r i s estan tallades per una secant t. L'angle que t forma amb r en la intersecció és de 40° (angle agut).",
-    s:['L\'angle altern extern format amb s és de ','_','°, i l\'angle co-interior (entre les paral·leles, mateix costat) amb s és de ','_','°. Escriu l\'angle altern extern.'],
-    answer:40,
-    hint:"Altern extern = igual que l'angle original (rectes paral·leles). Co-interior = suplementari (180−40=140°). Escriu el valor de l'altern extern."
+    ctx:"Dues rectes paral·leles r i s estan tallades per una secant t. L'angle agut que t forma amb r mesura 40°.",
+    s:['L\'angle altern extern format amb s mesura ','_','° i l\'angle co-interior (entre les paral·leles, al mateix costat) mesura ','_','°.'],
+    answers:[40, 140],
+    hint:"Altern extern = igual a l'angle original (rectes paral·leles): 40°. Co-interior = suplementari: 180 − 40 = 140°."
   },
   {
     tag:"Problema", stars:3,
-    ctx:"Un polígon convex té 9 costats (nonàgon).",
-    s:['La suma dels seus angles interiors és ','_','°. Si fos regular, cada angle interior mesuraria ','_','°. Escriu la suma dels angles interiors.'],
-    answer:1260,
-    hint:"Fórmula: (n−2) × 180° = (9−2) × 180 = 7 × 180 = 1260°. Cada angle si fos regular: 1260 ÷ 9 = 140°."
+    ctx:"Un polígon convex té 9 costats (ennèàgon).",
+    s:['La suma dels seus angles interiors és ','_','°. Si fos regular, cada angle interior mesuraria ','_','°.'],
+    answers:[1260, 140],
+    hint:"Suma: (9−2) × 180 = 7 × 180 = 1260°. Cada angle si fos regular: 1260 ÷ 9 = 140°."
   },
 ];
 
@@ -864,11 +864,14 @@ function loadRound(ri, animate) {
       const card = document.createElement('div');
       card.className = 'card'; card.id = 'card' + i;
 
+      let inputCount = 0;
       let sentHTML = '';
       ex.s.forEach(part => {
         if (part === '_') {
-          sentHTML += '<input type="text" id="ans' + i +
+          const fid = 'ans_' + i + '_' + inputCount;
+          sentHTML += '<input type="text" id="' + fid +
             '" placeholder="···" autocomplete="off" maxlength="12">';
+          inputCount++;
         } else if (Array.isArray(part)) {
           sentHTML += '<strong>' + part[0] + '</strong>';
         } else {
@@ -901,19 +904,28 @@ function loadRound(ri, animate) {
       }, 60 + i * 90);
     });
 
-    currentEx.forEach((_, i) => {
-      document.getElementById('ans' + i).addEventListener('keydown', e => {
+    // Enter key navigation across all inputs in order
+    const allInputIds = [];
+    currentEx.forEach((ex, i) => {
+      const count = ex.answers.length;
+      for (let j = 0; j < count; j++) allInputIds.push('ans_' + i + '_' + j);
+    });
+    allInputIds.forEach((fid, idx) => {
+      const el = document.getElementById(fid);
+      if (!el) return;
+      el.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-          let next = i + 1;
-          while (next < PER && locked[next]) next++;
-          const nxt = next < PER ? document.getElementById('ans' + next) : null;
-          if (nxt) nxt.focus(); else checkAnswers();
+          if (idx + 1 < allInputIds.length) {
+            document.getElementById(allInputIds[idx + 1])?.focus();
+          } else {
+            checkAnswers();
+          }
         }
       });
     });
 
     setTimeout(() => {
-      const f = document.getElementById('ans0');
+      const f = document.getElementById('ans_0_0');
       if (f && !locked[0]) f.focus();
     }, 350);
   }
@@ -944,32 +956,55 @@ function checkAnswers() {
   currentEx.forEach((ex, i) => {
     if (locked[i]) { okThisAttempt++; return; }
 
-    const inp  = document.getElementById('ans'  + i);
     const fb   = document.getElementById('fb'   + i);
     const card = document.getElementById('card' + i);
     const hint = document.getElementById('hint' + i);
     const idxGlobal = roundIdx * PER + i;
-    const esCorrecta = !isNaN(parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''))) &&
-  Math.abs(parseFloat(inp.value.replace(',', '.').replace(/\s/g, '')) - ex.answer) <= TOL;
-_registrarPrimeraResposta(idxGlobal, inp.value.trim(), esCorrecta);
-    const val  = parseFloat(inp.value.replace(',', '.').replace(/\s/g, ''));
 
-    if (isNaN(val)) {
-      inp.classList.remove('correct-input', 'wrong-input');
-      card.classList.remove('correct', 'wrong');
+    const answers = ex.answers; // always an array
+    const nFields = answers.length;
+
+    // Collect all field values
+    const vals = [];
+    let hasEmpty = false;
+    for (let j = 0; j < nFields; j++) {
+      const inp = document.getElementById('ans_' + i + '_' + j);
+      if (!inp) continue;
+      const raw = inp.value.replace(',', '.').replace(/\s/g, '');
+      if (raw === '') { hasEmpty = true; vals.push(NaN); }
+      else vals.push(parseFloat(raw));
+    }
+
+    if (hasEmpty || vals.some(isNaN)) {
       fb.className = 'feedback err show';
-      fb.textContent = '✗ Escriu un número.';
+      fb.textContent = '✗ Omple tots els camps.';
       hint.classList.add('visible');
       allDone = false;
       canScore[i] = false;
+      // Mark individual wrong inputs
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (inp && isNaN(vals[j])) inp.classList.add('wrong-input');
+      }
+      // Register first attempt
+      _registrarPrimeraResposta(idxGlobal, vals.map(v => isNaN(v) ? '' : v).join(','), false);
       return;
     }
 
-    if (Math.abs(val - ex.answer) <= TOL) {
+    // Check all fields
+    const allCorrect = answers.every((ans, j) => Math.abs(vals[j] - ans) <= TOL);
+    _registrarPrimeraResposta(idxGlobal, vals.join(','), allCorrect);
+
+    if (allCorrect) {
       okThisAttempt++;
       locked[i] = true;
-      inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
-      inp.disabled = true;
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (inp) {
+          inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+          inp.disabled = true;
+        }
+      }
       card.classList.add('correct'); card.classList.remove('wrong');
       fb.className = 'feedback ok show';
       const bonus = canScore[i] ? ' (+1 punt)' : '';
@@ -979,10 +1014,18 @@ _registrarPrimeraResposta(idxGlobal, inp.value.trim(), esCorrecta);
     } else {
       allDone = false;
       canScore[i] = false;
-      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (!inp) continue;
+        const ok = Math.abs(vals[j] - answers[j]) <= TOL;
+        inp.classList.toggle('wrong-input', !ok);
+        inp.classList.toggle('correct-input', ok);
+      }
       card.classList.add('wrong'); card.classList.remove('correct');
       fb.className = 'feedback err show';
-      fb.textContent = '✗ No és correcte. Revisa la pista!';
+      fb.textContent = nFields > 1
+        ? '✗ Algun camp no és correcte. Revisa la pista!'
+        : '✗ No és correcte. Revisa la pista!';
       hint.classList.add('visible');
     }
   });
@@ -1035,10 +1078,14 @@ _registrarPrimeraResposta(idxGlobal, inp.value.trim(), esCorrecta);
 function retryRound() {
   for (let i = 0; i < PER; i++) {
     if (locked[i]) continue;
-    const inp  = document.getElementById('ans'  + i);
+    const ex   = currentEx[i];
     const fb   = document.getElementById('fb'   + i);
     const card = document.getElementById('card' + i);
-    if (inp)  { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    const nFields = ex.answers.length;
+    for (let j = 0; j < nFields; j++) {
+      const inp = document.getElementById('ans_' + i + '_' + j);
+      if (inp) { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    }
     if (card) card.classList.remove('correct', 'wrong');
     if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
   }
@@ -1047,7 +1094,7 @@ function retryRound() {
   document.getElementById('checkBtn').disabled = false;
   checked = false;
   for (let i = 0; i < PER; i++) {
-    if (!locked[i]) { document.getElementById('ans' + i).focus(); break; }
+    if (!locked[i]) { document.getElementById('ans_' + i + '_0').focus(); break; }
   }
 }
 
