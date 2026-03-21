@@ -226,6 +226,47 @@
     .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
     .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
 
+    /* ── NOTICES ── */
+    .notice-box {
+      border-radius: 12px; padding: .9rem 1.1rem;
+      font-size: .82rem; line-height: 1.55;
+      border: 1px solid; margin-bottom: 0;
+      transition: all var(--tr);
+    }
+    .notice-box h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .notice-degenerate {
+      background: color-mix(in srgb, var(--coral) 8%, var(--card));
+      border-color: color-mix(in srgb, var(--coral) 35%, transparent);
+      color: var(--coral);
+    }
+    .notice-degenerate h4 { color: var(--coral); }
+    .notice-intersect {
+      background: color-mix(in srgb, var(--purple) 8%, var(--card));
+      border-color: color-mix(in srgb, var(--purple) 35%, transparent);
+      color: var(--purple);
+    }
+    .notice-intersect h4 { color: var(--purple); }
+    .notice-triangle {
+      border-radius: 12px; padding: .9rem 1.1rem;
+      font-size: .82rem; line-height: 1.55;
+      border: 1px solid; transition: all var(--tr);
+    }
+    .notice-equilateral {
+      background: color-mix(in srgb, var(--green) 8%, var(--card));
+      border-color: color-mix(in srgb, var(--green) 35%, transparent);
+    }
+    .notice-equilateral h4 { color: var(--green); font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .notice-isosceles {
+      background: color-mix(in srgb, var(--blue) 8%, var(--card));
+      border-color: color-mix(in srgb, var(--blue) 35%, transparent);
+    }
+    .notice-isosceles h4 { color: var(--blue); font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .notice-scalene {
+      background: color-mix(in srgb, var(--muted) 8%, var(--card));
+      border-color: color-mix(in srgb, var(--muted) 25%, transparent);
+    }
+    .notice-scalene h4 { color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+
     footer {
       border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
       display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
@@ -256,7 +297,7 @@
     <span class="cur">Angles interiors d'un polígon</span>
   </div>
   <h1>Angles <em>interiors</em> d'un polígon</h1>
-  <p>Selecciona un polígon regular o activa el mode lliure per moure els vèrtexs. Comprova que la suma dels angles interiors és sempre la mateixa sigui quin sigui el polígon — i descobreix la fórmula.</p>
+  <p>Selecciona un polígon i arrossega els vèrtexs per deformar-lo. Comprova que la suma dels angles interiors és sempre la mateixa sigui quin sigui el polígon — i descobreix la fórmula.</p>
 </div>
 
 <div class="main-layout">
@@ -314,17 +355,21 @@
           <span>Octàgon</span>
           <span class="poly-n">n=8</span>
         </button>
+        <button class="poly-btn" onclick="setPolygon(9)">
+          <span class="poly-icon">◯</span>
+          <span>Ennèàgon</span>
+          <span class="poly-n">n=9</span>
+        </button>
+        <button class="poly-btn" onclick="setPolygon(10)">
+          <span class="poly-icon">⬤</span>
+          <span>Decàgon</span>
+          <span class="poly-n">n=10</span>
+        </button>
       </div>
     </div>
 
-    <!-- Free mode -->
-    <div class="free-toggle" id="freeToggleRow">
-      <label for="freeToggle">
-        <strong>Mode lliure</strong><br>
-        Arrossega els vèrtexs per deformar el polígon i comprova que la suma no canvia.
-      </label>
-      <div class="toggle-switch" id="freeToggle" onclick="toggleFree()"></div>
-    </div>
+    <!-- Notices (degenerate / intersect / triangle type) -->
+    <div id="noticesPanel" style="display:flex;flex-direction:column;gap:.75rem"></div>
 
     <!-- Angle list -->
     <div class="angle-list-box">
@@ -381,13 +426,13 @@
 // CONFIG
 // ─────────────────────────────────────────
 const POLY_NAMES = ['','','','Triangle','Quadrilàter','Pentàgon','Hexàgon','Heptàgon','Octàgon','Ennèàgon','Decàgon'];
-const VERTEX_COLORS = ['#3dffa0','#3d8bff','#ff5f6d','#f5c842','#b47fff','#ff9f43','#48dbfb','#ff6b9d'];
+const VERTEX_COLORS = ['#3dffa0','#3d8bff','#ff5f6d','#f5c842','#b47fff','#ff9f43','#48dbfb','#ff6b9d','#a8ff3e','#ff3ea8'];
 
 let nSides    = 5;
-let freeMode  = false;
-let vertices  = [];        // [{x,y}] in canvas px
+let freeMode  = true;   // always on
+let vertices  = [];
 let dragIdx   = -1;
-let activeV   = -1;        // highlighted vertex index
+let activeV   = -1;
 let hinted    = false;
 
 // ─────────────────────────────────────────
@@ -429,22 +474,111 @@ function buildRegular(n) {
 // ─────────────────────────────────────────
 // GEOMETRY
 // ─────────────────────────────────────────
+
+// Signed area (positive = CW in canvas coords where Y is down, negative = CCW)
+function signedArea() {
+  const n = vertices.length;
+  let a = 0;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    a += vertices[i].x * vertices[j].y;
+    a -= vertices[j].x * vertices[i].y;
+  }
+  return a / 2;
+}
+
+// True interior angle at vertex i.
+// Strategy: compute the unsigned angle between the two edge vectors (0..180),
+// then decide if we need the reflex version (360 - angle) based on whether
+// the vertex is a "left turn" or "right turn" relative to the polygon winding.
 function interiorAngle(i) {
-  const n  = vertices.length;
-  const A  = vertices[(i - 1 + n) % n];
-  const B  = vertices[i];
-  const C  = vertices[(i + 1) % n];
-  const ax = A.x - B.x, ay = A.y - B.y;
-  const cx = C.x - B.x, cy2= C.y - B.y;
-  let angle = Math.atan2(ax * cy2 - ay * cx, ax * cx + ay * cy2) * 180 / Math.PI;
-  if (angle < 0) angle += 360;
-  // For convex polygons take the interior (< 180) version
-  if (angle > 180) angle = 360 - angle;
-  return angle;
+  const n   = vertices.length;
+  const A   = vertices[(i - 1 + n) % n];
+  const B   = vertices[i];
+  const C   = vertices[(i + 1) % n];
+
+  // Vectors from B to its neighbours
+  const bax = A.x - B.x, bay = A.y - B.y;  // BA
+  const bcx = C.x - B.x, bcy = C.y - B.y;  // BC
+
+  // Unsigned angle between BA and BC via dot product (0..180)
+  const dot  = bax * bcx + bay * bcy;
+  const magA = Math.hypot(bax, bay);
+  const magC = Math.hypot(bcx, bcy);
+  if (magA < 1e-9 || magC < 1e-9) return 0;
+
+  const cosA = Math.max(-1, Math.min(1, dot / (magA * magC)));
+  const unsignedAngle = Math.acos(cosA) * 180 / Math.PI;  // 0..180
+
+  // Cross product z-component: BA × BC
+  // Positive in canvas (Y-down) = clockwise turn = right turn
+  const cross = bax * bcy - bay * bcx;
+
+  // Polygon winding: in canvas (Y-down), signedArea < 0 → visually CCW (standard winding)
+  // A "right turn" locally (cross > 0 in Y-down) = convex for a visually-CCW polygon
+  // A "left  turn" locally (cross < 0 in Y-down) = reflex for a visually-CCW polygon
+  const isCCWvisual = signedArea() < 0;
+  const isReflex = isCCWvisual ? (cross < 0) : (cross > 0);
+
+  return isReflex ? (360 - unsignedAngle) : unsignedAngle;
 }
 
 function sumAngles() {
   return vertices.reduce((s, _, i) => s + interiorAngle(i), 0);
+}
+
+// Side length between vertex i and i+1
+function sideLength(i) {
+  const n = vertices.length;
+  const a = vertices[i], b = vertices[(i + 1) % n];
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+// Check if two segments (p1,p2) and (p3,p4) intersect (excluding shared endpoints)
+function segmentsIntersect(p1, p2, p3, p4) {
+  const d1x = p2.x - p1.x, d1y = p2.y - p1.y;
+  const d2x = p4.x - p3.x, d2y = p4.y - p3.y;
+  const cross = d1x * d2y - d1y * d2x;
+  if (Math.abs(cross) < 1e-10) return false;
+  const t = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / cross;
+  const u = ((p3.x - p1.x) * d1y - (p3.y - p1.y) * d1x) / cross;
+  return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9;
+}
+
+// Returns true if any non-adjacent edges of the polygon intersect
+function hasSelfIntersection() {
+  const n = vertices.length;
+  for (let i = 0; i < n; i++) {
+    const a = vertices[i], b = vertices[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue; // adjacent (wrap)
+      const c = vertices[j], d = vertices[(j + 1) % n];
+      if (segmentsIntersect(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+
+// Returns number of vertices with angle ≈ 180° (degenerate)
+function countDegenerateVertices() {
+  const n = vertices.length;
+  let count = 0;
+  for (let i = 0; i < n; i++) {
+    if (Math.abs(interiorAngle(i) - 180) < 2) count++;
+  }
+  return count;
+}
+
+// Triangle classification
+function classifyTriangle() {
+  if (vertices.length !== 3) return null;
+  const sides = [sideLength(0), sideLength(1), sideLength(2)];
+  const [a, b, c] = sides.map(Math.round);
+  const EPS = Math.min(W, H) * 0.04; // tolerance in canvas px
+  const eq = (x, y) => Math.abs(x - y) < EPS;
+  if (eq(sides[0], sides[1]) && eq(sides[1], sides[2])) return 'equilateral';
+  if (eq(sides[0], sides[1]) || eq(sides[1], sides[2]) || eq(sides[0], sides[2])) return 'isosceles';
+  return 'scalene';
 }
 
 // ─────────────────────────────────────────
@@ -454,6 +588,8 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   const dpr = devicePixelRatio;
   const n   = vertices.length;
+  const selfIntersects = hasSelfIntersection();
+  const triType = classifyTriangle();
 
   // Subtle grid
   ctx.save();
@@ -462,8 +598,8 @@ function draw() {
   for (let y = 0; y < H; y += H/6) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
   ctx.restore();
 
-  // Triangle decomposition lines (subtle)
-  if (n > 3) {
+  // Triangle decomposition lines (subtle) — only for simple polygon
+  if (n > 3 && !selfIntersects) {
     ctx.save();
     ctx.strokeStyle = 'rgba(245,200,66,0.12)'; ctx.lineWidth = 1 * dpr;
     ctx.setLineDash([5 * dpr, 5 * dpr]);
@@ -476,46 +612,99 @@ function draw() {
     ctx.setLineDash([]); ctx.restore();
   }
 
-  // Polygon fill
+  // Polygon fill — color depends on triangle type or self-intersection
+  let fillColor;
+  if (selfIntersects) {
+    fillColor = 'rgba(180,127,255,0.07)';
+  } else if (triType === 'equilateral') {
+    fillColor = 'rgba(61,255,160,0.08)';
+  } else if (triType === 'isosceles') {
+    fillColor = 'rgba(61,139,255,0.08)';
+  } else if (triType === 'scalene') {
+    fillColor = 'rgba(120,127,168,0.07)';
+  } else {
+    fillColor = 'rgba(245,200,66,0.05)';
+  }
+
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(vertices[0].x, vertices[0].y);
   for (let i = 1; i < n; i++) ctx.lineTo(vertices[i].x, vertices[i].y);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(245,200,66,0.05)'; ctx.fill();
+  ctx.fillStyle = fillColor; ctx.fill();
   ctx.restore();
 
   // Angle arcs at each vertex
+  const isCCWvisual = signedArea() < 0;
   vertices.forEach((v, i) => {
     const prev = vertices[(i - 1 + n) % n];
     const next = vertices[(i + 1) % n];
     const col  = VERTEX_COLORS[i % VERTEX_COLORS.length];
     const ang  = interiorAngle(i);
     const isActive = (i === activeV);
+    const isDegenerate = Math.abs(ang - 180) < 2;
 
-    // Arc
+    if (isDegenerate) {
+      // Still show the 180° label, just skip the arc
+      const a1 = Math.atan2(prev.y - v.y, prev.x - v.x);
+      const a2 = Math.atan2(next.y - v.y, next.x - v.x);
+      const arcR = 22 * dpr;
+      let midA = (a1 + a2) / 2;
+      const lR = arcR + 18 * dpr;
+      const lx = v.x + Math.cos(midA) * lR;
+      const ly = v.y + Math.sin(midA) * lR;
+      ctx.save();
+      ctx.font = `bold ${11 * dpr}px 'DM Mono', monospace`;
+      ctx.fillStyle = isActive ? col : col + 'aa';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = col; ctx.shadowBlur = isActive ? 6 : 0;
+      ctx.fillText('180°', lx, ly);
+      ctx.shadowBlur = 0; ctx.restore();
+      return;
+    }
+
     const a1 = Math.atan2(prev.y - v.y, prev.x - v.x);
     const a2 = Math.atan2(next.y - v.y, next.x - v.x);
     const arcR = 22 * dpr;
 
+    const bax = prev.x - v.x, bay = prev.y - v.y;
+    const bcx = next.x - v.x, bcy = next.y - v.y;
+    const cross = bax * bcy - bay * bcx;
+    const isReflex = isCCWvisual ? (cross < 0) : (cross > 0);
+
+    // For a visually-CCW polygon: convex → arc sweeps CCW (anticlockwise=true), reflex → CW
+    const arcCCW = isCCWvisual ? !isReflex : isReflex;
+
     ctx.save();
     ctx.beginPath(); ctx.moveTo(v.x, v.y);
-    ctx.arc(v.x, v.y, arcR, a1, a2, false);
+    ctx.arc(v.x, v.y, arcR, a1, a2, arcCCW);
     ctx.closePath();
     ctx.fillStyle = col + (isActive ? '40' : '20'); ctx.fill();
     ctx.beginPath();
-    ctx.arc(v.x, v.y, arcR, a1, a2, false);
+    ctx.arc(v.x, v.y, arcR, a1, a2, arcCCW);
     ctx.strokeStyle = col + (isActive ? 'ff' : '88');
     ctx.lineWidth   = (isActive ? 2 : 1.5) * dpr;
     ctx.shadowColor = col; ctx.shadowBlur = isActive ? 8 : 0;
     ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
 
-    // Angle label
-    const midA  = (a1 + a2) / 2;
-    // ensure label is inside polygon: check dot product
-    const lR    = arcR + 18 * dpr;
-    const lx    = v.x + Math.cos(midA) * lR;
-    const ly    = v.y + Math.sin(midA) * lR;
+    // Angle label: place at the midpoint of the arc sweep
+    // Compute mid-angle of the swept arc correctly
+    let midA;
+    {
+      // Normalise a1, a2 into a continuous range for the sweep direction
+      let from = a1, to = a2;
+      if (arcCCW) {
+        // decreasing: ensure to < from
+        while (to >= from) to -= 2 * Math.PI;
+      } else {
+        // increasing: ensure to > from
+        while (to <= from) to += 2 * Math.PI;
+      }
+      midA = (from + to) / 2;
+    }
+    const lR = arcR + 18 * dpr;
+    const lx = v.x + Math.cos(midA) * lR;
+    const ly = v.y + Math.sin(midA) * lR;
     ctx.save();
     ctx.font = `bold ${11 * dpr}px 'DM Mono', monospace`;
     ctx.fillStyle   = isActive ? col : col + 'aa';
@@ -525,28 +714,28 @@ function draw() {
     ctx.shadowBlur  = 0; ctx.restore();
   });
 
-  // Polygon edges
+  // Polygon edges — color depends on self-intersection
+  const edgeColor = selfIntersects ? 'rgba(180,127,255,0.8)' : 'rgba(245,200,66,0.7)';
+  const edgeShadow = selfIntersects ? 'rgba(180,127,255,0.3)' : 'rgba(245,200,66,0.3)';
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(vertices[0].x, vertices[0].y);
   for (let i = 1; i < n; i++) ctx.lineTo(vertices[i].x, vertices[i].y);
   ctx.closePath();
-  ctx.strokeStyle = 'rgba(245,200,66,0.7)'; ctx.lineWidth = 2 * dpr;
-  ctx.shadowColor = 'rgba(245,200,66,0.3)'; ctx.shadowBlur = 6;
+  ctx.strokeStyle = edgeColor; ctx.lineWidth = 2 * dpr;
+  ctx.shadowColor = edgeShadow; ctx.shadowBlur = 6;
   ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
 
   // Vertices dots
   vertices.forEach((v, i) => {
     const col = VERTEX_COLORS[i % VERTEX_COLORS.length];
     const isActive = (i === activeV);
-    ctx.beginPath(); ctx.arc(v.x, v.y, (freeMode ? 7 : 5) * dpr, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(v.x, v.y, 7 * dpr, 0, Math.PI * 2);
     ctx.fillStyle   = col;
     ctx.shadowColor = col; ctx.shadowBlur = isActive ? 14 : 6;
     ctx.fill(); ctx.shadowBlur = 0;
-    if (freeMode) {
-      ctx.beginPath(); ctx.arc(v.x, v.y, 10 * dpr, 0, Math.PI * 2);
-      ctx.strokeStyle = col + '44'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
-    }
+    ctx.beginPath(); ctx.arc(v.x, v.y, 10 * dpr, 0, Math.PI * 2);
+    ctx.strokeStyle = col + '44'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
   });
 }
 
@@ -558,7 +747,7 @@ function updateUI() {
   const sum = Math.round(sumAngles());
   const expected = (n - 2) * 180;
 
-  document.getElementById('sumDisplay').textContent   = sum + '°';
+  document.getElementById('sumDisplay').textContent    = sum + '°';
   document.getElementById('formulaDisplay').textContent = `(${n} − 2) × 180° = ${expected}°`;
 
   // Pulse badge
@@ -573,11 +762,13 @@ function updateUI() {
   vertices.forEach((_, i) => {
     const ang = Math.round(interiorAngle(i));
     const col = VERTEX_COLORS[i % VERTEX_COLORS.length];
+    const isDegenerate = Math.abs(ang - 180) < 4;
     const item = document.createElement('div');
     item.className = 'angle-item' + (i === activeV ? ' active-vertex' : '');
+    item.style.opacity = isDegenerate ? '0.4' : '1';
     item.innerHTML = `
       <div class="angle-dot" style="background:${col}"></div>
-      <span class="angle-item-label">Vèrtex V<sub>${i+1}</sub></span>
+      <span class="angle-item-label">Vèrtex V<sub>${i+1}</sub>${isDegenerate ? ' <em style="color:var(--muted);font-size:.7rem">(pla)</em>' : ''}</span>
       <span class="angle-item-deg">${ang}°</span>
     `;
     item.addEventListener('click', () => { activeV = (activeV === i) ? -1 : i; draw(); updateUI(); });
@@ -588,12 +779,69 @@ function updateUI() {
   document.querySelectorAll('#formulaTable tr').forEach(tr => {
     tr.classList.toggle('highlight-row', +tr.dataset.n === n);
   });
+
+  // ── Notices ──
+  const panel = document.getElementById('noticesPanel');
+  panel.innerHTML = '';
+
+  // 1. Degenerate vertices notice
+  const degCount = countDegenerateVertices();
+  if (degCount > 0) {
+    const effectiveSides = n - degCount;
+    let shapeName = effectiveSides >= 3 && effectiveSides <= 10
+      ? POLY_NAMES[effectiveSides]
+      : (effectiveSides + ' costats');
+    const notice = document.createElement('div');
+    notice.className = 'notice-box notice-degenerate';
+    notice.innerHTML = `<h4>⚠️ ${degCount} vèrtex${degCount > 1 ? 'os' : ''} pla${degCount > 1 ? 'ns' : ''}</h4>
+      <span style="color:var(--text)">Quan un angle és de 180°, el vèrtex desapareix visualment: tres punts en línia recta no formen cantonada. 
+      Amb ${degCount} vèrtex${degCount > 1 ? 'os' : ''} pla${degCount > 1 ? 'ns' : ''}, la figura visible és un 
+      <strong style="color:var(--coral)">${shapeName}</strong>.</span>`;
+    panel.appendChild(notice);
+  }
+
+  // 2. Self-intersection notice
+  const selfIntersects = hasSelfIntersection();
+  if (selfIntersects) {
+    const notice = document.createElement('div');
+    notice.className = 'notice-box notice-intersect';
+    notice.innerHTML = `<h4>✕ Polígon autosecant</h4>
+      <span style="color:var(--text)">Les arestes es creuen entre elles. Això crea una figura <strong style="color:var(--purple)">autosecant</strong> (o <em>estelada</em>), com una estrella.
+      <br><br>En aquests casos, la suma dels angles <em>interns dels vèrtexs</em> ja no coincideix amb la fórmula (n−2)×180°, 
+      perquè la fórmula es basa en polígons simples (sense creuaments). Les regions interiors es divideixen 
+      i el concepte d'"interior" deixa de ser únic — apareixen zones que queden dins i fora alhora 
+      (principi de <em>paritat de raig</em>).</span>`;
+    panel.appendChild(notice);
+  }
+
+  // 3. Triangle type notice
+  if (n === 3 && !selfIntersects) {
+    const triType = classifyTriangle();
+    const notice = document.createElement('div');
+    if (triType === 'equilateral') {
+      notice.className = 'notice-triangle notice-equilateral';
+      notice.innerHTML = `<h4>▲ Triangle equilàter</h4>
+        <span style="color:var(--text)">Els <strong style="color:var(--green)">tres costats són iguals</strong> i els tres angles mesuren exactament 60°. 
+        És el triangle amb més simetria possible: té 3 eixos de simetria.</span>`;
+    } else if (triType === 'isosceles') {
+      notice.className = 'notice-triangle notice-isosceles';
+      notice.innerHTML = `<h4>▲ Triangle isòsceles</h4>
+        <span style="color:var(--text)"><strong style="color:var(--blue)">Dos costats iguals</strong> i un de diferent. 
+        Els angles de la base (els oposats als costats iguals) també són iguals entre ells. Té 1 eix de simetria.</span>`;
+    } else {
+      notice.className = 'notice-triangle notice-scalene';
+      notice.innerHTML = `<h4>▲ Triangle escalè</h4>
+        <span style="color:var(--muted)"><strong>Tots tres costats són diferents</strong> i tots tres angles també. 
+        No té cap eix de simetria.</span>`;
+    }
+    panel.appendChild(notice);
+  }
 }
 
 // Build static table
 function buildTable() {
   const tbody = document.getElementById('formulaTable');
-  [3,4,5,6,7,8].forEach(n => {
+  [3,4,5,6,7,8,9,10].forEach(n => {
     const tr = document.createElement('tr');
     tr.dataset.n = n;
     tr.innerHTML = `<td>${POLY_NAMES[n]}</td><td>${n}</td><td>${(n-2)*180}°</td>`;
@@ -612,29 +860,7 @@ function setPolygon(n) {
 }
 
 // ─────────────────────────────────────────
-// FREE MODE
-// ─────────────────────────────────────────
-function toggleFree() {
-  freeMode = !freeMode;
-  const toggle = document.getElementById('freeToggle');
-  toggle.classList.toggle('on', freeMode);
-  const hint = document.getElementById('hint');
-  if (freeMode) {
-    hint.textContent = 'Arrossega un vèrtex per deformar el polígon';
-    hint.classList.toggle('hidden', hinted);
-    canvas.style.cursor = 'grab';
-    wrap.style.borderColor = 'var(--yellow)';
-  } else {
-    hint.classList.add('hidden');
-    canvas.style.cursor = 'default';
-    wrap.style.borderColor = '';
-    buildRegular(nSides); // reset to regular
-  }
-  draw();
-}
-
-// ─────────────────────────────────────────
-// DRAG
+// DRAG (always active)
 // ─────────────────────────────────────────
 function pointerPos(e) {
   const rect = canvas.getBoundingClientRect();
@@ -656,30 +882,28 @@ function nearestVertex(px, py, threshold) {
 }
 
 canvas.addEventListener('mousedown', e => {
-  if (!freeMode) return;
   const { x, y } = pointerPos(e);
   dragIdx = nearestVertex(x, y, 28 * devicePixelRatio);
   if (dragIdx >= 0) { canvas.style.cursor = 'grabbing'; activeV = dragIdx; }
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
 });
 canvas.addEventListener('mousemove', e => {
-  if (dragIdx < 0 || !freeMode) return;
+  if (dragIdx < 0) return;
   const { x, y } = pointerPos(e);
   vertices[dragIdx] = { x, y };
   draw(); updateUI();
 });
-canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = freeMode ? 'grab' : 'default'; });
+canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = 'grab'; });
 canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
 
 canvas.addEventListener('touchstart', e => {
-  if (!freeMode) return;
   e.preventDefault();
   const { x, y } = pointerPos(e);
   dragIdx = nearestVertex(x, y, 40 * devicePixelRatio);
   if (dragIdx >= 0) activeV = dragIdx;
 }, { passive: false });
 canvas.addEventListener('touchmove', e => {
-  if (dragIdx < 0 || !freeMode) return;
+  if (dragIdx < 0) return;
   e.preventDefault();
   const { x, y } = pointerPos(e);
   vertices[dragIdx] = { x, y };
@@ -690,6 +914,8 @@ canvas.addEventListener('touchend', () => { dragIdx = -1; });
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
+canvas.style.cursor = 'grab';
+wrap.style.borderColor = 'var(--yellow)';
 buildTable();
 resize();
 </script>
