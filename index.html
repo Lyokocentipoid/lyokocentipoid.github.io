@@ -13,18 +13,18 @@
 
   <header>
     <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
-    <h1 id="typewriter">Lyokocentipoid</h1>
-    <p>Espai de projectes web</p>
+    <h1 id="typewriter"></h1>
+    <p class="subtitle">Espai de projectes web</p>
   </header>
 
   <section id="projectes">
     <h2>Projectes educatius - Matemàtiques</h2>
-    
+
     <a href="/proporcionalitat1eso/" class="projecte-card">
       <h3>Proporcionalitat i Percentatges - 1r ESO</h3>
       <p>Només Fitxes</p>
     </a>
-    
+
     <a href="/geometria1eso/" class="projecte-card">
       <h3>Geometria de 1r ESO</h3>
       <p>Web de conceptes bàsics de geometria</p>
@@ -33,47 +33,43 @@
   </section>
 
   <script>
+    // ─── 1. PARTÍCULES ────────────────────────────────────────────────────────
     const canvas = document.getElementById('particles-canvas');
-    const ctx = canvas.getContext('2d');
-
+    const ctx    = canvas.getContext('2d');
     let particles = [];
     const NUM_PARTICLES = 80;
 
     function resize() {
-      canvas.width = window.innerWidth;
+      canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
     window.addEventListener('resize', resize);
     resize();
 
-    function randomBetween(a, b) {
-      return a + Math.random() * (b - a);
-    }
+    function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
     class Particle {
       constructor() { this.reset(true); }
 
       reset(initial = false) {
-        this.x = randomBetween(0, canvas.width);
-        // Si és l'inici, distribueix per tota la pantalla; si no, reapareix per baix
-        this.y = initial ? randomBetween(0, canvas.height) : canvas.height + 5;
-        this.r = randomBetween(0.8, 2.5);
-        this.speedX = randomBetween(-0.4, 0.4);
-        this.speedY = randomBetween(-0.6, -1.8);  // velocitats variades cap amunt
-        this.angle = randomBetween(0, Math.PI * 2);
+        this.x           = randomBetween(0, canvas.width);
+        this.y           = initial ? randomBetween(0, canvas.height) : canvas.height + 5;
+        this.r           = randomBetween(0.8, 2.5);
+        this.speedX      = randomBetween(-0.4, 0.4);
+        this.speedY      = randomBetween(-0.6, -1.8);
+        this.angle       = randomBetween(0, Math.PI * 2);
         this.twinkleSpeed = randomBetween(0.01, 0.04);
+        this.opacity     = 1;
       }
 
       update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-
-        // Parpelleig suau amb sinus
+        this.x     += this.speedX;
+        this.y     += this.speedY;
         this.angle += this.twinkleSpeed;
         this.opacity = 0.3 + 0.7 * Math.abs(Math.sin(this.angle));
 
         if (this.y + this.r < 0) this.reset();
-        if (this.x - this.r > canvas.width) this.x = -this.r;
+        if (this.x - this.r > canvas.width)  this.x = -this.r;
         if (this.x + this.r < 0) this.x = canvas.width + this.r;
       }
 
@@ -83,9 +79,9 @@
 
         // Resplendor exterior (glow)
         const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
-        glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0,   'rgba(255, 255, 255, 0.9)');
         glow.addColorStop(0.4, 'rgba(220, 240, 255, 0.4)');
-        glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        glow.addColorStop(1,   'rgba(255, 255, 255, 0)');
 
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r * 4, 0, Math.PI * 2);
@@ -104,137 +100,52 @@
 
     for (let i = 0; i < NUM_PARTICLES; i++) particles.push(new Particle());
 
-    function animate() {
+    function animateParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach(p => { p.update(); p.draw(); });
-      requestAnimationFrame(animate);
+      requestAnimationFrame(animateParticles);
     }
-    animate();
+    animateParticles();
+
+
+    // ─── 2. TYPEWRITER ────────────────────────────────────────────────────────
+    const TITLE = "Portfoli de Lyokocentipoid";
+    const typewriterEl = document.getElementById('typewriter');
+    let charIndex = 0;
+
+    function typeWriter() {
+      if (charIndex <= TITLE.length) {
+        // Inserim el text + cursor com a element independent
+        typewriterEl.textContent = TITLE.substring(0, charIndex);
+        charIndex++;
+        setTimeout(typeWriter, 100);
+      }
+      // Quan acaba, el cursor CSS segueix parpellejant via ::after o l'span injectat una sola vegada
+    }
+
+    window.addEventListener('load', () => {
+      // Afegim el cursor com a span fill permanent
+      const cursorSpan = document.createElement('span');
+      cursorSpan.className = 'cursor';
+      typewriterEl.appendChild(cursorSpan);
+      setTimeout(typeWriter, 400);
+    });
+
+
+    // ─── 3. ANIMACIÓ D'ENTRADA DE LES CARDS (Intersection Observer) ──────────
+    const cards = document.querySelectorAll('.projecte-card');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    cards.forEach(card => observer.observe(card));
   </script>
 
-
-
-
-
-
-<script>
-      // Efecte d'escriptura al títol
-      const title = "Portfoli de Lyokocentipoid";
-      const typewriterElement = document.getElementById('typewriter');
-      let charIndex = 0;
-
-      function typeWriter() {
-          if (charIndex < title.length) {
-              typewriterElement.innerHTML = title.substring(0, charIndex + 1) + '<span class="cursor"></span>';
-              charIndex++;
-              setTimeout(typeWriter, 100);
-          } else {
-              typewriterElement.innerHTML = title + '<span class="cursor"></span>';
-          }
-      }
-
-      // Iniciar escriptura quan carrega
-      window.addEventListener('load', () => {
-          setTimeout(typeWriter, 300);
-      });
-
-      // Sistema de partícules al fons
-      const canvas = document.getElementById('particles');
-      const ctx = canvas.getContext('2d');
-      
-      function resizeCanvas() {
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-      }
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-
-      // Crear partícules
-      const particles = [];
-      const particleCount = 25;
-
-      class Particle {
-          constructor() {
-              this.reset();
-          }
-
-          reset() {
-              this.x = Math.random() * canvas.width;
-              this.y = Math.random() * canvas.height;
-              this.size = Math.random() * 2 + 0.5;
-              this.speedX = (Math.random() - 0.5) * 0.5;
-              this.speedY = (Math.random() - 0.5) * 0.5;
-              this.opacity = Math.random() * 0.5 + 0.1;
-          }
-
-          update() {
-              this.x += this.speedX;
-              this.y += this.speedY;
-
-              if (this.x < 0 || this.x > canvas.width || 
-                  this.y < 0 || this.y > canvas.height) {
-                  this.reset();
-              }
-          }
-
-          draw() {
-              ctx.beginPath();
-              ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-              ctx.fillStyle = `rgba(96, 165, 250, ${this.opacity})`;
-              ctx.fill();
-          }
-      }
-
-      // Inicialitzar partícules
-      for (let i = 0; i < particleCount; i++) {
-          particles.push(new Particle());
-      }
-
-      // Animar partícules
-      function animateParticles() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
-          particles.forEach(particle => {
-              particle.update();
-              particle.draw();
-          });
-
-          // Connectar partícules properes amb línies fines
-          particles.forEach((p1, i) => {
-              particles.slice(i + 1).forEach(p2 => {
-                  const dx = p1.x - p2.x;
-                  const dy = p1.y - p2.y;
-                  const distance = Math.sqrt(dx * dx + dy * dy);
-
-                  if (distance < 100) {
-                      ctx.beginPath();
-                      ctx.moveTo(p1.x, p1.y);
-                      ctx.lineTo(p2.x, p2.y);
-                      ctx.strokeStyle = `rgba(96, 165, 250, ${0.1 * (1 - distance / 100)})`;
-                      ctx.stroke();
-                  }
-              });
-          });
-
-          requestAnimationFrame(animateParticles);
-      }
-
-      animateParticles();
-
-      // Efecte parallax al moure el ratolí
-      document.addEventListener('mousemove', (e) => {
-          const cards = document.querySelectorAll('.card');
-          const x = (window.innerWidth / 2 - e.pageX) / 50;
-          const y = (window.innerHeight / 2 - e.pageY) / 50;
-
-          cards.forEach((card, index) => {
-              const factor = (index + 1) * 0.5;
-              card.style.transform += ` translate(${x * factor}px, ${y * factor}px)`;
-          });
-      });
-  </script>
-
-
-  
 </body>
 </html>
