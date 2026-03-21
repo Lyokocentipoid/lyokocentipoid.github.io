@@ -1,15 +1,16 @@
-/* Reset bàsic i estils globals */
+/* =============================================
+   RESET I GLOBALS
+   ============================================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
 /* =============================================
-   CANVAS DE PARTÍCULES (fons fix, per darrere de tot)
+   CANVAS DE PARTÍCULES (fons fix)
    ============================================= */
 #particles-canvas {
   position: fixed;
@@ -22,13 +23,12 @@
 }
 
 /* =============================================
-   GRADIENT ANIMAT DE FONS
+   FONS ANIMAT — CICLE COMPLET RGB (via HSL)
    ============================================= */
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(-45deg, #e0f7fa, #b2ebf2, #c8f0e8, #80deea);
-  background-size: 400% 400%;
-  animation: gradientShift 12s ease infinite, fadeIn 1.5s ease-in-out;
+  animation: fadeInBody 1.5s ease-in-out,
+             rgbCycle 40s linear infinite;
   color: #2c3e50;
   display: flex;
   flex-direction: column;
@@ -69,11 +69,46 @@ header {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* =============================================
+   TÍTOL AMB GRADIENT (un sol bloc, sense conflicte)
+   ============================================= */
 h1 {
   font-size: 2.5rem;
   margin-top: 1rem;
-  animation: slideDown 1s ease-out, pulse 2s infinite;
-  color: #00796b;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  background: linear-gradient(90deg, #00897b, #0288d1, #00acc1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: slideDown 1s ease-out;
+}
+
+/* Cursor parpellejant del typewriter */
+.cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  background: #0288d1;
+  margin-left: 2px;
+  vertical-align: middle;
+  -webkit-text-fill-color: initial; /* override gradient per al cursor */
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50%  { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Subtítol */
+.subtitle {
+  color: #546e7a;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  opacity: 0;
+  animation: fadeInUp 1s ease-out 0.5s forwards;
 }
 
 /* =============================================
@@ -88,62 +123,131 @@ h2 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   text-align: center;
-  animation: fadeIn 2s ease-in-out;
+  opacity: 0;
+  animation: fadeInUp 1s ease-out 0.8s forwards;
 }
 
+/* =============================================
+   CARDS DE PROJECTES
+   ============================================= */
 .projecte-card {
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.4);
   text-decoration: none;
   color: inherit;
   display: block;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(30px);
+  /* Les cards s'animen amb JS (classe .visible) */
+  transition: transform 0.3s ease, box-shadow 0.3s ease,
+              background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Animació d'entrada de les cards */
+.projecte-card.visible {
+  animation: slideUpCard 0.6s ease-out forwards;
+}
+
+.projecte-card:nth-child(1) { animation-delay: 0.2s; }
+.projecte-card:nth-child(2) { animation-delay: 0.4s; }
+.projecte-card:nth-child(3) { animation-delay: 0.6s; }
+.projecte-card:nth-child(4) { animation-delay: 0.8s; }
+
+/* Efecte shimmer en hover */
+.projecte-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: left 0.45s ease;
+}
+
+.projecte-card:hover::before {
+  left: 100%;
 }
 
 .projecte-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  background: rgba(241, 248, 233, 0.88);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  background: rgba(241, 248, 233, 0.9);
+  border-color: rgba(2, 136, 193, 0.3);
 }
 
 .projecte-card h3 {
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  margin-bottom: 0.4rem;
+  color: #00695c;
 }
 
 .projecte-card p {
-  font-size: 1rem;
-  color: #555;
+  font-size: 0.95rem;
+  color: #546e7a;
+}
+
+/* Fletxa animada al costat dret */
+.projecte-card::after {
+  content: '→';
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  font-size: 1.2rem;
+  color: #0288d1;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.projecte-card:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 /* =============================================
    ANIMACIONS @keyframes
    ============================================= */
-@keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
 
-@keyframes fadeIn {
+@keyframes fadeInBody {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideDown {
-  from { transform: translateY(-50px); opacity: 0; }
+  from { transform: translateY(-40px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes pulse {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.02); }
-  100% { transform: scale(1); }
+@keyframes slideUpCard {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Cicle complet per tots els tons RGB (pastel, lluminositat alta) */
+@keyframes rgbCycle {
+  0%   { background-color: hsl(0,   60%, 88%); }   /* rosa */
+  12%  { background-color: hsl(45,  60%, 88%); }   /* taronja */
+  25%  { background-color: hsl(90,  60%, 88%); }   /* verd clar */
+  37%  { background-color: hsl(150, 60%, 88%); }   /* menta */
+  50%  { background-color: hsl(200, 60%, 88%); }   /* blau cel */
+  62%  { background-color: hsl(240, 60%, 88%); }   /* blau */
+  75%  { background-color: hsl(280, 60%, 88%); }   /* violeta */
+  87%  { background-color: hsl(320, 60%, 88%); }   /* magenta */
+  100% { background-color: hsl(360, 60%, 88%); }   /* torna al rosa */
 }
 
 /* =============================================
@@ -152,186 +256,5 @@ h2 {
 @media (max-width: 600px) {
   h1 { font-size: 2rem; }
   .foto-rodona { width: 120px; height: 120px; }
-}
-
-
-
-
-/* NOUS ESTILS - ANIMACIONS */
-
-/* Títol amb efecte d'escriptura */
-h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    text-align: center;
-    background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    position: relative;
-}
-
-.subtitle {
-    color: #94a3b8;
-    font-size: 1.1rem;
-    margin-bottom: 3rem;
-    text-align: center;
-    opacity: 0;
-    animation: fadeIn 1s ease-out 0.5s forwards;
-}
-
-@keyframes fadeIn {
-    to { opacity: 1; }
-}
-
-/* Cursor parpellejant */
-.cursor {
-    display: inline-block;
-    width: 3px;
-    height: 1em;
-    background: #60a5fa;
-    margin-left: 2px;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
-}
-
-/* Grid de targetes */
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    width: 100%;
-}
-
-/* Targeta individual */
-.card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-    opacity: 0;
-    transform: translateY(40px);
-    animation: slideUp 0.8s ease-out forwards;
-}
-
-/* Retard per cada targeta */
-.card:nth-child(1) { animation-delay: 0.3s; }
-.card:nth-child(2) { animation-delay: 0.5s; }
-
-@keyframes slideUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Efecte hover de la targeta */
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transition: left 0.5s;
-}
-
-.card:hover::before {
-    left: 100%;
-}
-
-.card:hover {
-    transform: translateY(-8px) scale(1.02);
-    border-color: rgba(96, 165, 250, 0.5);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 
-                0 0 60px rgba(96, 165, 250, 0.1);
-}
-
-/* Icona de la targeta */
-.card-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    display: block;
-    transition: transform 0.3s;
-}
-
-.card:hover .card-icon {
-    transform: scale(1.2) rotate(5deg);
-}
-
-/* Títol de la targeta */
-.card h2 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    color: #f1f5f9;
-}
-
-/* Descripció */
-.card p {
-    color: #94a3b8;
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
-}
-
-/* Enllaç amb efecte magnètic */
-.card a {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #60a5fa;
-    text-decoration: none;
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border-radius: 50px;
-    background: rgba(96, 165, 250, 0.1);
-    border: 1px solid rgba(96, 165, 250, 0.3);
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-}
-
-.card a::after {
-    content: '→';
-    transition: transform 0.3s;
-}
-
-.card:hover a::after {
-    transform: translateX(4px);
-}
-
-.card a:hover {
-    background: rgba(96, 165, 250, 0.2);
-    border-color: #60a5fa;
-    box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
-}
-
-/* Indicador de scroll */
-.scroll-indicator {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    animation: bounce 2s infinite 1.5s, fadeIn 1s ease-out 1s forwards;
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-    40% { transform: translateX(-50%) translateY(-10px); }
-    60% { transform: translateX(-50%) translateY(-5px); }
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-    h1 { font-size: 1.8rem; }
-    .card { padding: 1.5rem; }
+  .projecte-card { padding: 1.25rem; }
 }
