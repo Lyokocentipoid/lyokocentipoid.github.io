@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coordenades · Representació Gràfica · 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+      --violet:  #7c6bff;
+      --rose:    #ff6b9d;
+      --lime:    #a8ff3e;
+      --amber:   #ffbe3d;
+      --q1: #7c6bff;
+      --q2: #ff6b9d;
+      --q3: #ffbe3d;
+      --q4: #a8ff3e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 8px var(--violet); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--violet); }
+    .sec-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--violet); background: rgba(124,107,255,.1); border: 1px solid rgba(124,107,255,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem;
+    }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--violet); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--violet); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    /* MODE TABS */
+    .mode-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem; display: flex; gap: .6rem;
+    }
+    .mode-btn {
+      padding: .45rem 1.1rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .83rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .mode-btn:hover { border-color: var(--violet); color: var(--text); }
+    .mode-btn.active {
+      border-color: var(--violet); color: var(--violet);
+      background: rgba(124,107,255,.08);
+      box-shadow: 0 0 14px rgba(124,107,255,.12);
+    }
+
+    /* MAIN LAYOUT */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* CANVAS */
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 1/1; cursor: crosshair;
+      user-select: none;
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; }
+
+    /* HINT */
+    .canvas-hint {
+      position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted);
+      background: rgba(13,15,26,.85); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px;
+      padding: .3rem 1rem; pointer-events: none; white-space: nowrap;
+      transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .info-head {
+      padding: .85rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .75rem; }
+
+    /* Coordinate display */
+    .coord-display {
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      padding: 1rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .coord-paren { font-family: 'DM Mono', monospace; font-size: 1.6rem; color: var(--muted); line-height: 1; }
+    .coord-x { font-family: 'DM Mono', monospace; font-size: 1.5rem; color: var(--violet); min-width: 3ch; text-align: center; transition: all .2s; }
+    .coord-sep { font-family: 'DM Mono', monospace; font-size: 1.3rem; color: var(--muted); }
+    .coord-y { font-family: 'DM Mono', monospace; font-size: 1.5rem; color: var(--rose); min-width: 3ch; text-align: center; transition: all .2s; }
+
+    /* Quadrant info */
+    .quadrant-badge {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .75rem 1rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      transition: all .3s;
+    }
+    .q-roman {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem;
+      min-width: 2rem; text-align: center; transition: color .3s;
+    }
+    .q-info { display: flex; flex-direction: column; gap: .15rem; }
+    .q-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; }
+    .q-signs { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); }
+
+    /* Points list */
+    .points-list { display: flex; flex-direction: column; gap: .4rem; max-height: 200px; overflow-y: auto; }
+    .point-item {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .5rem .75rem; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace; font-size: .82rem;
+      transition: all var(--tr);
+    }
+    .point-item:hover { border-color: var(--violet); }
+    .point-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .point-coords { flex: 1; }
+    .point-q { font-size: .68rem; color: var(--muted); }
+    .point-del {
+      font-size: .8rem; color: var(--muted); cursor: pointer; padding: .2rem .4rem;
+      border-radius: 4px; transition: all var(--tr);
+    }
+    .point-del:hover { color: var(--rose); background: rgba(255,107,157,.1); }
+
+    .clear-btn {
+      width: 100%; padding: .5rem; border-radius: 8px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .8rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .clear-btn:hover { border-color: var(--rose); color: var(--rose); background: rgba(255,107,157,.06); }
+
+    /* CHALLENGE MODE */
+    .challenge-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .challenge-head {
+      padding: .85rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .challenge-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .challenge-score {
+      font-family: 'DM Mono', monospace; font-size: .88rem; color: var(--lime);
+    }
+    .challenge-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .85rem; }
+    .challenge-target {
+      font-size: .9rem; line-height: 1.6; text-align: center;
+      padding: .75rem; background: var(--surface); border-radius: 10px; border: 1px solid var(--border);
+    }
+    .challenge-target strong { font-family: 'DM Mono', monospace; color: var(--violet); font-size: 1.1rem; }
+    .challenge-feedback {
+      padding: .65rem 1rem; border-radius: 10px; font-size: .82rem; line-height: 1.5;
+      text-align: center; transition: all .3s; min-height: 2.5rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .challenge-feedback.correct  { background: rgba(168,255,62,.1);  border: 1px solid rgba(168,255,62,.3);  color: var(--lime); }
+    .challenge-feedback.close    { background: rgba(255,190,61,.1);  border: 1px solid rgba(255,190,61,.3);  color: var(--amber); }
+    .challenge-feedback.wrong    { background: rgba(255,107,157,.1); border: 1px solid rgba(255,107,157,.3); color: var(--rose); }
+    .challenge-feedback.idle     { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .next-btn {
+      width: 100%; padding: .55rem; border-radius: 8px;
+      border: 1px solid var(--violet); background: rgba(124,107,255,.1);
+      color: var(--violet); font-family: 'DM Sans', sans-serif; font-size: .85rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .next-btn:hover { background: rgba(124,107,255,.2); box-shadow: 0 0 14px rgba(124,107,255,.2); }
+
+    /* QUADRANT GUIDE */
+    .quadrant-guide {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .5rem;
+    }
+    .qg-item {
+      padding: .6rem .75rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .qg-num  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .82rem; margin-bottom: .15rem; }
+    .qg-sign { font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--muted); }
+
+    /* INSIGHTS */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p  { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .insights    { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav, .page-header, .mode-bar, .main-layout { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Representació Gràfica</a>
+  <div class="nav-right">
+    <span class="sec-label">Secció 01 · Coordenades</span>
+    <a href="index.html" class="nav-back">← Inici</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Coordenades</span>
+  </div>
+  <h1>El pla <em>cartesià</em></h1>
+  <p>Cada punt de l'espai pla té una adreça exacta formada per dos números: la coordenada <strong>x</strong> (horitzontal) i la coordenada <strong>y</strong> (vertical). Clica al pla per col·locar punts i aprendre a llegir-los.</p>
+</div>
+
+<!-- MODE TABS -->
+<div class="mode-bar">
+  <button class="mode-btn active" onclick="setMode('lliure', this)">📍 Mode lliure</button>
+  <button class="mode-btn" onclick="setMode('repte', this)">🎯 Repte: troba el punt</button>
+  <button class="mode-btn" onclick="setMode('quadrants', this)">🗺️ Explora els quadrants</button>
+</div>
+
+<div class="main-layout">
+
+  <!-- CANVAS -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="mainCanvas"></canvas>
+    <div class="canvas-hint" id="hint">Clica al pla per col·locar un punt</div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel" id="sidePanel">
+
+    <!-- Free mode panel -->
+    <div id="freePanel">
+      <div class="info-box">
+        <div class="info-head">
+          <span class="info-head-icon">📍</span>
+          <span class="info-head-title">Punt seleccionat</span>
+        </div>
+        <div class="info-body">
+          <div class="coord-display">
+            <span class="coord-paren">(</span>
+            <span class="coord-x" id="coordX">—</span>
+            <span class="coord-sep">,</span>
+            <span class="coord-y" id="coordY">—</span>
+            <span class="coord-paren">)</span>
+          </div>
+          <div class="quadrant-badge" id="quadrantBadge">
+            <span class="q-roman" id="qRoman">—</span>
+            <div class="q-info">
+              <span class="q-name" id="qName">Clica al pla</span>
+              <span class="q-signs" id="qSigns">x = ?, y = ?</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-head">
+          <span class="info-head-icon">🗂️</span>
+          <span class="info-head-title">Punts col·locats</span>
+        </div>
+        <div class="info-body">
+          <div class="points-list" id="pointsList">
+            <div style="font-size:.78rem;color:var(--muted);text-align:center;padding:.5rem">Cap punt encara</div>
+          </div>
+          <button class="clear-btn" onclick="clearPoints()">Esborrar tots els punts</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-head">
+          <span class="info-head-icon">🗺️</span>
+          <span class="info-head-title">Els quatre quadrants</span>
+        </div>
+        <div class="info-body">
+          <div class="quadrant-guide">
+            <div class="qg-item" style="border-color:rgba(124,107,255,.3)">
+              <div class="qg-num" style="color:var(--q1)">I Quadrant</div>
+              <div class="qg-sign">x &gt; 0, y &gt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(255,107,157,.3)">
+              <div class="qg-num" style="color:var(--q2)">II Quadrant</div>
+              <div class="qg-sign">x &lt; 0, y &gt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(255,190,61,.3)">
+              <div class="qg-num" style="color:var(--q3)">III Quadrant</div>
+              <div class="qg-sign">x &lt; 0, y &lt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(168,255,62,.3)">
+              <div class="qg-num" style="color:var(--q4)">IV Quadrant</div>
+              <div class="qg-sign">x &gt; 0, y &lt; 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Challenge panel -->
+    <div id="challengePanel" style="display:none">
+      <div class="challenge-box">
+        <div class="challenge-head">
+          <span class="challenge-title">🎯 Repte: troba el punt</span>
+          <span class="challenge-score" id="scoreDisplay">0 / 0</span>
+        </div>
+        <div class="challenge-body">
+          <div class="challenge-target">
+            Col·loca el punt<br>
+            <strong id="targetCoord">(?, ?)</strong>
+          </div>
+          <div class="challenge-feedback idle" id="challengeFeedback">
+            Clica on creus que és el punt
+          </div>
+          <button class="next-btn" id="nextBtn" onclick="nextChallenge()" style="display:none">
+            Següent punt →
+          </button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="info-head">
+          <span class="info-head-icon">📊</span>
+          <span class="info-head-title">Resultats</span>
+        </div>
+        <div class="info-body">
+          <div class="quadrant-guide">
+            <div class="qg-item" style="border-color:rgba(168,255,62,.3)">
+              <div class="qg-num" style="color:var(--lime)" id="scoreOk">0</div>
+              <div class="qg-sign">Encerts</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(255,107,157,.3)">
+              <div class="qg-num" style="color:var(--rose)" id="scoreErr">0</div>
+              <div class="qg-sign">Errors</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quadrants info panel -->
+    <div id="quadrantsPanel" style="display:none">
+      <div class="info-box">
+        <div class="info-head">
+          <span class="info-head-icon">🗺️</span>
+          <span class="info-head-title">Passa el cursor per cada quadrant</span>
+        </div>
+        <div class="info-body">
+          <div class="quadrant-badge" id="hoverBadge">
+            <span class="q-roman" id="hoverRoman" style="color:var(--violet)">—</span>
+            <div class="q-info">
+              <span class="q-name" id="hoverName">Mou el cursor pel pla</span>
+              <span class="q-signs" id="hoverSigns">x = ?, y = ?</span>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--muted);line-height:1.6">
+            Observa com canvia el quadrant quan el cursor creua un eix. Els punts sobre l'eix <strong>no pertanyen</strong> a cap quadrant.
+          </div>
+          <div class="quadrant-guide">
+            <div class="qg-item" style="border-color:rgba(124,107,255,.3)">
+              <div class="qg-num" style="color:var(--q1)">I</div>
+              <div class="qg-sign">x &gt; 0, y &gt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(255,107,157,.3)">
+              <div class="qg-num" style="color:var(--q2)">II</div>
+              <div class="qg-sign">x &lt; 0, y &gt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(255,190,61,.3)">
+              <div class="qg-num" style="color:var(--q3)">III</div>
+              <div class="qg-sign">x &lt; 0, y &lt; 0</div>
+            </div>
+            <div class="qg-item" style="border-color:rgba(168,255,62,.3)">
+              <div class="qg-num" style="color:var(--q4)">IV</div>
+              <div class="qg-sign">x &gt; 0, y &lt; 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🧭</span>
+    <div class="insight-text">
+      <h4>Origen i eixos</h4>
+      <p>El punt (0, 0) és l'<strong>origen</strong>. L'eix horitzontal és l'eix de les <strong>x</strong> (abscisses) i el vertical l'eix de les <strong>y</strong> (ordenades).</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">📍</span>
+    <div class="insight-text">
+      <h4>Com llegir un punt</h4>
+      <p>El punt (3, −2) significa: des de l'origen, <strong>3 passos a la dreta</strong> (x = 3) i <strong>2 passos avall</strong> (y = −2). Sempre primer x, després y.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🗺️</span>
+    <div class="insight-text">
+      <h4>Els quatre quadrants</h4>
+      <p>Els eixos divideixen el pla en 4 regions. Al primer quadrant (I), tots dos valors són positius. El signe de x i y indica el quadrant.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Representació Gràfica · Secció 01 · Coordenades</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─── COLOURS ───
+const QCOL = { 1:'#7c6bff', 2:'#ff6b9d', 3:'#ffbe3d', 4:'#a8ff3e' };
+const QNAMES = {
+  1:'I Quadrant',   2:'II Quadrant',
+  3:'III Quadrant', 4:'IV Quadrant',
+  0:'Sobre un eix'
+};
+const QSIGNS = {
+  1:'x > 0,  y > 0', 2:'x < 0,  y > 0',
+  3:'x < 0,  y < 0', 4:'x > 0,  y < 0',
+  0:'coordenada = 0'
+};
+
+// ─── CANVAS SETUP ───
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+let W, H, dpr, unit, cx, cy;
+
+function resize() {
+  dpr  = devicePixelRatio;
+  const rect = wrap.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  cx = W / 2; cy = H / 2;
+  unit = Math.min(W, H) / 14;   // 7 units each side
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ─── STATE ───
+let mode        = 'lliure';
+let points      = [];
+let hoverFX     = null;   // {x, y} fractional canvas — for hover crosshair
+let challenge   = null;
+let score       = { ok: 0, err: 0 };
+let awaitingNext = false;
+let hinted      = false;
+
+// Point colours cycling
+const PT_COLORS = ['#7c6bff','#ff6b9d','#a8ff3e','#ffbe3d','#48dbfb','#ff9f43'];
+let colorIdx = 0;
+
+// ─── COORDINATE HELPERS ───
+function canvasToGrid(px, py) {
+  return {
+    x: Math.round((px - cx) / unit * 2) / 2,
+    y: Math.round((cy - py) / unit * 2) / 2,
+  };
+}
+function gridToCanvas(gx, gy) {
+  return { px: cx + gx * unit, py: cy - gy * unit };
+}
+function quadrant(x, y) {
+  if (x === 0 || y === 0) return 0;
+  if (x > 0 && y > 0) return 1;
+  if (x < 0 && y > 0) return 2;
+  if (x < 0 && y < 0) return 3;
+  return 4;
+}
+function fmtCoord(v) {
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+
+// ─── DRAW ───
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+  drawAxes();
+  if (mode === 'quadrants') drawQuadrantShading();
+  if (mode === 'quadrants' && hoverFX) drawHoverHighlight();
+  if (mode === 'repte' && challenge) drawChallengeTarget();
+  drawPoints();
+  if (hoverFX && mode !== 'quadrants') drawCrosshair();
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let gx = -7; gx <= 7; gx++) {
+    const px = cx + gx * unit;
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+  }
+  for (let gy = -7; gy <= 7; gy++) {
+    const py = cy + gy * unit;
+    ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(W, py); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAxes() {
+  const dashes = unit * 0.35;
+  ctx.save();
+  // Axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.8 * dpr;
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, H); ctx.stroke();
+
+  // Arrowheads
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  const aw = 5*dpr, al = 10*dpr;
+  ctx.beginPath(); ctx.moveTo(W-2,cy); ctx.lineTo(W-al,cy-aw); ctx.lineTo(W-al,cy+aw); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,2); ctx.lineTo(cx-aw,al); ctx.lineTo(cx+aw,al); ctx.fill();
+
+  // Tick marks + numbers
+  ctx.font = `${9*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = -6; i <= 6; i++) {
+    if (i === 0) continue;
+    const px = cx + i * unit;
+    ctx.beginPath(); ctx.moveTo(px, cy - 4*dpr); ctx.lineTo(px, cy + 4*dpr);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillText(String(i), px, cy + 6*dpr);
+  }
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let i = -6; i <= 6; i++) {
+    if (i === 0) continue;
+    const py = cy - i * unit;
+    ctx.beginPath(); ctx.moveTo(cx - 4*dpr, py); ctx.lineTo(cx + 4*dpr, py);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillText(String(i), cx - 7*dpr, py);
+  }
+
+  // Axis labels
+  ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('x', W - 12*dpr, cy - 14*dpr);
+  ctx.fillText('y', cx + 14*dpr, 12*dpr);
+  ctx.fillText('O', cx - 12*dpr, cy + 12*dpr);
+  ctx.restore();
+}
+
+function drawQuadrantShading() {
+  const quads = [
+    { x: cx, y: 0,  w: W-cx, h: cy,   col: QCOL[1], q: 1 },
+    { x: 0,  y: 0,  w: cx,   h: cy,   col: QCOL[2], q: 2 },
+    { x: 0,  y: cy, w: cx,   h: H-cy, col: QCOL[3], q: 3 },
+    { x: cx, y: cy, w: W-cx, h: H-cy, col: QCOL[4], q: 4 },
+  ];
+
+  // Detect hover quadrant
+  let hq = 0;
+  if (hoverFX) {
+    const g = canvasToGrid(hoverFX.x, hoverFX.y);
+    hq = quadrant(g.x, g.y);
+  }
+
+  quads.forEach(q => {
+    const alpha = hq === q.q ? 0.1 : 0.04;
+    ctx.save();
+    ctx.fillStyle = q.col + Math.round(alpha * 255).toString(16).padStart(2,'0');
+    ctx.fillRect(q.x, q.y, q.w, q.h);
+    ctx.restore();
+
+    // Roman numeral label
+    const lx = q.x + q.w/2, ly = q.y + q.h/2;
+    ctx.save();
+    ctx.font = `bold ${18*dpr}px 'Syne',sans-serif`;
+    ctx.fillStyle = q.col + (hq === q.q ? 'cc' : '44');
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(['I','II','III','IV'][q.q-1], lx, ly);
+    ctx.restore();
+  });
+}
+
+function drawHoverHighlight() {
+  if (!hoverFX) return;
+  const g  = canvasToGrid(hoverFX.x, hoverFX.y);
+  const q  = quadrant(g.x, g.y);
+  const col = q ? QCOL[q] : 'rgba(255,255,255,0.3)';
+
+  // Highlight lines from origin to hover
+  ctx.save();
+  ctx.strokeStyle = col + '66'; ctx.lineWidth = 1.5*dpr; ctx.setLineDash([4*dpr,3*dpr]);
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(hoverFX.x, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hoverFX.x, cy); ctx.lineTo(hoverFX.x, hoverFX.y); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+
+  // Cursor dot
+  ctx.beginPath(); ctx.arc(hoverFX.x, hoverFX.y, 5*dpr, 0, Math.PI*2);
+  ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 12;
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Live coordinate label
+  ctx.save();
+  ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.shadowColor = col; ctx.shadowBlur = 6;
+  ctx.fillText(`(${fmtCoord(g.x)}, ${fmtCoord(g.y)})`, hoverFX.x + 10*dpr, hoverFX.y - 6*dpr);
+  ctx.shadowBlur = 0; ctx.restore();
+
+  // Update side panel
+  document.getElementById('hoverRoman').textContent = q ? ['I','II','III','IV'][q-1] : '—';
+  document.getElementById('hoverRoman').style.color  = q ? QCOL[q] : 'var(--muted)';
+  document.getElementById('hoverName').textContent   = QNAMES[q];
+  document.getElementById('hoverSigns').textContent  = QSIGNS[q];
+}
+
+function drawCrosshair() {
+  if (!hoverFX) return;
+  const g   = canvasToGrid(hoverFX.x, hoverFX.y);
+  const col = 'rgba(124,107,255,0.35)';
+  ctx.save();
+  ctx.strokeStyle = col; ctx.lineWidth = 1*dpr; ctx.setLineDash([4*dpr, 3*dpr]);
+  ctx.beginPath(); ctx.moveTo(hoverFX.x, 0); ctx.lineTo(hoverFX.x, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, hoverFX.y); ctx.lineTo(W, hoverFX.y); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+
+  // Snap circle
+  ctx.save();
+  ctx.beginPath(); ctx.arc(hoverFX.x, hoverFX.y, 5*dpr, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(124,107,255,.5)';
+  ctx.fill(); ctx.restore();
+
+  // Coordinate preview
+  const label = `(${fmtCoord(g.x)}, ${fmtCoord(g.y)})`;
+  const lx = hoverFX.x + 10*dpr;
+  const ly = hoverFX.y - 12*dpr;
+  ctx.save();
+  ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(124,107,255,.9)'; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.shadowColor = '#7c6bff'; ctx.shadowBlur = 6;
+  ctx.fillText(label, lx, ly);
+  ctx.shadowBlur = 0; ctx.restore();
+}
+
+function drawPoints() {
+  points.forEach((p, i) => {
+    const { px, py } = gridToCanvas(p.x, p.y);
+    // Outer ring
+    ctx.beginPath(); ctx.arc(px, py, 10*dpr, 0, Math.PI*2);
+    ctx.fillStyle = p.color + '22'; ctx.fill();
+    // Main dot
+    ctx.beginPath(); ctx.arc(px, py, 6*dpr, 0, Math.PI*2);
+    ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 14;
+    ctx.fill(); ctx.shadowBlur = 0;
+    // Coordinate label
+    ctx.save();
+    ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+    ctx.fillStyle = p.color; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+    ctx.fillText(`(${fmtCoord(p.x)}, ${fmtCoord(p.y)})`, px + 10*dpr, py - 4*dpr);
+    ctx.shadowBlur = 0; ctx.restore();
+  });
+}
+
+function drawChallengeTarget() {
+  if (!challenge || awaitingNext) return;
+  // Show blinking target position if revealed
+  if (challenge.revealed) {
+    const { px, py } = gridToCanvas(challenge.x, challenge.y);
+    const alpha = 0.5 + 0.5 * Math.sin(Date.now() * 0.005);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px, py, 14*dpr, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(168,255,62,${alpha})`; ctx.lineWidth = 2*dpr;
+    ctx.shadowColor = '#a8ff3e'; ctx.shadowBlur = 12;
+    ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(px, py, 5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = '#a8ff3e'; ctx.fill();
+    ctx.restore();
+    requestAnimationFrame(draw);
+  }
+}
+
+// ─── INTERACTION ───
+function pointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  return {
+    px: (src.clientX - rect.left) * dpr,
+    py: (src.clientY - rect.top)  * dpr,
+  };
+}
+
+canvas.addEventListener('mousemove', e => {
+  const { px, py } = pointerPos(e);
+  hoverFX = { x: px, y: py };
+  draw();
+});
+canvas.addEventListener('mouseleave', () => { hoverFX = null; draw(); });
+
+canvas.addEventListener('click', e => {
+  const { px, py } = pointerPos(e);
+  const g = canvasToGrid(px, py);
+  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+
+  if (mode === 'lliure') {
+    addPoint(g.x, g.y);
+  } else if (mode === 'repte') {
+    handleChallengeClick(g.x, g.y);
+  }
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const { px, py } = pointerPos(e);
+  hoverFX = { x: px, y: py };
+  const g = canvasToGrid(px, py);
+  if (mode === 'lliure') addPoint(g.x, g.y);
+  else if (mode === 'repte') handleChallengeClick(g.x, g.y);
+  draw();
+}, { passive: false });
+
+// ─── POINTS ───
+function addPoint(x, y) {
+  const color = PT_COLORS[colorIdx % PT_COLORS.length];
+  colorIdx++;
+  points.push({ x, y, color });
+  updatePointsList();
+  updateQuadrantDisplay(x, y, color);
+  draw();
+}
+
+function clearPoints() {
+  points = []; colorIdx = 0;
+  updatePointsList();
+  document.getElementById('coordX').textContent = '—';
+  document.getElementById('coordY').textContent = '—';
+  document.getElementById('qRoman').textContent  = '—';
+  document.getElementById('qName').textContent   = 'Clica al pla';
+  document.getElementById('qSigns').textContent  = 'x = ?, y = ?';
+  draw();
+}
+
+function updatePointsList() {
+  const list = document.getElementById('pointsList');
+  if (points.length === 0) {
+    list.innerHTML = '<div style="font-size:.78rem;color:var(--muted);text-align:center;padding:.5rem">Cap punt encara</div>';
+    return;
+  }
+  list.innerHTML = points.map((p, i) =>
+    `<div class="point-item">
+      <div class="point-dot" style="background:${p.color}"></div>
+      <span class="point-coords" style="color:${p.color}">(${fmtCoord(p.x)}, ${fmtCoord(p.y)})</span>
+      <span class="point-q">${['','I','II','III','IV'][quadrant(p.x,p.y)] || '—'}</span>
+      <span class="point-del" onclick="deletePoint(${i})">✕</span>
+    </div>`
+  ).reverse().join('');
+}
+
+function deletePoint(i) {
+  points.splice(i, 1);
+  updatePointsList();
+  draw();
+}
+
+function updateQuadrantDisplay(x, y, color) {
+  const q = quadrant(x, y);
+  document.getElementById('coordX').textContent = fmtCoord(x);
+  document.getElementById('coordY').textContent = fmtCoord(y);
+  document.getElementById('coordX').style.color = color || 'var(--violet)';
+  document.getElementById('coordY').style.color = color || 'var(--rose)';
+  document.getElementById('qRoman').textContent = q ? ['I','II','III','IV'][q-1] : '—';
+  document.getElementById('qRoman').style.color  = q ? QCOL[q] : 'var(--muted)';
+  document.getElementById('qName').textContent   = QNAMES[q];
+  document.getElementById('qSigns').textContent  = QSIGNS[q];
+  document.getElementById('quadrantBadge').style.borderColor = q ? QCOL[q]+'66' : 'var(--border)';
+}
+
+// ─── CHALLENGE ───
+const CHALLENGE_POINTS = [
+  {x:3,y:2},{x:-2,y:4},{x:-3,y:-1},{x:4,y:-3},
+  {x:1,y:5},{x:-5,y:-2},{x:2,y:-4},{x:-1,y:3},
+  {x:0,y:3},{x:4,y:0},{x:-3,y:0},{x:0,y:-2},
+  {x:5,y:5},{x:-4,y:-4},{x:3,y:-5},{x:-5,y:2},
+];
+let challengeQueue = [];
+let challengeIdx   = 0;
+
+function startChallenge() {
+  challengeQueue = [...CHALLENGE_POINTS].sort(() => Math.random() - .5);
+  challengeIdx = 0; score = { ok:0, err:0 };
+  updateScoreDisplay();
+  nextChallenge();
+}
+
+function nextChallenge() {
+  if (challengeIdx >= challengeQueue.length) {
+    document.getElementById('challengeFeedback').className = 'challenge-feedback correct';
+    document.getElementById('challengeFeedback').textContent = `✓ Has completat tots els reptes! ${score.ok} encerts, ${score.err} errors.`;
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('targetCoord').textContent = '✓ Fet!';
+    challenge = null; points = []; draw();
+    return;
+  }
+  challenge = { ...challengeQueue[challengeIdx], revealed: false };
+  challengeIdx++;
+  points = [];
+  awaitingNext = false;
+  document.getElementById('targetCoord').textContent =
+    `(${fmtCoord(challenge.x)}, ${fmtCoord(challenge.y)})`;
+  document.getElementById('challengeFeedback').className = 'challenge-feedback idle';
+  document.getElementById('challengeFeedback').textContent = 'Clica on creus que és el punt';
+  document.getElementById('nextBtn').style.display = 'none';
+  draw();
+}
+
+function handleChallengeClick(x, y) {
+  if (!challenge || awaitingNext) return;
+  const dx = Math.abs(x - challenge.x), dy = Math.abs(y - challenge.y);
+  const dist = Math.hypot(dx, dy);
+
+  let cls, msg;
+  if (dist <= 0.5) {
+    cls = 'correct'; msg = '✓ Excel·lent! Encert!'; score.ok++;
+  } else if (dist <= 1.5) {
+    cls = 'close'; msg = `Quasi! La resposta era (${fmtCoord(challenge.x)}, ${fmtCoord(challenge.y)})`; score.err++;
+  } else {
+    cls = 'wrong'; msg = `No. La resposta era (${fmtCoord(challenge.x)}, ${fmtCoord(challenge.y)})`; score.err++;
+  }
+  challenge.revealed = true;
+  awaitingNext = true;
+  points = [{ x, y, color: cls === 'correct' ? '#a8ff3e' : cls === 'close' ? '#ffbe3d' : '#ff6b9d' }];
+  document.getElementById('challengeFeedback').className = `challenge-feedback ${cls}`;
+  document.getElementById('challengeFeedback').textContent = msg;
+  document.getElementById('nextBtn').style.display = 'block';
+  updateScoreDisplay();
+  draw();
+}
+
+function updateScoreDisplay() {
+  const tot = score.ok + score.err;
+  document.getElementById('scoreDisplay').textContent = `${score.ok} / ${tot}`;
+  document.getElementById('scoreOk').textContent  = score.ok;
+  document.getElementById('scoreErr').textContent = score.err;
+}
+
+// ─── MODE SWITCH ───
+function setMode(name, btn) {
+  mode = name;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.getElementById('freePanel').style.display       = name === 'lliure'    ? 'contents' : 'none';
+  document.getElementById('challengePanel').style.display  = name === 'repte'     ? 'contents' : 'none';
+  document.getElementById('quadrantsPanel').style.display  = name === 'quadrants' ? 'contents' : 'none';
+
+  points = []; challenge = null; hoverFX = null;
+
+  const hint = document.getElementById('hint');
+  hint.classList.remove('hidden');
+  if (name === 'lliure')    hint.textContent = 'Clica al pla per col·locar un punt';
+  if (name === 'repte')     hint.textContent = 'Clica on creus que és el punt demanat';
+  if (name === 'quadrants') hint.textContent = 'Mou el cursor per veure els quadrants';
+
+  if (name === 'repte') startChallenge();
+  draw();
+}
+
+// ─── INIT ───
+resize();
+</script>
+</body>
+</html>
