@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Representació Gràfica · 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .25s cubic-bezier(.4,0,.2,1);
+
+      /* Paleta específica d'aquest web */
+      --violet:  #7c6bff;   /* accent principal */
+      --rose:    #ff6b9d;   /* accent secundari */
+      --lime:    #a8ff3e;   /* accent terciari  */
+      --amber:   #ffbe3d;   /* estadística      */
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED BACKGROUND ── */
+    .anim-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    #bgCanvas { display: block; width: 100%; height: 100%; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(13,15,26,.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem;
+      color: var(--text); text-decoration: none;
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .nav-logo .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--violet); box-shadow: 0 0 14px var(--violet);
+    }
+    .nav-sub { font-size: .72rem; color: var(--muted); font-weight: 300; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative; z-index: 1;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 3rem; align-items: center;
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 6rem 2rem 5rem;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(124,107,255,.1); color: var(--violet);
+      border: 1px solid rgba(124,107,255,.3);
+      border-radius: 100px; padding: .3rem 1rem;
+      font-size: .78rem; font-weight: 500; letter-spacing: .08em;
+      text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+      line-height: 1.08; letter-spacing: -.02em; margin-bottom: 1.25rem;
+    }
+    .hero h1 .a1 { color: var(--violet); }
+    .hero h1 .a2 { color: var(--rose); }
+    .hero p {
+      color: var(--muted); font-size: 1rem; line-height: 1.75;
+      max-width: 420px; margin-bottom: 2.5rem;
+    }
+    .hero-stats { display: flex; gap: 2.5rem; }
+    .hero-stat  { display: flex; flex-direction: column; gap: .18rem; }
+    .hero-stat-num {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 1.85rem; color: var(--violet); line-height: 1;
+    }
+    .hero-stat-label {
+      font-size: .72rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+
+    /* Hero canvas */
+    .hero-visual { display: flex; align-items: center; justify-content: center; }
+    .hero-canvas-wrap {
+      width: 340px; height: 340px; border-radius: 24px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: 0 0 80px rgba(124,107,255,.15); overflow: hidden;
+    }
+    #heroCanvas { display: block; width: 100%; height: 100%; }
+
+    /* ── SECTIONS GRID ── */
+    .sections {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 5rem;
+    }
+    .sections-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1.5rem;
+    }
+    .sections-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+    }
+
+    .section-card {
+      display: block; text-decoration: none;
+      background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+      padding: 2rem 1.75rem; position: relative; overflow: hidden;
+      transition: all .3s cubic-bezier(.4,0,.2,1);
+      cursor: pointer;
+    }
+    .section-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--s-color); opacity: .8;
+    }
+    .section-card::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at top left, color-mix(in srgb, var(--s-color) 8%, transparent), transparent 60%);
+      opacity: 0; transition: opacity .3s;
+    }
+    .section-card:hover { transform: translateY(-6px); border-color: var(--s-color); box-shadow: 0 24px 48px rgba(0,0,0,.4); }
+    .section-card:hover::after { opacity: 1; }
+
+    .sc-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: color-mix(in srgb, var(--s-color) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--s-color) 30%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1.25rem;
+      position: relative; z-index: 1;
+    }
+    .sc-label {
+      font-size: .7rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--s-color); margin-bottom: .5rem;
+      position: relative; z-index: 1;
+    }
+    .section-card h2 {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.2rem;
+      margin-bottom: .6rem; position: relative; z-index: 1;
+    }
+    .section-card p {
+      font-size: .82rem; color: var(--muted); line-height: 1.6;
+      position: relative; z-index: 1;
+    }
+    .sc-arrow {
+      position: absolute; bottom: 1.5rem; right: 1.5rem;
+      font-size: 1.1rem; color: var(--s-color); opacity: .5;
+      transition: all .3s; z-index: 1;
+    }
+    .section-card:hover .sc-arrow { opacity: 1; transform: translate(3px,-3px); }
+
+    .sc-tag {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .7rem; color: var(--muted); margin-top: 1rem;
+      position: relative; z-index: 1;
+    }
+    .sc-tag-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--s-color); }
+    .section-card.coming-soon { opacity: .5; cursor: default; pointer-events: none; }
+    .section-card.coming-soon .sc-arrow { display: none; }
+
+    /* ── HIGHLIGHTS ROW ── */
+    .highlights {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 5rem;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    }
+    .hl-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.2rem 1.25rem; display: flex; align-items: flex-start; gap: .85rem;
+    }
+    .hl-icon { font-size: 1.4rem; line-height: 1; margin-top: .1rem; flex-shrink: 0; }
+    .hl-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .hl-text p  { font-size: .76rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border); padding: 1.75rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+      margin-top: auto;
+    }
+
+    /* ── REVEAL ── */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 860px) {
+      .hero        { grid-template-columns: 1fr; padding: 4rem 1.5rem 3rem; }
+      .hero-visual { display: none; }
+      .sections-grid { grid-template-columns: 1fr; }
+      .highlights    { grid-template-columns: 1fr 1fr; }
+      nav, .sections, .highlights { padding-left: 1.5rem; padding-right: 1.5rem; }
+    }
+    @media (max-width: 520px) {
+      .highlights { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="anim-bg"><canvas id="bgCanvas"></canvas></div>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="dot"></span>
+    Representació Gràfica
+    <span class="nav-sub">· 1r ESO · Matemàtiques</span>
+  </a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <span class="hero-tag">Matemàtiques · 1r ESO</span>
+    <h1>
+      <span class="a1">Funcions</span> i<br>
+      <span class="a2">gràfiques</span>
+    </h1>
+    <p>Coordenades, funcions lineals i quadràtiques, taules de valors i una introducció a l'estadística. Tot de forma visual i interactiva.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-num">4</span>
+        <span class="hero-stat-label">Seccions</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-num">6</span>
+        <span class="hero-stat-label">Conceptes</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-canvas-wrap">
+      <canvas id="heroCanvas" width="340" height="340"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- SECTIONS -->
+<div class="sections reveal">
+  <p class="sections-title">Seccions del tema</p>
+  <div class="sections-grid">
+
+    <a href="coordenades.html" class="section-card" style="--s-color:var(--violet)">
+      <div class="sc-icon">📍</div>
+      <div class="sc-label">Secció 01</div>
+      <h2>Coordenades</h2>
+      <p>El pla cartesià, els eixos X i Y, els quadrants i com llegir i escriure coordenades (x, y).</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>Pla cartesià · Quadrants · Origen</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+    <a href="funcions.html" class="section-card" style="--s-color:var(--rose)">
+      <div class="sc-icon">📈</div>
+      <div class="sc-label">Secció 02</div>
+      <h2>Funcions</h2>
+      <p>Funció constant, proporcional, lineal i quadràtica. Taules de valors i intersecció amb els eixos.</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>y = mx + b · paràbola · taules</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+    <a href="dibuixa.html" class="section-card" style="--s-color:var(--lime)">
+      <div class="sc-icon">✏️</div>
+      <div class="sc-label">Secció 03</div>
+      <h2>Dibuixa la funció</h2>
+      <p>Intenta representar la funció clicant punts al pla. Veuràs si estàs a prop o lluny de la solució real.</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>Pràctica guiada · Feedback visual</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+    <a href="estadistica.html" class="section-card" style="--s-color:var(--amber)">
+      <div class="sc-icon">📊</div>
+      <div class="sc-label">Secció 04</div>
+      <h2>Estadística</h2>
+      <p>Diagrames de barres i de línies. Mitjana, moda i mediana representades sobre la gràfica.</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>Barres · Línies · Mitjana · Moda</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+    <a href="fitxes.html" class="section-card" style="--s-color:var(--muted)">
+      <div class="sc-icon">📄</div>
+      <div class="sc-label">Fitxes</div>
+      <h2>Fitxes de pràctica</h2>
+      <p>Exercicis per imprimir o fer en línia, organitzats per nivell i tema.</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>Bàsic · Mitjà · Avançat</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+    <a href="recursos.html" class="section-card" style="--s-color:var(--muted)">
+      <div class="sc-icon">🔗</div>
+      <div class="sc-label">Recursos</div>
+      <h2>Material extra</h2>
+      <p>Activitats externes, vídeos i applets per ampliar i reforçar els continguts del tema.</p>
+      <div class="sc-tag"><span class="sc-tag-dot"></span>Activitats · Vídeos · Applets</div>
+      <span class="sc-arrow">↗</span>
+    </a>
+
+  </div>
+</div>
+
+<!-- HIGHLIGHTS -->
+<div class="highlights reveal" style="transition-delay:.12s">
+  <div class="hl-card">
+    <span class="hl-icon">🎯</span>
+    <div class="hl-text">
+      <h4>Aprèn clicant</h4>
+      <p>Les gràfiques reaccionen en temps real als teus canvis. Mou sliders, clica punts i observa el resultat.</p>
+    </div>
+  </div>
+  <div class="hl-card">
+    <span class="hl-icon">📐</span>
+    <div class="hl-text">
+      <h4>Fórmules vives</h4>
+      <p>Cada paràmetre d'una funció (m, b, k, a) es pot modificar i veure l'efecte immediatament.</p>
+    </div>
+  </div>
+  <div class="hl-card">
+    <span class="hl-icon">✅</span>
+    <div class="hl-text">
+      <h4>Feedback immediat</h4>
+      <p>A la secció de dibuix, cada punt que col·loques rep un color: verd, taronja o vermell segons la precisió.</p>
+    </div>
+  </div>
+  <div class="hl-card">
+    <span class="hl-icon">📊</span>
+    <div class="hl-text">
+      <h4>Connexió amb estadística</h4>
+      <p>Les mateixes eines gràfiques serveixen per entendre la mitjana, la moda i la mediana de dades reals.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Representació Gràfica · 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────
+// BACKGROUND CANVAS: pla cartesià animat amb funcions que es dibuixen
+// ─────────────────────────────────────────
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx    = bgCanvas.getContext('2d');
+
+function resizeBg() {
+  bgCanvas.width  = window.innerWidth  * devicePixelRatio;
+  bgCanvas.height = window.innerHeight * devicePixelRatio;
+  bgCanvas.style.width  = window.innerWidth  + 'px';
+  bgCanvas.style.height = window.innerHeight + 'px';
+}
+window.addEventListener('resize', resizeBg);
+resizeBg();
+
+let bgT = 0;
+
+function drawBg() {
+  const W = bgCanvas.width, H = bgCanvas.height;
+  bgCtx.clearRect(0, 0, W, H);
+
+  const dpr = devicePixelRatio;
+  const cx = W/2, cy = H/2;
+
+  // Subtle grid
+  bgCtx.save();
+  bgCtx.strokeStyle = 'rgba(255,255,255,0.025)'; bgCtx.lineWidth = 1;
+  const step = 60 * dpr;
+  for (let x = cx % step; x < W; x += step) { bgCtx.beginPath(); bgCtx.moveTo(x,0); bgCtx.lineTo(x,H); bgCtx.stroke(); }
+  for (let y = cy % step; y < H; y += step) { bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y); bgCtx.stroke(); }
+  bgCtx.restore();
+
+  // Axes
+  bgCtx.save();
+  bgCtx.strokeStyle = 'rgba(124,107,255,.15)'; bgCtx.lineWidth = 1.5 * dpr;
+  bgCtx.beginPath(); bgCtx.moveTo(0, cy); bgCtx.lineTo(W, cy); bgCtx.stroke();
+  bgCtx.beginPath(); bgCtx.moveTo(cx, 0); bgCtx.lineTo(cx, H); bgCtx.stroke();
+  bgCtx.restore();
+
+  // Animated functions
+  const scl = Math.min(W, H) * 0.0012;
+
+  // f1: lineal y = 0.6x + sin(t)*20  (violet)
+  bgCtx.save();
+  bgCtx.beginPath();
+  for (let px = 0; px < W; px += 3) {
+    const x = (px - cx) / (scl * W);
+    const y = 0.6 * x + Math.sin(bgT * 0.4) * 4;
+    const py = cy - y * scl * W;
+    px === 0 ? bgCtx.moveTo(px, py) : bgCtx.lineTo(px, py);
+  }
+  bgCtx.strokeStyle = 'rgba(124,107,255,.22)'; bgCtx.lineWidth = 2 * dpr;
+  bgCtx.shadowColor = '#7c6bff'; bgCtx.shadowBlur = 8;
+  bgCtx.stroke(); bgCtx.shadowBlur = 0; bgCtx.restore();
+
+  // f2: quadràtica y = 0.04x² + cos(t)*2  (rose)
+  bgCtx.save();
+  bgCtx.beginPath();
+  for (let px = 0; px < W; px += 3) {
+    const x = (px - cx) / (scl * W);
+    const y = 0.04 * x * x - 8 + Math.cos(bgT * 0.3) * 3;
+    const py = cy - y * scl * W;
+    px === 0 ? bgCtx.moveTo(px, py) : bgCtx.lineTo(px, py);
+  }
+  bgCtx.strokeStyle = 'rgba(255,107,157,.18)'; bgCtx.lineWidth = 2 * dpr;
+  bgCtx.shadowColor = '#ff6b9d'; bgCtx.shadowBlur = 8;
+  bgCtx.stroke(); bgCtx.shadowBlur = 0; bgCtx.restore();
+
+  // f3: proporcional y = -0.3x (lime)
+  bgCtx.save();
+  bgCtx.beginPath();
+  for (let px = 0; px < W; px += 3) {
+    const x = (px - cx) / (scl * W);
+    const y = -0.3 * x;
+    const py = cy - y * scl * W;
+    px === 0 ? bgCtx.moveTo(px, py) : bgCtx.lineTo(px, py);
+  }
+  bgCtx.strokeStyle = 'rgba(168,255,62,.12)'; bgCtx.lineWidth = 1.5 * dpr;
+  bgCtx.stroke(); bgCtx.restore();
+
+  // Floating points along f1
+  for (let i = 0; i < 5; i++) {
+    const phase = bgT * 0.5 + i * 1.3;
+    const px = (Math.sin(phase) * 0.4 + 0.5) * W;
+    const x  = (px - cx) / (scl * W);
+    const y  = 0.6 * x + Math.sin(bgT * 0.4) * 4;
+    const py = cy - y * scl * W;
+    const pulse = 0.5 + 0.5 * Math.sin(bgT * 2 + i);
+    bgCtx.beginPath(); bgCtx.arc(px, py, (3 + pulse * 2) * dpr, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(124,107,255,${0.3 + pulse * 0.3})`;
+    bgCtx.shadowColor = '#7c6bff'; bgCtx.shadowBlur = 12;
+    bgCtx.fill(); bgCtx.shadowBlur = 0;
+  }
+
+  // Floating points along f2
+  for (let i = 0; i < 4; i++) {
+    const phase = bgT * 0.4 + i * 1.6;
+    const px = (Math.sin(phase + 1) * 0.4 + 0.5) * W;
+    const x  = (px - cx) / (scl * W);
+    const y  = 0.04 * x * x - 8 + Math.cos(bgT * 0.3) * 3;
+    const py = cy - y * scl * W;
+    if (py < 0 || py > H) return;
+    const pulse = 0.5 + 0.5 * Math.sin(bgT * 2.5 + i + 2);
+    bgCtx.beginPath(); bgCtx.arc(px, py, (2.5 + pulse * 2) * dpr, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(255,107,157,${0.25 + pulse * 0.3})`;
+    bgCtx.shadowColor = '#ff6b9d'; bgCtx.shadowBlur = 10;
+    bgCtx.fill(); bgCtx.shadowBlur = 0;
+  }
+
+  bgT += 0.008;
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+// ─────────────────────────────────────────
+// HERO CANVAS: pla cartesià net amb funcions animades
+// ─────────────────────────────────────────
+const heroCanvas = document.getElementById('heroCanvas');
+const hCtx       = heroCanvas.getContext('2d');
+let hT = 0;
+let dpr = devicePixelRatio;
+
+function resizeHero() {
+  dpr = devicePixelRatio;
+  const wrap = heroCanvas.parentElement;
+  const rect = wrap.getBoundingClientRect();
+  heroCanvas.width  = rect.width  * dpr;
+  heroCanvas.height = rect.height * dpr;
+  heroCanvas.style.width  = rect.width  + 'px';
+  heroCanvas.style.height = rect.height + 'px';
+}
+window.addEventListener('resize', resizeHero);
+resizeHero();
+
+// Color palette for hero
+const VIOLET = '#7c6bff', ROSE = '#ff6b9d', LIME = '#a8ff3e', AMBER = '#ffbe3d';
+
+// Points that appear and get highlighted
+const heroPoints = [];
+for (let i = 0; i < 12; i++) {
+  heroPoints.push({
+    x: (Math.random() - 0.5) * 8,
+    y: (Math.random() - 0.5) * 8,
+    born: i * 0.4,
+    color: [VIOLET, ROSE, LIME, AMBER][i % 4],
+  });
+}
+
+function drawHero() {
+  const W = heroCanvas.width, H = heroCanvas.height;
+  hCtx.clearRect(0, 0, W, H);
+
+  const cx = W/2, cy = H/2;
+  const unit = W / 12;   // 1 unit = W/12 px
+
+  // Grid
+  hCtx.save();
+  hCtx.strokeStyle = 'rgba(255,255,255,0.04)'; hCtx.lineWidth = 1;
+  for (let gx = cx % unit; gx < W; gx += unit) { hCtx.beginPath(); hCtx.moveTo(gx,0); hCtx.lineTo(gx,H); hCtx.stroke(); }
+  for (let gy = cy % unit; gy < H; gy += unit) { hCtx.beginPath(); hCtx.moveTo(0,gy); hCtx.lineTo(W,gy); hCtx.stroke(); }
+  hCtx.restore();
+
+  // Tick marks on axes
+  hCtx.save();
+  hCtx.strokeStyle = 'rgba(255,255,255,0.15)'; hCtx.lineWidth = 1;
+  for (let i = -6; i <= 6; i++) {
+    if (i === 0) continue;
+    const px = cx + i * unit, py = cy + i * unit;
+    hCtx.beginPath(); hCtx.moveTo(px, cy-4); hCtx.lineTo(px, cy+4); hCtx.stroke();
+    hCtx.beginPath(); hCtx.moveTo(cx-4, py); hCtx.lineTo(cx+4, py); hCtx.stroke();
+  }
+  hCtx.restore();
+
+  // Axes
+  hCtx.save();
+  hCtx.strokeStyle = 'rgba(255,255,255,0.3)'; hCtx.lineWidth = 1.5 * dpr;
+  hCtx.beginPath(); hCtx.moveTo(0, cy); hCtx.lineTo(W, cy); hCtx.stroke();
+  hCtx.beginPath(); hCtx.moveTo(cx, 0); hCtx.lineTo(cx, H); hCtx.stroke();
+  // Arrowheads
+  hCtx.fillStyle = 'rgba(255,255,255,0.3)';
+  hCtx.beginPath(); hCtx.moveTo(W-2,cy); hCtx.lineTo(W-10,cy-5); hCtx.lineTo(W-10,cy+5); hCtx.fill();
+  hCtx.beginPath(); hCtx.moveTo(cx,2); hCtx.lineTo(cx-5,10); hCtx.lineTo(cx+5,10); hCtx.fill();
+  // Axis labels
+  hCtx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+  hCtx.fillStyle = 'rgba(255,255,255,0.4)'; hCtx.textAlign='center';
+  hCtx.fillText('x', W-14, cy+16*dpr);
+  hCtx.fillText('y', cx+14, 14*dpr);
+  hCtx.restore();
+
+  // f1: lineal y = x - 1  (violet), progressiu
+  const prog1 = Math.min(1, Math.max(0, (hT - 0.5) / 3));
+  if (prog1 > 0) {
+    hCtx.save();
+    hCtx.beginPath();
+    let first1 = true;
+    for (let px = 0; px < W * prog1; px += 2) {
+      const xv = (px - cx) / unit;
+      const yv = xv - 1;
+      const py = cy - yv * unit;
+      first1 ? hCtx.moveTo(px, py) : hCtx.lineTo(px, py);
+      first1 = false;
+    }
+    hCtx.strokeStyle = VIOLET; hCtx.lineWidth = 2.5 * dpr;
+    hCtx.shadowColor = VIOLET; hCtx.shadowBlur = 10;
+    hCtx.stroke(); hCtx.shadowBlur = 0; hCtx.restore();
+
+    // Label
+    if (prog1 > 0.85) {
+      hCtx.save();
+      const lx = W * 0.78, ly = cy - ((lx-cx)/unit - 1) * unit - 16*dpr;
+      hCtx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+      hCtx.fillStyle = VIOLET; hCtx.textAlign = 'center';
+      hCtx.shadowColor = VIOLET; hCtx.shadowBlur = 6;
+      hCtx.fillText('y = x − 1', lx, ly);
+      hCtx.shadowBlur=0; hCtx.restore();
+    }
+  }
+
+  // f2: quadràtica y = 0.18x²  (rose), progressiu
+  const prog2 = Math.min(1, Math.max(0, (hT - 2.5) / 3));
+  if (prog2 > 0) {
+    hCtx.save();
+    // draw from centre outwards
+    hCtx.beginPath();
+    const halfW = (W/2) * prog2;
+    let firstQ = true;
+    for (let px = cx - halfW; px <= cx + halfW; px += 2) {
+      const xv = (px - cx) / unit;
+      const yv = 0.18 * xv * xv;
+      const py = cy - yv * unit;
+      firstQ ? hCtx.moveTo(px, py) : hCtx.lineTo(px, py);
+      firstQ = false;
+    }
+    hCtx.strokeStyle = ROSE; hCtx.lineWidth = 2.5 * dpr;
+    hCtx.shadowColor = ROSE; hCtx.shadowBlur = 10;
+    hCtx.stroke(); hCtx.shadowBlur = 0; hCtx.restore();
+
+    if (prog2 > 0.85) {
+      hCtx.save();
+      hCtx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+      hCtx.fillStyle = ROSE; hCtx.textAlign='center';
+      hCtx.shadowColor=ROSE; hCtx.shadowBlur=6;
+      hCtx.fillText('y = 0.18x²', cx, cy - 0.18*((halfW/unit)**2)*unit - 20*dpr);
+      hCtx.shadowBlur=0; hCtx.restore();
+    }
+  }
+
+  // f3: constant y = 2  (lime, subtle)
+  const prog3 = Math.min(1, Math.max(0, (hT - 4.5) / 2));
+  if (prog3 > 0) {
+    const py3 = cy - 2 * unit;
+    hCtx.save();
+    hCtx.beginPath();
+    hCtx.moveTo(0, py3); hCtx.lineTo(W * prog3, py3);
+    hCtx.strokeStyle = LIME; hCtx.lineWidth = 2 * dpr;
+    hCtx.shadowColor = LIME; hCtx.shadowBlur = 8;
+    hCtx.setLineDash([8*dpr, 5*dpr]); hCtx.stroke();
+    hCtx.setLineDash([]); hCtx.shadowBlur=0; hCtx.restore();
+
+    if (prog3 > 0.85) {
+      hCtx.save();
+      hCtx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+      hCtx.fillStyle = LIME; hCtx.textAlign='left';
+      hCtx.shadowColor=LIME; hCtx.shadowBlur=6;
+      hCtx.fillText('y = 2', 8*dpr, py3 - 8*dpr);
+      hCtx.shadowBlur=0; hCtx.restore();
+    }
+  }
+
+  // Origin label
+  hCtx.save();
+  hCtx.font = `${10*dpr}px 'DM Mono',monospace`;
+  hCtx.fillStyle = 'rgba(255,255,255,0.25)'; hCtx.textAlign='right';
+  hCtx.fillText('O', cx - 6*dpr, cy + 14*dpr);
+  hCtx.restore();
+
+  // Centre dot
+  hCtx.beginPath(); hCtx.arc(cx, cy, 3.5*dpr, 0, Math.PI*2);
+  hCtx.fillStyle = 'rgba(255,255,255,0.35)'; hCtx.fill();
+
+  hT += 0.015;
+  requestAnimationFrame(drawHero);
+}
+drawHero();
+
+// ── SCROLL REVEAL ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
