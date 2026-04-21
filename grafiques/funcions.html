@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funcions · Representació Gràfica · 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+      --violet:  #7c6bff;
+      --rose:    #ff6b9d;
+      --lime:    #a8ff3e;
+      --amber:   #ffbe3d;
+      --teal:    #48dbfb;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* NAV */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); box-shadow: 0 0 8px var(--rose); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--rose); }
+    .sec-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--rose); background: rgba(255,107,157,.1); border: 1px solid rgba(255,107,157,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* PAGE HEADER */
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--rose); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--rose); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    /* FUNCTION TABS */
+    .fn-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem; display: flex; gap: .6rem; flex-wrap: wrap;
+    }
+    .fn-btn {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .45rem 1.1rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .83rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .fn-btn:hover { border-color: var(--f-color); color: var(--text); }
+    .fn-btn.active {
+      border-color: var(--f-color); color: var(--f-color);
+      background: color-mix(in srgb, var(--f-color) 10%, transparent);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--f-color) 15%, transparent);
+    }
+    .fn-btn .fn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--f-color); }
+
+    /* MAIN LAYOUT */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* CANVAS */
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative; aspect-ratio: 1/1;
+    }
+    #mainCanvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .info-head {
+      padding: .85rem 1.2rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: .65rem;
+    }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .9rem; }
+
+    /* Formula display */
+    .formula-display {
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; transition: border-color .3s;
+    }
+    .formula-text {
+      font-family: 'DM Mono', monospace; font-size: 1.35rem; font-weight: 500;
+      transition: color .3s; letter-spacing: .02em;
+    }
+
+    /* Sliders */
+    .param-list { display: flex; flex-direction: column; gap: .75rem; }
+    .param-row  { display: flex; flex-direction: column; gap: .35rem; }
+    .param-label-row { display: flex; justify-content: space-between; align-items: center; }
+    .param-name {
+      font-family: 'DM Mono', monospace; font-size: .85rem;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .param-name .pn-letter { font-weight: 500; }
+    .param-name .pn-desc   { font-size: .72rem; color: var(--muted); }
+    .param-val {
+      font-family: 'DM Mono', monospace; font-size: .9rem;
+      min-width: 3.5ch; text-align: right; transition: color .2s;
+    }
+    input[type=range] {
+      width: 100%; appearance: none; height: 4px;
+      border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      cursor: grab; box-shadow: 0 0 8px currentColor; transition: transform .15s;
+    }
+    input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.25); }
+
+    /* Intersection chips */
+    .intersect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .ix-chip {
+      padding: .6rem .85rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .ix-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .2rem; }
+    .ix-val   { font-family: 'DM Mono', monospace; font-size: .9rem; transition: color .2s; }
+
+    /* Value table */
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: .8rem; }
+    th {
+      padding: .4rem .6rem; text-align: center;
+      background: var(--surface); border: 1px solid var(--border);
+      font-weight: 500; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted);
+    }
+    td {
+      padding: .38rem .6rem; text-align: center;
+      border: 1px solid var(--border); transition: background .2s;
+    }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .td-x   { color: var(--muted); }
+    .td-y   { }
+    .td-zero { font-weight: 700; }
+
+    /* Hover readout */
+    .hover-readout {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .6rem .9rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace; font-size: .82rem;
+      min-height: 2.5rem;
+    }
+    .hr-label { color: var(--muted); font-size: .72rem; }
+    .hr-val   { transition: color .2s; }
+
+    /* INSIGHTS */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p  { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .insights    { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav, .page-header, .fn-bar, .main-layout { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Representació Gràfica</a>
+  <div class="nav-right">
+    <span class="sec-label">Secció 02 · Funcions</span>
+    <a href="index.html" class="nav-back">← Inici</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Funcions</span>
+  </div>
+  <h1>Tipus de <em>funcions</em></h1>
+  <p>Modifica els paràmetres amb els sliders i observa com canvia la gràfica en temps real. Cada funció mostra la seva taula de valors i els punts d'intersecció amb els eixos.</p>
+</div>
+
+<!-- FUNCTION SELECTOR -->
+<div class="fn-bar">
+  <button class="fn-btn active" style="--f-color:var(--amber)"  onclick="setFn('constant',   this)"><span class="fn-dot"></span>Constant</button>
+  <button class="fn-btn"        style="--f-color:var(--lime)"   onclick="setFn('proporcional',this)"><span class="fn-dot"></span>Proporcional</button>
+  <button class="fn-btn"        style="--f-color:var(--rose)"   onclick="setFn('lineal',      this)"><span class="fn-dot"></span>Lineal</button>
+  <button class="fn-btn"        style="--f-color:var(--violet)" onclick="setFn('quadratica',  this)"><span class="fn-dot"></span>Quadràtica</button>
+</div>
+
+<div class="main-layout">
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="mainCanvas"></canvas>
+  </div>
+
+  <div class="side-panel">
+
+    <!-- Formula -->
+    <div class="info-box" id="formulaBox">
+      <div class="info-head">
+        <span class="info-head-icon" id="fnIcon">📊</span>
+        <span class="info-head-title" id="fnTitle">Funció</span>
+      </div>
+      <div class="info-body">
+        <div class="formula-display" id="formulaDisplay">
+          <span class="formula-text" id="formulaText">y = c</span>
+        </div>
+        <div class="param-list" id="paramList"></div>
+        <div class="hover-readout">
+          <span class="hr-label">Punt del cursor</span>
+          <span class="hr-val" id="hoverVal">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Intersections -->
+    <div class="info-box">
+      <div class="info-head">
+        <span class="info-head-icon">✕</span>
+        <span class="info-head-title">Interseccions amb els eixos</span>
+      </div>
+      <div class="info-body">
+        <div class="intersect-grid">
+          <div class="ix-chip">
+            <div class="ix-label">Tall eix X</div>
+            <div class="ix-val" id="ixX">—</div>
+          </div>
+          <div class="ix-chip">
+            <div class="ix-label">Tall eix Y</div>
+            <div class="ix-val" id="ixY">—</div>
+          </div>
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);line-height:1.55" id="ixNote"></div>
+      </div>
+    </div>
+
+    <!-- Value table -->
+    <div class="info-box">
+      <div class="info-head">
+        <span class="info-head-icon">📋</span>
+        <span class="info-head-title">Taula de valors</span>
+      </div>
+      <div class="info-body">
+        <div class="table-scroll">
+          <table id="valTable">
+            <thead><tr><th>x</th><th>y</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="insights" id="insightsBox"></div>
+
+<footer>
+  <span>Representació Gràfica · Secció 02 · Funcions</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ─── FUNCTION DEFINITIONS ───
+const FN_DEFS = {
+  constant: {
+    title: 'Funció constant',
+    icon:  '➖',
+    color: '#ffbe3d',
+    params: [
+      { id:'c', label:'c', desc:'valor constant', min:-6, max:6, step:.5, default:3 },
+    ],
+    formula: p => `y = ${fmt(p.c)}`,
+    eval:    (x, p) => p.c,
+    ixX:     p => p.c === 0 ? 'Tot l\'eix X' : 'Cap (paral·lela)',
+    ixY:     p => `(0, ${fmt(p.c)})`,
+    ixNote:  () => 'Una funció constant és paral·lela a l\'eix X i mai el talla (excepte si c = 0).',
+    insights: [
+      { icon:'➖', title:'Pendent zero', text:'Una funció constant té pendent m = 0. El valor de y no canvia mai, independentment de x.' },
+      { icon:'📍', title:'Tall eix Y', text:'La funció sempre talla l\'eix Y al punt (0, c). Si c = 0, la funció és el propi eix X.' },
+      { icon:'🏠', title:'Exemple real', text:'El preu d\'un producte fixe, la temperatura d\'un congelador estable, o una velocitat constant al llarg del temps.' },
+    ],
+    tableXs: [-3,-2,-1,0,1,2,3],
+  },
+  proporcional: {
+    title: 'Proporcionalitat directa',
+    icon:  '📐',
+    color: '#a8ff3e',
+    params: [
+      { id:'k', label:'k', desc:'constant de proporcionalitat', min:-4, max:4, step:.5, default:2 },
+    ],
+    formula: p => `y = ${fmt(p.k)}x`,
+    eval:    (x, p) => p.k * x,
+    ixX:     p => '(0, 0)',
+    ixY:     p => '(0, 0)',
+    ixNote:  () => 'La recta proporcional sempre passa per l\'origen (0, 0). Quant més gran és |k|, més inclinada és.',
+    insights: [
+      { icon:'🎯', title:'Sempre per l\'origen', text:'y = kx sempre passa per (0,0). Si x dobla, y dobla. La raó y/x és sempre k.' },
+      { icon:'↗️', title:'Signe de k', text:'Si k > 0 la recta puja d\'esquerra a dreta. Si k < 0 baixa. Si k = 0 és la funció constant y = 0.' },
+      { icon:'🌍', title:'Exemple real', text:'El preu total (y) en funció d\'unitats comprades (x): y = preu·x. O la distància recorreguda a velocitat constant.' },
+    ],
+    tableXs: [-3,-2,-1,0,1,2,3],
+  },
+  lineal: {
+    title: 'Funció lineal',
+    icon:  '📈',
+    color: '#ff6b9d',
+    params: [
+      { id:'m', label:'m', desc:'pendent (inclinació)', min:-4, max:4, step:.5, default:1 },
+      { id:'b', label:'b', desc:'ordenada a l\'origen', min:-5, max:5, step:.5, default:2 },
+    ],
+    formula: p => {
+      const mStr = p.m === 1 ? '' : p.m === -1 ? '−' : fmt(p.m);
+      const bStr = p.b === 0 ? '' : p.b > 0 ? ` + ${fmt(p.b)}` : ` − ${fmt(Math.abs(p.b))}`;
+      return `y = ${mStr}x${bStr}` || 'y = x';
+    },
+    eval:    (x, p) => p.m * x + p.b,
+    ixX:     p => p.m === 0 ? (p.b === 0 ? 'Tot eix X' : 'Cap') : `(${fmt(-p.b/p.m)}, 0)`,
+    ixY:     p => `(0, ${fmt(p.b)})`,
+    ixNote:  () => 'm és el pendent: indica quant puja y per cada unitat que avança x. b és on la recta talla l\'eix Y.',
+    insights: [
+      { icon:'📐', title:'El pendent m', text:'Si m = 2, per cada pas a la dreta la recta puja 2. Si m és negatiu, la recta baixa. Si m = 0, és una funció constant.' },
+      { icon:'✂️', title:'L\'ordenada b', text:'b indica on la recta talla l\'eix Y. El punt (0, b) sempre pertany a la recta, independentment de m.' },
+      { icon:'🔀', title:'Diferència amb proporcional', text:'y = mx + b és proporcional directa quan b = 0. Quan b ≠ 0, la recta no passa per l\'origen.' },
+    ],
+    tableXs: [-3,-2,-1,0,1,2,3],
+  },
+  quadratica: {
+    title: 'Funció quadràtica',
+    icon:  '⌒',
+    color: '#7c6bff',
+    params: [
+      { id:'a', label:'a', desc:'obertura de la paràbola', min:-2, max:2, step:.25, default:.5 },
+      { id:'h', label:'h', desc:'desplaçament horitzontal', min:-4, max:4, step:.5, default:0 },
+      { id:'k', label:'k', desc:'desplaçament vertical', min:-4, max:4, step:.5, default:0 },
+    ],
+    formula: p => {
+      const aStr = p.a === 1 ? '' : p.a === -1 ? '−' : fmt(p.a);
+      const hStr = p.h === 0 ? 'x²' : p.h > 0 ? `(x − ${fmt(p.h)})²` : `(x + ${fmt(Math.abs(p.h))})²`;
+      const kStr = p.k === 0 ? '' : p.k > 0 ? ` + ${fmt(p.k)}` : ` − ${fmt(Math.abs(p.k))}`;
+      return `y = ${aStr}${hStr}${kStr}`;
+    },
+    eval:    (x, p) => p.a * (x - p.h) ** 2 + p.k,
+    ixX: p => {
+      const disc = -p.k / p.a;
+      if (p.a === 0) return '—';
+      if (disc < 0) return 'Cap';
+      if (disc === 0) return `(${fmt(p.h)}, 0)`;
+      const r = Math.sqrt(disc);
+      return `(${fmt(p.h-r)}, 0) i (${fmt(p.h+r)}, 0)`;
+    },
+    ixY:     p => `(0, ${fmt(p.a * p.h * p.h + p.k)})`,
+    ixNote:  () => 'El vèrtex de la paràbola és el punt (h, k). Si a > 0 obre cap amunt; si a < 0 cap avall.',
+    insights: [
+      { icon:'⌒', title:'El vèrtex', text:'El punt (h, k) és el vèrtex: el punt màxim o mínim de la paràbola. Si a > 0 és mínim; si a < 0 és màxim.' },
+      { icon:'🔍', title:'El paràmetre a', text:'|a| gran fa la paràbola estreta i punxeguda. |a| petit la fa ampla i plana. Si a = 0, la funció és constant.' },
+      { icon:'🪞', title:'Eix de simetria', text:'La paràbola és simètrica respecte a la recta vertical x = h. Els dos braços de la paràbola són imatge especular l\'un de l\'altre.' },
+    ],
+    tableXs: [-3,-2,-1,0,1,2,3],
+  },
+};
+
+// ─── STATE ───
+let fnId    = 'constant';
+let params  = {};
+let hoverX  = null;
+let dpr, W, H, cx, cy, unit;
+const UNIT_GRID = 14;  // total grid units visible
+
+// ─── CANVAS ───
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+
+function resize() {
+  dpr = devicePixelRatio;
+  const rect = wrap.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  cx = W/2; cy = H/2;
+  unit = Math.min(W,H) / UNIT_GRID;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ─── FORMAT ───
+function fmt(v) {
+  if (v === null || v === undefined || !isFinite(v)) return '—';
+  return Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(2)).toString();
+}
+
+// ─── DRAW ───
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+  drawAxes();
+  drawFunction();
+  if (hoverX !== null) drawHoverLine();
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let i = -7; i <= 7; i++) {
+    const px = cx + i*unit, py = cy + i*unit;
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(W,py); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAxes() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1.6*dpr;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+
+  // Arrowheads
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  const aw=5*dpr, al=10*dpr;
+  ctx.beginPath(); ctx.moveTo(W-2,cy); ctx.lineTo(W-al,cy-aw); ctx.lineTo(W-al,cy+aw); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,2);   ctx.lineTo(cx-aw,al);   ctx.lineTo(cx+aw,al);   ctx.fill();
+
+  // Tick marks + numbers
+  ctx.font = `${9*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  for (let i = -6; i <= 6; i++) {
+    if (i === 0) continue;
+    const px = cx + i*unit, py = cy - i*unit;
+    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px,cy-4*dpr); ctx.lineTo(px,cy+4*dpr); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-4*dpr,py); ctx.lineTo(cx+4*dpr,py); ctx.stroke();
+    ctx.textAlign='center'; ctx.textBaseline='top';    ctx.fillText(i, px, cy+6*dpr);
+    ctx.textAlign='right';  ctx.textBaseline='middle'; ctx.fillText(i, cx-7*dpr, py);
+  }
+
+  // Axis labels
+  ctx.font = `bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('x', W-12*dpr, cy-14*dpr);
+  ctx.fillText('y', cx+14*dpr, 12*dpr);
+  ctx.fillText('O', cx-12*dpr, cy+12*dpr);
+  ctx.restore();
+}
+
+function drawFunction() {
+  const def   = FN_DEFS[fnId];
+  const color = def.color;
+  const evalFn = x => def.eval(x, params);
+  const xMin   = -W/(2*unit), xMax = W/(2*unit);
+
+  // Draw curve
+  ctx.save();
+  ctx.beginPath();
+  let first = true;
+  const steps = W / dpr;
+  for (let s = 0; s <= steps; s++) {
+    const x  = xMin + (xMax - xMin) * s / steps;
+    const y  = evalFn(x);
+    const px = cx + x * unit;
+    const py = cy - y * unit;
+    if (!isFinite(py) || py < -H || py > 2*H) { first = true; continue; }
+    first ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    first = false;
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = 3*dpr;
+  ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // Vertex for quadratic
+  if (fnId === 'quadratica') {
+    const { h, k } = params;
+    const vpx = cx + h*unit, vpy = cy - k*unit;
+    ctx.beginPath(); ctx.arc(vpx, vpy, 6*dpr, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
+    ctx.fill(); ctx.shadowBlur = 0;
+    ctx.save();
+    ctx.font=`bold ${10*dpr}px 'DM Mono',monospace`;
+    ctx.fillStyle=color; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.shadowColor=color; ctx.shadowBlur=6;
+    ctx.fillText(`vèrtex (${fmt(h)}, ${fmt(k)})`, vpx+8*dpr, vpy-4*dpr);
+    ctx.shadowBlur=0; ctx.restore();
+  }
+
+  // Y-intercept dot
+  const y0 = evalFn(0);
+  if (isFinite(y0)) {
+    const ypx = cx, ypy = cy - y0*unit;
+    ctx.beginPath(); ctx.arc(ypx, ypy, 5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.shadowColor = color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+  }
+
+  // X-intercept dots
+  getXIntercepts().forEach(xi => {
+    const xpx = cx + xi*unit, xpy = cy;
+    ctx.beginPath(); ctx.arc(xpx, xpy, 5*dpr, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.shadowColor = color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+  });
+}
+
+function getXIntercepts() {
+  if (fnId === 'constant')     return params.c === 0 ? [] : [];
+  if (fnId === 'proporcional') return [0];
+  if (fnId === 'lineal')       return params.m === 0 ? [] : [-params.b / params.m];
+  if (fnId === 'quadratica') {
+    const { a, h, k } = params;
+    if (a === 0) return [];
+    const disc = -k/a;
+    if (disc < 0) return [];
+    if (disc === 0) return [h];
+    return [h - Math.sqrt(disc), h + Math.sqrt(disc)];
+  }
+  return [];
+}
+
+function drawHoverLine() {
+  const def   = FN_DEFS[fnId];
+  const color = def.color;
+  const x     = hoverX;
+  const y     = def.eval(x, params);
+  if (!isFinite(y)) return;
+  const px = cx + x*unit, py = cy - y*unit;
+  if (py < -H || py > 2*H) return;
+
+  // Dashed lines to axes
+  ctx.save();
+  ctx.strokeStyle = color+'66'; ctx.lineWidth = 1.2*dpr; ctx.setLineDash([4*dpr,3*dpr]);
+  ctx.beginPath(); ctx.moveTo(px, cy); ctx.lineTo(px, py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, py); ctx.lineTo(px, py); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+
+  // Point
+  ctx.beginPath(); ctx.arc(px, py, 6*dpr, 0, Math.PI*2);
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Coordinate label
+  ctx.save();
+  ctx.font=`bold ${11*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle=color; ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.shadowColor=color; ctx.shadowBlur=6;
+  ctx.fillText(`(${fmt(x)}, ${fmt(y)})`, px+10*dpr, py-4*dpr);
+  ctx.shadowBlur=0; ctx.restore();
+
+  // Axis foot marks
+  ctx.save();
+  ctx.font=`${9*dpr}px 'DM Mono',monospace`;
+  ctx.fillStyle=color+'cc'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(fmt(x), px, cy+6*dpr);
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText(fmt(y), cx-7*dpr, py);
+  ctx.restore();
+
+  // Update hover readout
+  document.getElementById('hoverVal').textContent = `(${fmt(x)}, ${fmt(y)})`;
+  document.getElementById('hoverVal').style.color = color;
+}
+
+// ─── MOUSE ───
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const px   = (e.clientX - rect.left) * dpr;
+  hoverX = Math.round((px - cx) / unit * 2) / 2;
+  draw();
+});
+canvas.addEventListener('mouseleave', () => {
+  hoverX = null;
+  document.getElementById('hoverVal').textContent = '—';
+  draw();
+});
+
+// ─── FUNCTION SWITCH ───
+function setFn(id, btn) {
+  fnId = id;
+  document.querySelectorAll('.fn-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  initParams();
+  buildParamSliders();
+  updatePanel();
+  buildTable();
+  buildInsights();
+  draw();
+}
+
+function initParams() {
+  params = {};
+  FN_DEFS[fnId].params.forEach(p => { params[p.id] = p.default; });
+}
+
+// ─── SLIDERS ───
+function buildParamSliders() {
+  const def   = FN_DEFS[fnId];
+  const color = def.color;
+  const list  = document.getElementById('paramList');
+
+  list.innerHTML = def.params.map(p => `
+    <div class="param-row">
+      <div class="param-label-row">
+        <span class="param-name">
+          <span class="pn-letter" style="color:${color}">${p.label}</span>
+          <span class="pn-desc">${p.desc}</span>
+        </span>
+        <span class="param-val" id="val-${p.id}" style="color:${color}">${fmt(p.default)}</span>
+      </div>
+      <input type="range" id="sl-${p.id}"
+        min="${p.min}" max="${p.max}" step="${p.step}" value="${p.default}"
+        style="--thumb-color:${color}"
+        oninput="onParam('${p.id}', this.value)"
+      />
+    </div>
+  `).join('');
+
+  // Apply thumb color via CSS custom property (webkit)
+  def.params.forEach(p => {
+    const sl = document.getElementById('sl-'+p.id);
+    if (sl) sl.style.setProperty('--c', color);
+  });
+
+  // Thumb color injection
+  const styleId = 'thumb-style';
+  let s = document.getElementById(styleId);
+  if (!s) { s = document.createElement('style'); s.id = styleId; document.head.appendChild(s); }
+  s.textContent = `input[type=range]::-webkit-slider-thumb { background:${color}; }`;
+}
+
+function onParam(id, val) {
+  params[id] = parseFloat(val);
+  document.getElementById('val-'+id).textContent = fmt(params[id]);
+  updatePanel();
+  buildTable();
+  draw();
+}
+
+// ─── PANEL UPDATE ───
+function updatePanel() {
+  const def   = FN_DEFS[fnId];
+  const color = def.color;
+
+  document.getElementById('fnIcon').textContent    = def.icon;
+  document.getElementById('fnTitle').textContent   = def.title;
+  document.getElementById('formulaText').textContent = def.formula(params);
+  document.getElementById('formulaText').style.color = color;
+  document.getElementById('formulaDisplay').style.borderColor = color+'44';
+
+  document.getElementById('ixX').textContent   = def.ixX(params);
+  document.getElementById('ixX').style.color   = color;
+  document.getElementById('ixY').textContent   = def.ixY(params);
+  document.getElementById('ixY').style.color   = color;
+  document.getElementById('ixNote').textContent = def.ixNote(params);
+}
+
+// ─── TABLE ───
+function buildTable() {
+  const def    = FN_DEFS[fnId];
+  const color  = def.color;
+  const xVals  = def.tableXs;
+  const tbody  = document.getElementById('tableBody');
+  tbody.innerHTML = xVals.map(x => {
+    const y   = def.eval(x, params);
+    const isZ = Math.abs(y) < 0.01;
+    return `<tr>
+      <td class="td-x">${x}</td>
+      <td class="td-y${isZ ? ' td-zero' : ''}" style="color:${isZ ? color : 'inherit'}">${fmt(y)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── INSIGHTS ───
+function buildInsights() {
+  const ins = FN_DEFS[fnId].insights;
+  const col = FN_DEFS[fnId].color;
+  document.getElementById('insightsBox').innerHTML = ins.map(i => `
+    <div class="insight-card">
+      <span class="insight-icon">${i.icon}</span>
+      <div class="insight-text">
+        <h4 style="color:${col}">${i.title}</h4>
+        <p>${i.text}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── INIT ───
+initParams();
+buildParamSliders();
+updatePanel();
+buildTable();
+buildInsights();
+resize();
+</script>
+</body>
+</html>
