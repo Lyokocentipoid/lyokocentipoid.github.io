@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dibuixa la funció · Representació Gràfica · 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+      --violet:  #7c6bff;
+      --rose:    #ff6b9d;
+      --lime:    #a8ff3e;
+      --amber:   #ffbe3d;
+      --c-ok:    #a8ff3e;
+      --c-near:  #ffbe3d;
+      --c-far:   #ff6b9d;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px var(--lime); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--lime); }
+    .sec-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--lime); background: rgba(168,255,62,.08); border: 1px solid rgba(168,255,62,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem; }
+    .breadcrumb a { color: var(--muted); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--lime); }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.6rem,3vw,2.4rem); letter-spacing: -.02em; margin-bottom: .5rem; }
+    .page-header h1 em { font-style: normal; color: var(--lime); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    .diff-bar { max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 1.5rem; display: flex; gap: .6rem; align-items: center; }
+    .diff-label { font-size: .78rem; color: var(--muted); margin-right: .25rem; }
+    .diff-btn {
+      padding: .38rem .9rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .diff-btn:hover { border-color: var(--lime); color: var(--text); }
+    .diff-btn.active { border-color: var(--lime); color: var(--lime); background: rgba(168,255,62,.08); }
+
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+    .canvas-outer {
+      position: relative; aspect-ratio: 1/1;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden;
+    }
+    #mainCanvas {
+      position: absolute; inset: 0;
+      display: block; width: 100%; height: 100%;
+      cursor: crosshair;
+    }
+
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .info-head { padding: .85rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .65rem; }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .85rem; }
+
+    .fn-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; }
+    .fn-card-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: .4rem; }
+    .fn-card-formula { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 500; margin-bottom: .35rem; }
+    .fn-card-desc { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+    .feedback-box {
+      padding: .75rem 1rem; border-radius: 10px; font-size: .82rem; line-height: 1.5;
+      text-align: center; min-height: 3rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .35s;
+    }
+    .fb-idle   { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .fb-good   { background: rgba(168,255,62,.08);  border: 1px solid rgba(168,255,62,.3);  color: var(--lime); }
+    .fb-ok     { background: rgba(255,190,61,.08);  border: 1px solid rgba(255,190,61,.3);  color: var(--amber); }
+    .fb-bad    { background: rgba(255,107,157,.08); border: 1px solid rgba(255,107,157,.3); color: var(--rose); }
+    .fb-reveal { background: rgba(124,107,255,.08); border: 1px solid rgba(124,107,255,.3); color: var(--violet); }
+
+    .btn {
+      width: 100%; padding: .6rem 1rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: .88rem;
+      cursor: pointer; transition: all var(--tr); border: 1px solid;
+    }
+    .btn-primary { border-color: var(--lime); background: rgba(168,255,62,.08); color: var(--lime); }
+    .btn-primary:hover { background: rgba(168,255,62,.18); }
+    .btn-secondary { border-color: var(--border); background: transparent; color: var(--muted); }
+    .btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+    .btn-disabled { opacity: .35; cursor: not-allowed; }
+
+    .legend-row { display: flex; flex-direction: column; gap: .45rem; }
+    .legend-item { display: flex; align-items: center; gap: .65rem; font-size: .78rem; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-item strong { color: var(--text); font-weight: 500; }
+
+    .score-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .5rem; }
+    .score-chip { border-radius: 10px; padding: .6rem .5rem; text-align: center; background: var(--surface); border: 1px solid var(--border); }
+    .score-chip-val { font-family: 'DM Mono', monospace; font-size: 1.1rem; line-height: 1; }
+    .score-chip-lbl { font-size: .62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: .25rem; }
+
+    .progress-dots { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; }
+    .pdot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all .3s; }
+    .pdot-good  { background: var(--c-ok);  box-shadow: 0 0 6px var(--c-ok); }
+    .pdot-ok    { background: var(--c-near); }
+    .pdot-bad   { background: var(--c-far); }
+    .pdot-cur   { background: var(--lime); box-shadow: 0 0 10px var(--lime); transform: scale(1.3); }
+
+    .insights { max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+    .insight-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start; }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p  { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2.5rem; display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .insights    { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav, .page-header, .diff-bar, .main-layout { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Representació Gràfica</a>
+  <div class="nav-right">
+    <span class="sec-label">Secció 03</span>
+    <a href="index.html" class="nav-back">← Inici</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Dibuixa la funció</span>
+  </div>
+  <h1>Dibuixa la <em>funció</em></h1>
+  <p>Se't mostrarà una equació. Col·loca punts al pla on creus que passa la funció i prem "Comprova" per veure quant t'has aproximat.</p>
+</div>
+
+<div class="diff-bar">
+  <span class="diff-label">Nivell:</span>
+  <button class="diff-btn active" id="btn-basic">Bàsic</button>
+  <button class="diff-btn" id="btn-mitja">Mitjà</button>
+  <button class="diff-btn" id="btn-avancat">Avançat</button>
+</div>
+
+<div class="main-layout">
+  <div class="canvas-outer" id="canvasOuter">
+    <canvas id="mainCanvas"></canvas>
+  </div>
+
+  <div class="side-panel">
+
+    <!-- PUNTUACIÓ (ara primer) -->
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📊</span><span class="info-head-title">Puntuació total</span></div>
+      <div class="info-body">
+        <div class="score-grid">
+          <div class="score-chip"><div class="score-chip-val" id="sOk"   style="color:var(--c-ok)">0</div><div class="score-chip-lbl">Verds</div></div>
+          <div class="score-chip"><div class="score-chip-val" id="sNear" style="color:var(--c-near)">0</div><div class="score-chip-lbl">Taronges</div></div>
+          <div class="score-chip"><div class="score-chip-val" id="sFar"  style="color:var(--c-far)">0</div><div class="score-chip-lbl">Vermells</div></div>
+        </div>
+        <div class="progress-dots" id="progressDots"></div>
+      </div>
+    </div>
+
+    <!-- REPTE ACTUAL -->
+    <div class="info-box">
+      <div class="info-head">
+        <span class="info-head-icon">✏️</span>
+        <span class="info-head-title">Repte actual</span>
+      </div>
+      <div class="info-body">
+        <div class="fn-card" id="fnCard">
+          <div class="fn-card-label">Dibuixa aquesta funció</div>
+          <div class="fn-card-formula" id="fnFormula">—</div>
+          <div class="fn-card-desc"   id="fnDesc">—</div>
+        </div>
+        <div class="feedback-box fb-idle" id="feedbackBox">Col·loca punts al pla i prem "Comprova"</div>
+        <!-- Inline confirmation box when <5 points -->
+        <div id="confirmBox" style="display:none;padding:.8rem 1rem;border-radius:10px;background:rgba(255,190,61,.07);border:1px solid rgba(255,190,61,.3);">
+          <div style="font-size:.8rem;color:var(--amber);margin-bottom:.6rem;line-height:1.5" id="confirmMsg"></div>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-primary" id="confirmYes" style="flex:1;padding:.42rem .5rem;font-size:.8rem">Comprova igualment</button>
+            <button class="btn btn-secondary" id="confirmNo" style="flex:1;padding:.42rem .5rem;font-size:.8rem">Seguir dibuixant</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-disabled" id="checkBtn">Comprova els punts</button>
+        <button class="btn btn-secondary" id="revealBtn" style="display:none">Revela la solució</button>
+        <button class="btn btn-secondary" id="nextBtn"   style="display:none">Següent funció →</button>
+        <button class="btn btn-secondary" id="clearBtn">Esborrar punts</button>
+        <!-- Level-up suggestion -->
+        <div id="levelUpBox" style="display:none;margin-top:.25rem;padding:.85rem 1rem;border-radius:10px;background:rgba(168,255,62,.07);border:1px solid rgba(168,255,62,.3);">
+          <div style="font-size:.82rem;color:var(--lime);margin-bottom:.65rem;line-height:1.5">
+            🎉 Has resolt 5 funcions seguides correctament! Vols passar al nivell següent?
+          </div>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-primary" id="levelUpYes" style="flex:1;padding:.45rem .5rem;font-size:.8rem">Sí, pujar nivell</button>
+            <button class="btn btn-secondary" id="levelUpNo"  style="flex:1;padding:.45rem .5rem;font-size:.8rem">Seguir aquí</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLORS -->
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">🎨</span><span class="info-head-title">Colors dels punts</span></div>
+      <div class="info-body">
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-ok)"></div><span><strong>Verd</strong> — a menys de 0.5 unitats</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-near)"></div><span><strong>Taronja</strong> — entre 0.5 i 1.5 unitats</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--c-far)"></div><span><strong>Vermell</strong> — a més de 1.5 unitats</span></div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🎯</span>
+    <div class="insight-text">
+      <h4>Com usar-ho</h4>
+      <p>Llegeix l'equació, pensa on passen alguns punts clau (l'origen, els talls amb els eixos, el vèrtex...) i col·loca'ls al pla. Els colors t'ajudaran a veure on t'has equivocat.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">💡</span>
+    <div class="insight-text">
+      <h4>Estratègia</h4>
+      <p>Comença calculant x = 0, x = 1 i x = −1 a mà. Situa primer els punts extrems i després omple el centre per confirmar la forma de la corba.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">📈</span>
+    <div class="insight-text">
+      <h4>Tres nivells</h4>
+      <p><strong>Bàsic:</strong> constants i proporcionals. <strong>Mitjà:</strong> funcions lineals. <strong>Avançat:</strong> paràboles amb vèrtex desplaçat.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Representació Gràfica · Secció 03 · Dibuixa la funció</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ── CHALLENGES ──
+var CHALLENGES = {
+  basic: [
+    { formula:'y = 3',    desc:'Funció constant. Tots els punts: y = 3.',              color:'#ffbe3d', eval: function(x){ return 3; } },
+    { formula:'y = -2',   desc:'Funció constant negativa. Tots els punts: y = -2.',    color:'#ffbe3d', eval: function(x){ return -2; } },
+    { formula:'y = 2x',   desc:'Proporcional directa. Passa per l\'origen.',           color:'#a8ff3e', eval: function(x){ return 2*x; } },
+    { formula:'y = -x',   desc:'Proporcional de pendent -1.',                          color:'#a8ff3e', eval: function(x){ return -x; } },
+    { formula:'y = 0.5x', desc:'Per cada 2 unitats a la dreta, puja 1.',              color:'#a8ff3e', eval: function(x){ return 0.5*x; } },
+  ],
+  mitja: [
+    { formula:'y = x + 2',   desc:'Pendent 1, talla l\'eix Y a (0, 2).',              color:'#ff6b9d', eval: function(x){ return x+2; } },
+    { formula:'y = 2x - 1',  desc:'Pendent 2, talla l\'eix Y a (0, -1).',             color:'#ff6b9d', eval: function(x){ return 2*x-1; } },
+    { formula:'y = -x + 3',  desc:'Pendent negatiu. Decreixent d\'esquerra a dreta.', color:'#ff6b9d', eval: function(x){ return -x+3; } },
+    { formula:'y = 3x - 6',  desc:'Talla l\'eix X a (2, 0) i l\'eix Y a (0, -6).',   color:'#ff6b9d', eval: function(x){ return 3*x-6; } },
+    { formula:'y = -2x + 4', desc:'Pendent -2. On talla l\'eix X?',                   color:'#ff6b9d', eval: function(x){ return -2*x+4; } },
+  ],
+  avancat: [
+    { formula:'y = x²',          desc:'Paràbola bàsica. Vèrtex a l\'origen.',                    color:'#7c6bff', eval: function(x){ return x*x; } },
+    { formula:'y = x² - 4',      desc:'Paràbola desplaçada avall. On talla l\'eix X?',           color:'#7c6bff', eval: function(x){ return x*x-4; } },
+    { formula:'y = -x² + 3',     desc:'Paràbola inversa. Vèrtex (0,3), obre cap avall.',        color:'#7c6bff', eval: function(x){ return -x*x+3; } },
+    { formula:'y = 2x² - 2',     desc:'Paràbola estreta. Talla l\'eix X a x = ±1.',             color:'#7c6bff', eval: function(x){ return 2*x*x-2; } },
+    { formula:'y = (x-2)²',      desc:'Vèrtex desplaçat a (2, 0). Eix de simetria x = 2.',     color:'#7c6bff', eval: function(x){ return (x-2)*(x-2); } },
+    { formula:'y = -(x+1)² + 4', desc:'Vèrtex a (-1, 4). Màxim de la paràbola.',               color:'#7c6bff', eval: function(x){ return -(x+1)*(x+1)+4; } },
+  ],
+};
+
+// ── STATE ──
+var difficulty  = 'basic';
+var queue       = [];
+var qIdx        = 0;
+var current     = null;
+var userPts     = [];
+var revealed    = false;
+var checked     = false;
+var sessionRes  = [];
+var totOk=0, totNear=0, totFar=0;
+var consecutiveGood = 0;   // good rounds in a row (across levels)
+
+// ── CANVAS ──
+var outer  = document.getElementById('canvasOuter');
+var canvas = document.getElementById('mainCanvas');
+var ctx    = canvas.getContext('2d');
+var W, H, dpr, cx, cy, unit;
+var GRID   = 14;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  var r = outer.getBoundingClientRect();
+  canvas.width  = r.width  * dpr;
+  canvas.height = r.height * dpr;
+  canvas.style.width  = r.width  + 'px';
+  canvas.style.height = r.height + 'px';
+  W = canvas.width; H = canvas.height;
+  cx = W/2; cy = H/2; unit = Math.min(W,H)/GRID;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ── DRAW ──
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  drawGrid();
+  drawAxes();
+  if (revealed && current) drawCurve(current.eval, current.color);
+  drawPoints();
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (var i=-7; i<=7; i++) {
+    var px=cx+i*unit, py=cy+i*unit;
+    ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(W,py); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAxes() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1.6*dpr;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(W,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.28)';
+  var aw=5*dpr, al=10*dpr;
+  ctx.beginPath(); ctx.moveTo(W-2,cy); ctx.lineTo(W-al,cy-aw); ctx.lineTo(W-al,cy+aw); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,2);   ctx.lineTo(cx-aw,al);   ctx.lineTo(cx+aw,al);   ctx.fill();
+  ctx.font = (9*dpr) + 'px DM Mono,monospace';
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  for (var i=-6; i<=6; i++) {
+    if (i===0) continue;
+    var px=cx+i*unit, py=cy-i*unit;
+    ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(px,cy-4*dpr); ctx.lineTo(px,cy+4*dpr); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-4*dpr,py); ctx.lineTo(cx+4*dpr,py); ctx.stroke();
+    ctx.textAlign='center'; ctx.textBaseline='top';    ctx.fillText(i, px, cy+6*dpr);
+    ctx.textAlign='right';  ctx.textBaseline='middle'; ctx.fillText(i, cx-7*dpr, py);
+  }
+  ctx.font = 'bold '+(11*dpr)+'px DM Mono,monospace';
+  ctx.fillStyle = 'rgba(255,255,255,.3)';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('x', W-12*dpr, cy-14*dpr);
+  ctx.fillText('y', cx+14*dpr, 12*dpr);
+  ctx.fillText('O', cx-12*dpr, cy+12*dpr);
+  ctx.restore();
+}
+
+function drawCurve(evalFn, color) {
+  var xMin = -W/(2*unit), xMax = W/(2*unit);
+  var steps = Math.round(W/dpr);
+  ctx.save();
+  ctx.beginPath();
+  var first = true;
+  for (var s=0; s<=steps; s++) {
+    var x  = xMin + (xMax-xMin)*s/steps;
+    var y  = evalFn(x);
+    var px = cx+x*unit, py = cy-y*unit;
+    if (!isFinite(py) || py < -H || py > 2*H) { first=true; continue; }
+    if (first) { ctx.moveTo(px,py); first=false; } else { ctx.lineTo(px,py); }
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = 3*dpr;
+  ctx.shadowColor = color; ctx.shadowBlur = 14;
+  ctx.stroke(); ctx.shadowBlur=0; ctx.restore();
+}
+
+function drawPoints() {
+  for (var i=0; i<userPts.length; i++) {
+    var p = userPts[i];
+    var px = cx+p.gx*unit, py = cy-p.gy*unit;
+    ctx.beginPath(); ctx.arc(px,py,11*dpr,0,Math.PI*2);
+    ctx.fillStyle = p.color+'33'; ctx.fill();
+    ctx.beginPath(); ctx.arc(px,py,6*dpr,0,Math.PI*2);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color; ctx.shadowBlur = 12;
+    ctx.fill(); ctx.shadowBlur = 0;
+    if (checked && p.dist !== undefined) {
+      ctx.save();
+      ctx.font = (9*dpr)+'px DM Mono,monospace';
+      ctx.fillStyle = p.color; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText('d' + p.dist.toFixed(1), px, py-10*dpr);
+      ctx.restore();
+    }
+  }
+}
+
+// ── HOVER CROSSHAIR ──
+canvas.addEventListener('mousemove', function(e) {
+  var r = canvas.getBoundingClientRect();
+  var hx = (e.clientX-r.left)*dpr, hy = (e.clientY-r.top)*dpr;
+  draw();
+  if (revealed) return;
+  ctx.save();
+  ctx.strokeStyle='rgba(168,255,62,0.22)'; ctx.lineWidth=1*dpr; ctx.setLineDash([4*dpr,3*dpr]);
+  ctx.beginPath(); ctx.moveTo(hx,0); ctx.lineTo(hx,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,hy); ctx.lineTo(W,hy);  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(hx,hy,4*dpr,0,Math.PI*2);
+  ctx.fillStyle='rgba(168,255,62,.35)'; ctx.fill();
+  ctx.restore();
+});
+canvas.addEventListener('mouseleave', function() { draw(); });
+
+// ── CLICK TO PLACE POINT ──
+canvas.addEventListener('click', function(e) {
+  if (revealed) return;
+  var r  = canvas.getBoundingClientRect();
+  var px = (e.clientX-r.left)*dpr, py = (e.clientY-r.top)*dpr;
+  addPoint(px, py);
+});
+canvas.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  if (revealed) return;
+  var r = canvas.getBoundingClientRect();
+  var t = e.changedTouches[0];
+  var px = (t.clientX-r.left)*dpr, py = (t.clientY-r.top)*dpr;
+  addPoint(px, py);
+}, { passive: false });
+
+function addPoint(px, py) {
+  var gx = Math.round((px-cx)/unit*2)/2;
+  var gy = Math.round((cy-py)/unit*2)/2;
+  for (var i=0; i<userPts.length; i++) {
+    if (userPts[i].gx===gx && userPts[i].gy===gy) return;
+  }
+  userPts.push({ gx:gx, gy:gy, color: '#e8eaf6', dist:0 });
+  checked = false;
+  setFeedback('idle', userPts.length + ' punt' + (userPts.length!==1?'s':'') + ' col\u00b7locat' + (userPts.length!==1?'s':'') + '. Prem "Comprova".');
+  syncButtons();
+  draw();
+}
+
+// ── BUTTONS (wired in JS, no inline onclick) ──
+document.getElementById('checkBtn').addEventListener('click', function() {
+  if (userPts.length === 0) return;
+  // If fewer than 5 points, show inline confirmation instead of native dialog
+  if (userPts.length < 5 && !checked) {
+    document.getElementById('confirmMsg').textContent =
+      'Encara no has col\u00b7locat 5 punts (en tens ' + userPts.length + '). ' +
+      'Vols comprovar igualment o seguir dibuixant?';
+    document.getElementById('confirmBox').style.display = 'block';
+    document.getElementById('checkBtn').style.display   = 'none';
+    return;
+  }
+  doCheck();
+});
+
+document.getElementById('confirmYes').addEventListener('click', function() {
+  document.getElementById('confirmBox').style.display = 'none';
+  document.getElementById('checkBtn').style.display   = 'block';
+  doCheck();
+});
+
+document.getElementById('confirmNo').addEventListener('click', function() {
+  document.getElementById('confirmBox').style.display = 'none';
+  document.getElementById('checkBtn').style.display   = 'block';
+});
+
+function doCheck() {
+  checked = true;
+  var ok=0, near=0, far=0;
+  for (var i=0; i<userPts.length; i++) {
+    var p = userPts[i];
+    var minD = Infinity;
+    for (var dx=-4; dx<=4; dx+=0.05) {
+      var xx = p.gx+dx, yy = current.eval(xx);
+      var d  = Math.sqrt((p.gx-xx)*(p.gx-xx)+(p.gy-yy)*(p.gy-yy));
+      if (d < minD) minD = d;
+    }
+    p.dist = minD;
+    if (minD<=0.5)      { p.color='#a8ff3e'; ok++; }
+    else if (minD<=1.5) { p.color='#ffbe3d'; near++; }
+    else                { p.color='#ff6b9d'; far++; }
+  }
+  totOk+=ok; totNear+=near; totFar+=far;
+  document.getElementById('sOk').textContent   = totOk;
+  document.getElementById('sNear').textContent = totNear;
+  document.getElementById('sFar').textContent  = totFar;
+  var total = userPts.length, pctOk = ok/total;
+  var result = pctOk>=0.8 ? 'good' : pctOk>=0.5 ? 'ok' : 'bad';
+  var msgs = {
+    good: 'Excel\u00b7lent! La majoria dels punts estan molt a prop de la corba.',
+    ok:   'No est\u00e0 malament! Revisa els punts vermells. Pots revelar la soluci\u00f3.',
+    bad:  'Molts punts lluny de la corba. Revisa l\'equaci\u00f3 i torna-ho a intentar.',
+  };
+  setFeedback(result, msgs[result]);
+  syncButtons();
+  draw();
+}
+
+document.getElementById('revealBtn').addEventListener('click', function() {
+  revealed = true;
+  document.getElementById('canvasOuter').style.cursor = 'default';
+  canvas.style.cursor = 'default';
+  setFeedback('reveal', 'Aquesta \u00e9s la funci\u00f3 ' + current.formula + '. Compara els teus punts amb la corba.');
+  syncButtons();
+  draw();
+});
+
+document.getElementById('nextBtn').addEventListener('click', function() {
+  var ok=0;
+  for (var i=0; i<userPts.length; i++) { if(userPts[i].dist<=0.5) ok++; }
+  var ratio = userPts.length>0 ? ok/userPts.length : 0;
+  var result = ratio>=0.8 ? 'good' : ratio>=0.5 ? 'ok' : 'bad';
+  sessionRes.push(result);
+
+  if (result === 'good') { consecutiveGood++; } else { consecutiveGood = 0; }
+
+  var nextLevel = difficulty === 'basic' ? 'mitja' : difficulty === 'mitja' ? 'avancat' : null;
+  if (consecutiveGood >= 5 && nextLevel) {
+    document.getElementById('levelUpBox').style.display = 'block';
+    document.getElementById('nextBtn').style.display   = 'none';
+    consecutiveGood = 0;
+    return;
+  }
+
+  qIdx++;
+  if (qIdx >= queue.length) {
+    queue = shuffle(CHALLENGES[difficulty].slice());
+    qIdx = 0;
+  }
+  loadChallenge(queue[qIdx]);
+  updateProgressDots();
+});
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+  userPts=[]; checked=false; revealed=false;
+  setFeedback('idle','Col\u00b7loca punts al pla i prem "Comprova"');
+  syncButtons(); draw();
+});
+
+document.getElementById('levelUpYes').addEventListener('click', function() {
+  document.getElementById('levelUpBox').style.display = 'none';
+  var nextLevel = difficulty === 'basic' ? 'mitja' : 'avancat';
+  var btn = document.getElementById('btn-' + nextLevel);
+  setDiff(nextLevel, btn);
+});
+
+document.getElementById('levelUpNo').addEventListener('click', function() {
+  document.getElementById('levelUpBox').style.display = 'none';
+  queue = shuffle(CHALLENGES[difficulty].slice());
+  qIdx  = 0;
+  loadChallenge(queue[0]);
+  updateProgressDots();
+});
+
+document.getElementById('btn-basic').addEventListener('click',   function(){ setDiff('basic',   this); });
+document.getElementById('btn-mitja').addEventListener('click',   function(){ setDiff('mitja',   this); });
+document.getElementById('btn-avancat').addEventListener('click', function(){ setDiff('avancat', this); });
+
+// ── HELPERS ──
+function setFeedback(cls, txt) {
+  var fb = document.getElementById('feedbackBox');
+  fb.className = 'feedback-box fb-'+cls;
+  fb.textContent = txt;
+}
+
+function syncButtons() {
+  var checkBtn  = document.getElementById('checkBtn');
+  var revealBtn = document.getElementById('revealBtn');
+  var nextBtn   = document.getElementById('nextBtn');
+  var hasPoints  = userPts.length > 0;
+  var hasChecked = checked;
+
+  if (hasPoints) {
+    checkBtn.classList.remove('btn-disabled');
+  } else {
+    checkBtn.classList.add('btn-disabled');
+  }
+  // Hide checkBtn when revealed (no more checking after solution shown)
+  checkBtn.style.display  = revealed ? 'none' : 'block';
+  revealBtn.style.display = hasChecked && !revealed ? 'block' : 'none';
+  nextBtn.style.display   = hasChecked ? 'block' : 'none';
+}
+
+function setDiff(d, btn) {
+  difficulty = d;
+  document.getElementById('btn-basic').classList.remove('active');
+  document.getElementById('btn-mitja').classList.remove('active');
+  document.getElementById('btn-avancat').classList.remove('active');
+  btn.classList.add('active');
+  document.getElementById('levelUpBox').style.display = 'none';
+  // Score (totOk/Near/Far) is intentionally kept across levels
+  startSession();
+}
+
+function shuffle(arr) {
+  for (var i=arr.length-1; i>0; i--) {
+    var j=Math.floor(Math.random()*(i+1));
+    var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  }
+  return arr;
+}
+
+function startSession() {
+  queue = shuffle(CHALLENGES[difficulty].slice());
+  qIdx  = 0; sessionRes = [];
+  loadChallenge(queue[0]);
+  updateProgressDots();
+}
+
+function loadChallenge(ch) {
+  current = ch; userPts=[]; checked=false; revealed=false;
+  canvas.style.cursor = 'crosshair';
+  document.getElementById('canvasOuter').style.cursor = 'crosshair';
+  document.getElementById('confirmBox').style.display = 'none';
+  document.getElementById('levelUpBox').style.display = 'none';
+  document.getElementById('fnFormula').textContent = ch.formula;
+  document.getElementById('fnFormula').style.color = ch.color;
+  document.getElementById('fnDesc').textContent    = ch.desc;
+  document.getElementById('fnCard').style.borderColor = ch.color+'55';
+  setFeedback('idle','Col\u00b7loca punts al pla i prem "Comprova"');
+  syncButtons(); draw();
+}
+
+function updateProgressDots() {
+  var dots = document.getElementById('progressDots');
+  var html = '';
+  for (var i=0; i<queue.length; i++) {
+    var cls = 'pdot';
+    if      (i < sessionRes.length)           cls += ' pdot-'+sessionRes[i];
+    else if (i === Math.min(qIdx, queue.length-1)) cls += ' pdot-cur';
+    html += '<div class="'+cls+'"></div>';
+  }
+  dots.innerHTML = html;
+}
+
+// ── INIT ──
+resize();
+startSession();
+</script>
+</body>
+</html>
