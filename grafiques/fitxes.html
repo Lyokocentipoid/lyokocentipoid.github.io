@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matemàtiques · Pla Cartesià i Funcions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --yellow:  #FFE135;
+      --pink:    #FF6B9D;
+      --blue:    #3B82F6;
+      --green:   #22C55E;
+      --orange:  #FF7849;
+      --purple:  #A855F7;
+      --teal:    #14B8A6;
+      --red:     #EF4444;
+      --ink:     #0F0F0F;
+      --white:   #FFFDF0;
+      --border:  3px solid #0F0F0F;
+      --shadow:  4px 4px 0 #0F0F0F;
+      --shadow-lg: 6px 6px 0 #0F0F0F;
+      --shadow-xl: 8px 8px 0 #0F0F0F;
+      --r: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--yellow);
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(255,107,157,0.18) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(59,130,246,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(168,85,247,0.08) 0%, transparent 60%);
+      min-height: 100vh;
+      font-family: 'Fredoka', sans-serif;
+      color: var(--ink);
+      padding: 2rem 1rem 6rem;
+    }
+
+    /* ── DECORATIVE BLOBS ── */
+    body::before, body::after {
+      content: ''; position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+    }
+    body::before {
+      width: 300px; height: 300px;
+      background: var(--pink); opacity: 0.25;
+      top: -80px; right: -80px;
+    }
+    body::after {
+      width: 200px; height: 200px;
+      background: var(--blue); opacity: 0.2;
+      bottom: 60px; left: -60px;
+    }
+
+    .page-wrap { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* ── NAME SCREEN ── */
+    #nameScreen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 80vh; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .name-card {
+      background: var(--white); border: var(--border); border-radius: 16px;
+      box-shadow: var(--shadow-xl); padding: 2.8rem 2.5rem 2.5rem;
+      max-width: 440px; width: 100%; text-align: center;
+      transform: rotate(-1deg);
+    }
+    .name-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .name-title { font-size: 2rem; font-weight: 700; color: var(--ink); margin-bottom: 0.25rem; }
+    .name-subtitle { font-size: 0.95rem; font-weight: 400; color: #555; margin-bottom: 2rem; line-height: 1.5; }
+    .name-label { font-size: 0.9rem; font-weight: 600; text-align: left; display: block; margin-bottom: 0.4rem; color: var(--ink); }
+    #playerNameInput {
+      width: 100%; background: var(--yellow); border: var(--border); border-radius: var(--r);
+      font-family: 'Fredoka', sans-serif; font-size: 1.3rem; font-weight: 600; color: var(--ink);
+      padding: 0.6rem 1rem; text-align: center; outline: none; margin-bottom: 1.5rem;
+      transition: box-shadow 0.15s;
+    }
+    #playerNameInput:focus { box-shadow: var(--shadow); }
+    #playerNameInput::placeholder { color: #aaa; font-weight: 400; }
+    #startBtn {
+      font-family: 'Fredoka', sans-serif; font-size: 1.2rem; font-weight: 700;
+      background: var(--ink); color: var(--yellow); border: var(--border); border-radius: var(--r);
+      padding: 0.75rem 2.5rem; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    #startBtn:hover { transform: translate(-2px,-2px); box-shadow: var(--shadow-lg); }
+    #startBtn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #0F0F0F; }
+
+    #mainContent { display: none; }
+    #mainContent.show { display: block; animation: fadeUp 0.4s ease both; }
+
+    /* ── HEADER ── */
+    .nb-header {
+      background: var(--ink); border-radius: 16px;
+      padding: 1.6rem 2rem; margin-bottom: 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+      position: relative; overflow: hidden;
+    }
+    .nb-header::before {
+      content: ''; position: absolute; right: -30px; top: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: var(--yellow); opacity: 0.08;
+    }
+    .nb-header-left { flex: 1; }
+    .nb-subject { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--yellow); margin-bottom: 0.2rem; }
+    .nb-title { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 700; color: var(--white); line-height: 1.1; }
+    .nb-title span { color: var(--yellow); }
+    .nb-student { font-size: 0.92rem; font-weight: 500; color: rgba(255,253,240,0.6); margin-top: 0.3rem; }
+    .nb-student em { color: var(--yellow); font-style: normal; font-weight: 700; }
+
+    /* Stamp */
+    .stamp {
+      background: var(--yellow); border: var(--border); border-radius: 50%;
+      width: 84px; height: 84px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; line-height: 1.1;
+      transform: rotate(8deg); flex-shrink: 0;
+    }
+    .stamp-label { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .stamp-score { display: flex; align-items: baseline; gap: 1px; }
+    .stamp-num { font-size: 2.2rem; font-weight: 700; line-height: 1; transition: all 0.3s; }
+    .stamp-denom { font-size: 0.9rem; font-weight: 700; opacity: 0.55; }
+
+    /* ── PROGRESS ── */
+    .progress-box {
+      background: var(--white); border: var(--border); border-radius: var(--r);
+      padding: 0.9rem 1.2rem; margin-bottom: 1.2rem;
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      box-shadow: var(--shadow);
+    }
+    .progress-label { font-size: 0.88rem; font-weight: 700; white-space: nowrap; color: var(--ink); }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+    .dot-ball {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: transparent; border: 2.5px solid #ccc;
+      transition: all 0.25s; position: relative; cursor: default;
+    }
+    .dot-ball.done {
+      background: var(--green); border-color: var(--green);
+    }
+    .dot-ball.done::after {
+      content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #fff; font-weight: 700;
+    }
+    .dot-ball.pop { animation: popDot 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    #progressCount { font-size: 1rem; font-weight: 700; white-space: nowrap; color: var(--blue); }
+
+    /* ── INSTRUCTIONS ── */
+    .instructions-box {
+      background: var(--teal); border: var(--border); border-radius: var(--r);
+      padding: 0.85rem 1.1rem; margin-bottom: 1.8rem;
+      font-size: 0.88rem; font-weight: 500; color: #fff; line-height: 1.6;
+      box-shadow: var(--shadow);
+    }
+    .instructions-box strong { font-weight: 700; color: var(--yellow); }
+
+    /* ── ROUND LABEL ── */
+    #roundLabel {
+      font-size: 1rem; font-weight: 700; color: var(--ink);
+      margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .round-badge {
+      background: var(--pink); color: #fff; border: var(--border); border-radius: 20px;
+      padding: 0.15rem 0.8rem; font-size: 0.88rem; font-weight: 700;
+      box-shadow: 2px 2px 0 #0F0F0F;
+    }
+
+    /* ── CARDS ── */
+    .exercises { display: flex; flex-direction: column; gap: 1.4rem; }
+
+    /* Each card gets one of 5 accent colors cyclically */
+    .card {
+      background: var(--white); border: var(--border); border-radius: 12px;
+      padding: 1.2rem 1.4rem; box-shadow: var(--shadow-lg);
+      transition: box-shadow 0.15s, transform 0.15s;
+      border-left: 6px solid var(--blue);
+      position: relative;
+    }
+    .card.accent-0 { border-left-color: var(--blue); }
+    .card.accent-1 { border-left-color: var(--pink); }
+    .card.accent-2 { border-left-color: var(--orange); }
+    .card.correct  { border-left-color: var(--green) !important; background: #f0fdf4; }
+    .card.wrong    { border-left-color: var(--red)   !important; background: #fff5f5; }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; }
+    .card-tag {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.18rem 0.65rem; border: var(--border); border-radius: 20px;
+      background: var(--yellow);
+    }
+    .card.correct .card-tag { background: var(--green); color: #fff; border-color: var(--green); }
+    .card.wrong   .card-tag { background: var(--red);   color: #fff; border-color: var(--red); }
+    .card-num {
+      width: 26px; height: 26px; border-radius: 50%; border: var(--border);
+      background: var(--ink); color: var(--yellow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; font-weight: 700; flex-shrink: 0;
+    }
+    .card-difficulty { font-size: 0.78rem; color: var(--orange); font-weight: 600; }
+
+    .sentence { font-size: 1rem; font-weight: 500; line-height: 2; color: var(--ink); }
+
+    /* ── MINI TABLE ── */
+    .data-table { border-collapse: collapse; margin: 0.5rem 0 0.6rem; font-family: 'DM Mono', monospace; font-size: 0.88rem; }
+    .data-table th, .data-table td {
+      border: 2px solid var(--ink); padding: 0.3rem 0.7rem; text-align: center;
+    }
+    .data-table th { background: var(--ink); color: var(--yellow); font-weight: 500; }
+    .data-table td { background: #fff; font-weight: 500; }
+
+    /* ── INPUT ── */
+    input[type="text"] {
+      display: inline-block; width: 78px;
+      background: var(--yellow); border: 2.5px solid var(--ink); border-radius: 6px;
+      color: var(--ink); font-family: 'DM Mono', monospace;
+      font-size: 1rem; font-weight: 500; text-align: center;
+      padding: 0.15rem 0.3rem; outline: none;
+      transition: box-shadow 0.15s; vertical-align: middle;
+    }
+    input[type="text"]::placeholder { color: #aaa; font-size: 0.88rem; }
+    input[type="text"]:focus { box-shadow: 3px 3px 0 var(--blue); }
+    input.correct-input { background: #dcfce7; border-color: var(--green); box-shadow: 2px 2px 0 var(--green); }
+    input.wrong-input   { background: #fee2e2; border-color: var(--red);   box-shadow: 2px 2px 0 var(--red); }
+
+    /* ── HINT ── */
+    .hint {
+      font-size: 0.88rem; font-weight: 500; color: var(--ink);
+      background: #fff8e1; border: 2px dashed var(--orange); border-radius: var(--r);
+      padding: 0; margin-top: 0.6rem;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
+    }
+    .hint.visible { max-height: 200px; opacity: 1; padding: 0.5rem 0.8rem; }
+    .hint::before { content: '💡 '; }
+
+    /* ── FEEDBACK ── */
+    .feedback {
+      font-size: 0.92rem; font-weight: 700; margin-top: 0.5rem; min-height: 1.3rem;
+      opacity: 0; transform: translateY(4px); transition: opacity 0.2s, transform 0.2s;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok  { color: var(--green); }
+    .feedback.err { color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn-row { margin-top: 1.8rem; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.8rem; }
+
+    #checkBtn {
+      font-family: 'Fredoka', sans-serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--blue); color: #fff; border: var(--border); border-radius: var(--r);
+      padding: 0.65rem 2rem; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    #checkBtn::before { content: '✏️  '; }
+    #checkBtn:hover  { transform: translate(-2px,-2px); box-shadow: var(--shadow-lg); }
+    #checkBtn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #0F0F0F; }
+    #checkBtn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: var(--shadow); }
+
+    #retryBtn {
+      display: none; font-family: 'Fredoka', sans-serif; font-size: 1rem; font-weight: 700;
+      background: var(--white); color: var(--ink); border: var(--border); border-radius: var(--r);
+      padding: 0.6rem 1.5rem; cursor: pointer; box-shadow: var(--shadow);
+      transition: background 0.15s;
+    }
+    #retryBtn::before { content: '↺  '; }
+    #retryBtn:hover { background: var(--yellow); }
+
+    #scoreBox {
+      width: 100%; margin-top: 0.2rem;
+      opacity: 0; transform: translateY(6px); transition: opacity 0.3s, transform 0.3s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 1.8rem; font-weight: 700; color: var(--blue); display: block; line-height: 1.1; }
+    #scoreBox .score-msg { font-size: 0.92rem; font-weight: 500; color: #555; }
+
+    /* ── CELEBRATION ── */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      justify-content: center; align-items: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.25s ease; }
+
+    .celeb-card {
+      background: var(--yellow); border: var(--border); border-radius: 16px;
+      padding: 2rem 2.2rem 2rem; max-width: 400px; width: 90%;
+      text-align: center; box-shadow: var(--shadow-xl);
+      transform: rotate(-1deg);
+      animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .celeb-emoji { font-size: 3rem; margin-bottom: 0.3rem; }
+    .celeb-name { font-size: 1rem; font-weight: 600; color: #444; margin-bottom: 0.2rem; }
+    .celeb-title { font-size: 2rem; font-weight: 700; color: var(--ink); margin-bottom: 0.5rem; }
+    .celeb-stamp {
+      display: inline-block; background: var(--ink); color: var(--yellow);
+      border: var(--border); border-radius: var(--r); font-size: 1.2rem; font-weight: 700;
+      padding: 0.25rem 1.2rem; margin: 0.5rem 0 0.3rem; transform: rotate(-2deg);
+    }
+    .celeb-score { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 0.2rem; }
+    .celeb-sub { font-size: 0.88rem; font-weight: 500; color: #444; margin: 0.7rem 0 1.2rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Fredoka', sans-serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: var(--yellow); border: var(--border); border-radius: var(--r);
+      padding: 0.65rem 2rem; cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.1s;
+    }
+    #celebCloseBtn:hover { transform: translate(-2px,-2px); }
+
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* ── FINAL ── */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeUp 0.5s ease; }
+    .final-wrap {
+      display: inline-block; background: var(--white); border: var(--border); border-radius: 16px;
+      padding: 3rem 3rem 2.5rem; box-shadow: var(--shadow-xl); transform: rotate(0.5deg);
+    }
+    .final-name { font-size: 1rem; font-weight: 600; color: #555; margin-bottom: 0.7rem; }
+    .final-grade {
+      font-weight: 700; color: var(--ink);
+      background: var(--yellow); border: var(--border); border-radius: 50%;
+      width: 110px; height: 110px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; transform: rotate(-4deg); box-shadow: var(--shadow-lg);
+    }
+    .final-grade .grade-num { font-size: 3rem; line-height: 1; }
+    .final-grade .grade-denom { font-size: 0.9rem; opacity: 0.6; }
+    .final-title { font-size: 2rem; font-weight: 700; }
+    .final-sub { font-size: 0.92rem; font-weight: 500; color: #555; margin: 0.5rem 0 1.5rem; line-height: 1.6; }
+    .final-note { font-size: 0.8rem; color: #888; margin-bottom: 1.2rem; }
+    #reloadBtn {
+      font-family: 'Fredoka', sans-serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: var(--yellow); border: var(--border); border-radius: var(--r);
+      padding: 0.65rem 2rem; cursor: pointer; box-shadow: var(--shadow);
+    }
+    #reloadBtn:hover { background: var(--blue); }
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes popIn   { from{opacity:0;transform:scale(0.85) rotate(-2deg)} to{opacity:1;transform:scale(1) rotate(-1deg)} }
+    @keyframes popDot  { 0%{transform:scale(1)} 50%{transform:scale(1.6)} 100%{transform:scale(1)} }
+    @keyframes stampBump { 0%{transform:rotate(8deg) scale(1)} 40%{transform:rotate(6deg) scale(1.25)} 100%{transform:rotate(8deg) scale(1)} }
+    .stamp.bump { animation: stampBump 0.35s ease; }
+  </style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<div id="celebration">
+  <div class="celeb-card">
+    <div class="celeb-emoji">🎉</div>
+    <div class="celeb-name" id="celebName"></div>
+    <div class="celeb-title">Molt bé!</div>
+    <div class="celeb-stamp">3 / 3 ✓</div>
+    <div class="celeb-score" id="celebScoreNote"></div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Seguim →</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- NAME SCREEN -->
+  <div id="nameScreen">
+    <div class="name-card">
+      <div class="name-icon">📐</div>
+      <div class="name-title">Quadern de Pràctica</div>
+      <div class="name-subtitle">Matemàtiques · 1r ESO<br>Pla cartesià, funcions i estadística</div>
+      <label class="name-label" for="playerNameInput">✏️ Escriu el teu nom:</label>
+      <input type="text" id="playerNameInput" placeholder="El teu nom aquí…" maxlength="30" autocomplete="off">
+      <button id="startBtn" onclick="startGame()">Comencem! →</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="mainContent">
+
+    <div class="nb-header">
+      <div class="nb-header-left">
+        <div class="nb-subject">Matemàtiques · 1r ESO</div>
+        <div class="nb-title">Pla Cartesià, <span>Funcions</span> i Estadística</div>
+        <div class="nb-student">Alumne/a: <em id="headerName"></em></div>
+      </div>
+      <div class="stamp">
+        <div class="stamp-label">Nota</div>
+        <div class="stamp-score">
+          <div class="stamp-num" id="stampNum">0</div>
+          <div class="stamp-denom">/30</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-box">
+      <div class="progress-label">Progrés ✓</div>
+      <div id="dotsGrid"></div>
+      <div id="progressCount">0 / 30</div>
+    </div>
+
+    <div class="instructions-box">
+      💡 Omple els buits i fes clic a <strong>"Comprova"</strong>. Si t'equivoques apareixerà una pista, però <strong>la resposta no et serà donada</strong>. Cada encert a la primera suma <strong>1 punt</strong>. Pots reintentar sense perdre els encerts!
+    </div>
+
+    <div id="roundLabel"></div>
+    <div class="exercises" id="exercises"></div>
+
+    <div class="btn-row">
+      <button id="checkBtn" onclick="checkAnswers()">Comprova respostes</button>
+      <button id="retryBtn" onclick="retryRound()">Torna-ho a intentar</button>
+      <div id="scoreBox">
+        <span class="score-num" id="scoreNum"></span>
+        <span class="score-msg" id="scoreMsg"></span>
+      </div>
+    </div>
+
+    <div id="finalScreen">
+      <div class="final-wrap">
+        <div class="final-name" id="finalName"></div>
+        <div class="final-grade">
+          <div class="grade-num" id="finalGradeNum">—</div>
+          <div class="grade-denom">/ 30</div>
+        </div>
+        <div class="final-title" id="finalTitle">Excel·lent!</div>
+        <div class="final-sub" id="finalSub"></div>
+        <div class="final-note">* Cada encert a la primera suma 1 punt. Màxim: 30 punts.</div>
+        <button id="reloadBtn" onclick="location.reload()">Tornar a començar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// REGISTRE
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = '1ESO_PlaCartesia_Funcions_Fitxa1';
+const _startTime = Date.now();
+const _primeres_respostes = {};
+function _registrarPrimeraResposta(ig, v) { if (!(ig in _primeres_respostes)) _primeres_respostes[ig] = v; }
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({length:total},(_,i)=>_primeres_respostes[i]!==undefined?String(_primeres_respostes[i]):'');
+  fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fitxa:FITXA_NOM,timestamp:new Date().toLocaleString('ca-ES',{timeZone:'Europe/Madrid'}),nom,puntuacio,total,minuts:Math.round((Date.now()-_startTime)/60000),primeres_respostes:respostes})
+  }).catch(()=>{});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ── A) PLA CARTESIÀ ★ (7) ───────────────────────────────────
+  { tag:"Pla cartesià", stars:1,
+    s:['El punt (',['−2'],', ',['5'],') és al quadrant ','_','. (1, 2, 3 o 4)'],
+    answer:2, hint:"Q1:(+,+) · Q2:(−,+) · Q3:(−,−) · Q4:(+,−)." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['El punt (',['4'],', ',['−3'],') és al quadrant ','_','. (1, 2, 3 o 4)'],
+    answer:4, hint:"x positiu i y negatiu → quadrant 4." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['El punt (',['−5'],', ',['−1'],') és al quadrant ','_','. (1, 2, 3 o 4)'],
+    answer:3, hint:"x negatiu i y negatiu → quadrant 3." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['La distància entre A(',['1'],', 0) i B(',['9'],', 0) sobre l\'eix X és ','_',' unitats.'],
+    answer:8, hint:"Distància sobre l'eix X = diferència d'abscisses: 9 − 1." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['La distància entre P(0, ',['2'],') i Q(0, ',['10'],') sobre l\'eix Y és ','_',' unitats.'],
+    answer:8, hint:"Distància sobre l'eix Y = diferència d'ordenades: 10 − 2." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['El punt mig entre A(',['0'],', 6) i B(',['8'],', 6) té abscissa ','_','.'],
+    answer:4, hint:"Abscissa del punt mig = (x₁ + x₂) ÷ 2 = (0 + 8) ÷ 2." },
+
+  { tag:"Pla cartesià", stars:1,
+    s:['Un punt amb ordenada igual a ',['0'],' és sobre l\'eix ','_','. (1 = eix X, 2 = eix Y)'],
+    answer:1, hint:"Si y = 0, el punt és sobre l'eix X (l'eix horitzontal)." },
+
+  // ── B) FUNCIONS PROPORCIONALS  y = mx ★★ (5) ────────────────
+  { tag:"Funció proporcional", stars:2,
+    s:['En la funció ',['y = 3x'],', quan x = ',['5'],', y = ','_','.'],
+    answer:15, hint:"Substitueix x: y = 3 × 5." },
+
+  { tag:"Funció proporcional", stars:2,
+    s:['En la funció ',['y = 4x'],', quan x = ',['−2'],', y = ','_','.'],
+    answer:-8, hint:"y = 4 × (−2). Positiu × negatiu = negatiu." },
+
+  { tag:"Funció proporcional", stars:2,
+    s:['En la funció ',['y = 5x'],', si y = ',['30'],', x = ','_','.'],
+    answer:6, hint:"Aïlla x: x = y ÷ m = 30 ÷ 5." },
+
+  { tag:"Funció proporcional", stars:2,
+    s:['Completa la taula per a ',['y = 2x'],':',
+       'TABLE:x|−3|0|4;y|?|0|?',
+       'Quan x = −3, y = ','_','. (Quan x = 4 ha de donar 8)'],
+    answer:-6, hint:"y = 2 × (−3). Negatiu × positiu = negatiu." },
+
+  { tag:"Funció proporcional", stars:2,
+    s:['En y = kx, si el punt (',['3'],', ',['12'],') pertany a la gràfica, k = ','_','.'],
+    answer:4, hint:"12 = k × 3 → k = 12 ÷ 3." },
+
+  // ── C) FUNCIONS LINEALS  y = mx + b ★★ (6) ──────────────────
+  { tag:"Funció lineal", stars:2,
+    s:['En ',['y = 2x + 1'],', quan x = ',['4'],', y = ','_','.'],
+    answer:9, hint:"y = 2 × 4 + 1." },
+
+  { tag:"Funció lineal", stars:2,
+    s:['En ',['y = −3x + 6'],', quan x = ',['2'],', y = ','_','.'],
+    answer:0, hint:"y = −3 × 2 + 6 = −6 + 6." },
+
+  { tag:"Funció lineal", stars:2,
+    s:['En ',['y = 5x − 4'],', quan x = ',['0'],', y = ','_','. (Aquesta és l\'ordenada a l\'origen)'],
+    answer:-4, hint:"Quan x = 0: y = 5 × 0 − 4 = −4." },
+
+  { tag:"Funció lineal", stars:2,
+    s:['La funció ',['y = 2x − 6'],' talla l\'eix X (y = 0) quan x = ','_','.'],
+    answer:3, hint:"Posa y = 0: 0 = 2x − 6 → x = 3." },
+
+  { tag:"Funció lineal", stars:2,
+    s:['Completa la taula per a ',['y = x + 3'],':',
+       'TABLE:x|−2|0|5;y|?|3|?',
+       'Quan x = −2, y = ','_','. (Quan x = 5 ha de donar 8)'],
+    answer:1, hint:"y = (−2) + 3 = 1." },
+
+  { tag:"Funció lineal", stars:2,
+    s:['En ',['y = 7x − 2'],', el pendent m és ','_',' i l\'ordenada a l\'origen és −2.'],
+    answer:7, hint:"En y = mx + b, m és el coeficient davant de la x." },
+
+  // ── D) ESTADÍSTICA ★★ (6) ────────────────────────────────────
+  { tag:"Estadística", stars:2,
+    s:['Notes de 5 alumnes: ',['4, 6, 7, 8, 5'],'. Nota mitjana: ','_','.'],
+    answer:6, hint:"Mitjana = (4+6+7+8+5) ÷ 5." },
+
+  { tag:"Estadística", stars:2,
+    s:['Puntuacions: ',['3, 7, 5, 7, 2, 7, 4'],'. La moda (valor més repetit) és ','_','.'],
+    answer:7, hint:"Compta quantes vegades apareix cada valor." },
+
+  { tag:"Estadística", stars:2,
+    s:['Edats ordenades: ',['11, 13, 14, 16, 18, 20, 22'],'. La mediana (valor central) és ','_','.'],
+    answer:16, hint:"Amb 7 dades, la mediana és el 4t valor." },
+
+  { tag:"Estadística", stars:2,
+    s:['En una classe de ',['25 alumnes'],', ',['10'],' practiquen natació. Freqüència relativa (%) dels nedadors: ','_',' %.'],
+    answer:40, hint:"Freq. relativa = (10 ÷ 25) × 100." },
+
+  { tag:"Estadística", stars:2,
+    s:['Temperatures: ',['12, 18, 9, 21, 15'],'. El rang (màxim − mínim) és ','_',' °C.'],
+    answer:12, hint:"Rang = 21 − 9." },
+
+  { tag:"Estadística", stars:2,
+    s:['En ',['40 persones'],', el ',['30%'],' ha respost "sí". Quantes persones han dit "sí"? ','_','.'],
+    answer:12, hint:"(30 ÷ 100) × 40 = 12." },
+
+  // ── E) PROBLEMES COMPOSTOS ★★★ (6) ──────────────────────────
+  // E1 – Funció + context
+  { tag:"Problema compost", stars:3,
+    s:['La funció ',['y = 3x − 1'],' dóna el cost (€) de llogar una bicicleta x hores.',
+       'TABLE:Hores (x)|1|2|3;Cost € (y)|?|?|?',
+       'Quant costa llogar-la 3 hores? ','_',' €.'],
+    answer:8, hint:"Substitueix x = 3: y = 3 × 3 − 1 = 9 − 1." },
+
+  // E2 – Proporcional + context
+  { tag:"Problema compost", stars:3,
+    s:['Un cotxe segueix ',['d = 80t'],' (km/h).',
+       'TABLE:Temps (h)|1|2|3;Distància (km)|80|?|?',
+       'Quina distància recorre en 3 hores? ','_',' km.'],
+    answer:240, hint:"d = 80 × 3." },
+
+  // E3 NOU – Taula de valors y = 4x − 2
+  { tag:"Taula de valors", stars:3,
+    s:['Completa la taula per a la funció ',['y = 4x − 2'],':',
+       'TABLE:x|0|1|3;y|?|2|?',
+       'Quan x = 0, y = ','_','. (Quan x = 3 ha de donar 10)'],
+    answer:-2, hint:"y = 4 × 0 − 2 = −2." },
+
+  // E4 NOU – Taula de valors y = −2x + 8
+  { tag:"Taula de valors", stars:3,
+    s:['Completa la taula per a la funció ',['y = −2x + 8'],':',
+       'TABLE:x|0|2|4;y|?|4|?',
+       'Quan x = 0, y = ','_','. (Quan x = 4 ha de donar 0)'],
+    answer:8, hint:"y = −2 × 0 + 8 = 8." },
+
+  // E5 NOU – Taula de valors y = x² (introducció quadràtica simple)
+  { tag:"Taula de valors", stars:3,
+    s:['Completa la taula per a la funció ',['y = x²'],':',
+       'TABLE:x|−2|0|3;y|?|0|?',
+       'Quan x = −2, y = ','_','. (Quan x = 3 ha de donar 9)'],
+    answer:4, hint:"y = (−2)² = (−2) × (−2) = 4. Negatiu × negatiu = positiu." },
+
+  // E6 – Estadística + percentatge
+  { tag:"Problema compost", stars:3,
+    s:['En una classe de ',['30 alumnes'],', el ',['60%'],' ha aprovat. Dels aprovats, ',['6'],' han tret excel·lent. Quin % dels aprovats ha tret excel·lent? ','_',' %.'],
+    answer:33, hint:"Aprovats = 60% de 30 = 18. % excel·lents = (6 ÷ 18) × 100 ≈ 33%." },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ESTAT
+// ═══════════════════════════════════════════════════════════════
+const TOTAL = 30, PER = 3;
+const ACCENT_COLORS = ['accent-0','accent-1','accent-2'];
+let order=[], solved=0, score=0, roundIdx=0;
+let currentEx=[], checked=false;
+let canScore=[true,true,true], locked=[false,false,false];
+let playerName='';
+
+// ═══════════════════════════════════════════════════════════════
+// NOM I INICI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('playerNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+function startGame() {
+  playerName = document.getElementById('playerNameInput').value.trim() || 'Alumne/a';
+  document.getElementById('nameScreen').style.display = 'none';
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('headerName').textContent = playerName;
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i=TOTAL-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  buildDots(); loadRound(0, false);
+}
+function buildDots() {
+  const g = document.getElementById('dotsGrid'); g.innerHTML='';
+  for (let i=0;i<TOTAL;i++) { const d=document.createElement('div'); d.className='dot-ball'; d.id='dot'+i; g.appendChild(d); }
+  updateCount();
+}
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved+' / '+TOTAL;
+  document.getElementById('stampNum').textContent = score;
+}
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el=document.getElementById('dot'+gi); if(!el) return;
+      el.classList.add('done','pop');
+      el.addEventListener('animationend',()=>el.classList.remove('pop'),{once:true});
+    }, delay*180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER SENTENCE
+// ═══════════════════════════════════════════════════════════════
+function renderSentence(ex, idx) {
+  let html='';
+  ex.s.forEach(part => {
+    if (part==='_') {
+      html+='<input type="text" id="ans'+idx+'" placeholder="···" autocomplete="off" maxlength="12">';
+    } else if (Array.isArray(part)) {
+      html+='<strong>'+part[0]+'</strong>';
+    } else if (typeof part==='string' && part.startsWith('TABLE:')) {
+      const rows=part.slice(6).split(';'), heads=rows[0].split('|'), vals=rows[1].split('|');
+      let t='<table class="data-table"><tr>';
+      heads.forEach(h=>{t+='<th>'+h+'</th>';}); t+='</tr><tr>';
+      vals.forEach(v=>{t+='<td>'+v+'</td>';}); t+='</tr></table>';
+      html+=t;
+    } else { html+=part; }
+  });
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+const STARS=['','★','★★','★★★'];
+
+function loadRound(ri, animate) {
+  checked=false; canScore=[true,true,true]; locked=[false,false,false]; roundIdx=ri;
+  const start=ri*PER;
+  currentEx=order.slice(start,start+PER).map(i=>BANK[i]);
+
+  // Round label
+  const rl=document.getElementById('roundLabel');
+  rl.innerHTML='<span class="round-badge">Repte '+(ri+1)+' / '+(TOTAL/PER)+'</span>';
+
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent='';
+  document.getElementById('scoreMsg').textContent='';
+  document.getElementById('retryBtn').style.display='none';
+  document.getElementById('checkBtn').disabled=false;
+  document.getElementById('checkBtn').style.display='';
+
+  const container=document.getElementById('exercises');
+
+  function renderCards() {
+    container.innerHTML='';
+    currentEx.forEach((ex,i) => {
+      const card=document.createElement('div');
+      card.className='card '+ACCENT_COLORS[i]; card.id='card'+i;
+      card.innerHTML=
+        '<div class="card-header">'+
+          '<span class="card-tag">'+ex.tag+'</span>'+
+          '<div style="display:flex;align-items:center;gap:0.5rem">'+
+            '<span class="card-difficulty">'+STARS[ex.stars||1]+'</span>'+
+            '<div class="card-num">'+(i+1)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="sentence">'+renderSentence(ex,i)+'</div>'+
+        '<div class="hint" id="hint'+i+'">'+ex.hint+'</div>'+
+        '<div class="feedback" id="fb'+i+'"></div>';
+      container.appendChild(card);
+      card.style.opacity='0'; card.style.transform='translateY(16px)';
+      setTimeout(()=>{
+        card.style.transition='opacity 0.32s ease, transform 0.32s ease';
+        card.style.opacity='1'; card.style.transform='translateY(0)';
+      }, 50+i*80);
+    });
+
+    currentEx.forEach((_,i) => {
+      const inp=document.getElementById('ans'+i);
+      if(inp) inp.addEventListener('keydown', e=>{
+        if(e.key!=='Enter') return;
+        let next=i+1; while(next<PER&&locked[next]) next++;
+        const nxt=next<PER?document.getElementById('ans'+next):null;
+        if(nxt) nxt.focus(); else checkAnswers();
+      });
+    });
+    setTimeout(()=>{ const f=document.getElementById('ans0'); if(f) f.focus(); },320);
+  }
+
+  if(animate && container.children.length>0) {
+    Array.from(container.children).forEach((card,i)=>{
+      card.style.transition='opacity 0.25s ease, transform 0.25s ease';
+      card.style.transitionDelay=(i*45)+'ms';
+      card.style.opacity='0'; card.style.transform='translateX(-45px)';
+    });
+    setTimeout(renderCards, 300);
+  } else {
+    renderCards();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVA
+// ═══════════════════════════════════════════════════════════════
+function checkAnswers() {
+  if(checked) return;
+  const TOL=0.6;
+  let okThisAttempt=0, scoreGained=0, allDone=true;
+
+  currentEx.forEach((ex,i)=>{
+    if(locked[i]){ okThisAttempt++; return; }
+    const inp=document.getElementById('ans'+i);
+    const fb=document.getElementById('fb'+i);
+    const card=document.getElementById('card'+i);
+    const hint=document.getElementById('hint'+i);
+    const idxGlobal=roundIdx*PER+i;
+    _registrarPrimeraResposta(idxGlobal, inp.value.trim());
+    const val=parseFloat(inp.value.replace(',','.').replace(/\s/g,''));
+
+    if(isNaN(val)){
+      inp.classList.remove('correct-input','wrong-input');
+      card.classList.remove('correct','wrong');
+      fb.className='feedback err show'; fb.textContent='✗ Escriu un número.';
+      hint.classList.add('visible'); allDone=false; canScore[i]=false; return;
+    }
+    if(Math.abs(val-ex.answer)<=TOL){
+      okThisAttempt++; locked[i]=true;
+      inp.classList.add('correct-input'); inp.classList.remove('wrong-input'); inp.disabled=true;
+      card.className='card correct';
+      fb.className='feedback ok show'; fb.textContent='✓ Correcte!'+(canScore[i]?' (+1 punt)':'');
+      hint.classList.remove('visible');
+      if(canScore[i]) scoreGained++;
+    } else {
+      allDone=false; canScore[i]=false;
+      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      card.className='card wrong';
+      fb.className='feedback err show'; fb.textContent='✗ No és correcte. Revisa la pista!';
+      hint.classList.add('visible');
+    }
+  });
+
+  if(scoreGained>0){
+    score+=scoreGained; updateCount();
+    const stamp=document.querySelector('.stamp');
+    stamp.classList.remove('bump'); void stamp.offsetWidth;
+    stamp.classList.add('bump');
+    stamp.addEventListener('animationend',()=>stamp.classList.remove('bump'),{once:true});
+  }
+
+  const pendents=PER-okThisAttempt;
+  document.getElementById('scoreNum').textContent=okThisAttempt+' / '+PER;
+  document.getElementById('scoreMsg').textContent=allDone
+    ?'Perfecte! Totes encertades! 🏆'
+    :(pendents===1?'Queda 1 per corregir. Torna-ho a provar! 💪':'Queden '+pendents+' per corregir. Revisa les pistes! 💪');
+  document.getElementById('scoreBox').classList.add('show');
+
+  if(allDone){
+    checked=true; document.getElementById('checkBtn').disabled=true;
+    for(let i=0;i<PER;i++){ const h=document.getElementById('hint'+i); if(h) h.classList.remove('visible'); }
+    markDots(order.slice(roundIdx*PER, roundIdx*PER+PER));
+    solved+=PER; updateCount();
+    const isLast=(roundIdx+1)*PER>=TOTAL;
+    if(isLast) setTimeout(showFinal,800); else setTimeout(showCelebration,500);
+  } else {
+    document.getElementById('retryBtn').style.display='';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RETRY
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for(let i=0;i<PER;i++){
+    if(locked[i]) continue;
+    const inp=document.getElementById('ans'+i);
+    const fb=document.getElementById('fb'+i);
+    const card=document.getElementById('card'+i);
+    if(inp){ inp.value=''; inp.classList.remove('correct-input','wrong-input'); }
+    if(card){ card.classList.remove('correct','wrong'); card.classList.add(ACCENT_COLORS[i]); }
+    if(fb){ fb.className='feedback'; fb.textContent=''; }
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display='none';
+  document.getElementById('checkBtn').disabled=false;
+  checked=false;
+  for(let i=0;i<PER;i++){ if(!locked[i]){ document.getElementById('ans'+i).focus(); break; } }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ / FINAL
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebName').textContent=playerName+',';
+  document.getElementById('celebSub').textContent='Repte '+(roundIdx+1)+' superat! Prepara\'t per al repte '+(roundIdx+2)+'.';
+  document.getElementById('celebScoreNote').textContent='Nota acumulada: '+score+' / 30';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti(); loadRound(roundIdx+1, true);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showFinal() {
+  document.getElementById('exercises').style.display='none';
+  document.getElementById('roundLabel').style.display='none';
+  document.querySelector('.btn-row').style.display='none';
+  document.getElementById('finalName').textContent=playerName;
+  document.getElementById('finalGradeNum').textContent=score;
+  const titles=[
+    [0,9,'Segueix practicant!','No t\'amoïnis, la pràctica fa la perfecció. Torna a intentar-ho!'],
+    [10,18,'Bé, però pots millorar!','Has superat molts reptes. Amb una mica més d\'esforç arribaràs al màxim!'],
+    [19,26,'Notable!','Molt bon treball, '+playerName+'! Quasi ho tens tot dominat.'],
+    [27,30,'Excel·lent! 🏅','Increïble, '+playerName+'! Domines el pla cartesià, les funcions i l\'estadística!'],
+  ];
+  const [,,title,sub]=titles.find(([mn,mx])=>score>=mn&&score<=mx)||titles[3];
+  document.getElementById('finalTitle').textContent=title;
+  document.getElementById('finalSub').textContent=sub;
+  document.getElementById('finalScreen').classList.add('show');
+  _enviarRegistre(playerName,score,TOTAL);
+  launchConfetti(); setTimeout(stopConfetti,6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas=document.getElementById('confettiCanvas'), ctx=canvas.getContext('2d');
+let particles=[], confettiAF=null;
+function launchConfetti(){
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  canvas.classList.add('show'); particles=Array.from({length:90},makeP);
+  if(confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop(){ drawConfetti(); confettiAF=requestAnimationFrame(loop); })();
+}
+function stopConfetti(){
+  if(confettiAF){ cancelAnimationFrame(confettiAF); confettiAF=null; }
+  ctx.clearRect(0,0,canvas.width,canvas.height); canvas.classList.remove('show');
+}
+function makeP(){
+  const c=['#FF6B9D','#3B82F6','#22C55E','#FF7849','#A855F7','#14B8A6','#FFE135'];
+  return{x:Math.random()*window.innerWidth,y:Math.random()*-200,w:8+Math.random()*8,h:4+Math.random()*5,
+    color:c[Math.floor(Math.random()*c.length)],speed:2+Math.random()*4,
+    angle:Math.random()*Math.PI*2,spin:(Math.random()-0.5)*0.2,drift:(Math.random()-0.5)*1.5};
+}
+function drawConfetti(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.y+=p.speed; p.x+=p.drift; p.angle+=p.spin;
+    if(p.y>canvas.height) Object.assign(p,makeP(),{y:-20});
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.angle);
+    ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+    ctx.restore();
+  });
+}
+</script>
+</body>
+</html>
