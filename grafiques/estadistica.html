@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estadística · Representació Gràfica · 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --text:    #e8eaf6;
+      --muted:   #7a7fa8;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+      --violet:  #7c6bff;
+      --rose:    #ff6b9d;
+      --lime:    #a8ff3e;
+      --amber:   #ffbe3d;
+      --teal:    #48dbfb;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--amber); }
+    .sec-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--amber); background: rgba(255,190,61,.08); border: 1px solid rgba(255,190,61,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem; }
+    .breadcrumb a { color: var(--muted); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--amber); }
+    .page-header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.6rem,3vw,2.4rem); letter-spacing: -.02em; margin-bottom: .5rem; }
+    .page-header h1 em { font-style: normal; color: var(--amber); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 620px; }
+
+    /* DATASET + CHART TYPE SELECTORS */
+    .controls-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 1.5rem; display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center;
+    }
+    .ctrl-group { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .ctrl-label { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .sel-btn {
+      padding: .38rem .9rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .sel-btn:hover { border-color: var(--amber); color: var(--text); }
+    .sel-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(255,190,61,.08); }
+    .sel-btn.chart-active { border-color: var(--teal); color: var(--teal); background: rgba(72,219,251,.08); }
+
+    /* MAIN LAYOUT */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+
+    /* CHART AREA */
+    .chart-col { display: flex; flex-direction: column; gap: 1rem; }
+    .canvas-wrap {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; position: relative;
+    }
+    #mainCanvas { display: block; width: 100%; }
+
+    /* MEASURE TOGGLES — ON/OFF style */
+    .measure-bar {
+      display: flex; gap: .5rem; flex-wrap: wrap;
+    }
+    .meas-btn {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .38rem .85rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .8rem;
+      cursor: pointer; transition: all var(--tr); user-select: none;
+    }
+    .meas-btn .mdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; opacity: .4; transition: opacity .2s; }
+    .meas-btn .toggle-pill {
+      display: flex; align-items: center;
+      width: 28px; height: 15px; border-radius: 8px;
+      background: var(--border); position: relative; flex-shrink: 0;
+      transition: background .2s;
+    }
+    .meas-btn .toggle-pill::after {
+      content: ''; position: absolute; left: 2px;
+      width: 11px; height: 11px; border-radius: 50%;
+      background: var(--muted); transition: all .2s;
+    }
+    .meas-btn.on  { color: var(--text); border-color: var(--m-color); background: color-mix(in srgb, var(--m-color) 10%, transparent); }
+    .meas-btn.on  .mdot { opacity: 1; }
+    .meas-btn.on  .toggle-pill { background: var(--m-color); }
+    .meas-btn.on  .toggle-pill::after { left: calc(100% - 13px); background: #fff; }
+    .meas-btn.off { opacity: .5; }
+
+    /* SIDE PANEL */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .info-head { padding: .85rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .65rem; }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .75rem; }
+
+    /* Measure cards */
+    .meas-card {
+      padding: .75rem 1rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; gap: .85rem;
+      transition: border-color .3s;
+    }
+    .meas-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .meas-info { flex: 1; min-width: 0; }
+    .meas-name { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: .18rem; }
+    .meas-val  { font-family: 'DM Mono', monospace; font-size: 1.1rem; transition: color .3s; }
+    .meas-formula { font-size: .72rem; color: var(--muted); margin-top: .1rem; font-family: 'DM Mono', monospace; }
+
+    /* EXPLANATION BOX */
+    .explain-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.1rem 1.4rem; display: flex; flex-direction: column; gap: .75rem;
+    }
+    .explain-box-title {
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem;
+      margin-bottom: .1rem;
+    }
+    .explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+    .explain-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: .75rem .9rem; transition: border-color .3s, opacity .3s;
+    }
+    .explain-card.dim { opacity: .3; }
+    .explain-card-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+    .explain-card-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .explain-card-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .8rem; }
+    .explain-card p    { font-size: .75rem; color: var(--muted); line-height: 1.55; }
+    .explain-card code { font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--text); background: var(--card); padding: .1rem .3rem; border-radius: 4px; }
+
+    /* RANDOM BTN */
+    .random-btn {
+      display: flex; align-items: center; gap: .45rem;
+      padding: .38rem .9rem; border-radius: 100px;
+      border: 1px solid var(--border); background: var(--card);
+      color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .random-btn:hover { border-color: var(--amber); color: var(--amber); }
+    table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: .78rem; }
+    th { padding: .38rem .55rem; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-weight: 500; font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+    td { padding: .35rem .55rem; border: 1px solid var(--border); text-align: center; transition: background .2s; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .td-moda { color: var(--amber); font-weight: 700; }
+    .td-median { background: rgba(72,219,251,.07) !important; }
+
+    /* INSIGHTS */
+    .insights { max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+    .insight-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; display: flex; gap: .8rem; align-items: flex-start; }
+    .insight-icon { font-size: 1.2rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .85rem; margin-bottom: .25rem; }
+    .insight-text p { font-size: .76rem; color: var(--muted); line-height: 1.55; }
+
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2.5rem; display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem; }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .insights    { grid-template-columns: 1fr 1fr; padding: 0 1.25rem 2.5rem; }
+      nav, .page-header, .controls-bar, .main-layout { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+    @media (max-width: 500px) {
+      .insights { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Representació Gràfica</a>
+  <div class="nav-right">
+    <span class="sec-label">Secció 04 · Estadística</span>
+    <a href="index.html" class="nav-back">← Inici</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="index.html">Inici</a> <span>›</span>
+    <span class="cur">Estadística</span>
+  </div>
+  <h1>Estadística <em>descriptiva</em></h1>
+  <p>Explora conjunts de dades reals amb diagrames de barres i de línies. Activa i desactiva la mitjana, la moda, la mediana i el rang per veure com es representen directament sobre la gràfica.</p>
+</div>
+
+<div class="controls-bar">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Conjunt de dades:</span>
+    <button class="sel-btn active" id="ds-notes">📝 Notes</button>
+    <button class="sel-btn" id="ds-temp">🌡️ Temperatures</button>
+    <button class="sel-btn" id="ds-pob">👥 Alçades</button>
+    <button class="sel-btn" id="ds-pluja">🌧️ Pluges</button>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Tipus de gràfic:</span>
+    <button class="sel-btn chart-active" id="chart-barres">Barres</button>
+    <button class="sel-btn" id="chart-linies">Línies</button>
+  </div>
+  <div class="ctrl-group">
+    <button class="random-btn" id="randomBtn">🎲 Dades aleatòries</button>
+  </div>
+</div>
+
+<div class="main-layout">
+
+  <div class="chart-col">
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mainCanvas"></canvas>
+    </div>
+    <div class="measure-bar" id="measureBar">
+      <button class="meas-btn on" id="mbMitjana" style="--m-color:#ff6b9d">
+        <span class="mdot" style="background:#ff6b9d"></span>
+        Mitjana
+        <span class="toggle-pill"></span>
+      </button>
+      <button class="meas-btn on" id="mbModa" style="--m-color:#ffbe3d">
+        <span class="mdot" style="background:#ffbe3d"></span>
+        Moda
+        <span class="toggle-pill"></span>
+      </button>
+      <button class="meas-btn on" id="mbMediana" style="--m-color:#48dbfb">
+        <span class="mdot" style="background:#48dbfb"></span>
+        Mediana
+        <span class="toggle-pill"></span>
+      </button>
+      <button class="meas-btn on" id="mbRang" style="--m-color:#a8ff3e">
+        <span class="mdot" style="background:#a8ff3e"></span>
+        Rang
+        <span class="toggle-pill"></span>
+      </button>
+    </div>
+
+    <!-- EXPLANATION BOX -->
+    <div class="explain-box" id="explainBox">
+      <div class="explain-box-title">Com s'han calculat?</div>
+      <div class="explain-grid">
+        <div class="explain-card" id="exMitjana">
+          <div class="explain-card-head">
+            <div class="explain-card-dot" style="background:#ff6b9d"></div>
+            <span class="explain-card-name" style="color:#ff6b9d">Mitjana</span>
+          </div>
+          <p id="exMitjanaText">—</p>
+        </div>
+        <div class="explain-card" id="exModa">
+          <div class="explain-card-head">
+            <div class="explain-card-dot" style="background:#ffbe3d"></div>
+            <span class="explain-card-name" style="color:#ffbe3d">Moda</span>
+          </div>
+          <p id="exModaText">—</p>
+        </div>
+        <div class="explain-card" id="exMediana">
+          <div class="explain-card-head">
+            <div class="explain-card-dot" style="background:#48dbfb"></div>
+            <span class="explain-card-name" style="color:#48dbfb">Mediana</span>
+          </div>
+          <p id="exMedianaText">—</p>
+        </div>
+        <div class="explain-card" id="exRang">
+          <div class="explain-card-head">
+            <div class="explain-card-dot" style="background:#a8ff3e"></div>
+            <span class="explain-card-name" style="color:#a8ff3e">Rang</span>
+          </div>
+          <p id="exRangText">—</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+
+    <!-- Measures -->
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Mesures estadístiques</span></div>
+      <div class="info-body">
+        <div class="meas-card" id="cardMitjana">
+          <span class="meas-icon">〰️</span>
+          <div class="meas-info">
+            <div class="meas-name">Mitjana</div>
+            <div class="meas-val"  id="valMitjana" style="color:#ff6b9d">—</div>
+            <div class="meas-formula">suma / n</div>
+          </div>
+        </div>
+        <div class="meas-card" id="cardModa">
+          <span class="meas-icon">⭐</span>
+          <div class="meas-info">
+            <div class="meas-name">Moda</div>
+            <div class="meas-val"  id="valModa" style="color:#ffbe3d">—</div>
+            <div class="meas-formula">valor més freqüent</div>
+          </div>
+        </div>
+        <div class="meas-card" id="cardMediana">
+          <span class="meas-icon">⚖️</span>
+          <div class="meas-info">
+            <div class="meas-name">Mediana</div>
+            <div class="meas-val"  id="valMediana" style="color:#48dbfb">—</div>
+            <div class="meas-formula">valor central ordenat</div>
+          </div>
+        </div>
+        <div class="meas-card" id="cardRang">
+          <span class="meas-icon">↔️</span>
+          <div class="meas-info">
+            <div class="meas-name">Rang</div>
+            <div class="meas-val"  id="valRang" style="color:#a8ff3e">—</div>
+            <div class="meas-formula">màxim − mínim</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data table -->
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📋</span><span class="info-head-title">Taula de dades</span></div>
+      <div class="info-body">
+        <div class="data-table-wrap">
+          <table>
+            <thead><tr><th>Etiqueta</th><th>Valor</th><th>Nota</th></tr></thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">〰️</span>
+    <div class="insight-text">
+      <h4 style="color:#ff6b9d">Mitjana</h4>
+      <p>És la suma de tots els valors dividida entre quants n'hi ha. Representa el "valor típic", però es veu afectada pels valors extrems.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⭐</span>
+    <div class="insight-text">
+      <h4 style="color:#ffbe3d">Moda</h4>
+      <p>És el valor que apareix més vegades. Pot haver-hi més d'una moda. És útil per a dades amb moltes repeticions.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⚖️</span>
+    <div class="insight-text">
+      <h4 style="color:#48dbfb">Mediana</h4>
+      <p>És el valor del mig quan les dades estan ordenades. Si n és parell, és la mitjana dels dos valors centrals. No es veu afectada pels extrems.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">↔️</span>
+    <div class="insight-text">
+      <h4 style="color:#a8ff3e">Rang</h4>
+      <p>És la diferència entre el valor màxim i el mínim. Indica quant estan disperses les dades. Un rang gran vol dir molta variabilitat.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Representació Gràfica · Secció 04 · Estadística</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+// ── DATASETS ──
+var DATASETS = {
+  notes: {
+    title:    'Notes de la classe (sobre 10)',
+    unit:     'punts',
+    labels:   ['Alba','Bernat','Carla','David','Elena','Ferran','Gina','Hector','Irene','Joan','Laura','Marc'],
+    values:   [7, 5, 8, 6, 9, 5, 7, 4, 8, 6, 7, 10],
+    color:    '#7c6bff',
+    yMax:     12,
+    yStep:    2,
+  },
+  temp: {
+    title:    'Temperatura màxima mensual a Barcelona (°C)',
+    unit:     '°C',
+    labels:   ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'],
+    values:   [13, 14, 16, 18, 22, 26, 29, 29, 25, 21, 16, 13],
+    color:    '#ff6b9d',
+    yMax:     35,
+    yStep:    5,
+  },
+  pob: {
+    title:    'Alçada dels alumnes (cm)',
+    unit:     'cm',
+    labels:   ['A1','A2','A3','A4','A5','A6','A7','A8','A9','A10','A11','A12'],
+    values:   [148, 172, 155, 183, 151, 163, 158, 176, 145, 169, 158, 179],
+    color:    '#a8ff3e',
+    yMax:     195,
+    yStep:    15,
+  },
+  pluja: {
+    title:    'Precipitació mensual a Lleida (mm)',
+    unit:     'mm',
+    labels:   ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'],
+    values:   [22, 18, 28, 38, 44, 30, 15, 18, 42, 48, 30, 24],
+    color:    '#48dbfb',
+    yMax:     60,
+    yStep:    10,
+  },
+};
+
+// ── STATE ──
+var currentDs    = 'notes';
+var chartType    = 'barres';
+var showMitjana  = true;
+var showModa     = true;
+var showMediana  = true;
+var showRang     = true;
+var dpr, W, H;
+var PAD = { top: 40, right: 20, bottom: 70, left: 52 };
+
+// ── CANVAS ──
+var wrap   = document.getElementById('canvasWrap');
+var canvas = document.getElementById('mainCanvas');
+var ctx    = canvas.getContext('2d');
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  var r = wrap.getBoundingClientRect();
+  var h = Math.max(320, r.width * 0.55);
+  canvas.width  = r.width * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width  = r.width + 'px';
+  canvas.style.height = h + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ── STATS ──
+function calcStats(vals) {
+  var n = vals.length;
+  var sum = 0;
+  for (var i=0; i<n; i++) sum += vals[i];
+  var mean = sum / n;
+
+  var sorted = vals.slice().sort(function(a,b){ return a-b; });
+  var median = n % 2 === 1
+    ? sorted[Math.floor(n/2)]
+    : (sorted[n/2-1] + sorted[n/2]) / 2;
+
+  // Moda: find most frequent
+  var freq = {};
+  for (var i=0; i<n; i++) {
+    freq[vals[i]] = (freq[vals[i]] || 0) + 1;
+  }
+  var maxFreq = 0;
+  for (var k in freq) { if (freq[k] > maxFreq) maxFreq = freq[k]; }
+  var modes = [];
+  for (var k in freq) { if (freq[k] === maxFreq) modes.push(+k); }
+  modes.sort(function(a,b){ return a-b; });
+
+  var rang = sorted[n-1] - sorted[0];
+
+  return { mean: mean, median: median, modes: modes, maxFreq: maxFreq, rang: rang, min: sorted[0], max: sorted[n-1], sorted: sorted };
+}
+
+// ── DRAW ──
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  var ds   = DATASETS[currentDs];
+  var vals = ds.values;
+  var st   = calcStats(vals);
+  var n    = vals.length;
+
+  var chartW = W - (PAD.left + PAD.right) * dpr;
+  var chartH = H - (PAD.top  + PAD.bottom) * dpr;
+  var ox = PAD.left * dpr, oy = PAD.top * dpr;
+
+  // ── GRID & AXES ──
+  ctx.save();
+  // Horizontal grid lines
+  var steps = Math.round(ds.yMax / ds.yStep);
+  for (var s=0; s<=steps; s++) {
+    var val = s * ds.yStep;
+    var py  = oy + chartH - (val / ds.yMax) * chartH;
+    ctx.beginPath(); ctx.moveTo(ox, py); ctx.lineTo(ox+chartW, py);
+    ctx.strokeStyle = s===0 ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.05)';
+    ctx.lineWidth = s===0 ? 1.5*dpr : 1;
+    ctx.stroke();
+    // Y label
+    ctx.font = (9*dpr)+'px DM Mono,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.textAlign='right'; ctx.textBaseline='middle';
+    ctx.fillText(val, ox-7*dpr, py);
+  }
+  // X axis
+  ctx.beginPath(); ctx.moveTo(ox, oy+chartH); ctx.lineTo(ox+chartW, oy+chartH);
+  ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5*dpr; ctx.stroke();
+  // Title
+  ctx.font = 'bold '+(10*dpr)+'px DM Sans,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(ds.title, ox+chartW/2, 8*dpr);
+  ctx.restore();
+
+  // ── BAR WIDTH / X POSITIONS ──
+  var barPad = 0.2;
+  var slotW  = chartW / n;
+  var barW   = slotW * (1 - barPad);
+
+  function xCenter(i) { return ox + slotW*i + slotW/2; }
+  function yVal(v)    { return oy + chartH - (v/ds.yMax)*chartH; }
+
+  // ── RANG BRACKET ──
+  if (showRang) {
+    var rxMin = xCenter(vals.indexOf(st.min));
+    var rxMax = xCenter(vals.indexOf(st.max));
+    var ry    = oy - 10*dpr;
+    ctx.save();
+    ctx.strokeStyle = '#a8ff3e'; ctx.lineWidth = 1.5*dpr;
+    ctx.shadowColor = '#a8ff3e'; ctx.shadowBlur = 6;
+    // Bracket
+    ctx.beginPath();
+    ctx.moveTo(rxMin, yVal(st.min) - 8*dpr);
+    ctx.lineTo(rxMin, ry);
+    ctx.lineTo(rxMax, ry);
+    ctx.lineTo(rxMax, yVal(st.max) - 8*dpr);
+    ctx.stroke(); ctx.shadowBlur=0;
+    // Label
+    ctx.font='bold '+(10*dpr)+'px DM Mono,monospace';
+    ctx.fillStyle='#a8ff3e'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.shadowColor='#a8ff3e'; ctx.shadowBlur=5;
+    ctx.fillText('Rang = '+fmt(st.rang)+' '+ds.unit, (rxMin+rxMax)/2, ry-2*dpr);
+    ctx.shadowBlur=0; ctx.restore();
+  }
+
+  // ── DRAW BARS OR LINES ──
+  if (chartType === 'barres') {
+    for (var i=0; i<n; i++) {
+      var bx  = ox + slotW*i + slotW*barPad/2;
+      var bh  = (vals[i]/ds.yMax)*chartH;
+      var by  = oy + chartH - bh;
+      var isModa = showModa && st.modes.indexOf(vals[i]) >= 0 && st.maxFreq > 1;
+
+      ctx.save();
+      ctx.fillStyle = ds.color + '33';
+      ctx.fillRect(bx, by, barW, bh);
+      ctx.strokeStyle = isModa ? '#ffbe3d' : ds.color;
+      ctx.lineWidth   = isModa ? 2.5*dpr : 2*dpr;
+      ctx.shadowColor = isModa ? '#ffbe3d' : ds.color;
+      ctx.shadowBlur  = isModa ? 10 : 6;
+      ctx.strokeRect(bx, by, barW, bh);
+      ctx.shadowBlur=0; ctx.restore();
+
+      // Value on top
+      ctx.save();
+      ctx.font=(9*dpr)+'px DM Mono,monospace';
+      ctx.fillStyle=isModa?'#ffbe3d':ds.color; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(vals[i], xCenter(i), by-3*dpr);
+      ctx.restore();
+    }
+  } else {
+    // LINE CHART
+    ctx.save();
+    ctx.beginPath();
+    for (var i=0; i<n; i++) {
+      var px = xCenter(i), py2 = yVal(vals[i]);
+      i===0 ? ctx.moveTo(px,py2) : ctx.lineTo(px,py2);
+    }
+    ctx.strokeStyle=ds.color; ctx.lineWidth=2.5*dpr;
+    ctx.shadowColor=ds.color; ctx.shadowBlur=10;
+    ctx.lineJoin='round'; ctx.stroke(); ctx.shadowBlur=0; ctx.restore();
+
+    // Area fill
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(xCenter(0), oy+chartH);
+    for (var i=0; i<n; i++) ctx.lineTo(xCenter(i), yVal(vals[i]));
+    ctx.lineTo(xCenter(n-1), oy+chartH);
+    ctx.closePath();
+    ctx.fillStyle = ds.color+'18'; ctx.fill(); ctx.restore();
+
+    // Dots
+    for (var i=0; i<n; i++) {
+      var isModa = showModa && st.modes.indexOf(vals[i]) >= 0 && st.maxFreq > 1;
+      ctx.beginPath(); ctx.arc(xCenter(i), yVal(vals[i]), (isModa?6:4)*dpr, 0, Math.PI*2);
+      ctx.fillStyle  = isModa?'#ffbe3d':ds.color;
+      ctx.shadowColor= isModa?'#ffbe3d':ds.color; ctx.shadowBlur=10;
+      ctx.fill(); ctx.shadowBlur=0;
+      // Value
+      ctx.save();
+      ctx.font=(9*dpr)+'px DM Mono,monospace';
+      ctx.fillStyle=isModa?'#ffbe3d':ds.color; ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(vals[i], xCenter(i), yVal(vals[i])-8*dpr);
+      ctx.restore();
+    }
+  }
+
+  // ── MITJANA LINE ──
+  if (showMitjana) {
+    var myMit = yVal(st.mean);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(ox, myMit); ctx.lineTo(ox+chartW, myMit);
+    ctx.strokeStyle='#ff6b9d'; ctx.lineWidth=2*dpr;
+    ctx.setLineDash([8*dpr,5*dpr]);
+    ctx.shadowColor='#ff6b9d'; ctx.shadowBlur=8; ctx.stroke();
+    ctx.setLineDash([]); ctx.shadowBlur=0;
+    ctx.font='bold '+(10*dpr)+'px DM Mono,monospace';
+    ctx.fillStyle='#ff6b9d'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.shadowColor='#ff6b9d'; ctx.shadowBlur=5;
+    ctx.fillText('x\u0305 = '+fmt(st.mean), ox+4*dpr, myMit-4*dpr);
+    ctx.shadowBlur=0; ctx.restore();
+  }
+
+  // ── MEDIANA LINE ──
+  if (showMediana) {
+    var myMed = yVal(st.median);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(ox, myMed); ctx.lineTo(ox+chartW, myMed);
+    ctx.strokeStyle='#48dbfb'; ctx.lineWidth=2*dpr;
+    ctx.setLineDash([4*dpr,4*dpr]);
+    ctx.shadowColor='#48dbfb'; ctx.shadowBlur=8; ctx.stroke();
+    ctx.setLineDash([]); ctx.shadowBlur=0;
+    ctx.font='bold '+(10*dpr)+'px DM Mono,monospace';
+    ctx.fillStyle='#48dbfb'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.shadowColor='#48dbfb'; ctx.shadowBlur=5;
+    ctx.fillText('Me = '+fmt(st.median), ox+chartW-4*dpr, myMed-4*dpr);
+    ctx.shadowBlur=0; ctx.restore();
+  }
+
+  // ── X LABELS ──
+  ctx.save();
+  ctx.font=(9*dpr)+'px DM Sans,sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.4)'; ctx.textAlign='center'; ctx.textBaseline='top';
+  for (var i=0; i<n; i++) {
+    ctx.fillText(ds.labels[i], xCenter(i), oy+chartH+6*dpr);
+  }
+  ctx.restore();
+
+  // ── UPDATE PANEL ──
+  updatePanel(st, ds);
+  buildTable(vals, ds.labels, st);
+}
+
+function fmt(v) {
+  if (!isFinite(v)) return '—';
+  return Math.round(v*100)/100 === Math.round(v) ? String(Math.round(v)) : v.toFixed(2);
+}
+
+function updatePanel(st, ds) {
+  var n = ds.values.length;
+  document.getElementById('valMitjana').textContent = showMitjana ? fmt(st.mean) + ' ' + ds.unit : '—';
+  document.getElementById('valModa').textContent    = showModa    ? (st.maxFreq > 1 ? st.modes.join(', ') + ' ' + ds.unit : 'No n\'hi ha') : '—';
+  document.getElementById('valMediana').textContent = showMediana ? fmt(st.median) + ' ' + ds.unit : '—';
+  document.getElementById('valRang').textContent    = showRang    ? fmt(st.rang) + ' ' + ds.unit + ' (' + fmt(st.min) + '\u2013' + fmt(st.max) + ')' : '—';
+
+  // Dim cards that are toggled off
+  document.getElementById('cardMitjana').style.opacity = showMitjana ? '1' : '.4';
+  document.getElementById('cardModa').style.opacity    = showModa    ? '1' : '.4';
+  document.getElementById('cardMediana').style.opacity = showMediana ? '1' : '.4';
+  document.getElementById('cardRang').style.opacity    = showRang    ? '1' : '.4';
+
+  // Dim explanation cards
+  document.getElementById('exMitjana').classList.toggle('dim', !showMitjana);
+  document.getElementById('exModa').classList.toggle('dim',    !showModa);
+  document.getElementById('exMediana').classList.toggle('dim', !showMediana);
+  document.getElementById('exRang').classList.toggle('dim',    !showRang);
+
+  // ── CONTEXTUAL EXPLANATIONS ──
+  // Mitjana
+  var vals = ds.values;
+  var sum  = 0; for (var i=0; i<n; i++) sum += vals[i];
+  document.getElementById('exMitjanaText').innerHTML =
+    'Suma tots els valors i divideix entre ' + n + ':<br>' +
+    '<code>' + vals.join(' + ') + ' = ' + fmt(sum) + '</code><br>' +
+    '<code>' + fmt(sum) + ' \u00f7 ' + n + ' = ' + fmt(st.mean) + '</code>';
+
+  // Moda
+  if (st.maxFreq <= 1) {
+    document.getElementById('exModaText').innerHTML =
+      'Tots els valors apareixen exactament 1 vegada. <strong>No hi ha moda</strong> perquè cap valor es repeteix.';
+  } else if (st.modes.length === 1) {
+    document.getElementById('exModaText').innerHTML =
+      'El valor <code>' + st.modes[0] + '</code> apareix ' + st.maxFreq + ' vegades, m\u00e9s que cap altre. \u00c9s l\'\u00fanic valor m\u00e9s freqüent.';
+  } else {
+    document.getElementById('exModaText').innerHTML =
+      'Els valors <code>' + st.modes.join('</code> i <code>') + '</code> apareixen tots ' + st.maxFreq +
+      ' vegades. Hi ha <strong>' + st.modes.length + ' modes</strong>: quan dos o m\u00e9s valors empaten en freq\u00fc\u00e8ncia, tots s\u00f3n moda.';
+  }
+
+  // Mediana
+  var sorted = st.sorted;
+  if (n % 2 === 1) {
+    var mi = Math.floor(n/2);
+    document.getElementById('exMedianaText').innerHTML =
+      'Amb ' + n + ' dades (nombre senar), la mediana \u00e9s el valor de la posici\u00f3 ' + (mi+1) + ' en ordre:<br>' +
+      '<code>' + sorted.join(', ') + '</code><br>' +
+      '\u2192 Mediana = <code>' + sorted[mi] + '</code>';
+  } else {
+    var m1 = sorted[n/2-1], m2 = sorted[n/2];
+    document.getElementById('exMedianaText').innerHTML =
+      'Amb ' + n + ' dades (nombre parell), no hi ha un valor central \u00fanico. Es fa la mitjana dels dos valors centrals (posicions ' + (n/2) + ' i ' + (n/2+1) + '):<br>' +
+      '<code>' + sorted.join(', ') + '</code><br>' +
+      '\u2192 (' + m1 + ' + ' + m2 + ') \u00f7 2 = <code>' + fmt(st.median) + '</code>';
+  }
+
+  // Rang
+  document.getElementById('exRangText').innerHTML =
+    'Valor m\u00e0xim \u2212 valor m\u00ednim:<br>' +
+    '<code>' + fmt(st.max) + ' \u2212 ' + fmt(st.min) + ' = ' + fmt(st.rang) + ' ' + ds.unit + '</code><br>' +
+    'El rang indica quant estan disperses les dades.';
+}
+
+function buildTable(vals, labels, st) {
+  var sorted = vals.slice().sort(function(a,b){return a-b;});
+  var medIdx = Math.floor(sorted.length/2);
+  var tbody  = document.getElementById('dataTableBody');
+  var rows   = '';
+  for (var i=0; i<vals.length; i++) {
+    var v         = vals[i];
+    var isModa    = showModa    && st.modes.indexOf(v)>=0 && st.maxFreq>1;
+    var isMediana = showMediana && v === st.median;
+    var note   = isModa && isMediana ? 'Moda i Mediana'
+               : isModa    ? 'Moda'
+               : isMediana ? 'Mediana'
+               : '';
+    var cls = (isModa ? 'td-moda' : '') + (isMediana ? ' td-median' : '');
+    rows += '<tr>' +
+      '<td>' + labels[i] + '</td>' +
+      '<td class="' + cls + '">' + v + '</td>' +
+      '<td style="font-size:.7rem;color:var(--muted)">' + note + '</td>' +
+      '</tr>';
+  }
+  tbody.innerHTML = rows;
+}
+
+// ── DATASET BUTTONS ──
+var dsIds = ['notes','temp','pob','pluja'];
+dsIds.forEach(function(id) {
+  document.getElementById('ds-'+id).addEventListener('click', function() {
+    currentDs = id;
+    dsIds.forEach(function(x){ document.getElementById('ds-'+x).classList.remove('active'); });
+    document.getElementById('ds-'+id).classList.add('active');
+    draw();
+  });
+});
+
+// ── CHART TYPE BUTTONS ──
+document.getElementById('chart-barres').addEventListener('click', function() {
+  chartType = 'barres';
+  document.getElementById('chart-barres').classList.add('chart-active');
+  document.getElementById('chart-linies').classList.remove('chart-active');
+  draw();
+});
+document.getElementById('chart-linies').addEventListener('click', function() {
+  chartType = 'linies';
+  document.getElementById('chart-linies').classList.add('chart-active');
+  document.getElementById('chart-barres').classList.remove('chart-active');
+  draw();
+});
+
+// ── MEASURE TOGGLE BUTTONS ──
+function bindMeasure(btnId, getState, setState) {
+  document.getElementById(btnId).addEventListener('click', function() {
+    setState(!getState());
+    document.getElementById(btnId).classList.toggle('on',  getState());
+    document.getElementById(btnId).classList.toggle('off', !getState());
+    draw();
+  });
+}
+bindMeasure('mbMitjana',
+  function(){ return showMitjana; },
+  function(v){ showMitjana=v; }
+);
+bindMeasure('mbModa',
+  function(){ return showModa; },
+  function(v){ showModa=v; }
+);
+bindMeasure('mbMediana',
+  function(){ return showMediana; },
+  function(v){ showMediana=v; }
+);
+bindMeasure('mbRang',
+  function(){ return showRang; },
+  function(v){ showRang=v; }
+);
+
+// ── RANDOM DATA BUTTON ──
+document.getElementById('randomBtn').addEventListener('click', function() {
+  var ds  = DATASETS[currentDs];
+  var n   = ds.values.length;
+  var min = Math.min.apply(null, DATASETS[currentDs + '_orig'] || ds.values);
+  var max = Math.max.apply(null, DATASETS[currentDs + '_orig'] || ds.values);
+
+  // Config per dataset
+  var cfg = {
+    notes:  { min: 1, max: 10, round: 1 },
+    temp:   { min: 8, max: 35, round: 1 },
+    pob:    { min: 140, max: 190, round: 1 },
+    pluja:  { min: 5, max: 70, round: 1 },
+  };
+  var c = cfg[currentDs];
+
+  // Generate n values, ensure at least one repeat for moda interest
+  var vals = [];
+  for (var i=0; i<n-2; i++) {
+    vals.push(Math.round((Math.random()*(c.max-c.min)+c.min) / c.round) * c.round);
+  }
+  // Force one repeated value for pedagogical interest
+  var repeat = vals[Math.floor(Math.random()*vals.length)];
+  vals.push(repeat);
+  vals.push(Math.round((Math.random()*(c.max-c.min)+c.min) / c.round) * c.round);
+  // Shuffle
+  for (var i=vals.length-1; i>0; i--) {
+    var j = Math.floor(Math.random()*(i+1));
+    var tmp = vals[i]; vals[i]=vals[j]; vals[j]=tmp;
+  }
+
+  ds.values = vals;
+  // Recalculate yMax
+  var maxVal = Math.max.apply(null, vals);
+  ds.yMax = Math.ceil(maxVal / ds.yStep) * ds.yStep + ds.yStep;
+  draw();
+});
+
+// ── INIT ──
+resize();
+</script>
+</body>
+</html>
