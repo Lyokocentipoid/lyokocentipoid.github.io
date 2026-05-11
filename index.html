@@ -11,6 +11,97 @@
   <!-- Canvas per a les partícules (fons fix) -->
   <canvas id="particles-canvas"></canvas>
 
+  <!-- Barra de navegació superior -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <ul class="nav-links">
+        <li>
+          <a href="generador_mails.html" class="nav-link nav-link--colorful">
+            <span class="nav-link__icon">✉</span>
+            <span class="nav-link__text">Generador de Correus</span>
+          </a>
+        </li>
+        <!-- Afegeix més nav-link aquí -->
+      </ul>
+    </div>
+  </nav>
+
+  <style>
+    /* ─── NAVBAR ─────────────────────────────────────────────────────── */
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      /* Vidre transparent */
+      background: rgba(10, 5, 20, 0.45);
+      backdrop-filter: blur(14px) saturate(1.6);
+      -webkit-backdrop-filter: blur(14px) saturate(1.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 2px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .nav-inner {
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .nav-links {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 1.1rem;
+      border-radius: 999px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    /* Estil colorit per al primer enllaç */
+    .nav-link--colorful {
+      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 30%, #48dbfb 60%, #a29bfe 100%);
+      color: #1a0a0a;
+      box-shadow: 0 0 14px rgba(255, 107, 107, 0.45), 0 0 28px rgba(72, 219, 251, 0.2);
+    }
+
+    .nav-link--colorful:hover {
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 0 22px rgba(255, 107, 107, 0.7), 0 0 44px rgba(72, 219, 251, 0.35);
+      filter: brightness(1.08);
+    }
+
+    .nav-link--colorful:active {
+      transform: scale(0.97);
+    }
+
+    .nav-link__icon {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+  </style>
+
   <header>
     <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
     <h1 id="typewriter"></h1>
