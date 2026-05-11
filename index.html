@@ -35,7 +35,7 @@
       right: 0;
       z-index: 1000;
       padding: 0 2rem;
-      height: 52px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -60,58 +60,92 @@
       flex-wrap: wrap;
     }
 
-    /* Botó: pastilla amb cristall i gradient coherent amb style.css */
+    /* Botó: bola circular que s'expandeix en hover */
     .nav-link {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.45rem 1.2rem;
+      justify-content: center;
+      gap: 0;
+      overflow: hidden;
+
+      /* Estat repòs: cercle */
+      width: 42px;
+      height: 42px;
       border-radius: 999px;
+      padding: 0;
+
       font-family: 'Poppins', sans-serif;
       font-size: 0.82rem;
       font-weight: 600;
       letter-spacing: 0.03em;
       text-decoration: none;
       white-space: nowrap;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
 
-      /* Cristall translúcid */
-      background: rgba(255, 255, 255, 0.22);
-      backdrop-filter: blur(10px) saturate(1.4);
-      -webkit-backdrop-filter: blur(10px) saturate(1.4);
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      /* Cristall */
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(12px) saturate(1.5);
+      -webkit-backdrop-filter: blur(12px) saturate(1.5);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.1);
 
-      /* Color del text: gradient com el h1 del style.css */
-      color: transparent;
-      background-image: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0.22)),
-                        linear-gradient(90deg, #00897b, #0288d1, #00acc1);
-      background-clip: padding-box, text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      /* Animació flotant suau */
+      animation: navFloat 7s ease-in-out infinite;
+
+      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 0.3s ease,
+                  background 0.3s ease,
+                  border-color 0.3s ease;
     }
 
-    /* Hack: l'icon no hereta el clip de text */
+    /* Flotació lleugera, en sintonia amb el ritme de la pàgina */
+    @keyframes navFloat {
+      0%   { transform: translate(0px, 0px); }
+      20%  { transform: translate(2px, -3px); }
+      45%  { transform: translate(-2px, -2px); }
+      65%  { transform: translate(1px, 2px); }
+      85%  { transform: translate(-1px, 1px); }
+      100% { transform: translate(0px, 0px); }
+    }
+
     .nav-link__icon {
-      font-size: 1rem;
+      font-size: 1.2rem;
       line-height: 1;
-      background: linear-gradient(90deg, #00897b, #0288d1);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      flex-shrink: 0;
+      /* Sense clip de text perquè és emoji */
+      -webkit-text-fill-color: initial;
+    }
+
+    .nav-link__text {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-left: 0;
+      color: #00695c;
+      -webkit-text-fill-color: #00695c;
+      transition: max-width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  opacity 0.25s ease,
+                  margin-left 0.3s ease;
     }
 
     .nav-link:hover {
-      transform: translateY(-2px);
-      background: rgba(255, 255, 255, 0.38);
-      backdrop-filter: blur(16px) saturate(1.6);
-      -webkit-backdrop-filter: blur(16px) saturate(1.6);
-      box-shadow: 0 6px 20px rgba(2, 136, 193, 0.18), 0 2px 8px rgba(0,0,0,0.08);
-      border-color: rgba(255, 255, 255, 0.7);
+      width: auto;
+      padding: 0 1.1rem 0 0.8rem;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(18px) saturate(1.8);
+      -webkit-backdrop-filter: blur(18px) saturate(1.8);
+      box-shadow: 0 6px 22px rgba(2, 136, 193, 0.2), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: rgba(255, 255, 255, 0.8);
+      animation-play-state: paused;
+    }
+
+    .nav-link:hover .nav-link__text {
+      max-width: 200px;
+      opacity: 1;
+      margin-left: 0.45rem;
     }
 
     .nav-link:active {
-      transform: scale(0.97);
+      transform: scale(0.95) !important;
     }
 
   </style>
