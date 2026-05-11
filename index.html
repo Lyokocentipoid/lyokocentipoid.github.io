@@ -88,9 +88,6 @@
       border: 1px solid rgba(255, 255, 255, 0.5);
       box-shadow: 0 2px 14px rgba(0, 0, 0, 0.1);
 
-      /* Animació flotant suau */
-      animation: navFloat 7s ease-in-out infinite;
-
       transition: width 0.65s cubic-bezier(0.25, 1, 0.5, 1),
                   padding 0.65s cubic-bezier(0.25, 1, 0.5, 1),
                   box-shadow 0.5s ease,
@@ -98,13 +95,22 @@
                   border-color 0.5s ease;
     }
 
+    .nav-links li {
+      animation: navFloat 7s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    .nav-links li:hover {
+      animation-play-state: paused;
+    }
+
     /* Flotació lleugera, en sintonia amb el ritme de la pàgina */
     @keyframes navFloat {
       0%   { transform: translate(0px, 0px); }
-      20%  { transform: translate(2px, -3px); }
+      20%  { transform: translate(2px, -2px); }
       45%  { transform: translate(-2px, -2px); }
-      65%  { transform: translate(1px, 2px); }
-      85%  { transform: translate(-1px, 1px); }
+      65%  { transform: translate(0px, 2px); }
+      85%  { transform: translate(-2px, 0px); }
       100% { transform: translate(0px, 0px); }
     }
 
@@ -112,8 +118,9 @@
       font-size: 1.2rem;
       line-height: 1;
       flex-shrink: 0;
-      /* Sense clip de text perquè és emoji */
       -webkit-text-fill-color: initial;
+      will-change: transform;
+      -webkit-font-smoothing: antialiased;
     }
 
     .nav-link__text {
@@ -124,7 +131,7 @@
       color: #00695c;
       -webkit-text-fill-color: #00695c;
       transition: max-width 0.65s cubic-bezier(0.25, 1, 0.5, 1),
-                  opacity 0.45s ease 0.1s,
+                  opacity 0.4s ease,
                   margin-left 0.5s ease;
     }
 
@@ -136,7 +143,6 @@
       -webkit-backdrop-filter: blur(18px) saturate(1.8);
       box-shadow: 0 6px 22px rgba(2, 136, 193, 0.2), 0 2px 8px rgba(0,0,0,0.08);
       border-color: rgba(255, 255, 255, 0.8);
-      animation-play-state: paused;
     }
 
     .nav-link:hover .nav-link__text {
