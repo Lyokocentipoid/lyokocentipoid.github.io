@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de correus</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;width:100%}
+body{min-height:100vh;background:linear-gradient(135deg,#FBDDD8,#E8D5F5,#D8E8FB,#F5EFD5);background-size:400% 400%;animation:wave 12s ease infinite;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#root{min-height:100vh;padding:2rem 1.5rem}
+@keyframes wave{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+#shell{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:1.25rem}
+.glass{background:rgba(255,255,255,0.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(255,255,255,0.9);border-radius:16px;padding:1rem 1.25rem}
+.step-header{display:flex;align-items:center;gap:8px;margin-bottom:.75rem}
+.step-num{width:22px;height:22px;border-radius:50%;background:#C0426B;color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title{font-size:14px;font-weight:500;color:#2E1A25}
+.hint{font-size:12px;color:#7A6070;margin-bottom:8px;line-height:1.5}
+textarea,input[type=text],select{width:100%;font-family:inherit;font-size:13px;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.18);border-radius:10px;background:rgba(255,255,255,0.85);color:#2E1A25;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:none;border-color:#C0426B;box-shadow:0 0 0 2px rgba(192,66,107,0.2)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.18);background:rgba(255,255,255,0.85);font-size:13px;font-weight:500;color:#2E1A25;cursor:pointer;transition:background 0.15s;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,0.97)}
+.btn-primary{background:#C0426B;color:#fff;border-color:#8F2049}
+.btn-primary:hover{background:#8F2049}
+.btn-secondary{background:#7B5EA7;color:#fff;border-color:#5A3D82}
+.btn-secondary:hover{background:#5A3D82}
+.btn-sm{padding:5px 10px;font-size:12px}
+.pill{display:inline-block;font-size:11px;font-family:monospace;background:rgba(192,66,107,0.1);border:0.5px solid rgba(192,66,107,0.3);border-radius:99px;padding:2px 9px;cursor:pointer;color:#8F2049;transition:background 0.12s}
+.pill:hover{background:rgba(192,66,107,0.22)}
+.pill-flash{background:rgba(192,66,107,0.35)!important;outline:2px solid rgba(192,66,107,0.5)}
+.badge-ok{font-size:11px;padding:2px 8px;border-radius:99px;background:#EAF3DE;color:#3B6D11}
+.badge-pend{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(0,0,0,0.07);color:#7A6070}
+.email-card{background:rgba(255,255,255,0.82);border:0.5px solid rgba(255,255,255,0.9);border-radius:12px;padding:10px 14px}
+.tab-bar{display:flex;gap:4px;margin-bottom:.75rem;flex-wrap:wrap}
+.tab{padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;border:0.5px solid transparent;color:#7A6070}
+.tab.active{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.15);color:#2E1A25;font-weight:500}
+.tab:hover:not(.active){background:rgba(255,255,255,0.5)}
+.col-edit-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:6px}
+details.adv>summary{font-size:12px;color:#7A6070;cursor:pointer;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:6px}
+details.adv>summary::before{content:"▶";font-size:9px;transition:transform 0.15s;display:inline-block;color:#C0426B}
+details.adv[open]>summary::before{transform:rotate(90deg)}
+details.adv>summary::-webkit-details-marker{display:none}
+.copy-area{font-size:12px;font-family:monospace;background:rgba(255,255,255,0.7);border:0.5px solid rgba(0,0,0,0.12);border-radius:10px;padding:10px;white-space:pre-wrap;line-height:1.6;max-height:320px;overflow-y:auto}
+.info-box{display:flex;align-items:flex-start;gap:7px;padding:8px 10px;background:rgba(192,66,107,0.05);border:0.5px solid rgba(192,66,107,0.18);border-radius:10px;font-size:12px;color:#7A6070;line-height:1.5}
+.bottom-actions{display:flex;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.07)}
+details pre{margin:6px 0 0;font-size:12px;font-family:inherit;white-space:pre-wrap;color:#2E1A25;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="shell">
+
+    <!-- CAPÇALERA -->
+    <div style="text-align:center;padding:.75rem 0 .5rem">
+      <p style="font-size:28px;font-weight:600;color:#2E1A25;letter-spacing:-0.3px">Generador de correus</p>
+      <p style="font-size:13px;color:#8F2049;margin-top:5px">Importa dades · Redacta la plantilla · Envia manualment</p>
+      <div style="margin-top:16px">
+        <button class="btn btn-sm" id="downloadHtmlBtn" style="background:rgba(255,255,255,0.75);border-color:rgba(0,0,0,0.18)">
+          <i class="ti ti-download"></i> Descarregar en local
+        </button>
+      </div>
+    </div>
+
+    <!-- PAS 1: Dades -->
+    <div class="glass">
+      <div class="step-header"><span class="step-num">1</span><span class="step-title">Enganxa les dades</span></div>
+      <p class="hint">Copia cel·les directament des d'Excel, Google Sheets o LibreOffice. La primera fila ha de ser la capçalera de columnes.</p>
+      <textarea id="pasteArea" rows="4" placeholder="Nom	Cognom	Email	Document	Data&#10;Anna	Garcia	anna@empresa.com	Contracte	15/06&#10;Marc	López	marc@empresa.com	Nòmina	15/06"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span id="parseMsg" style="font-size:12px;color:#7A6070"></span>
+        <button class="btn btn-primary" id="parseBtn"><i class="ti ti-table-import"></i> Llegir dades</button>
+      </div>
+
+      <!-- Opcions avançades: reanomenar i columnes derivades (plegat per defecte) -->
+      <details class="adv" id="stepEdit" style="display:none;margin-top:12px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.08)">
+        <summary>Opcions avançades: reanomenar columnes i crear camps combinats</summary>
+        <div style="margin-top:10px">
+          <p class="hint">Reanomena les capçaleres originals, o defineix nous camps combinant columnes existents amb una fórmula (per exemple, un camp <code style="font-family:monospace;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px">NomComplet</code> = <code style="font-family:monospace;background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px">{{Nom}} {{Cognom}}</code>).</p>
+          <div id="colEditList" style="margin-top:8px"></div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button class="btn btn-sm" id="addColBtn"><i class="ti ti-plus"></i> Nou camp combinat</button>
+            <button class="btn btn-sm btn-primary" id="applyColBtn"><i class="ti ti-check"></i> Aplicar canvis</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- PAS 2: Destinataris -->
+    <div class="glass" id="step2" style="display:none">
+      <div class="step-header"><span class="step-num" style="background:#2A9D6B">2</span><span class="step-title">Destinataris</span></div>
+
+      <div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap">
+        <label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="radio" name="recipientMode" value="col" checked> Columna de les dades
+        </label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="radio" name="recipientMode" value="list"> Llista de correus
+        </label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer">
+          <input type="radio" name="recipientMode" value="none"> Sense destinatari
+        </label>
+      </div>
+
+      <!-- Opció A: columna -->
+      <div id="recipientCol">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#7A6070;white-space:nowrap">Columna amb l'adreça:</span>
+          <select id="emailColSelect" style="width:auto;flex:1;min-width:140px;padding:4px 8px;font-size:12px"></select>
+          <span id="emailColPreview" style="font-size:11px;color:#7A6070"></span>
+        </div>
+      </div>
+
+      <!-- Opció B: llista externa -->
+      <div id="recipientList" style="display:none">
+        <p class="hint" style="margin-bottom:6px">Enganxa una adreça per línia (o copia una columna de l'Excel). S'assignaran en ordre a cada fila de dades.</p>
+        <textarea id="emailListArea" rows="4" placeholder="anna@empresa.com&#10;marc@empresa.com&#10;julia@empresa.com"></textarea>
+        <p id="listMatchMsg" style="font-size:11px;color:#7A6070;margin-top:4px"></p>
+      </div>
+
+      <!-- Opció C: sense destinatari -->
+      <div id="recipientNone" style="display:none">
+        <div class="info-box"><i class="ti ti-info-circle" style="flex-shrink:0;margin-top:1px"></i> Els correus es generaran sense destinatari. Podràs afegir l'adreça manualment des del client de correu abans d'enviar.</div>
+      </div>
+    </div>
+
+    <!-- PAS 3: Plantilla -->
+    <div class="glass" id="step3tpl" style="display:none">
+      <div class="step-header"><span class="step-num" style="background:#2A9D6B">3</span><span class="step-title">Redacta la plantilla</span></div>
+
+      <!-- Comportament camps buits -->
+      <div style="margin-bottom:12px;padding:8px 10px;background:rgba(0,0,0,0.03);border-radius:10px;border:0.5px solid rgba(0,0,0,0.08)">
+        <p style="font-size:12px;color:#7A6070;margin-bottom:6px">Si un camp de les dades és buit…</p>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="radio" name="emptyMode" value="blank" checked> Deixar en blanc</label>
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="radio" name="emptyMode" value="custom"> Substituir per:</label>
+          <input type="text" id="emptyFallback" placeholder="(pendent)" style="width:110px;padding:4px 8px;font-size:12px">
+          <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="radio" name="emptyMode" value="deleteline"> Esborrar la línia sencera</label>
+        </div>
+        <p id="deleteline-hint" style="font-size:11px;color:#8F2049;display:none;margin-top:6px">↳ Qualsevol línia de la plantilla que contingui un camp buit s'eliminarà completament del missatge final.</p>
+      </div>
+
+      <!-- Pills: un sol per columna, inserció intel·ligent -->
+      <p style="font-size:12px;color:#7A6070;margin-bottom:4px">Camps disponibles — clica per inserir on tinguis el cursor:</p>
+      <p id="focusHint" style="font-size:11px;color:#C0426B;margin-bottom:6px;display:none">↑ Primer fes clic a l'assumpte o al cos per triar on s'ha d'inserir.</p>
+      <div id="colPills" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
+
+      <input type="text" id="subject" placeholder="Assumpte (pots usar {{camps}})" style="margin-bottom:8px">
+      <textarea id="body" rows="7" placeholder="Benvolgut/da {{Nom}},&#10;&#10;Us recordem que cal entregar el document «{{Document}}» abans del {{Data}}.&#10;&#10;Gràcies,"></textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-primary" id="genBtn"><i class="ti ti-wand"></i> Genera els correus</button>
+      </div>
+    </div>
+
+    <!-- PAS 4: Correus generats -->
+    <div class="glass" id="step4" style="display:none">
+      <div class="step-header">
+        <span class="step-num" style="background:#C07A17">4</span>
+        <span class="step-title">Correus generats</span>
+        <span id="progress" style="font-size:12px;color:#7A6070;margin-left:auto"></span>
+      </div>
+
+      <div class="tab-bar" id="viewTabs">
+        <div class="tab active" data-view="cards">Targetes</div>
+        <div class="tab" data-view="expanded">Desplegat</div>
+        <div class="tab" data-view="compact">Compacte</div>
+        <div class="tab" data-view="copy">Exportar</div>
+      </div>
+
+      <!-- Vista: targetes -->
+      <div id="viewCards">
+        <div id="emailList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div class="bottom-actions">
+          <button class="btn btn-sm btn-secondary" onclick="downloadEmails()">
+            <i class="ti ti-file-download"></i> Descarregar com a text
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista: desplegada -->
+      <div id="viewExpanded" style="display:none">
+        <div id="expandedList"></div>
+        <div class="bottom-actions">
+          <button class="btn btn-sm btn-secondary" onclick="downloadEmails()">
+            <i class="ti ti-file-download"></i> Descarregar com a text
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista: compacta -->
+      <div id="viewCompact" style="display:none">
+        <div id="compactTable"></div>
+        <div class="bottom-actions">
+          <button class="btn btn-sm btn-secondary" onclick="downloadEmails()">
+            <i class="ti ti-file-download"></i> Descarregar com a text
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista: exportar -->
+      <div id="viewCopy" style="display:none">
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" id="copyFmt1">Destinatari · Assumpte</button>
+          <button class="btn btn-sm btn-primary" id="copyFmt2">Blocs complets</button>
+          <button class="btn btn-sm" id="copyFmt3">CSV</button>
+        </div>
+        <div class="copy-area" id="copyArea" contenteditable="false"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-secondary" id="downloadEmailsBtn">
+            <i class="ti ti-file-download"></i> Descarregar fitxer
+          </button>
+          <button class="btn btn-sm btn-primary" id="copyBtn">
+            <i class="ti ti-copy"></i> Copia al porta-retalls
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let rows=[], cols=[], emails=[], derivedCols=[], currentCopyFmt='blocs';
+let lastFocus='body'; // 'subject' | 'body'
+let focusEverSet=false;
+
+// ── Focus tracking for smart-insert ──────────────────────────────────
+['subject','body'].forEach(id=>{
+  document.getElementById(id).addEventListener('focus',()=>{
+    lastFocus=id;
+    focusEverSet=true;
+    document.getElementById('focusHint').style.display='none';
+  });
+});
+
+function escape(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ── Delete-line hint ──────────────────────────────────────────────────
+document.querySelectorAll('input[name=emptyMode]').forEach(r=>{
+  r.addEventListener('change',()=>{
+    document.getElementById('deleteline-hint').style.display=
+      document.querySelector('input[name=emptyMode]:checked').value==='deleteline'?'block':'none';
+  });
+});
+
+// ── Recipient mode ────────────────────────────────────────────────────
+document.querySelectorAll('input[name=recipientMode]').forEach(r=>{
+  r.addEventListener('change',()=>{
+    const v=document.querySelector('input[name=recipientMode]:checked').value;
+    document.getElementById('recipientCol').style.display=v==='col'?'block':'none';
+    document.getElementById('recipientList').style.display=v==='list'?'block':'none';
+    document.getElementById('recipientNone').style.display=v==='none'?'block':'none';
+  });
+});
+
+document.getElementById('emailListArea').addEventListener('input',updateListMatch);
+
+function updateListMatch(){
+  const lines=document.getElementById('emailListArea').value.trim().split('\n').filter(l=>l.trim());
+  const msg=document.getElementById('listMatchMsg');
+  if(!rows.length){msg.textContent='';return;}
+  if(lines.length===rows.length)
+    msg.textContent=`✓ ${lines.length} adreces per a ${rows.length} files — coincideixen perfectament.`;
+  else if(lines.length<rows.length)
+    msg.textContent=`⚠ ${lines.length} adreces per a ${rows.length} files. Les files sense adreça quedaran buides.`;
+  else
+    msg.textContent=`⚠ ${lines.length} adreces per a ${rows.length} files. Les ${lines.length-rows.length} adreces sobrants s'ignoraran.`;
+}
+
+// ── Download this HTML file ───────────────────────────────────────────
+document.getElementById('downloadHtmlBtn').onclick=()=>{
+  const blob=new Blob([document.documentElement.outerHTML],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mail_merge_generator.html';a.click();URL.revokeObjectURL(a.href);
+};
+
+// ── Parse pasted data ─────────────────────────────────────────────────
+document.getElementById('parseBtn').onclick=()=>{
+  const raw=document.getElementById('pasteArea').value.trim();
+  if(!raw)return;
+  const lines=raw.split('\n').filter(l=>l.trim());
+  if(lines.length<2){document.getElementById('parseMsg').textContent='Cal almenys una capçalera i una fila de dades.';return;}
+  cols=lines[0].split('\t').map(c=>c.trim());
+  rows=lines.slice(1).map(l=>{const vals=l.split('\t');const o={};cols.forEach((c,i)=>o[c]=(vals[i]||'').trim());return o;});
+  document.getElementById('parseMsg').textContent=`${rows.length} files · ${cols.length} columnes llegides`;
+  derivedCols=[];
+  buildColEditor();
+  document.getElementById('stepEdit').style.display='block';
+  document.getElementById('step2').style.display='block';
+  document.getElementById('step3tpl').style.display='block';
+  document.getElementById('step4').style.display='none';
+  buildPills(cols);
+  buildEmailColSelect(cols);
+  updateListMatch();
+};
+
+// ── Email column selector ─────────────────────────────────────────────
+function buildEmailColSelect(c){
+  const sel=document.getElementById('emailColSelect');
+  sel.innerHTML='';
+  const autoIdx=c.findIndex(x=>/mail|correu|email/i.test(x));
+  c.forEach((col,i)=>{
+    const opt=document.createElement('option');
+    opt.value=col;opt.textContent=col;
+    if(i===autoIdx||(autoIdx===-1&&i===0))opt.selected=true;
+    sel.appendChild(opt);
+  });
+  updateEmailColPreview();
+  sel.onchange=updateEmailColPreview;
+}
+
+function updateEmailColPreview(){
+  const col=document.getElementById('emailColSelect').value;
+  const ex=rows.slice(0,3).map(r=>r[col]||'—').filter(Boolean);
+  document.getElementById('emailColPreview').textContent=ex.length?'Ex: '+ex.join(', '):'';
+}
+
+// ── Advanced col editor ───────────────────────────────────────────────
+function buildColEditor(){
+  const list=document.getElementById('colEditList');list.innerHTML='';
+  cols.forEach(c=>{
+    const row=document.createElement('div');row.className='col-edit-row';
+    row.innerHTML=`<span style="font-size:12px;color:#7A6070;font-family:monospace">${escape(c)}</span><i class="ti ti-arrow-right" style="font-size:14px;color:#7A6070"></i><input type="text" data-col="${escape(c)}" value="${escape(c)}" style="padding:5px 8px;font-size:12px">`;
+    list.appendChild(row);
+  });
+  renderDerivedCols();
+}
+
+function renderDerivedCols(){
+  document.querySelectorAll('.derived-row').forEach(r=>r.remove());
+  const list=document.getElementById('colEditList');
+  derivedCols.forEach((d,i)=>{
+    const row=document.createElement('div');row.className='derived-row';
+    row.style.cssText='background:rgba(192,66,107,0.05);border:0.5px solid rgba(192,66,107,0.2);border-radius:10px;padding:8px 10px;margin-bottom:6px';
+    row.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><span style="font-size:11px;font-weight:500;color:#8F2049">Nou camp</span><input type="text" placeholder="Nom del camp" value="${escape(d.name)}" style="flex:1;padding:4px 8px;font-size:12px" data-di="${i}" data-field="name"><button class="btn btn-sm" data-di="${i}" data-action="del" style="padding:4px 8px;color:#A32D2D"><i class="ti ti-trash"></i></button></div><input type="text" placeholder="Fórmula amb {{columnes}}. Ex: {{Nom}} {{Cognom}}" value="${escape(d.formula)}" style="width:100%;padding:4px 8px;font-size:12px" data-di="${i}" data-field="formula">`;
+    list.appendChild(row);
+    row.querySelectorAll('[data-di]').forEach(el=>{
+      if(el.dataset.action==='del'){el.onclick=()=>{derivedCols.splice(i,1);renderDerivedCols();};}
+      else el.oninput=()=>{derivedCols[el.dataset.di][el.dataset.field]=el.value;};
+    });
+  });
+}
+
+document.getElementById('addColBtn').onclick=()=>{derivedCols.push({name:'',formula:''});renderDerivedCols();};
+
+document.getElementById('applyColBtn').onclick=()=>{
+  const renames={};
+  document.querySelectorAll('#colEditList input[data-col]').forEach(inp=>{
+    const orig=inp.dataset.col,neu=inp.value.trim();
+    if(neu&&neu!==orig)renames[orig]=neu;
+  });
+  if(Object.keys(renames).length){
+    cols=cols.map(c=>renames[c]||c);
+    rows=rows.map(r=>{const o={};Object.keys(r).forEach(k=>o[renames[k]||k]=r[k]);return o;});
+  }
+  const allCols=[...cols];
+  derivedCols.forEach(d=>{
+    if(!d.name||!d.formula)return;
+    rows=rows.map(r=>{
+      let val=d.formula;
+      cols.forEach(c=>{const re=new RegExp('\\{\\{'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\}\\}','g');val=val.replace(re,r[c]||'');});
+      return{...r,[d.name]:val};
+    });
+    if(!allCols.includes(d.name))allCols.push(d.name);
+  });
+  cols=allCols;
+  buildPills(cols);
+  buildEmailColSelect(cols);
+  document.getElementById('parseMsg').textContent=`${rows.length} files · ${cols.length} columnes (actualitzades)`;
+};
+
+// ── Pills: smart insert ───────────────────────────────────────────────
+function buildPills(c){
+  const container=document.getElementById('colPills');container.innerHTML='';
+  c.forEach(col=>{
+    const p=document.createElement('span');
+    p.className='pill';p.textContent='{{'+col+'}}';
+    p.title='Inserir on tinguis el cursor';
+    p.onclick=()=>{
+      if(!focusEverSet){
+        document.getElementById('focusHint').style.display='block';
+        return;
+      }
+      const ta=document.getElementById(lastFocus);
+      const s=ta.selectionStart??ta.value.length;
+      const e2=ta.selectionEnd??ta.value.length;
+      ta.value=ta.value.slice(0,s)+'{{'+col+'}}'+ta.value.slice(e2);
+      ta.focus();ta.selectionStart=ta.selectionEnd=s+col.length+4;
+      p.classList.add('pill-flash');setTimeout(()=>p.classList.remove('pill-flash'),350);
+    };
+    container.appendChild(p);
+  });
+}
+
+// ── Merge template ────────────────────────────────────────────────────
+function mergeTemplate(tpl,row){
+  const mode=document.querySelector('input[name=emptyMode]:checked').value;
+  const fallback=mode==='custom'?(document.getElementById('emptyFallback').value||''):'';
+  if(mode==='deleteline'){
+    const result=tpl.split('\n').filter(line=>{
+      const phs=[...line.matchAll(/\{\{([^}]+)\}\}/g)].map(m=>m[1]);
+      return!phs.some(ph=>row[ph]===undefined||row[ph]==='');
+    });
+    let out=result.join('\n');
+    cols.forEach(c=>{const re=new RegExp('\\{\\{'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\}\\}','g');out=out.replace(re,row[c]??'');});
+    return out;
+  }
+  let out=tpl;
+  cols.forEach(c=>{
+    const re=new RegExp('\\{\\{'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\}\\}','g');
+    out=out.replace(re,(row[c]!==undefined&&row[c]!=='')?row[c]:fallback);
+  });
+  return out;
+}
+
+// ── Generate ──────────────────────────────────────────────────────────
+document.getElementById('genBtn').onclick=()=>{
+  const subTpl=document.getElementById('subject').value;
+  const bodyTpl=document.getElementById('body').value;
+  if(!subTpl||!bodyTpl){alert('Omple l\'assumpte i el cos del missatge.');return;}
+  const rMode=document.querySelector('input[name=recipientMode]:checked').value;
+  let toList=[];
+  if(rMode==='col'){
+    const emailCol=document.getElementById('emailColSelect').value||cols[0];
+    toList=rows.map(r=>r[emailCol]||'');
+  } else if(rMode==='list'){
+    const lines=document.getElementById('emailListArea').value.trim().split('\n').map(l=>l.trim());
+    toList=rows.map((_,i)=>lines[i]||'');
+  } else {
+    toList=rows.map(()=>'');
+  }
+  emails=rows.map((row,i)=>({to:toList[i],subject:mergeTemplate(subTpl,row),body:mergeTemplate(bodyTpl,row),sent:false}));
+  document.getElementById('step4').style.display='block';
+  document.getElementById('step4').scrollIntoView({behavior:'smooth',block:'start'});
+  renderAll();
+};
+
+// ── Render ────────────────────────────────────────────────────────────
+function renderAll(){updateProgress();renderCards();renderExpanded();renderCompact();renderCopy();}
+
+function updateProgress(){
+  const done=emails.filter(e=>e.sent).length;
+  document.getElementById('progress').textContent=`${done}/${emails.length} enviats`;
+}
+
+function mailtoUrl(em){
+  return'mailto:'+encodeURIComponent(em.to)+'?subject='+encodeURIComponent(em.subject)+'&body='+encodeURIComponent(em.body);
+}
+
+const NO_TO='<span style="color:#C0426B;font-style:italic">Sense destinatari</span>';
+
+function renderCards(){
+  const list=document.getElementById('emailList');list.innerHTML='';
+  emails.forEach((em,i)=>{
+    const card=document.createElement('div');card.className='email-card';
+    card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="${em.sent?'badge-ok':'badge-pend'}">${em.sent?'✓ Enviat':'Pendent'}</span>
+          <span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${em.to?escape(em.to):NO_TO}</span>
+        </div>
+        <p style="font-size:12px;color:#7A6070;margin-bottom:6px">Assumpte: <span style="color:#2E1A25">${escape(em.subject)}</span></p>
+        <details><summary style="font-size:12px;color:#7A6070;cursor:pointer;user-select:none">Veure missatge</summary><pre style="margin:6px 0 0;font-size:12px;white-space:pre-wrap;line-height:1.6">${escape(em.body)}</pre></details>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <a href="${mailtoUrl(em)}" style="text-decoration:none"><button class="btn btn-sm"><i class="ti ti-external-link"></i> Obre</button></a>
+        <button class="btn btn-sm done-btn" data-i="${i}" style="${em.sent?'background:#EAF3DE;border-color:#639922;color:#3B6D11':''}">
+          <i class="ti ti-${em.sent?'rotate-clockwise-2':'check'}"></i> ${em.sent?'Desfer':'Marcar enviat'}
+        </button>
+      </div>
+    </div>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('.done-btn').forEach(btn=>{
+    btn.onclick=()=>{emails[+btn.dataset.i].sent=!emails[+btn.dataset.i].sent;renderAll();};
+  });
+}
+
+function renderExpanded(){
+  const el=document.getElementById('expandedList');el.innerHTML='';
+  emails.forEach((em,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='border-bottom:0.5px solid rgba(0,0,0,0.1);padding:12px 0';
+    d.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="${em.sent?'badge-ok':'badge-pend'}">${em.sent?'✓ Enviat':'Pendent'}</span>
+        <strong style="font-size:13px">${em.to?escape(em.to):NO_TO}</strong>
+      </div>
+      <p style="font-size:12px;color:#7A6070;margin-bottom:8px"><strong>Assumpte:</strong> ${escape(em.subject)}</p>
+      <div style="font-size:13px;white-space:pre-wrap;line-height:1.6;background:rgba(255,255,255,0.6);border-radius:8px;padding:10px 12px;border:0.5px solid rgba(0,0,0,0.1)">${escape(em.body)}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <a href="${mailtoUrl(em)}" style="text-decoration:none"><button class="btn btn-sm"><i class="ti ti-external-link"></i> Obre al client de correu</button></a>
+        <button class="btn btn-sm done-btn-ex" data-i="${i}" style="${em.sent?'background:#EAF3DE;border-color:#639922;color:#3B6D11':''}">
+          <i class="ti ti-${em.sent?'rotate-clockwise-2':'check'}"></i> Marca com a ${em.sent?'pendent':'enviat'}
+        </button>
+      </div>`;
+    el.appendChild(d);
+  });
+  el.querySelectorAll('.done-btn-ex').forEach(btn=>{btn.onclick=()=>{emails[+btn.dataset.i].sent=!emails[+btn.dataset.i].sent;renderAll();};});
+}
+
+function renderCompact(){
+  const el=document.getElementById('compactTable');el.innerHTML='';
+  const t=document.createElement('table');
+  t.style.cssText='width:100%;font-size:12px;border-collapse:collapse';
+  t.innerHTML='<thead><tr style="border-bottom:0.5px solid rgba(0,0,0,0.15)"><th style="padding:5px 8px;text-align:left;font-weight:500">Estat</th><th style="padding:5px 8px;text-align:left;font-weight:500">Destinatari</th><th style="padding:5px 8px;text-align:left;font-weight:500">Assumpte</th><th style="padding:5px 8px"></th></tr></thead>';
+  const tb=document.createElement('tbody');
+  emails.forEach(em=>{
+    const tr=document.createElement('tr');tr.style.borderBottom='0.5px solid rgba(0,0,0,0.07)';
+    tr.innerHTML=`<td style="padding:5px 8px"><span class="${em.sent?'badge-ok':'badge-pend'}">${em.sent?'✓':'–'}</span></td>
+      <td style="padding:5px 8px">${em.to?escape(em.to):NO_TO}</td>
+      <td style="padding:5px 8px;color:#7A6070">${escape(em.subject)}</td>
+      <td style="padding:5px 8px;text-align:right"><a href="${mailtoUrl(em)}" style="text-decoration:none"><button class="btn btn-sm"><i class="ti ti-external-link"></i></button></a></td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);el.appendChild(t);
+}
+
+function renderCopy(){
+  const el=document.getElementById('copyArea');
+  if(currentCopyFmt==='linia'){
+    el.textContent=emails.map(e=>`${e.to||'(sense destinatari)'} · ${e.subject}`).join('\n');
+  } else if(currentCopyFmt==='blocs'){
+    el.textContent=emails.map(e=>`Per a: ${e.to||'(sense destinatari)'}\nAssumpte: ${e.subject}\n\n${e.body}`).join('\n\n---\n\n');
+  } else if(currentCopyFmt==='csv'){
+    el.textContent='Destinatari,Assumpte,Missatge\n'+emails.map(e=>`"${e.to}","${e.subject}","${e.body.replace(/"/g,'""')}"`).join('\n');
+  }
+}
+
+// ── Download emails (accessible des de totes les vistes) ──────────────
+function downloadEmails(){
+  // Regenerate content in blocs format for non-export views
+  const isExportView=document.getElementById('viewCopy').style.display!=='none';
+  let content,ext,mime;
+  if(isExportView){
+    content=document.getElementById('copyArea').textContent;
+    ext=currentCopyFmt==='csv'?'csv':'txt';
+    mime=currentCopyFmt==='csv'?'text/csv;charset=utf-8':'text/plain;charset=utf-8';
+  } else {
+    content=emails.map(e=>`Per a: ${e.to||'(sense destinatari)'}\nAssumpte: ${e.subject}\n\n${e.body}`).join('\n\n---\n\n');
+    ext='txt';mime='text/plain;charset=utf-8';
+  }
+  const blob=new Blob([content],{type:mime});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='correus_generats.'+ext;a.click();URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('copyFmt1').onclick=()=>{currentCopyFmt='linia';renderCopy();};
+document.getElementById('copyFmt2').onclick=()=>{currentCopyFmt='blocs';renderCopy();};
+document.getElementById('copyFmt3').onclick=()=>{currentCopyFmt='csv';renderCopy();};
+document.getElementById('downloadEmailsBtn').onclick=downloadEmails;
+
+document.getElementById('copyBtn').onclick=()=>{
+  navigator.clipboard.writeText(document.getElementById('copyArea').textContent).then(()=>{
+    const b=document.getElementById('copyBtn');
+    b.innerHTML='<i class="ti ti-check"></i> Copiat!';
+    setTimeout(()=>{b.innerHTML='<i class="ti ti-copy"></i> Copia al porta-retalls';},2000);
+  });
+};
+
+// ── Tab switching ─────────────────────────────────────────────────────
+document.getElementById('viewTabs').querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll('#viewTabs .tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const v=tab.dataset.view;
+    ['viewCards','viewExpanded','viewCompact','viewCopy'].forEach(id=>{
+      document.getElementById(id).style.display=(id==='view'+v[0].toUpperCase()+v.slice(1))?'block':'none';
+    });
+    if(v==='copy')renderCopy();
+  };
+});
+</script>
+</body>
+</html>
