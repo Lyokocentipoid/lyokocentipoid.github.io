@@ -11,57 +11,19 @@
   <!-- Canvas per a les partícules (fons fix) -->
   <canvas id="particles-canvas"></canvas>
 
-  <!-- Barra de navegació superior -->
-  <nav id="navbar">
-    <div class="nav-inner">
-      <ul class="nav-links">
-        <li>
-          <a href="generador_mails.html" class="nav-link nav-link--colorful">
-            <span class="nav-link__icon">✉</span>
-            <span class="nav-link__text">Generador de Correus</span>
-          </a>
-        </li>
-        <!-- Afegeix més nav-link aquí -->
-      </ul>
-    </div>
-  </nav>
-
   <style>
-    /* ─── NAVBAR ─────────────────────────────────────────────────────── */
-    #navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      padding: 0 2rem;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: transparent;
-      border-bottom: none;
-      pointer-events: none;
+    /* ─── BOTONS LATERALS DEL HEADER ─────────────────────────────────── */
+
+    /* El header necessita position relative perquè els botons absoluts s'hi ancoren */
+    header {
+      position: relative;
     }
 
-    .nav-inner {
-      width: 100%;
-      max-width: 960px;
-      pointer-events: all;
-    }
+    .header-side-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
 
-    .nav-links {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-    }
-
-    /* Botó: bola circular que s'expandeix en hover */
-    .nav-link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -93,49 +55,57 @@
                   box-shadow 0.5s ease,
                   background 0.5s ease,
                   border-color 0.5s ease;
-    }
 
-    .nav-links li {
       animation: navFloat 7s ease-in-out infinite;
       will-change: transform;
+      z-index: 10;
     }
 
-    .nav-links li:hover {
+    /* Botó esquerre: s'expandeix cap a la dreta */
+    .header-side-btn--left {
+      left: calc(50% - 80px - 42px - 18px); /* mig - radi foto - radi botó - marge */
+    }
+
+    /* Botó dret: s'expandeix cap a l'esquerra */
+    .header-side-btn--right {
+      right: calc(50% - 80px - 42px - 18px);
+      flex-direction: row-reverse; /* icona a la dreta, text s'obre cap a l'esquerra */
+    }
+
+    .header-side-btn:hover {
       animation-play-state: paused;
     }
 
-    /* Flotació lleugera, en sintonia amb el ritme de la pàgina */
     @keyframes navFloat {
-      0%   { transform: translate(0px, 0px); }
-      20%  { transform: translate(2px, -2px); }
-      45%  { transform: translate(-2px, -2px); }
-      65%  { transform: translate(0px, 2px); }
-      85%  { transform: translate(-2px, 0px); }
-      100% { transform: translate(0px, 0px); }
+      0%   { transform: translateY(-50%) translate(0px, 0px); }
+      20%  { transform: translateY(-50%) translate(2px, -2px); }
+      45%  { transform: translateY(-50%) translate(-2px, -2px); }
+      65%  { transform: translateY(-50%) translate(0px, 2px); }
+      85%  { transform: translateY(-50%) translate(-2px, 0px); }
+      100% { transform: translateY(-50%) translate(0px, 0px); }
     }
 
-    .nav-link__icon {
+    .header-side-btn__icon {
       font-size: 1.2rem;
       line-height: 1;
       flex-shrink: 0;
       -webkit-text-fill-color: initial;
-      will-change: transform;
       -webkit-font-smoothing: antialiased;
     }
 
-    .nav-link__text {
+    .header-side-btn__text {
       max-width: 0;
       opacity: 0;
       overflow: hidden;
-      margin-left: 0;
       color: #00695c;
       -webkit-text-fill-color: #00695c;
       transition: max-width 0.65s cubic-bezier(0.25, 1, 0.5, 1),
                   opacity 0.4s ease,
-                  margin-left 0.5s ease;
+                  margin 0.5s ease;
     }
 
-    .nav-link:hover {
+    /* Expansió botó esquerre: el text apareix a la dreta de la icona */
+    .header-side-btn--left:hover {
       width: auto;
       padding: 0 1.1rem 0 0.8rem;
       background: rgba(255, 255, 255, 0.55);
@@ -145,20 +115,51 @@
       border-color: rgba(255, 255, 255, 0.8);
     }
 
-    .nav-link:hover .nav-link__text {
+    .header-side-btn--left:hover .header-side-btn__text {
       max-width: 200px;
       opacity: 1;
       margin-left: 0.45rem;
     }
 
-    .nav-link:active {
-      transform: scale(0.95) !important;
+    /* Expansió botó dret: el text apareix a l'esquerra de la icona */
+    .header-side-btn--right:hover {
+      width: auto;
+      padding: 0 0.8rem 0 1.1rem;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(18px) saturate(1.8);
+      -webkit-backdrop-filter: blur(18px) saturate(1.8);
+      box-shadow: 0 6px 22px rgba(2, 136, 193, 0.2), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-side-btn--right:hover .header-side-btn__text {
+      max-width: 200px;
+      opacity: 1;
+      margin-right: 0.45rem;
+    }
+
+    .header-side-btn:active {
+      transform: translateY(-50%) scale(0.95) !important;
     }
 
   </style>
 
   <header>
+
+    <!-- Botó esquerre: Generador de Correus -->
+    <a href="generador_mails.html" class="header-side-btn header-side-btn--left">
+      <span class="header-side-btn__icon">✉</span>
+      <span class="header-side-btn__text">Generador de Correus</span>
+    </a>
+
     <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
+
+    <!-- Botó dret: Inici -->
+    <a href="index.html" class="header-side-btn header-side-btn--right">
+      <span class="header-side-btn__icon">🌿</span>
+      <span class="header-side-btn__text">Inici</span>
+    </a>
+
     <h1 id="typewriter"></h1>
     <p class="subtitle">Espai de projectes web educatius</p>
   </header>
