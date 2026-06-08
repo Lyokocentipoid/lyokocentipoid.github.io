@@ -61,15 +61,17 @@
       z-index: 10;
     }
 
-    /* Botó esquerre: s'expandeix cap a la dreta */
+    /* Botó esquerre: icona a la dreta (costat foto), text s'obre cap a l'esquerra.
+       Ancorem per "right" perquè la icona no es mogui en expandir-se. */
     .header-side-btn--left {
-      left: calc(50% - 80px - 42px - 18px); /* mig - radi foto - radi botó - marge */
+      right: calc(50% + 80px + 18px);
+      flex-direction: row-reverse;
     }
 
-    /* Botó dret: s'expandeix cap a l'esquerra */
+    /* Botó dret: icona a l'esquerra (costat foto), text s'obre cap a la dreta.
+       Ancorem per "left" perquè la icona no es mogui en expandir-se. */
     .header-side-btn--right {
-      right: calc(50% - 80px - 42px - 18px);
-      flex-direction: row-reverse; /* icona a la dreta, text s'obre cap a l'esquerra */
+      left: calc(50% + 80px + 18px);
     }
 
     .header-side-btn:hover {
@@ -104,10 +106,10 @@
                   margin 0.5s ease;
     }
 
-    /* Expansió botó esquerre: el text apareix a la dreta de la icona */
+    /* Expansió botó esquerre: el text apareix a l'esquerra de la icona */
     .header-side-btn--left:hover {
       width: auto;
-      padding: 0 1.1rem 0 0.8rem;
+      padding: 0 0.8rem 0 1.1rem;
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(18px) saturate(1.8);
       -webkit-backdrop-filter: blur(18px) saturate(1.8);
@@ -118,13 +120,13 @@
     .header-side-btn--left:hover .header-side-btn__text {
       max-width: 200px;
       opacity: 1;
-      margin-left: 0.45rem;
+      margin-right: 0.45rem;
     }
 
-    /* Expansió botó dret: el text apareix a l'esquerra de la icona */
+    /* Expansió botó dret: el text apareix a la dreta de la icona */
     .header-side-btn--right:hover {
       width: auto;
-      padding: 0 0.8rem 0 1.1rem;
+      padding: 0 1.1rem 0 0.8rem;
       background: rgba(255, 255, 255, 0.55);
       backdrop-filter: blur(18px) saturate(1.8);
       -webkit-backdrop-filter: blur(18px) saturate(1.8);
@@ -135,7 +137,7 @@
     .header-side-btn--right:hover .header-side-btn__text {
       max-width: 200px;
       opacity: 1;
-      margin-right: 0.45rem;
+      margin-left: 0.45rem;
     }
 
     .header-side-btn:active {
@@ -154,10 +156,10 @@
 
     <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
 
-    <!-- Botó dret: Inici -->
+    <!-- Botó dret: Pròximament -->
     <a href="index.html" class="header-side-btn header-side-btn--right">
       <span class="header-side-btn__icon">🌿</span>
-      <span class="header-side-btn__text">Inici</span>
+      <span class="header-side-btn__text">Pròximament</span>
     </a>
 
     <h1 id="typewriter"></h1>
