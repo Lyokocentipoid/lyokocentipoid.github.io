@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recursos · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── CANVAS DE PARTÍCULES (fons) ───────────────────────────────────────── */
+    #particles-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── CANVAS GEOMÈTRIC (fons centrat) ───────────────────────────────────── */
+    .geo-ornament {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeInUp 1.2s ease-out 1s forwards;
+    }
+    .geo-ornament canvas {
+      display: block;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: transparent;
+      opacity: 0.13;
+    }
+    @media (max-width: 600px) {
+      .geo-ornament canvas {
+        width: 280px;
+        height: 280px;
+      }
+    }
+
+    /* ── BODY / FONS ───────────────────────────────────────────────────────── */
+    body {
+      font-family: 'Poppins', sans-serif;
+      color: #2c3e50;
+      min-height: 100vh;
+      animation: fadeInBody 1.2s ease-in-out, rgbCycle 40s linear infinite;
+    }
+
+    /* ── NAV ───────────────────────────────────────────────────────────────── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000; padding: 0 2rem; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    .nav-inner {
+      width: 100%; max-width: 960px;
+      pointer-events: all;
+      display: flex; gap: 0.6rem; justify-content: center;
+    }
+    .nav-link {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0; overflow: hidden;
+      width: 42px; height: 42px; border-radius: 999px; padding: 0;
+      font-family: 'Poppins', sans-serif; font-size: 0.82rem; font-weight: 600;
+      text-decoration: none; white-space: nowrap;
+      background: rgba(255,255,255,0.28);
+      backdrop-filter: blur(12px) saturate(1.5);
+      -webkit-backdrop-filter: blur(12px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 2px 14px rgba(0,0,0,0.1);
+      transition: width .65s cubic-bezier(.25,1,.5,1),
+                  padding .65s cubic-bezier(.25,1,.5,1),
+                  box-shadow .5s ease, background .5s ease;
+      animation: navFloat 7s ease-in-out infinite;
+    }
+    .nav-link:hover { animation-play-state: paused; }
+    .nav-link__icon { font-size: 1.15rem; line-height: 1; flex-shrink: 0; }
+    .nav-link__text {
+      max-width: 0; opacity: 0; overflow: hidden; margin-left: 0;
+      color: #00695c;
+      transition: max-width .65s cubic-bezier(.25,1,.5,1), opacity .4s ease, margin-left .5s ease;
+    }
+    .nav-link:hover {
+      width: auto; padding: 0 1.1rem 0 0.8rem;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(18px) saturate(1.8);
+      -webkit-backdrop-filter: blur(18px) saturate(1.8);
+      box-shadow: 0 6px 22px rgba(2,136,193,0.2), 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-link:hover .nav-link__text { max-width: 200px; opacity: 1; margin-left: 0.45rem; }
+    .nav-link:active { transform: scale(0.95); }
+
+    /* ── PAGE WRAPPER ──────────────────────────────────────────────────────── */
+    .page-wrapper {
+      position: relative; z-index: 1;
+      max-width: 700px; margin: 0 auto;
+      padding: 100px 1.75rem 5rem;
+    }
+
+    /* ── PAGE HEADER ───────────────────────────────────────────────────────── */
+    .page-title {
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      font-weight: 700; line-height: 1.1;
+      background: linear-gradient(100deg, #00897b 0%, #0288d1 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.35rem;
+      animation: slideDown .8s ease-out;
+    }
+    .page-subtitle {
+      font-size: 0.85rem; color: #78909c; font-weight: 400;
+      margin-bottom: 2.2rem;
+      opacity: 0; animation: fadeInUp .8s ease-out .25s forwards;
+    }
+
+    /* ── LLEGENDA / FILTRES ────────────────────────────────────────────────── */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 0.55rem;
+      margin-bottom: 2.8rem;
+      opacity: 0; animation: fadeInUp .8s ease-out .45s forwards;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.38rem;
+      font-size: 0.72rem; font-weight: 600; color: #546e7a;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: 999px; padding: 0.22rem 0.75rem;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      user-select: none;
+      transition: background .18s ease, box-shadow .18s ease, transform .18s ease, color .18s ease;
+    }
+    .legend-item:hover {
+      background: rgba(255,255,255,0.78);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+    .legend-item.active {
+      background: rgba(255,255,255,0.92);
+      color: #2c3e50;
+      box-shadow: 0 3px 14px rgba(0,0,0,0.13);
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.9);
+    }
+    .legend-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      transition: transform .18s ease;
+    }
+    .legend-item.active .legend-dot { transform: scale(1.35); }
+
+    /* ── SECCIONS ──────────────────────────────────────────────────────────── */
+    .sections-container { display: flex; flex-direction: column; gap: 2.8rem; }
+
+    .section-block {
+      opacity: 0; animation: fadeInUp .7s ease-out forwards;
+    }
+
+    .section-header {
+      display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1rem;
+    }
+    .section-badge {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; white-space: nowrap;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 999px; padding: 0.22rem 0.8rem; color: #546e7a;
+    }
+    .section-label {
+      font-size: 0.95rem; font-weight: 700; color: #2c3e50; flex-shrink: 0;
+    }
+    .section-rule {
+      flex: 1; height: 1px;
+      background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+    }
+
+    /* ── TARGETES ──────────────────────────────────────────────────────────── */
+    .res-list { display: flex; flex-direction: column; gap: 0.45rem; }
+
+    .res-card {
+      display: flex; align-items: center;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.55);
+      border-left: 4px solid var(--tc);
+      border-radius: 10px; padding: 0.8rem 1rem;
+      text-decoration: none; color: #2c3e50;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .res-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.09);
+      background: rgba(255,255,255,0.82);
+    }
+    .res-card[hidden] { display: none; }
+
+    .res-card-title {
+      flex: 1; font-size: 0.88rem; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding-right: 0.75rem;
+    }
+    .res-card-pip {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--tc); flex-shrink: 0; opacity: 0.65;
+      margin-right: 0.5rem;
+    }
+    .res-card-arrow {
+      font-size: 0.78rem; color: var(--tc); flex-shrink: 0; opacity: 0.5;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .res-card:hover .res-card-arrow { opacity: 1; transform: translate(2px,-2px); }
+
+    .res-empty {
+      font-size: 0.8rem; color: #90a4ae; text-align: center;
+      background: rgba(255,255,255,0.35);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      border: 1px dashed rgba(0,0,0,0.1); border-radius: 10px;
+      padding: 1rem;
+    }
+
+    /* ── FOOTER ────────────────────────────────────────────────────────────── */
+    footer {
+      position: relative; z-index: 1; text-align: center;
+      padding: 2rem; font-size: 0.75rem; color: #90a4ae;
+    }
+
+    /* ── KEYFRAMES ─────────────────────────────────────────────────────────── */
+    @keyframes fadeInBody  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp    { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideDown   { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes navFloat {
+      0%   { transform: translate(0,0); }
+      20%  { transform: translate(2px,-2px); }
+      45%  { transform: translate(-2px,-2px); }
+      65%  { transform: translate(0,2px); }
+      85%  { transform: translate(-2px,0); }
+      100% { transform: translate(0,0); }
+    }
+    @keyframes rgbCycle {
+      0%   { background-color: hsl(0,   60%, 88%); }
+      12%  { background-color: hsl(45,  60%, 88%); }
+      25%  { background-color: hsl(90,  60%, 88%); }
+      37%  { background-color: hsl(150, 60%, 88%); }
+      50%  { background-color: hsl(200, 60%, 88%); }
+      62%  { background-color: hsl(240, 60%, 88%); }
+      75%  { background-color: hsl(280, 60%, 88%); }
+      87%  { background-color: hsl(320, 60%, 88%); }
+      100% { background-color: hsl(360, 60%, 88%); }
+    }
+
+    /* ── RESPONSIVE ────────────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .page-wrapper { padding: 88px 1.2rem 4rem; }
+      .section-label { font-size: 0.88rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- FONS: PARTÍCULES -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ORNAMENT: CANVAS GEOMÈTRIC (top-right) -->
+<div class="geo-ornament">
+  <canvas id="geoCanvas" width="420" height="420"></canvas>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-link">
+      <span class="nav-link__icon">🏠</span>
+      <span class="nav-link__text">Inici</span>
+    </a>
+    <!-- Afegeix més botons aquí si cal -->
+  </div>
+</nav>
+
+<!-- CONTINGUT -->
+<div class="page-wrapper">
+  <h1 class="page-title">Recursos</h1>
+  <p class="page-subtitle">Matemàtiques</p>
+  <div class="legend"   id="legend"></div>
+  <div class="sections-container" id="sections-container"></div>
+</div>
+
+<footer>Diego Valiño · 2026</footer>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+//  ① SECCIONS
+//     Afegeix o treu objectes { id, label } per crear/eliminar seccions.
+//     L'ordre aquí determina l'ordre a la pàgina.
+// ══════════════════════════════════════════════════════════════════════════════
+const SECTIONS = [
+  { id: "angles",  label: "Rectes i Angles"           },
+  { id: "figures", label: "Figures i Cossos"           },
+  { id: "mesures", label: "Mesures, Àrees i Perímetres" },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ② RECURSOS
+//     Afegeix un objecte per cada recurs:
+//       title   → nom visible
+//       url     → enllaç
+//       type    → "activitat" | "pdf" | "video" | "minijoc" | "web"
+//       section → id d'una secció (opcional; sense section → apareix a "Recursos")
+// ══════════════════════════════════════════════════════════════════════════════
+const RESOURCES = [
+  { title: "Joc d'angles: Aplastatopos",            url: "https://wordwall.net/es/resource/63176275/angles",                                                          type: "minijoc",   section: "angles" },
+  { title: "Qüestionari: Els angles i les rectes",   url: "https://es.educaplay.com/recursos-educativos/12115189-els_angles_i_les_rectes.html",                       type: "activitat", section: "angles" },
+  { title: "Teoria de Geometria plana (1r ESO)",     url: "https://proyectodescartes.org/EDAD/materiales_didacticos/EDAD_1eso_cat_geometria_plana-JS/1quincena8.pdf", type: "pdf",       section: "angles" },
+  { title: "Fitxa d'Angles i rectes",                url: "https://www.cefax.org/digitals/primer/mates/anglesirectes.pdf",                                            type: "pdf",       section: "angles" },
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ③ COLORS PER TIPUS  (no cal tocar)
+// ══════════════════════════════════════════════════════════════════════════════
+const TYPES = {
+  activitat: { label: "Activitat", color: "#00897b" },
+  pdf:       { label: "PDF",       color: "#e53935" },
+  video:     { label: "Vídeo",     color: "#1e88e5" },
+  minijoc:   { label: "Minijoc",   color: "#8e24aa" },
+  web:       { label: "Web",       color: "#f57c00" },
+};
+
+
+// ── RENDERITZACIÓ ─────────────────────────────────────────────────────────────
+
+// Llegenda + filtre
+const legendEl = document.getElementById('legend');
+let activeType  = null;
+const legendBtns = [];
+
+Object.entries(TYPES).forEach(([key, { label, color }]) => {
+  const el = document.createElement('div');
+  el.className    = 'legend-item';
+  el.dataset.type = key;
+  el.innerHTML    = `<span class="legend-dot" style="background:${color}"></span>${label}`;
+
+  el.addEventListener('click', () => {
+    if (activeType === key) {
+      activeType = null;
+      el.classList.remove('active');
+    } else {
+      activeType = key;
+      legendBtns.forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    applyFilter();
+  });
+
+  legendEl.appendChild(el);
+  legendBtns.push(el);
+});
+
+// Targeta individual
+function makeCard(res) {
+  const { color } = TYPES[res.type] || { color: '#90a4ae' };
+  const a = document.createElement('a');
+  a.href           = res.url;
+  a.target         = '_blank';
+  a.rel            = 'noopener noreferrer';
+  a.className      = 'res-card';
+  a.dataset.type   = res.type;
+  a.style.setProperty('--tc', color);
+  a.innerHTML = `
+    <span class="res-card-title">${res.title}</span>
+    <span class="res-card-pip"></span>
+    <span class="res-card-arrow">↗</span>
+  `;
+  return a;
+}
+
+// Bloc de secció
+function makeSection({ badge, label, resources, delay, showIfEmpty }) {
+  if (!showIfEmpty && resources.length === 0) return null;
+
+  const block = document.createElement('div');
+  block.className = 'section-block';
+  block.style.animationDelay = `${delay}s`;
+
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = `
+    <span class="section-badge">${badge}</span>
+    ${label ? `<span class="section-label">${label}</span>` : ''}
+    <div class="section-rule"></div>
+  `;
+  block.appendChild(header);
+
+  const list = document.createElement('div');
+  list.className = 'res-list';
+
+  if (resources.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'res-empty static-empty';
+    empty.textContent = 'Encara no hi ha recursos per a aquesta secció.';
+    list.appendChild(empty);
+  } else {
+    resources.forEach(r => list.appendChild(makeCard(r)));
+  }
+
+  block.appendChild(list);
+  return block;
+}
+
+const container = document.getElementById('sections-container');
+const knownIds   = new Set(SECTIONS.map(s => s.id));
+let delay = 0.6;
+
+// Secció "Recursos" (sense secció assignada)
+const unclassified = RESOURCES.filter(r => !r.section || !knownIds.has(r.section));
+if (unclassified.length > 0) {
+  const block = makeSection({ badge: 'Recursos', label: '', resources: unclassified, delay, showIfEmpty: false });
+  if (block) { container.appendChild(block); delay += 0.12; }
+}
+
+// Seccions definides
+SECTIONS.forEach((sec, i) => {
+  const res   = RESOURCES.filter(r => r.section === sec.id);
+  const badge = `Bloc ${String(i + 1).padStart(2, '0')}`;
+  const block = makeSection({ badge, label: sec.label, resources: res, delay, showIfEmpty: true });
+  if (block) { container.appendChild(block); delay += 0.12; }
+});
+
+
+// ── FILTRE ────────────────────────────────────────────────────────────────────
+function applyFilter() {
+  // Mostra/amaga targetes
+  document.querySelectorAll('.res-card').forEach(card => {
+    card.hidden = (activeType !== null && card.dataset.type !== activeType);
+  });
+
+  // Per cada secció, gestiona el missatge "cap recurs d'aquest tipus"
+  document.querySelectorAll('.section-block').forEach(block => {
+    const list     = block.querySelector('.res-list');
+    const allCards = list.querySelectorAll('.res-card');
+    const visible  = [...allCards].filter(c => !c.hidden);
+
+    // Esborra missatge de filtre anterior si existeix
+    const old = list.querySelector('.filter-empty');
+    if (old) old.remove();
+
+    // Mostra/amaga missatge estàtic d'empty (seccions sense recursos)
+    const staticEmpty = list.querySelector('.static-empty');
+    if (staticEmpty) {
+      staticEmpty.hidden = (activeType !== null);
+    }
+
+    // Afegeix missatge de filtre si cap targeta coincideix
+    if (activeType && allCards.length > 0 && visible.length === 0) {
+      const msg = document.createElement('div');
+      msg.className   = 'res-empty filter-empty';
+      msg.textContent = 'Cap recurs d\'aquest tipus en aquesta secció.';
+      list.appendChild(msg);
+    }
+  });
+}
+
+
+// ── PARTÍCULES ────────────────────────────────────────────────────────────────
+const pCanvas = document.getElementById('particles-canvas');
+const pCtx    = pCanvas.getContext('2d');
+
+function resizeParticles() { pCanvas.width = innerWidth; pCanvas.height = innerHeight; }
+window.addEventListener('resize', resizeParticles);
+resizeParticles();
+
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+class Particle {
+  constructor() { this.reset(true); }
+  reset(init = false) {
+    this.x  = rnd(0, pCanvas.width);
+    this.y  = init ? rnd(0, pCanvas.height) : pCanvas.height + 5;
+    this.r  = rnd(0.8, 2.5);
+    this.vx = rnd(-0.4, 0.4);
+    this.vy = rnd(-0.6, -1.8);
+    this.a  = rnd(0, Math.PI * 2);
+    this.da = rnd(0.01, 0.04);
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.a += this.da;
+    this.o = 0.3 + 0.7 * Math.abs(Math.sin(this.a));
+    if (this.y + this.r < 0) this.reset();
+    if (this.x - this.r > pCanvas.width)  this.x = -this.r;
+    if (this.x + this.r < 0) this.x = pCanvas.width + this.r;
+  }
+  draw() {
+    pCtx.save();
+    pCtx.globalAlpha = this.o;
+    const g = pCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
+    g.addColorStop(0,   'rgba(255,255,255,0.9)');
+    g.addColorStop(0.4, 'rgba(220,240,255,0.4)');
+    g.addColorStop(1,   'rgba(255,255,255,0)');
+    pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r * 4, 0, Math.PI * 2);
+    pCtx.fillStyle = g; pCtx.fill();
+    pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    pCtx.fillStyle = 'rgba(255,255,255,1)'; pCtx.fill();
+    pCtx.restore();
+  }
+}
+
+const particles = Array.from({ length: 80 }, () => new Particle());
+(function loopParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(loopParticles);
+})();
+
+
+// ── CANVAS GEOMÈTRIC ─────────────────────────────────────────────────────────
+// Adaptat de GeoMat_1r_ESO.html · escalat de 340×340 → 200×200
+const geoCanvas = document.getElementById('geoCanvas');
+const gCtx      = geoCanvas.getContext('2d');
+const GW = 420, GH = 420;
+geoCanvas.width  = GW;
+geoCanvas.height = GH;
+const gcx = GW / 2, gcy = GH / 2;
+let gt = 0;
+
+function drawGeo() {
+  gCtx.clearRect(0, 0, GW, GH);
+
+  // Quadrícula de fons subtil
+  gCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+  gCtx.lineWidth = 1;
+  for (let x = 0; x < GW; x += 42) {
+    gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, GH); gCtx.stroke();
+  }
+  for (let y = 0; y < GH; y += 42) {
+    gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(GW, y); gCtx.stroke();
+  }
+
+  // Triangle girant
+  gCtx.save();
+  gCtx.translate(gcx, gcy);
+  gCtx.rotate(gt * 0.3);
+  const r = 136;
+  gCtx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+    i === 0 ? gCtx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+            : gCtx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  gCtx.closePath();
+  gCtx.strokeStyle = '#3d8bff';
+  gCtx.lineWidth = 2;
+  gCtx.shadowColor = '#3d8bff';
+  gCtx.shadowBlur = 18;
+  gCtx.stroke();
+  gCtx.shadowBlur = 0;
+  gCtx.restore();
+
+  // Quadrat contra-girant
+  gCtx.save();
+  gCtx.translate(gcx, gcy);
+  gCtx.rotate(-gt * 0.2);
+  const sq = 92;
+  gCtx.beginPath();
+  gCtx.rect(-sq, -sq, sq * 2, sq * 2);
+  gCtx.strokeStyle = '#f5c842';
+  gCtx.lineWidth = 1.5;
+  gCtx.shadowColor = '#f5c842';
+  gCtx.shadowBlur = 12;
+  gCtx.stroke();
+  gCtx.shadowBlur = 0;
+  gCtx.restore();
+
+  // Cercle pulsant
+  const pulse = 54 + Math.sin(gt * 2) * 6;
+  gCtx.beginPath();
+  gCtx.arc(gcx, gcy, pulse, 0, Math.PI * 2);
+  gCtx.strokeStyle = '#ff5f6d';
+  gCtx.lineWidth = 1.5;
+  gCtx.shadowColor = '#ff5f6d';
+  gCtx.shadowBlur = 14;
+  gCtx.stroke();
+  gCtx.shadowBlur = 0;
+
+  // Punt en òrbita
+  const ox = gcx + Math.cos(gt * 1.5) * 142;
+  const oy = gcy + Math.sin(gt * 1.5) * 142;
+  gCtx.beginPath();
+  gCtx.arc(ox, oy, 5, 0, Math.PI * 2);
+  gCtx.fillStyle = '#3dffa0';
+  gCtx.shadowColor = '#3dffa0';
+  gCtx.shadowBlur = 20;
+  gCtx.fill();
+  gCtx.shadowBlur = 0;
+
+  // Punt central
+  gCtx.beginPath();
+  gCtx.arc(gcx, gcy, 5, 0, Math.PI * 2);
+  gCtx.fillStyle = '#ffffff';
+  gCtx.fill();
+
+  // Arc d'angle (element pedagògic)
+  gCtx.save();
+  gCtx.translate(gcx, gcy);
+  gCtx.beginPath();
+  gCtx.arc(0, 0, 161, -Math.PI / 2, -Math.PI / 2 + gt * 0.5, false);
+  gCtx.strokeStyle = 'rgba(180,127,255,0.5)';
+  gCtx.lineWidth = 2;
+  gCtx.stroke();
+  gCtx.restore();
+
+  gt += 0.01;
+  requestAnimationFrame(drawGeo);
+}
+drawGeo();
+</script>
+
+</body>
+</html>
