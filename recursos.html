@@ -77,26 +77,63 @@
       padding: 100px 1.75rem 5rem;
     }
 
-    /* ── PAGE HEADER ───────────────────────────────────────────────────────── */
+    /* ── HEADER AREA (títol + canvas) ─────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: 2.4rem;
+    }
+    .page-header-text {
+      flex: 1;
+      min-width: 0;
+    }
     .page-title {
       font-size: clamp(1.8rem, 5vw, 2.4rem);
       font-weight: 700; line-height: 1.1;
       background: linear-gradient(100deg, #00897b 0%, #0288d1 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
       animation: slideDown .8s ease-out;
     }
     .page-subtitle {
       font-size: 0.85rem; color: #78909c; font-weight: 400;
-      margin-bottom: 2.2rem;
+      margin-bottom: 0.9rem;
       opacity: 0; animation: fadeInUp .8s ease-out .25s forwards;
+    }
+
+    /* ── CANVAS GEOMÈTRIC (ornament inline) ────────────────────────────────── */
+    .geo-ornament {
+      flex-shrink: 0;
+      width: 130px;
+      height: 130px;
+      opacity: 0;
+      animation: fadeInUp .9s ease-out .6s forwards;
+      border-radius: 50%;
+      overflow: hidden;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.35);
+      box-shadow:
+        0 4px 24px rgba(61,139,255,0.1),
+        0 1px 6px rgba(0,0,0,0.06);
+    }
+    .geo-ornament canvas {
+      display: block;
+      width: 130px;
+      height: 130px;
+    }
+    @media (max-width: 500px) {
+      .geo-ornament { display: none; }
     }
 
     /* ── LLEGENDA / FILTRES ────────────────────────────────────────────────── */
     .legend {
-      display: flex; flex-wrap: wrap; gap: 0.55rem;
-      margin-bottom: 2.8rem;
+      display: flex; flex-wrap: wrap; gap: 0.45rem;
+      margin-bottom: 0;
       opacity: 0; animation: fadeInUp .8s ease-out .45s forwards;
     }
     .legend-item {
@@ -241,11 +278,6 @@
 <!-- FONS: PARTÍCULES -->
 <canvas id="particles-canvas"></canvas>
 
-<!-- ORNAMENT: CANVAS GEOMÈTRIC (top-right) -->
-<div class="geo-ornament">
-  <canvas id="geoCanvas" width="420" height="420"></canvas>
-</div>
-
 <!-- NAV -->
 <nav id="navbar">
   <div class="nav-inner">
@@ -259,9 +291,16 @@
 
 <!-- CONTINGUT -->
 <div class="page-wrapper">
-  <h1 class="page-title">Recursos</h1>
-  <p class="page-subtitle">Matemàtiques</p>
-  <div class="legend"   id="legend"></div>
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1 class="page-title">Recursos</h1>
+      <p class="page-subtitle">Matemàtiques · 2027</p>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="geo-ornament">
+      <canvas id="geoCanvas" width="260" height="260"></canvas>
+    </div>
+  </div>
   <div class="sections-container" id="sections-container"></div>
 </div>
 
@@ -270,13 +309,16 @@
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
 //  ① SECCIONS
-//     Afegeix o treu objectes { id, label } per crear/eliminar seccions.
+//     Afegeix o treu objectes per crear/eliminar seccions.
 //     L'ordre aquí determina l'ordre a la pàgina.
+//       id    → identificador intern (ha de coincidir amb section dels recursos)
+//       label → títol visible de la secció
+//       badge → (opcional) text del badge; si no s'indica, s'usa "Bloc 01", "Bloc 02"...
 // ══════════════════════════════════════════════════════════════════════════════
 const SECTIONS = [
-  { id: "angles",  label: "Rectes i Angles"           },
-  { id: "figures", label: "Figures i Cossos"           },
-  { id: "mesures", label: "Mesures, Àrees i Perímetres" },
+  { id: "geo",  label: "Geometria",            badge: "Temari" },
+  { id: "avançat", label: "Llibres i Articles",            badge: "Avançat" },
+  { id: "altres", label: "Altres recursos", badge: "Per definir" },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -288,10 +330,12 @@ const SECTIONS = [
 //       section → id d'una secció (opcional; sense section → apareix a "Recursos")
 // ══════════════════════════════════════════════════════════════════════════════
 const RESOURCES = [
-  { title: "Joc d'angles: Aplastatopos",            url: "https://wordwall.net/es/resource/63176275/angles",                                                          type: "minijoc",   section: "angles" },
-  { title: "Qüestionari: Els angles i les rectes",   url: "https://es.educaplay.com/recursos-educativos/12115189-els_angles_i_les_rectes.html",                       type: "activitat", section: "angles" },
-  { title: "Teoria de Geometria plana (1r ESO)",     url: "https://proyectodescartes.org/EDAD/materiales_didacticos/EDAD_1eso_cat_geometria_plana-JS/1quincena8.pdf", type: "pdf",       section: "angles" },
-  { title: "Fitxa d'Angles i rectes",                url: "https://www.cefax.org/digitals/primer/mates/anglesirectes.pdf",                                            type: "pdf",       section: "angles" },
+  { title: "Joc d'angles: Aplastatopos",             url: "https://wordwall.net/es/resource/63176275/angles",                                                          type: "minijoc",   section: "geo" },
+  { title: "Qüestionari: Els angles i les rectes",   url: "https://es.educaplay.com/recursos-educativos/12115189-els_angles_i_les_rectes.html",                       type: "activitat", section: "geo" },
+  { title: "Teoria de Geometria plana (1r ESO)",     url: "https://proyectodescartes.org/EDAD/materiales_didacticos/EDAD_1eso_cat_geometria_plana-JS/1quincena8.pdf", type: "pdf",       section: "geo" },
+  { title: "Fitxa d'Angles i rectes",                url: "https://www.cefax.org/digitals/primer/mates/anglesirectes.pdf",                                            type: "pdf",       section: "geo" },
+  { title: "Llibre: Logicomix - Anglès",             url: "https://drive.google.com/file/d/1gao5hxPAkQ34t-yXsWmgE2QBFnkabfSP/view?usp=sharing",                       type: "pdf",       section: "avançat" },
+  { title: "Llibre: Logicomix - Castellà",           url: "https://drive.google.com/file/d/1tUd6k4uwvz5n0pPM3Lmw602Xw2TssF8r/view?usp=sharing",                       type: "pdf",       section: "avançat" },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -400,7 +444,7 @@ if (unclassified.length > 0) {
 // Seccions definides
 SECTIONS.forEach((sec, i) => {
   const res   = RESOURCES.filter(r => r.section === sec.id);
-  const badge = `Bloc ${String(i + 1).padStart(2, '0')}`;
+  const badge = sec.badge || `Bloc ${String(i + 1).padStart(2, '0')}`;
   const block = makeSection({ badge, label: sec.label, resources: res, delay, showIfEmpty: true });
   if (block) { container.appendChild(block); delay += 0.12; }
 });
@@ -493,10 +537,9 @@ const particles = Array.from({ length: 80 }, () => new Particle());
 
 
 // ── CANVAS GEOMÈTRIC ─────────────────────────────────────────────────────────
-// Adaptat de GeoMat_1r_ESO.html · escalat de 340×340 → 200×200
 const geoCanvas = document.getElementById('geoCanvas');
 const gCtx      = geoCanvas.getContext('2d');
-const GW = 420, GH = 420;
+const GW = 260, GH = 260;
 geoCanvas.width  = GW;
 geoCanvas.height = GH;
 const gcx = GW / 2, gcy = GH / 2;
@@ -506,12 +549,12 @@ function drawGeo() {
   gCtx.clearRect(0, 0, GW, GH);
 
   // Quadrícula de fons subtil
-  gCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+  gCtx.strokeStyle = 'rgba(255,255,255,0.07)';
   gCtx.lineWidth = 1;
-  for (let x = 0; x < GW; x += 42) {
+  for (let x = 0; x < GW; x += 26) {
     gCtx.beginPath(); gCtx.moveTo(x, 0); gCtx.lineTo(x, GH); gCtx.stroke();
   }
-  for (let y = 0; y < GH; y += 42) {
+  for (let y = 0; y < GH; y += 26) {
     gCtx.beginPath(); gCtx.moveTo(0, y); gCtx.lineTo(GW, y); gCtx.stroke();
   }
 
@@ -519,7 +562,7 @@ function drawGeo() {
   gCtx.save();
   gCtx.translate(gcx, gcy);
   gCtx.rotate(gt * 0.3);
-  const r = 136;
+  const r = 84;
   gCtx.beginPath();
   for (let i = 0; i < 3; i++) {
     const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
@@ -528,9 +571,9 @@ function drawGeo() {
   }
   gCtx.closePath();
   gCtx.strokeStyle = '#3d8bff';
-  gCtx.lineWidth = 2;
+  gCtx.lineWidth = 1.5;
   gCtx.shadowColor = '#3d8bff';
-  gCtx.shadowBlur = 18;
+  gCtx.shadowBlur = 12;
   gCtx.stroke();
   gCtx.shadowBlur = 0;
   gCtx.restore();
@@ -539,42 +582,42 @@ function drawGeo() {
   gCtx.save();
   gCtx.translate(gcx, gcy);
   gCtx.rotate(-gt * 0.2);
-  const sq = 92;
+  const sq = 57;
   gCtx.beginPath();
   gCtx.rect(-sq, -sq, sq * 2, sq * 2);
   gCtx.strokeStyle = '#f5c842';
-  gCtx.lineWidth = 1.5;
+  gCtx.lineWidth = 1;
   gCtx.shadowColor = '#f5c842';
-  gCtx.shadowBlur = 12;
+  gCtx.shadowBlur = 8;
   gCtx.stroke();
   gCtx.shadowBlur = 0;
   gCtx.restore();
 
   // Cercle pulsant
-  const pulse = 54 + Math.sin(gt * 2) * 6;
+  const pulse = 33 + Math.sin(gt * 2) * 4;
   gCtx.beginPath();
   gCtx.arc(gcx, gcy, pulse, 0, Math.PI * 2);
   gCtx.strokeStyle = '#ff5f6d';
-  gCtx.lineWidth = 1.5;
+  gCtx.lineWidth = 1;
   gCtx.shadowColor = '#ff5f6d';
-  gCtx.shadowBlur = 14;
+  gCtx.shadowBlur = 9;
   gCtx.stroke();
   gCtx.shadowBlur = 0;
 
   // Punt en òrbita
-  const ox = gcx + Math.cos(gt * 1.5) * 142;
-  const oy = gcy + Math.sin(gt * 1.5) * 142;
+  const ox = gcx + Math.cos(gt * 1.5) * 88;
+  const oy = gcy + Math.sin(gt * 1.5) * 88;
   gCtx.beginPath();
-  gCtx.arc(ox, oy, 5, 0, Math.PI * 2);
+  gCtx.arc(ox, oy, 3, 0, Math.PI * 2);
   gCtx.fillStyle = '#3dffa0';
   gCtx.shadowColor = '#3dffa0';
-  gCtx.shadowBlur = 20;
+  gCtx.shadowBlur = 14;
   gCtx.fill();
   gCtx.shadowBlur = 0;
 
   // Punt central
   gCtx.beginPath();
-  gCtx.arc(gcx, gcy, 5, 0, Math.PI * 2);
+  gCtx.arc(gcx, gcy, 3, 0, Math.PI * 2);
   gCtx.fillStyle = '#ffffff';
   gCtx.fill();
 
@@ -582,9 +625,9 @@ function drawGeo() {
   gCtx.save();
   gCtx.translate(gcx, gcy);
   gCtx.beginPath();
-  gCtx.arc(0, 0, 161, -Math.PI / 2, -Math.PI / 2 + gt * 0.5, false);
-  gCtx.strokeStyle = 'rgba(180,127,255,0.5)';
-  gCtx.lineWidth = 2;
+  gCtx.arc(0, 0, 99, -Math.PI / 2, -Math.PI / 2 + gt * 0.5, false);
+  gCtx.strokeStyle = 'rgba(180,127,255,0.55)';
+  gCtx.lineWidth = 1.5;
   gCtx.stroke();
   gCtx.restore();
 
