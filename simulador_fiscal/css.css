@@ -1,0 +1,198 @@
+/* =====================================================================
+   ESTIL — "Llibre de Comptes d'un País"
+   Tema: tinta petroli institucional + or de moneda, sobre paper fred.
+   Tipografia: Fraunces (titulars amb caràcter) + Public Sans (interfície)
+               + IBM Plex Mono (xifres, sempre en monospace tabular).
+   Signatura: "El Segell" — un segell oficial que colpeja el paper quan
+   s'activa una llei econòmica (vermell = perill, or/verd = èxit).
+   ===================================================================== */
+
+:root {
+    --tinta: #163B47;
+    --tinta-fosca: #0E2830;
+    --paper: #EDF1EE;
+    --paper-card: #FFFFFF;
+    --or: #C9A227;
+    --or-fosc: #9C7D1B;
+    --exit: #2E7D4F;
+    --exit-fosc: #1F5C39;
+    --perill: #B23A32;
+    --perill-fosc: #8A2C26;
+    --vora: #D8DEDA;
+    --text: #182B2E;
+    --text-suau: #55686B;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--paper);
+    background-image:
+        radial-gradient(circle at 1px 1px, rgba(22,59,71,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--text);
+    font-family: 'Public Sans', sans-serif;
+}
+
+.font-display { font-family: 'Fraunces', serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- Barra superior / pestanyes tipus passaport ---------- */
+.nav-govern {
+    background: var(--tinta-fosca);
+    border-bottom: 4px solid var(--or);
+}
+
+.pestanya-tab {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #B9C7C4;
+    border-radius: 999px;
+    padding: 0.55rem 1.1rem;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+.pestanya-tab:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.pestanya-tab.actiu {
+    background: var(--or);
+    color: var(--tinta-fosca);
+    box-shadow: 0 2px 0 var(--or-fosc);
+}
+
+/* ---------- Panells de pestanya (transició suau) ---------- */
+.panell-tab { display: none; }
+.panell-tab.actiu {
+    display: block;
+    animation: aparicio-panell 0.4s ease;
+}
+@keyframes aparicio-panell {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Targetes tipus fitxa ---------- */
+.targeta {
+    background: var(--paper-card);
+    border: 1px solid var(--vora);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(14,40,48,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.targeta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(14,40,48,0.09);
+}
+
+/* ---------- Botó primari estil "botó de joc" (Duolingo-like) ---------- */
+.boto-primari {
+    background: var(--or);
+    color: var(--tinta-fosca);
+    font-weight: 700;
+    border-radius: 0.9rem;
+    box-shadow: 0 4px 0 var(--or-fosc);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.boto-primari:hover { filter: brightness(1.04); }
+.boto-primari:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--or-fosc);
+}
+
+.boto-secundari {
+    background: transparent;
+    border: 2px solid var(--tinta);
+    color: var(--tinta);
+    font-weight: 700;
+    border-radius: 0.9rem;
+    transition: all 0.15s ease;
+}
+.boto-secundari:hover { background: var(--tinta); color: #fff; }
+
+/* ---------- Pastilles de selecció de perfil ---------- */
+.pastilla-perfil {
+    border: 2px solid var(--vora);
+    background: #fff;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.pastilla-perfil:hover { border-color: var(--tinta); }
+.pastilla-perfil.seleccionat {
+    background: var(--tinta);
+    border-color: var(--tinta);
+    color: #fff;
+}
+
+/* ---------- EL SEGELL — signatura visual de les alertes ---------- */
+.segell-caixa {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    border: 2px solid;
+    animation: entrada-segell 0.35s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes entrada-segell {
+    0% { opacity: 0; transform: scale(1.4) rotate(-8deg); }
+    60% { opacity: 1; transform: scale(0.94) rotate(2deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+.segell-caixa.perill {
+    background: #FBEAE8;
+    border-color: var(--perill);
+    color: var(--perill-fosc);
+}
+.segell-caixa.exit {
+    background: #EAF4EC;
+    border-color: var(--exit);
+    color: var(--exit-fosc);
+}
+.segell-anell {
+    flex-shrink: 0;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    border: 3px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+    text-align: center;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+/* ---------- Alertes discretes (canvi de valors) ---------- */
+.flash-canvi {
+    animation: flash 0.6s ease;
+}
+@keyframes flash {
+    0% { background-color: rgba(201,162,39,0.35); }
+    100% { background-color: transparent; }
+}
+
+/* ---------- Barres de nivell pressupostari (Tab C) ---------- */
+.barra-nivell {
+    height: 0.6rem;
+    border-radius: 999px;
+    background: var(--vora);
+    overflow: hidden;
+}
+.barra-nivell > div { height: 100%; }
+
+/* ---------- Scrollbar discreta per a files de trams ---------- */
+::-webkit-scrollbar { height: 8px; width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--vora); border-radius: 999px; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
