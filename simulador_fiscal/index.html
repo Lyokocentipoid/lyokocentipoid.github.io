@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Fiscal - Web de l'Alumne</title>
+    
+    <!-- Llibreries externes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Configuració de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6', // Blau modern
+                        secondary: '#10b981', // Verd èxit
+                        danger: '#ef4444', // Vermell alerta
+                        warning: '#f59e0b', // Taronja avís
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Animacions suaus */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden-tab { display: none; }
+        .active-tab { border-bottom: 4px solid #3b82f6; color: #3b82f6; font-weight: 600; }
+        
+        /* Efecte pols per a alertes */
+        .pulse-danger { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+
+    <!-- Capçalera i Menú de Navegació -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-primary text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-slate-900">Simulador Fiscal</h1>
+                </div>
+            </div>
+            <!-- Pestanyes -->
+            <nav class="flex space-x-8 mt-2" id="main-nav">
+                <button onclick="canviarPestanya('tab-demografia', this)" class="pb-3 px-1 hover:text-primary transition-colors active-tab">
+                    <i class="fa-solid fa-users mr-2"></i>Demografia
+                </button>
+                <button onclick="canviarPestanya('tab-laboratori', this)" class="pb-3 px-1 text-slate-500 hover:text-primary transition-colors">
+                    <i class="fa-solid fa-flask mr-2"></i>Laboratori d'Impostos
+                </button>
+                <button onclick="canviarPestanya('tab-necessitats', this)" class="pb-3 px-1 text-slate-500 hover:text-primary transition-colors">
+                    <i class="fa-solid fa-building-columns mr-2"></i>Necessitats
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Contenidor Principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ========================================== -->
+        <!-- PESTANYA A: DEMOGRAFIA -->
+        <!-- ========================================== -->
+        <section id="tab-demografia" class="fade-in block">
+            <!-- Panell de Generació -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 mb-8 flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Llavor Numèrica (La teva clau)</label>
+                    <input type="number" id="input-llavor" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Ex: 2026">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nivell de Dificultat</label>
+                    <select id="select-dificultat" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white transition-all">
+                        <option value="normal">Normal (Bàsic, 3 perfils)</option>
+                        <option value="dificil">Difícil (5 Perfils i Evasió)</option>
+                        <option value="repte">Repte (Examen final, deduccions)</option>
+                    </select>
+                </div>
+                <button onclick="generarIActualitzar()" class="bg-primary hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generar País
+                </button>
+            </div>
+
+            <!-- Resultats Demogràfics (Ocults inicialment) -->
+            <div id="resultats-demografia" class="hidden fade-in">
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h2 id="nom-pais" class="text-3xl font-extrabold text-slate-900">Nom del País</h2>
+                        <p class="text-lg text-slate-600 mt-1"><i class="fa-solid fa-users mr-2"></i> Població: <span id="poblacio-total" class="font-semibold text-slate-800"></span> habitants</p>
+                    </div>
+                </div>
+
+                <!-- Pista Sociològica -->
+                <div class="bg-blue-50 border-l-4 border-primary p-5 rounded-r-lg mb-8 shadow-sm">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0"><i class="fa-solid fa-lightbulb text-primary text-xl"></i></div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-bold text-blue-800 uppercase tracking-wide">Context Nacional (Pista)</h3>
+                            <p id="pista-sociologica" class="mt-1 text-blue-900 font-medium"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gràfica i Targetes -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Gràfica -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
+                        <h3 class="font-bold text-slate-800 mb-4 text-center">Distribució de la Població</h3>
+                        <div class="relative w-full max-w-[300px] aspect-square">
+                            <canvas id="grafic-demografia"></canvas>
+                        </div>
+                    </div>
+                    <!-- Targetes de perfils -->
+                    <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4" id="contenidor-targetes">
+                        <!-- S'ompliran per JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- PESTANYA B: LABORATORI D'IMPOSTOS -->
+        <!-- ========================================== -->
+        <section id="tab-laboratori" class="hidden-tab fade-in">
+            <div id="alerta-generar-primer" class="bg-yellow-50 text-yellow-800 p-4 rounded-lg text-center mb-4 border border-yellow-200">
+                <i class="fa-solid fa-triangle-exclamation mr-2"></i> Si us plau, genera primer el país a la pestanya de Demografia.
+            </div>
+
+            <div id="contingut-laboratori" class="hidden grid grid-cols-1 xl:grid-cols-12 gap-8">
+                
+                <!-- Columna Esquerra: Inputs d'Impostos -->
+                <div class="xl:col-span-5 space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2"><i class="fa-solid fa-money-bill-wave text-primary mr-2"></i> Llei d'Impostos</h3>
+                        <p class="text-sm text-slate-500 mb-6">Qualsevol canvi aquí s'aplicarà immediatament a la fitxa del ciutadà seleccionat.</p>
+
+                        <!-- IRPF -->
+                        <div class="mb-6">
+                            <h4 class="font-bold text-slate-700 mb-3 bg-slate-100 p-2 rounded">1. Impost sobre la Renda (IRPF)</h4>
+                            <div id="contenidor-trams-irpf" class="space-y-3">
+                                <!-- Els trams es generen per JS -->
+                            </div>
+                        </div>
+
+                        <!-- Patrimoni -->
+                        <div class="mb-6">
+                            <h4 class="font-bold text-slate-700 mb-3 bg-slate-100 p-2 rounded">2. Impost sobre el Patrimoni</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500">Mínim Exempt (€)</label>
+                                    <input type="number" id="patrimoni-minim" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded text-right tax-input">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500">Impost (%)</label>
+                                    <input type="number" step="0.1" id="patrimoni-pct" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded text-right tax-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- IVA -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3 bg-slate-100 p-2 rounded">3. Impost al Consum (IVA)</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500">Bàsic (%)</label>
+                                    <input type="number" id="iva-basic" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded text-right tax-input">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500">Normal (%)</label>
+                                    <input type="number" id="iva-normal" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded text-right tax-input">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500">Luxe (%)</label>
+                                    <input type="number" id="iva-luxe" class="w-full mt-1 px-3 py-2 border border-slate-300 rounded text-right tax-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Dreta: Simulació Individual -->
+                <div class="xl:col-span-7">
+                    <!-- Selector de perfil -->
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex items-center justify-between">
+                        <label class="font-bold text-slate-700"><i class="fa-solid fa-magnifying-glass text-primary mr-2"></i> Inspeccionar Ciutadà:</label>
+                        <select id="select-perfil" class="ml-4 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary outline-none font-medium text-slate-700 bg-slate-50 min-w-[250px]">
+                            <!-- S'omple per JS -->
+                        </select>
+                    </div>
+
+                    <!-- Avís de Regla (Es mostra si s'activa l'evasió/problema) -->
+                    <div id="alerta-regla" class="hidden mb-4 p-5 rounded-lg border shadow-sm fade-in transition-all">
+                        <div class="flex items-start gap-3">
+                            <i id="alerta-icona" class="fa-solid fa-triangle-exclamation text-2xl mt-1"></i>
+                            <div>
+                                <h3 id="alerta-titol" class="font-bold text-lg"></h3>
+                                <p id="alerta-text" class="text-sm mt-1 opacity-90"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fitxa de Resultat -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-slate-800 text-white p-4 text-center">
+                            <h3 class="text-xl font-bold" id="fitxa-nom">Nom del Perfil</h3>
+                            <p class="text-sm opacity-80" id="fitxa-poblacio">Representa X habitants</p>
+                        </div>
+                        
+                        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Dades Base -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-slate-500 uppercase tracking-wider text-xs border-b pb-1">Economia Anual (Abans / Després)</h4>
+                                
+                                <div class="flex justify-between items-center bg-slate-50 p-2 rounded">
+                                    <span class="font-medium">Ingressos Bruts:</span>
+                                    <div class="text-right">
+                                        <span id="fitxa-ing-original" class="text-xs text-slate-400 line-through mr-2 hidden"></span>
+                                        <span id="fitxa-ing-real" class="font-bold text-slate-800"></span>
+                                    </div>
+                                </div>
+                                <div id="div-deduccions" class="flex justify-between items-center bg-green-50 p-2 rounded text-green-700 text-sm hidden">
+                                    <span class="font-medium"><i class="fa-solid fa-leaf mr-1"></i> Deduccions aplicables:</span>
+                                    <span id="fitxa-deduccions" class="font-bold"></span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-50 p-2 rounded">
+                                    <span class="font-medium">Patrimoni Total:</span>
+                                    <div class="text-right">
+                                        <span id="fitxa-pat-original" class="text-xs text-slate-400 line-through mr-2 hidden"></span>
+                                        <span id="fitxa-pat-real" class="font-bold text-slate-800"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-2 border-t border-dashed">
+                                    <span class="font-medium block mb-2 text-sm text-slate-500">Despeses:</span>
+                                    <div class="pl-3 border-l-2 border-slate-200 space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span>Bàsiques:</span>
+                                            <div>
+                                                <span id="fitxa-des-b-original" class="text-xs text-slate-400 line-through mr-2 hidden"></span>
+                                                <span id="fitxa-des-b-real" class="font-semibold"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Normals:</span>
+                                            <div>
+                                                <span id="fitxa-des-n-original" class="text-xs text-slate-400 line-through mr-2 hidden"></span>
+                                                <span id="fitxa-des-n-real" class="font-semibold"></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Luxe:</span>
+                                            <div>
+                                                <span id="fitxa-des-l-original" class="text-xs text-slate-400 line-through mr-2 hidden"></span>
+                                                <span id="fitxa-des-l-real" class="font-semibold"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Impostos Pagats -->
+                            <div class="space-y-4">
+                                <h4 class="font-bold text-slate-500 uppercase tracking-wider text-xs border-b pb-1">Total a Pagar (Anotar per calcular)</h4>
+                                
+                                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <div>
+                                        <span class="font-bold text-blue-900 block">Quota IRPF</span>
+                                        <span class="text-xs text-blue-700" id="fitxa-irpf-detall">Mitjana: 0%</span>
+                                    </div>
+                                    <span id="fitxa-quota-irpf" class="font-black text-blue-700 text-lg">0 €</span>
+                                </div>
+
+                                <div class="flex justify-between items-center bg-purple-50 p-3 rounded-lg border border-purple-100">
+                                    <div>
+                                        <span class="font-bold text-purple-900 block">Quota Patrimoni</span>
+                                        <span class="text-xs text-purple-700" id="fitxa-pat-detall">Base T.: 0 €</span>
+                                    </div>
+                                    <span id="fitxa-quota-pat" class="font-black text-purple-700 text-lg">0 €</span>
+                                </div>
+
+                                <div class="flex justify-between items-center bg-orange-50 p-3 rounded-lg border border-orange-100">
+                                    <div>
+                                        <span class="font-bold text-orange-900 block">Quota IVA (Total)</span>
+                                        <span class="text-xs text-orange-700">Consum gravat</span>
+                                    </div>
+                                    <span id="fitxa-quota-iva" class="font-black text-orange-700 text-lg">0 €</span>
+                                </div>
+                                
+                                <div class="mt-4 pt-4 border-t-2 border-slate-200 flex justify-between items-center">
+                                    <span class="font-black text-slate-800 uppercase">Esforç Individual:</span>
+                                    <span id="fitxa-quota-total" class="font-black text-2xl text-slate-900">0 €</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- PESTANYA C: NECESSITATS DEPARTAMENTALS -->
+        <!-- ========================================== -->
+        <section id="tab-necessitats" class="hidden-tab fade-in">
+            <div id="alerta-generar-primer-2" class="bg-yellow-50 text-yellow-800 p-4 rounded-lg text-center mb-4 border border-yellow-200">
+                <i class="fa-solid fa-triangle-exclamation mr-2"></i> Genera un país a la pestanya Demografia per veure els pressupostos.
+            </div>
+
+            <div id="contingut-necessitats" class="hidden">
+                <div class="mb-8 text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-extrabold text-slate-900">Pressupostos de l'Estat</h2>
+                    <p class="text-slate-600 mt-2">Aquestes són les quantitats reals (en euros) que necessita cada ministeri per assolir els diferents nivells de servei. Els diners surten d'allò que aconsegueixis recaptar.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="graella-ministeris">
+                    <!-- Es genera dinàmicament per JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CARREGA D'SCRIPTS (ORDRE ESTRICTE) -->
+    <!-- En un entorn real, assegura't que aquests fitxers estiguin a la carpeta -->
+    <script src="configuracio.js"></script>
+    <script src="generador.js"></script>
+    <script src="motor-fiscal.js"></script>
+    <script src="public.js"></script>
+
+</body>
+</html>
