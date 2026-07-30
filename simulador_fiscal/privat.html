@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Fiscal - Panell del Professor (Web Privat)</title>
+    
+    <!-- Llibreries externes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e293b', // Fosc professional
+                        accent: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans">
+
+    <!-- Capçalera -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-user-shield text-accent text-2xl"></i>
+                <div>
+                    <h1 class="text-xl font-bold">Panell d'Avaluació (Web Privat)</h1>
+                    <p class="text-xs text-slate-400">Solucionari i Verificació de Pressupostos</p>
+                </div>
+            </div>
+            <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-2 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Anar al Web Públic
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- PAS 1: CONFIGURACIÓ DE LA LLAVOR I L'ALUMNE -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="bg-slate-900 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">1</span> 
+                Dades de la Partida i Proposta Fiscal de l'Alumne
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Llavor Numèrica</label>
+                    <input type="number" id="privat-llavor" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent outline-none" placeholder="Ex: 2026">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Dificultat</label>
+                    <select id="privat-dificultat" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-accent outline-none bg-white">
+                        <option value="normal">Normal</option>
+                        <option value="dificil">Difícil</option>
+                        <option value="repte">Repte</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="carregarPaisPrivat()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-rotate mr-1"></i> Carregar País
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulari d'Impostos (Mateix format que el públic) -->
+            <div id="seccio-impostos-privat" class="hidden space-y-4 border-t pt-4">
+                <h3 class="font-semibold text-slate-700">Impostos aplicats per l'alumne:</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- IRPF -->
+                    <div class="bg-slate-50 p-4 rounded-lg border">
+                        <h4 class="font-bold text-xs uppercase text-slate-500 mb-2">Trams IRPF</h4>
+                        <div id="privat-trams-irpf" class="space-y-2 text-sm"></div>
+                    </div>
+                    <!-- Patrimoni -->
+                    <div class="bg-slate-50 p-4 rounded-lg border">
+                        <h4 class="font-bold text-xs uppercase text-slate-500 mb-2">Patrimoni</h4>
+                        <div class="space-y-2 text-sm">
+                            <div>
+                                <span class="text-xs text-slate-500 block">Mínim Exempt (€)</span>
+                                <input type="number" id="privat-pat-minim" class="w-full px-2 py-1 border rounded text-right">
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">Impost (%)</span>
+                                <input type="number" step="0.1" id="privat-pat-pct" class="w-full px-2 py-1 border rounded text-right">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- IVA -->
+                    <div class="bg-slate-50 p-4 rounded-lg border">
+                        <h4 class="font-bold text-xs uppercase text-slate-500 mb-2">IVA</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between items-center"><span>Bàsic (%):</span> <input type="number" id="privat-iva-basic" class="w-20 px-2 py-1 border rounded text-right"></div>
+                            <div class="flex justify-between items-center"><span>Normal (%):</span> <input type="number" id="privat-iva-normal" class="w-20 px-2 py-1 border rounded text-right"></div>
+                            <div class="flex justify-between items-center"><span>Luxe (%):</span> <input type="number" id="privat-iva-luxe" class="w-20 px-2 py-1 border rounded text-right"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAS 2: DISTRIBUCIÓ DEL PRESSUPOST EN PERCENTATGES -->
+        <div id="seccio-repartiment" class="hidden bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <span class="bg-slate-900 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">2</span> 
+                Repartiment del Pressupost (Promeses de l'alumne)
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Introdueix el percentatge (%) que l'alumne ha decidit destinar a cada departament. La suma ha de ser exacte 100%.</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Sanitat (%)</label>
+                    <input type="number" id="pct-sanitat" value="25" class="w-full px-3 py-2 border rounded-lg text-right pct-input font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Educació (%)</label>
+                    <input type="number" id="pct-educacio" value="25" class="w-full px-3 py-2 border rounded-lg text-right pct-input font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Seguretat (%)</label>
+                    <input type="number" id="pct-seguretat" value="25" class="w-full px-3 py-2 border rounded-lg text-right pct-input font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Foment (%)</label>
+                    <input type="number" id="pct-foment" value="25" class="w-full px-3 py-2 border rounded-lg text-right pct-input font-bold">
+                </div>
+            </div>
+            
+            <div class="mt-4 flex justify-between items-center">
+                <span id="avís-suma-pct" class="text-sm font-semibold text-slate-600">Suma total: 100%</span>
+                <button onclick="executarValidacio()" class="bg-accent hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-md">
+                    <i class="fa-solid fa-calculator mr-2"></i> Calcular Resultats Reals i Veredicte
+                </button>
+            </div>
+        </div>
+
+        <!-- PAS 3: RESULTATS I VEREDICTE (Ocult fins a calcular) -->
+        <div id="seccio-resultats" class="hidden space-y-6 fade-in">
+            
+            <!-- Targeta Resumen Recaptació -->
+            <div class="bg-slate-900 text-white rounded-xl p-6 shadow-md flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-bold">Recaptació Total Real (Amb efectes d'evasió)</span>
+                    <h2 id="resum-reaptacio-total" class="text-4xl font-black mt-1 text-accent">0 €</h2>
+                </div>
+                <div class="mt-4 md:mt-0 text-right">
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-bold block">Estat General</span>
+                    <span id="resum-estat-general" class="inline-block px-3 py-1 rounded-full text-xs font-bold mt-1"></span>
+                </div>
+            </div>
+
+            <!-- Graella de resultats per departament -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="graella-resultats-departaments">
+                <!-- S'omplirà per JS -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SCRIPTS -->
+    <script src="configuracio.js"></script>
+    <script src="generador.js"></script>
+    <script src="motor-fiscal.js"></script>
+    <script src="privat.js"></script>
+</body>
+</html>
