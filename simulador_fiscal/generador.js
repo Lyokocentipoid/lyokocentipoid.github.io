@@ -83,15 +83,15 @@ function obtenirPerfils(dificultat, random) {
 // magnitud semblant sigui quina sigui la dificultat.
 // ---------------------------------------------------------------
 const CATALEG_DEPARTAMENTS = {
-    sanitat:          { minim: 0.8, normal: 1.5, optim: 2.2, excellencia: 3.5 },
-    educacio:         { minim: 0.6, normal: 1.2, optim: 1.8, excellencia: 2.8 },
-    seguretat:        { minim: 0.3, normal: 0.6, optim: 1.0, excellencia: 1.5 },
-    foment:           { minim: 0.2, normal: 0.7, optim: 1.3, excellencia: 2.5 },
-    serveis_socials:  { minim: 0.5, normal: 0.9, optim: 1.4, excellencia: 2.2 },
-    cultura:          { minim: 0.2, normal: 0.5, optim: 0.9, excellencia: 1.6 },
-    justicia:         { minim: 0.4, normal: 0.8, optim: 1.2, excellencia: 1.9 },
-    medi_ambient:     { minim: 0.3, normal: 0.6, optim: 1.0, excellencia: 1.8 },
-    habitatge:        { minim: 0.5, normal: 0.9, optim: 1.5, excellencia: 2.4 }
+    sanitat:          { minim: 0.8, normal: 1.5, optim: 2.4,  excellencia: 4.3 },
+    educacio:         { minim: 0.6, normal: 1.2, optim: 1.95, excellencia: 3.4 },
+    seguretat:        { minim: 0.3, normal: 0.6, optim: 1.05, excellencia: 1.9 },
+    foment:           { minim: 0.2, normal: 0.7, optim: 1.4,  excellencia: 3.1 },
+    serveis_socials:  { minim: 0.5, normal: 0.9, optim: 1.5,  excellencia: 2.8 },
+    cultura:          { minim: 0.2, normal: 0.5, optim: 0.95, excellencia: 1.9 },
+    justicia:         { minim: 0.4, normal: 0.8, optim: 1.3,  excellencia: 2.4 },
+    medi_ambient:     { minim: 0.3, normal: 0.6, optim: 1.05, excellencia: 2.2 },
+    habitatge:        { minim: 0.5, normal: 0.9, optim: 1.6,  excellencia: 2.9 }
 };
 
 const DEPARTAMENTS_PER_DIFICULTAT = {
@@ -101,6 +101,16 @@ const DEPARTAMENTS_PER_DIFICULTAT = {
 };
 
 const FACTOR_PRESSUPOST_PER_DIFICULTAT = { normal: 0.05, dificil: 0.041, repte: 0.026 };
+
+// L'índex de "riquesa" del país (que fixa la mida del pressupost) es calculava
+// abans NOMÉS a partir dels ingressos anuals declarats, ignorant per complet
+// el patrimoni. Com que el patrimoni acumulat sol ser diverses vegades més
+// gran que els ingressos (sobretot en perfils rics), això feia que un impost
+// de Patrimoni ben aplicat pogués recaptar molt més del que la "riquesa"
+// del país semblava justificar. Per això ara hi afegim una part del
+// patrimoni (ponderat molt més fluix que els ingressos, ja que és un estoc
+// i no es pot recaptar cada any al mateix ritme que la renda).
+const FACTOR_RIQUESA_PATRIMONI = 0.06;
 
 // 3. Funció Principal de Generació
 function generarPais(llavorNum, dificultat) {
@@ -164,7 +174,7 @@ function generarPais(llavorNum, dificultat) {
         let ing_final = Math.round(variarPercentatge(p.ing, 0.10) / 1000) * 1000;
         let pat_final = Math.round(variarPercentatge(p.pat, 0.10) / 1000) * 1000;
 
-        indexRiquesaTotal += (ing_final * poblacioAbsoluta);
+        indexRiquesaTotal += (ing_final * poblacioAbsoluta) + (pat_final * poblacioAbsoluta * FACTOR_RIQUESA_PATRIMONI);
 
         demografiaFinal.push({
             perfil: p.nom,
