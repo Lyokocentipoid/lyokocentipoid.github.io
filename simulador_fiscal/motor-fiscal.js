@@ -11,42 +11,25 @@
  *  - Càlcul de l'IRPF progressiu per trams
  *  - Càlcul de l'Impost sobre el Patrimoni
  *  - Càlcul de l'IVA (bàsic / normal / luxe)
+ *  - Càlcul de l'Impost de Societats (agregat, no per individu, amb
+ *    inviabilitat empresarial gradual per sobre d'un llindar)
  *  - El "Motor de Regles": detecta si la sociologia activa del país
  *    es dispara per a un perfil concret, i n'aplica els modificadors
  *    ABANS de calcular la quota d'aquell perfil.
  *  - Els "Pactes de País": límits (min/max) que TOTS els impostos han
  *    de complir sempre, independentment de la sociologia activa.
+ *  - Els "Límits Absoluts": límits universals que existeixen a tots
+ *    els països, però escalats per l'arquetip econòmic de cadascun
+ *    (pais.limits_absoluts).
  */
 
 // ---------------------------------------------------------------
-// 1. VALORS PER DEFECTE (l'alumne/professor els pot canviar sempre)
+// 1. VALORS SUGGERITS
+// Ja no són fixos: cada país genera els seus propis suggeriments
+// aleatoris a pais.suggeriments (veure generador.js), perquè agafar
+// sempre "el valor de l'exemple" no funcioni igual de bé a tots els
+// països. numTramsPerDificultat() sí és estructural i es queda aquí.
 // ---------------------------------------------------------------
-
-function tramsIRPFPerDefecte(dificultat) {
-    if (dificultat === "normal") {
-        return [
-            { desde: 0,     percentatge: 19 },
-            { desde: 15000, percentatge: 30 },
-            { desde: 40000, percentatge: 40 }
-        ];
-    }
-    // dificil i repte -> 5 trams
-    return [
-        { desde: 0,      percentatge: 19 },
-        { desde: 15000,  percentatge: 24 },
-        { desde: 30000,  percentatge: 30 },
-        { desde: 60000,  percentatge: 37 },
-        { desde: 120000, percentatge: 45 }
-    ];
-}
-
-function patrimoniPerDefecte() {
-    return { minimExempt: 100000, percentatge: 1.0 };
-}
-
-function ivaPerDefecte() {
-    return { basic: 4, normal: 10, luxe: 21 };
-}
 
 function numTramsPerDificultat(dificultat) {
     return dificultat === "normal" ? 3 : 5;
@@ -116,6 +99,39 @@ function calcularIVA(despeses, tipusIva) {
         quotaNormal: Math.round(quotaNormal),
         quotaLuxe: Math.round(quotaLuxe),
         total: Math.round(quotaBasica + quotaNormal + quotaLuxe)
+    };
+}
+
+// ---------------------------------------------------------------
+// 2b. IMPOST DE SOCIETATS
+// A diferència dels altres 3, no és per individu: grava el
+// valor_empresarial agregat del país (les empreses, no la ciutadania).
+// Per sobre d'un llindar, cada punt de tipus addicional fa inviables
+// més empreses de manera GRADUAL (no és un "supera/no supera" binari
+// com els Límits Absoluts): la base efectiva es va reduint fins que,
+// a partir d'un tipus molt alt, la major part de l'activitat
+// empresarial desapareix.
+// ---------------------------------------------------------------
+const LLINDAR_INVIABILITAT_SOCIETATS = 20;
+const PENDENT_INVIABILITAT_SOCIETATS = 2;
+const MAX_INVIABILITAT_SOCIETATS = 90;
+
+/** % d'empreses que es tornen inviables amb un tipus de societats concret */
+function calcularPctEmpresesInviables(tipusSocietats) {
+    if (tipusSocietats <= LLINDAR_INVIABILITAT_SOCIETATS) return 0;
+    const exces = tipusSocietats - LLINDAR_INVIABILITAT_SOCIETATS;
+    return Math.min(MAX_INVIABILITAT_SOCIETATS, Math.round(exces * PENDENT_INVIABILITAT_SOCIETATS));
+}
+
+/** Recaptació de societats: el tipus s'aplica només sobre la base de les empreses que sobreviuen */
+function calcularSocietats(valorEmpresarial, tipusSocietats) {
+    const pctInviable = calcularPctEmpresesInviables(tipusSocietats);
+    const baseEfectiva = valorEmpresarial * (1 - pctInviable / 100);
+    const quota = baseEfectiva * (tipusSocietats / 100);
+    return {
+        pctInviable,
+        baseEfectiva: Math.round(baseEfectiva),
+        quota: Math.round(quota)
     };
 }
 
@@ -193,7 +209,7 @@ function avaluarPerfil(pais, dificultat, perfilNom, configImpostos) {
 
     const eco = perfilBase.economia_anual;
     const resultatRegla = comprovarRegla(pais, dificultat, perfilNom, configImpostos);
-    const limitsAbsoluts = avaluarLimitsAbsoluts(configImpostos);
+    const limitsAbsoluts = avaluarLimitsAbsoluts(pais, configImpostos);
 
     // Valors econòmics de partida
     let ingressos = eco.ingressos;
@@ -257,7 +273,8 @@ function llegirConfiguracioImpostosDelDOM(numTrams) {
             basic: parseFloat(document.getElementById('iva-basic').value) || 0,
             normal: parseFloat(document.getElementById('iva-normal').value) || 0,
             luxe: parseFloat(document.getElementById('iva-luxe').value) || 0
-        }
+        },
+        societats: parseFloat(document.getElementById('societats-pct').value) || 0
     };
 }
 
@@ -308,13 +325,32 @@ const LIMITS_ABSOLUTS = {
 };
 
 /**
+ * Escala els llindars base segons la sensibilitat del país (el seu
+ * arquetip econòmic). factor < 1 = ciutadania més sensible (llindars
+ * més baixos, salta abans); factor > 1 = més tolerant. Es crida un
+ * cop per país, a generarPais(), i el resultat es guarda a
+ * pais.limits_absoluts perquè avaluarLimitsAbsoluts() el faci servir.
+ */
+function escalarLimitsAbsoluts(factor) {
+    const resultat = {};
+    Object.keys(LIMITS_ABSOLUTS).forEach(cat => {
+        const base = LIMITS_ABSOLUTS[cat].llindar;
+        resultat[cat] = (cat === 'patrimoni_minim_exempt')
+            ? Math.round(base * factor / 1000) * 1000
+            : Math.round(base * factor);
+    });
+    return resultat;
+}
+
+/**
  * Comprova, per a cadascun dels impostos, si s'ha superat el seu
  * límit absolut amb la configuració fiscal actual. La majoria són
  * "sostres" (es disparen per sobre del llindar), però patrimoni_minim_exempt
  * és un "terra" (es dispara per SOTA del llindar) — per això cada entrada
- * pot marcar-se amb esMinim.
+ * pot marcar-se amb esMinim. Els llindars concrets surten de
+ * pais.limits_absoluts (ja escalats segons l'arquetip econòmic del país).
  */
-function avaluarLimitsAbsoluts(configImpostos) {
+function avaluarLimitsAbsoluts(pais, configImpostos) {
     const valors = {
         irpf: tramMesAlt(configImpostos.trams),
         patrimoni: configImpostos.patrimoni.percentatge,
@@ -323,15 +359,17 @@ function avaluarLimitsAbsoluts(configImpostos) {
         iva_normal: configImpostos.iva.normal,
         iva_luxe: configImpostos.iva.luxe
     };
+    const llindarsPais = (pais && pais.limits_absoluts) || {};
 
     const resultat = {};
     Object.keys(LIMITS_ABSOLUTS).forEach(cat => {
         const limit = LIMITS_ABSOLUTS[cat];
+        const llindar = llindarsPais[cat] !== undefined ? llindarsPais[cat] : limit.llindar;
         const valor = valors[cat];
-        const superat = limit.esMinim ? (valor < limit.llindar) : (valor > limit.llindar);
+        const superat = limit.esMinim ? (valor < llindar) : (valor > llindar);
         resultat[cat] = {
             valor,
-            llindar: limit.llindar,
+            llindar,
             consequencia: limit.consequencia,
             superat
         };
@@ -376,7 +414,8 @@ function avaluarPactes(pais, configImpostos) {
         patrimoni: configImpostos.patrimoni.percentatge,
         iva_basic: configImpostos.iva.basic,
         iva_normal: configImpostos.iva.normal,
-        iva_luxe: configImpostos.iva.luxe
+        iva_luxe: configImpostos.iva.luxe,
+        societats: configImpostos.societats
     };
 
     const resultat = {};
