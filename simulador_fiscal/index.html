@@ -166,6 +166,7 @@
   .subtab-btn[data-subtab="irpf"].active { background:#2B3A67; border-color:#2B3A67; }
   .subtab-btn[data-subtab="patrimoni"].active { background:#8A6816; border-color:#8A6816; }
   .subtab-btn[data-subtab="iva"].active { background:#0E5C42; border-color:#0E5C42; }
+  .subtab-btn[data-subtab="societats"].active { background:#4A3868; border-color:#4A3868; }
 
   /* ---- capçalera: petita respiració a l'icona ---- */
   .logo-breathe { animation: breathe 4s ease-in-out infinite; }
@@ -272,6 +273,12 @@
           </div>
         </div>
 
+        <!-- arquetip economic -->
+        <div class="card p-6 bg-white border border-gold/30 relative overflow-hidden">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gold-dark">📐 Arquetip econòmic — <span id="arquetip-nom"></span></p>
+          <p id="arquetip-pista" class="font-display text-base text-ink mt-2 leading-relaxed"></p>
+        </div>
+
         <!-- grafic + targetes -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="card p-6 lg:col-span-1">
@@ -315,6 +322,7 @@
           <button data-subtab="irpf" class="subtab-btn active">💼 IRPF</button>
           <button data-subtab="patrimoni" class="subtab-btn">🏦 Patrimoni</button>
           <button data-subtab="iva" class="subtab-btn">🛒 IVA</button>
+          <button data-subtab="societats" class="subtab-btn">🏭 Societats</button>
         </div>
 
         <!-- ========== SUBPESTANYA IRPF ========== -->
@@ -356,6 +364,7 @@
                 <div>
                   <label class="block text-xs text-ink/50 mb-1">Mínim exempt (€)</label>
                   <input id="patrimoni-minim" type="number" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 100000">
+                  <p class="text-[11px] text-ink/40 mt-1">Ha de ser com a mínim 30.000 €.</p>
                 </div>
                 <div>
                   <label class="block text-xs text-ink/50 mb-1">% impost</label>
@@ -436,6 +445,33 @@
               </div>
             </div>
             <div id="fitxa-iva" class="card p-6"></div>
+          </div>
+        </div>
+
+        <!-- ========== SUBPESTANYA SOCIETATS ========== -->
+        <div id="subtab-societats" class="subtab-panel hidden grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div class="lg:col-span-2 space-y-4">
+            <div class="card p-5">
+              <p class="font-display font-semibold text-sm mb-1">Impost de Societats</p>
+              <p class="text-xs text-ink/40 mb-3">Grava els beneficis agregats de les empreses del país amb un tipus únic. NOMÉS afecta les empreses, no la ciutadania — no cal triar cap perfil.</p>
+              <div>
+                <label class="block text-xs text-ink/50 mb-1">% impost</label>
+                <input id="societats-pct" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 23">
+              </div>
+            </div>
+            <div id="pacte-societats" class="pacte-card rounded-2xl p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1">📜 Pacte de País</p>
+              <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-2"></p>
+              <p class="pacte-estat text-sm font-semibold"></p>
+            </div>
+          </div>
+          <div class="lg:col-span-3 space-y-4">
+            <div class="card p-5">
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink/40">Valor empresarial del país</p>
+              <p id="societats-valor-empresarial" class="font-mono-num font-bold text-2xl text-institut mt-1"></p>
+              <p class="text-xs text-ink/40 mt-1">Base agregada dels beneficis de les empreses (~<span id="societats-num-empreses" class="font-mono-num"></span> empreses).</p>
+            </div>
+            <div id="fitxa-societats" class="card p-6"></div>
           </div>
         </div>
 
