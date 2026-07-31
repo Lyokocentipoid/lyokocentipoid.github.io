@@ -223,6 +223,11 @@
           <p id="info-pista" class="text-sm text-ink/80 leading-relaxed"></p>
         </div>
 
+        <div class="rounded-2xl p-4 bg-white border border-gold/30 mb-4">
+          <p class="text-xs font-semibold uppercase tracking-wide text-gold-dark mb-1">📐 Full de resposta — arquetip econòmic (<span id="info-arquetip-nom"></span>)</p>
+          <p id="info-arquetip-pista" class="text-sm text-ink/80 leading-relaxed"></p>
+        </div>
+
         <div class="rounded-2xl p-4 bg-paper border border-ink/10">
           <p class="text-xs font-semibold uppercase tracking-wide text-ink/50 mb-2">📜 Full de resposta — Pactes de País</p>
           <div id="info-pactes" class="space-y-1.5 text-xs text-ink/70"></div>
@@ -240,7 +245,7 @@
       </div>
       <p class="text-xs text-ink/40 mb-4">Transcriu aquí els impostos tal com els ha escrit l'alumne al paper.</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
         <div>
           <p class="font-display font-semibold text-sm mb-1">IRPF</p>
           <p class="text-xs text-ink/40 mb-3">Trams progressius</p>
@@ -253,6 +258,7 @@
             <div>
               <label class="block text-xs text-ink/50 mb-1">Mínim exempt (€)</label>
               <input id="patrimoni-minim" type="number" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 100000">
+              <p class="text-[11px] text-ink/40 mt-1">Ha de ser com a mínim 30.000 €.</p>
             </div>
             <div>
               <label class="block text-xs text-ink/50 mb-1">% impost</label>
@@ -276,6 +282,15 @@
               <label class="block text-xs text-ink/50 mb-1">Luxe %</label>
               <input id="iva-luxe" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 21">
             </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="font-display font-semibold text-sm mb-3">Societats</p>
+          <p class="text-xs text-ink/40 mb-3">Grava el valor empresarial agregat, no la ciutadania.</p>
+          <div>
+            <label class="block text-xs text-ink/50 mb-1">% impost</label>
+            <input id="societats-pct" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 23">
           </div>
         </div>
       </div>
@@ -316,7 +331,7 @@
       <div class="card p-6 bg-institut relative overflow-hidden">
         <p class="text-xs font-semibold uppercase tracking-wide text-gold-light/80">Recaptació Total Real</p>
         <p id="recaptacio-total" class="font-mono-num font-bold text-4xl text-white mt-1 stat-flip"></p>
-        <div class="grid grid-cols-3 gap-4 mt-5 pt-5 border-t border-white/15">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-5 border-t border-white/15">
           <div>
             <p class="text-[11px] uppercase tracking-wide text-white/50">IRPF</p>
             <p id="recaptacio-irpf" class="font-mono-num font-semibold text-white mt-0.5"></p>
@@ -328,6 +343,10 @@
           <div>
             <p class="text-[11px] uppercase tracking-wide text-white/50">IVA</p>
             <p id="recaptacio-iva" class="font-mono-num font-semibold text-white mt-0.5"></p>
+          </div>
+          <div>
+            <p class="text-[11px] uppercase tracking-wide text-white/50">Societats</p>
+            <p id="recaptacio-societats" class="font-mono-num font-semibold text-white mt-0.5"></p>
           </div>
         </div>
       </div>
