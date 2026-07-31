@@ -1,361 +1,484 @@
 /**
  * public.js
- * Lògica de la interfície d'usuari per al Web Públic (Alumnes)
+ * Lògica d'interfície del web PÚBLIC (index.html) del Simulador Fiscal Educatiu.
+ * Fa servir DADES_SIMULACIO i generarPais() de configuracio.js / generador.js,
+ * i totes les funcions de càlcul de motor-fiscal.js.
+ *
+ * REGLA D'OR: aquest fitxer MAI calcula la recaptació total del país a partir
+ * dels impostos. Cada impost es mostra sempre per separat, individualment.
+ * (El pressupost departamental sí és editable, però el total el proposa
+ * l'alumne a mà — no surt de sumar les quotes fiscals.)
  */
 
-// Variables d'estat globals de l'aplicació
-let paisActual = null;
-let dificultatActual = null;
-let chartDemografia = null;
+// ---------------------------------------------------------------
+// ESTAT GLOBAL
+// ---------------------------------------------------------------
+const estat = {
+    pais: null,
+    dificultat: 'normal',
+    numTrams: 3,
+    perfilSeleccionat: null,
+    subtabActiu: 'irpf',
+    chart: null,
+    pressupostosDepartaments: null
+};
 
-// ==========================================
-// 1. NAVEGACIÓ ENTRE PESTANYES
-// ==========================================
-function canviarPestanya(idPestanya, botonClickat) {
-    // Amagar totes les seccions
-    document.getElementById('tab-demografia').classList.add('hidden-tab');
-    document.getElementById('tab-laboratori').classList.add('hidden-tab');
-    document.getElementById('tab-necessitats').classList.add('hidden-tab');
-    
-    // Mostrar la seleccionada
-    document.getElementById(idPestanya).classList.remove('hidden-tab');
+const ICONES_DEPARTAMENTS = {
+    sanitat:   { nom: 'Sanitat',   icona: '🏥' },
+    educacio:  { nom: 'Educació',  icona: '🎓' },
+    seguretat: { nom: 'Seguretat', icona: '🛡️' },
+    foment:    { nom: 'Foment',    icona: '🏗️' }
+};
 
-    // Estils dels botons
-    const botons = document.getElementById('main-nav').children;
-    for (let btn of botons) {
-        btn.classList.remove('active-tab');
-        btn.classList.add('text-slate-500');
-    }
-    botonClickat.classList.add('active-tab');
-    botonClickat.classList.remove('text-slate-500');
-}
+const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42'];
 
-// ==========================================
-// 2. GENERACIÓ DEL PAÍS (PESTANYA A)
-// ==========================================
-function generarIActualitzar() {
-    const llavorInput = document.getElementById('input-llavor').value;
-    const dificultatSelect = document.getElementById('select-dificultat').value;
+// Quin "impost" del motor de regles correspon a quina subpestanya de la interfície
+const IMPOST_A_SECCIO = {
+    irpf: 'irpf',
+    patrimoni: 'patrimoni',
+    iva_basic: 'iva',
+    iva_normal: 'iva',
+    iva_luxe: 'iva'
+};
+const NOM_SECCIO = { irpf: "de l'IRPF", patrimoni: 'del Patrimoni', iva: "de l'IVA" };
 
-    if (!llavorInput) {
-        alert("Si us plau, introdueix una llavor numèrica primer.");
-        return;
-    }
+// ---------------------------------------------------------------
+// INICIALITZACIÓ
+// ---------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-generar').addEventListener('click', generarPaisHandler);
 
-    // Cridem al backend (generador.js)
-    const llavor = parseInt(llavorInput);
-    dificultatActual = dificultatSelect;
-    paisActual = generarPais(llavor, dificultatActual);
-
-    // Dibuixar interfície Demografia
-    renderitzarPestanyaDemografia();
-    
-    // Preparar Laboratori
-    prepararPestanyaLaboratori();
-
-    // Preparar Necessitats
-    renderitzarPestanyaNecessitats();
-
-    // Mostrar el contingut ocult de les altres pestanyes
-    document.getElementById('alerta-generar-primer').classList.add('hidden');
-    document.getElementById('contingut-laboratori').classList.remove('hidden');
-    document.getElementById('alerta-generar-primer-2').classList.add('hidden');
-    document.getElementById('contingut-necessitats').classList.remove('hidden');
-}
-
-function renderitzarPestanyaDemografia() {
-    document.getElementById('resultats-demografia').classList.remove('hidden');
-    document.getElementById('nom-pais').innerText = paisActual.metadades.nom_ubicacio;
-    document.getElementById('poblacio-total').innerText = formatNumero(paisActual.metadades.poblacio_total);
-    document.getElementById('pista-sociologica').innerText = paisActual.metadades.pista_sociologica;
-
-    // Targetes de perfils
-    const contenidor = document.getElementById('contenidor-targetes');
-    contenidor.innerHTML = '';
-    
-    let chartLabels = [];
-    let chartData = [];
-    let chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
-
-    paisActual.demografia.forEach((p, index) => {
-        chartLabels.push(p.perfil);
-        chartData.push(p.percentatge);
-
-        const card = document.createElement('div');
-        card.className = "bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow";
-        
-        // Comprovem si té deduccions (Mode Repte) per mostrar-ho
-        let deduccionsHTML = '';
-        if (p.economia_anual.deduccions_irpf > 0) {
-            deduccionsHTML = `<div class="text-xs font-semibold text-green-600 mt-1"><i class="fa-solid fa-leaf"></i> Deduccions previstes: ${formatEuros(p.economia_anual.deduccions_irpf)}</div>`;
-        }
-
-        card.innerHTML = `
-            <div class="flex justify-between items-start border-b pb-2 mb-3">
-                <h4 class="font-bold text-slate-800 text-lg">${p.perfil}</h4>
-                <span class="bg-slate-100 text-slate-700 py-1 px-2 rounded font-bold text-sm">${p.percentatge}%</span>
-            </div>
-            <p class="text-xs text-slate-500 mb-3"><i class="fa-solid fa-users"></i> ${formatNumero(p.poblacio_absoluta)} persones</p>
-            
-            <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="bg-blue-50 p-2 rounded">
-                    <span class="block text-xs text-blue-600 font-bold uppercase">Ingressos</span>
-                    <span class="font-bold text-slate-800">${formatEuros(p.economia_anual.ingressos)}</span>
-                    ${deduccionsHTML}
-                </div>
-                <div class="bg-purple-50 p-2 rounded">
-                    <span class="block text-xs text-purple-600 font-bold uppercase">Patrimoni</span>
-                    <span class="font-bold text-slate-800">${formatEuros(p.economia_anual.patrimoni)}</span>
-                </div>
-            </div>
-            <div class="mt-2 bg-slate-50 p-2 rounded text-xs space-y-1 border border-slate-100">
-                <span class="block text-xs text-slate-500 font-bold uppercase mb-1">Despeses</span>
-                <div class="flex justify-between"><span>Bàsiques:</span> <span class="font-medium">${formatEuros(p.economia_anual.despeses.basiques)}</span></div>
-                <div class="flex justify-between"><span>Normals:</span> <span class="font-medium">${formatEuros(p.economia_anual.despeses.normals)}</span></div>
-                <div class="flex justify-between"><span>Luxe:</span> <span class="font-medium">${formatEuros(p.economia_anual.despeses.luxe)}</span></div>
-            </div>
-        `;
-        contenidor.appendChild(card);
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => canviarPestanya(btn.dataset.tab));
     });
 
-    // Dibuixar Gràfica Chart.js
-    if (chartDemografia) chartDemografia.destroy();
-    const ctx = document.getElementById('grafic-demografia').getContext('2d');
-    chartDemografia = new Chart(ctx, {
+    document.querySelectorAll('#subtabs-impostos .subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => canviarSubtab(btn.dataset.subtab));
+    });
+
+    // Pressupost departamental: sempre disponible, reacciona a qualsevol canvi
+    ['pressupost-total', 'pct-sanitat', 'pct-educacio', 'pct-seguretat', 'pct-foment'].forEach(id => {
+        document.getElementById(id).addEventListener('input', recalcularDepartaments);
+    });
+});
+
+function canviarPestanya(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+function canviarSubtab(subtab) {
+    estat.subtabActiu = subtab;
+    document.querySelectorAll('#subtabs-impostos .subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === subtab));
+    ['irpf', 'patrimoni', 'iva'].forEach(s => {
+        document.getElementById(`subtab-${s}`).classList.toggle('hidden', s !== subtab);
+    });
+}
+
+// ---------------------------------------------------------------
+// GENERACIÓ DEL PAÍS
+// ---------------------------------------------------------------
+function generarPaisHandler() {
+    const llavor = parseInt(document.getElementById('input-llavor').value) || 0;
+    const dificultat = document.getElementById('select-dificultat').value;
+
+    const pais = generarPais(llavor, dificultat);
+
+    estat.pais = pais;
+    estat.dificultat = dificultat;
+    estat.numTrams = numTramsPerDificultat(dificultat);
+    estat.perfilSeleccionat = pais.demografia[0].perfil;
+
+    renderDemografia(pais, dificultat);
+    document.getElementById('pista-laboratori').textContent = pais.metadades.pista_sociologica;
+    renderFormularisImpostos(dificultat);
+    renderSelectorPerfils(pais);
+    recalcularPerfilSeleccionat();
+
+    estat.pressupostosDepartaments = pais.pressupostos_departaments;
+    crearTargetesDepartaments();
+    recalcularDepartaments();
+
+    document.getElementById('demografia-buida').classList.add('hidden');
+    document.getElementById('demografia-resultat').classList.remove('hidden');
+    document.getElementById('laboratori-buit').classList.add('hidden');
+    document.getElementById('laboratori-contingut').classList.remove('hidden');
+    document.getElementById('departaments-buit').classList.add('hidden');
+    document.getElementById('departaments-contingut').classList.remove('hidden');
+
+    const badge = document.getElementById('pais-badge');
+    badge.classList.remove('hidden');
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-exit inline-block"></span> ${pais.metadades.nom_ubicacio}`;
+}
+
+// ---------------------------------------------------------------
+// PESTANYA A · DEMOGRAFIA
+// ---------------------------------------------------------------
+function renderDemografia(pais, dificultat) {
+    document.getElementById('nom-pais').textContent = pais.metadades.nom_ubicacio;
+    document.getElementById('dificultat-label').textContent =
+        dificultat === 'normal' ? 'Normal' : (dificultat === 'dificil' ? 'Difícil' : 'Repte');
+    document.getElementById('poblacio-total').textContent = formatNumero(pais.metadades.poblacio_total);
+    document.getElementById('pista-sociologica').textContent = pais.metadades.pista_sociologica;
+
+    const ctx = document.getElementById('chart-demografia');
+    if (estat.chart) estat.chart.destroy();
+    estat.chart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: chartLabels,
+            labels: pais.demografia.map(p => p.perfil),
             datasets: [{
-                data: chartData,
-                backgroundColor: chartColors.slice(0, chartData.length),
-                borderWidth: 2,
-                borderColor: '#ffffff'
+                data: pais.demografia.map(p => p.percentatge),
+                backgroundColor: COLORS_CHART,
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 8
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
-            },
-            cutout: '65%'
+                legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 10, padding: 12 } },
+                tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw}%` } }
+            }
         }
     });
-}
 
-// ==========================================
-// 3. LABORATORI D'IMPOSTOS (PESTANYA B)
-// ==========================================
-function prepararPestanyaLaboratori() {
-    const numTrams = numTramsPerDificultat(dificultatActual);
-    const defaultsIRPF = tramsIRPFPerDefecte(dificultatActual);
-    
-    // 3.1. Generar inputs d'IRPF
-    const contIRPF = document.getElementById('contenidor-trams-irpf');
-    contIRPF.innerHTML = '';
-    
-    for (let i = 0; i < numTrams; i++) {
-        const def = defaultsIRPF[i] || { desde: 0, percentatge: 0 };
-        const readonlyHTML = i === 0 ? 'readonly disabled class="w-full px-3 py-2 border border-slate-300 rounded bg-slate-100 text-slate-500"' : 'class="w-full px-3 py-2 border border-slate-300 rounded tax-input"';
-        
-        contIRPF.innerHTML += `
-            <div class="flex gap-2 items-center bg-slate-50 p-2 rounded border border-slate-100">
-                <span class="text-sm font-medium text-slate-500 w-16">Tram ${i+1}:</span>
-                <div class="flex-1">
-                    <div class="flex items-center">
-                        <span class="text-xs mr-2 text-slate-500">Des de</span>
-                        <input type="number" id="irpf-desde-${i}" value="${def.desde}" ${readonlyHTML}>
-                        <span class="text-xs ml-2 text-slate-500">€</span>
-                    </div>
-                </div>
-                <div class="w-24">
-                    <div class="flex items-center">
-                        <input type="number" id="irpf-pct-${i}" value="${def.percentatge}" step="0.1" class="w-full px-3 py-2 border border-slate-300 rounded text-right tax-input">
-                        <span class="text-xs ml-1 text-slate-500">%</span>
-                    </div>
+    const cont = document.getElementById('targetes-poblacio');
+    cont.innerHTML = '';
+    pais.demografia.forEach((perfil, i) => {
+        const eco = perfil.economia_anual;
+        const color = COLORS_CHART[i % COLORS_CHART.length];
+        const card = document.createElement('div');
+        card.className = 'card p-5';
+        card.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <p class="font-display font-semibold text-sm">${perfil.perfil}</p>
+                <span class="text-xs font-mono-num font-semibold px-2 py-0.5 rounded-full" style="background:${color}22; color:${color}">${perfil.percentatge}%</span>
+            </div>
+            <p class="text-xs text-ink/40 mb-3 font-mono-num">${formatNumero(perfil.poblacio_absoluta)} persones</p>
+            <div class="space-y-1.5 text-sm">
+                <div class="flex justify-between"><span class="text-ink/50">Ingressos anuals</span><span class="font-mono-num font-semibold">${formatEuros(eco.ingressos)}</span></div>
+                <div class="flex justify-between"><span class="text-ink/50">Patrimoni</span><span class="font-mono-num font-semibold">${formatEuros(eco.patrimoni)}</span></div>
+                <div class="pt-2 mt-1 border-t border-ink/10 space-y-1">
+                    <div class="flex justify-between text-xs"><span class="text-ink/40">Despeses bàsiques</span><span class="font-mono-num">${formatEuros(eco.despeses.basiques)}</span></div>
+                    <div class="flex justify-between text-xs"><span class="text-ink/40">Despeses normals</span><span class="font-mono-num">${formatEuros(eco.despeses.normals)}</span></div>
+                    <div class="flex justify-between text-xs"><span class="text-ink/40">Despeses de luxe</span><span class="font-mono-num">${formatEuros(eco.despeses.luxe)}</span></div>
                 </div>
             </div>
         `;
-    }
-
-    // 3.2. Valors per defecte Patrimoni i IVA
-    const defPat = patrimoniPerDefecte();
-    document.getElementById('patrimoni-minim').value = defPat.minimExempt;
-    document.getElementById('patrimoni-pct').value = defPat.percentatge;
-
-    const defIva = ivaPerDefecte();
-    document.getElementById('iva-basic').value = defIva.basic;
-    document.getElementById('iva-normal').value = defIva.normal;
-    document.getElementById('iva-luxe').value = defIva.luxe;
-
-    // 3.3. Omplir el selector de perfils
-    const selectPerfil = document.getElementById('select-perfil');
-    selectPerfil.innerHTML = '';
-    paisActual.demografia.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.perfil;
-        opt.innerText = p.perfil;
-        selectPerfil.appendChild(opt);
+        cont.appendChild(card);
     });
-
-    // 3.4. Afegir listeners als inputs perquè recalculin a l'instant
-    const totsElsInputs = document.querySelectorAll('.tax-input');
-    totsElsInputs.forEach(input => {
-        input.addEventListener('input', recalcularSimulacioIndividual);
-    });
-    
-    selectPerfil.addEventListener('change', recalcularSimulacioIndividual);
-
-    // Executar càlcul inicial
-    recalcularSimulacioIndividual();
 }
 
-// CRIDA AL MOTOR FISCAL I PINTAT DE LA FITXA
-function recalcularSimulacioIndividual() {
-    if (!paisActual) return;
+// ---------------------------------------------------------------
+// PESTANYA B · LABORATORI D'IMPOSTOS (3 subpestanyes independents)
+// ---------------------------------------------------------------
+function renderFormularisImpostos(dificultat) {
+    const numTrams = numTramsPerDificultat(dificultat);
+    const trams = tramsIRPFPerDefecte(dificultat);
+    const patrimoni = patrimoniPerDefecte();
+    const iva = ivaPerDefecte();
 
-    const perfilNom = document.getElementById('select-perfil').value;
-    const numTrams = numTramsPerDificultat(dificultatActual);
-    
-    // 1. Llegim els inputs (utilitzem la funció del motor)
-    const configImpostos = llegirConfiguracioImpostosDelDOM(numTrams);
-    
-    // 2. El motor avalua (aplica regles d'evasió si cal i calcula impostos)
-    const resultat = avaluarPerfil(paisActual, dificultatActual, perfilNom, configImpostos);
+    const cont = document.getElementById('trams-irpf');
+    cont.innerHTML = '';
+    for (let i = 0; i < numTrams; i++) {
+        const fila = document.createElement('div');
+        fila.className = 'grid grid-cols-2 gap-2 items-center';
+        fila.innerHTML = `
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">des de</span>
+                <input id="irpf-desde-${i}" type="number" value="${trams[i].desde}" class="field w-full pl-16 pr-3 py-2 text-sm text-right">
+            </div>
+            <div class="relative">
+                <input id="irpf-pct-${i}" type="number" step="0.5" value="${trams[i].percentatge}" class="field w-full pl-3 pr-7 py-2 text-sm text-right">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">%</span>
+            </div>
+        `;
+        cont.appendChild(fila);
+    }
+
+    document.getElementById('patrimoni-minim').value = patrimoni.minimExempt;
+    document.getElementById('patrimoni-pct').value = patrimoni.percentatge;
+    document.getElementById('iva-basic').value = iva.basic;
+    document.getElementById('iva-normal').value = iva.normal;
+    document.getElementById('iva-luxe').value = iva.luxe;
+
+    // Qualsevol canvi a QUALSEVOL impost recalcula els 3 blocs (cadascú mostra només el seu)
+    const tots = [
+        ...cont.querySelectorAll('input'),
+        document.getElementById('patrimoni-minim'), document.getElementById('patrimoni-pct'),
+        document.getElementById('iva-basic'), document.getElementById('iva-normal'), document.getElementById('iva-luxe')
+    ];
+    tots.forEach(input => input.addEventListener('input', recalcularPerfilSeleccionat));
+}
+
+function renderSelectorPerfils(pais) {
+    const cont = document.getElementById('selector-perfils');
+    cont.innerHTML = '';
+    pais.demografia.forEach(perfil => {
+        const chip = document.createElement('button');
+        chip.className = 'profile-chip px-4 py-2 rounded-full text-sm font-semibold border border-ink/10' +
+            (perfil.perfil === estat.perfilSeleccionat ? ' selected' : '');
+        chip.textContent = perfil.perfil;
+        chip.addEventListener('click', () => {
+            estat.perfilSeleccionat = perfil.perfil;
+            cont.querySelectorAll('.profile-chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+            recalcularPerfilSeleccionat();
+        });
+        cont.appendChild(chip);
+    });
+}
+
+function recalcularPerfilSeleccionat() {
+    if (!estat.pais || !estat.perfilSeleccionat) return;
+
+    const config = llegirConfiguracioImpostosDelDOM(estat.numTrams);
+    const resultat = avaluarPerfil(estat.pais, estat.dificultat, estat.perfilSeleccionat, config);
     if (!resultat) return;
 
-    // 3. Actualitzar UI - Dades Bàsiques
-    document.getElementById('fitxa-nom').innerText = resultat.perfil;
-    const dadesBase = paisActual.demografia.find(p => p.perfil === perfilNom);
-    document.getElementById('fitxa-poblacio').innerText = `Representa ${formatNumero(dadesBase.poblacio_absoluta)} habitants`;
-
-    // 4. Mostrar/Amagar Deduccions
-    const divDed = document.getElementById('div-deduccions');
-    if (resultat.original.deduccions_irpf > 0) {
-        divDed.classList.remove('hidden');
-        document.getElementById('fitxa-deduccions').innerText = formatEuros(resultat.original.deduccions_irpf);
-    } else {
-        divDed.classList.add('hidden');
-    }
-
-    // 5. Gestionar l'Alerta de Regla
-    const alertaDiv = document.getElementById('alerta-regla');
-    if (resultat.regla.disparada) {
-        alertaDiv.classList.remove('hidden');
-        document.getElementById('alerta-titol').innerText = "Regla Sociològica Activada";
-        document.getElementById('alerta-text').innerText = resultat.regla.consequencia;
-        
-        // Estil segons sentiment
-        const sentiment = SENTIMENT_SOCIOLOGIES[resultat.regla.sociologia.clau] || 'perill';
-        alertaDiv.className = `mb-4 p-5 rounded-lg border shadow-sm fade-in transition-all ${
-            sentiment === 'exit' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800 pulse-danger'
-        }`;
-        
-        const icona = document.getElementById('alerta-icona');
-        icona.className = sentiment === 'exit' 
-            ? 'fa-solid fa-circle-check text-2xl mt-1 text-green-600'
-            : 'fa-solid fa-triangle-exclamation text-2xl mt-1 text-red-600';
-
-    } else {
-        alertaDiv.classList.add('hidden');
-    }
-
-    // 6. Funcio auxiliar per mostrar originals tatxats si han canviat
-    const renderCanvi = (idReal, idOriginal, valorReal, valorOriginal) => {
-        document.getElementById(idReal).innerText = formatEuros(valorReal);
-        const spanOriginal = document.getElementById(idOriginal);
-        if (valorReal !== valorOriginal) {
-            spanOriginal.innerText = formatEuros(valorOriginal);
-            spanOriginal.classList.remove('hidden');
-        } else {
-            spanOriginal.classList.add('hidden');
-        }
-    };
-
-    // Pinta valors econòmics
-    renderCanvi('fitxa-ing-real', 'fitxa-ing-original', resultat.ajustat.ingressos, resultat.original.ingressos);
-    renderCanvi('fitxa-pat-real', 'fitxa-pat-original', resultat.ajustat.patrimoni, resultat.original.patrimoni);
-    renderCanvi('fitxa-des-b-real', 'fitxa-des-b-original', resultat.ajustat.despeses.basiques, resultat.original.despeses.basiques);
-    renderCanvi('fitxa-des-n-real', 'fitxa-des-n-original', resultat.ajustat.despeses.normals, resultat.original.despeses.normals);
-    renderCanvi('fitxa-des-l-real', 'fitxa-des-l-original', resultat.ajustat.despeses.luxe, resultat.original.despeses.luxe);
-
-    // 7. Pintar Impostos (El que interessa a l'alumne per fer els seus càlculs)
-    document.getElementById('fitxa-quota-irpf').innerText = formatEuros(resultat.irpf.quota);
-    document.getElementById('fitxa-irpf-detall').innerText = `Marginal: ${resultat.irpf.tipusMarginal}% | Mitjana: ${resultat.irpf.tipusMitja}%`;
-
-    document.getElementById('fitxa-quota-pat').innerText = formatEuros(resultat.patrimoni.quota);
-    document.getElementById('fitxa-pat-detall').innerText = `Base Tributable: ${formatEuros(resultat.patrimoni.baseTributable)}`;
-
-    document.getElementById('fitxa-quota-iva').innerText = formatEuros(resultat.iva.total);
-
-    document.getElementById('fitxa-quota-total').innerText = formatEuros(resultat.totalIndividual);
+    renderSeccioImpost('irpf', resultat);
+    renderSeccioImpost('patrimoni', resultat);
+    renderSeccioImpost('iva', resultat);
 }
 
-// ==========================================
-// 4. PESTANYA DE NECESSITATS (MINISTERIS)
-// ==========================================
-function renderitzarPestanyaNecessitats() {
-    const contenidor = document.getElementById('graella-ministeris');
-    contenidor.innerHTML = '';
+/**
+ * Renderitza UNA subpestanya (irpf | patrimoni | iva): la seva alerta pròpia
+ * (o pista, si encara no s'ha disparat) i la seva fitxa amb NOMÉS la quota
+ * d'aquest impost — mai un total combinat.
+ */
+function renderSeccioImpost(seccio, r) {
+    const regla = r.regla;
+    const causaSeccio = (regla && regla.afectat) ? IMPOST_A_SECCIO[regla.regla.impost] : null;
+    const esAquestaLaCausa = causaSeccio === seccio;
+    const disparada = regla && regla.disparada;
 
-    const deps = paisActual.pressupostos_departaments;
-    
-    const icones = {
-        sanitat: '<i class="fa-solid fa-heart-pulse text-red-500"></i>',
-        educacio: '<i class="fa-solid fa-graduation-cap text-blue-500"></i>',
-        seguretat: '<i class="fa-solid fa-shield-halved text-slate-700"></i>',
-        foment: '<i class="fa-solid fa-road text-orange-500"></i>'
-    };
-    
-    const noms = { sanitat: "Sanitat Pública", educacio: "Educació Pública", seguretat: "Seguretat i Justícia", foment: "Foment i Economia" };
+    renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio);
+    renderFitxaSeccio(seccio, r, causaSeccio, disparada);
+}
 
-    Object.keys(deps).forEach(clau => {
-        const d = deps[clau];
+function renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio) {
+    const banner = document.getElementById(`alerta-${seccio}`);
+    const icona = banner.querySelector('.alerta-icona');
+    const titol = banner.querySelector('.alerta-titol');
+    const text = banner.querySelector('.alerta-text');
+    const perque = banner.querySelector('.alerta-perque');
+
+    banner.classList.remove(
+        'bg-perill-light', 'text-perill-dark',
+        'bg-exit-light', 'text-exit-dark',
+        'bg-gold/15', 'text-gold-dark'
+    );
+
+    if (esAquestaLaCausa && disparada) {
+        const esExit = SENTIMENT_SOCIOLOGIES[r.regla.sociologia.clau] === 'exit';
+        banner.classList.add(esExit ? 'bg-exit-light' : 'bg-perill-light', esExit ? 'text-exit-dark' : 'text-perill-dark');
+        icona.textContent = esExit ? '✅' : '⚠️';
+        titol.textContent = esExit ? 'Efecte positiu activat' : 'Alerta econòmica activada!';
+        text.textContent = r.regla.consequencia;
+        perque.textContent = `Per què passa? ${estat.pais.metadades.pista_sociologica}`;
+        banner.classList.add('show');
+    } else if (esAquestaLaCausa && r.regla.afectat && !disparada) {
+        banner.classList.add('bg-gold/15', 'text-gold-dark');
+        icona.textContent = '👀';
+        titol.textContent = 'Zona sensible';
+        text.textContent = 'Aquest perfil és especialment sensible a com configuris aquest impost en aquest país. Segons cap a on el moguis, pot passar alguna cosa.';
+        perque.textContent = `Pista del país: ${estat.pais.metadades.pista_sociologica}`;
+        banner.classList.add('show');
+    } else {
+        banner.classList.remove('show');
+    }
+}
+
+const COMPARACIONS_SECCIO = {
+    irpf: [{ camp: 'ingressos', etiqueta: 'Ingressos' }],
+    patrimoni: [{ camp: 'patrimoni', etiqueta: 'Patrimoni' }],
+    iva: [
+        { camp: 'despeses.basiques', etiqueta: 'Despeses bàsiques' },
+        { camp: 'despeses.normals', etiqueta: 'Despeses normals' },
+        { camp: 'despeses.luxe', etiqueta: 'Despeses de luxe' }
+    ]
+};
+
+function llegirCamp(obj, path) {
+    return path.split('.').reduce((acc, k) => acc[k], obj);
+}
+
+function renderFitxaSeccio(seccio, r, causaSeccio, disparada) {
+    const cont = document.getElementById(`fitxa-${seccio}`);
+    const esExit = disparada && r.regla.sociologia ? SENTIMENT_SOCIOLOGIES[r.regla.sociologia.clau] === 'exit' : false;
+    const colorCanvi = esExit ? 'text-exit' : 'text-perill';
+
+    const filesComparacio = COMPARACIONS_SECCIO[seccio].map(({ camp, etiqueta }) => {
+        const original = llegirCamp(r.original, camp);
+        const ajustat = llegirCamp(r.ajustat, camp);
+        const canviat = original !== ajustat;
+        const efecteIndirecte = canviat && causaSeccio && causaSeccio !== seccio;
+        return `
+            <div class="flex justify-between items-start text-sm py-1.5">
+                <span class="text-ink/50">
+                    ${etiqueta}
+                    ${efecteIndirecte ? `<br><span class="text-[10px] text-gold-dark">↳ conseqüència ${NOM_SECCIO[causaSeccio]}</span>` : ''}
+                </span>
+                <span class="font-mono-num text-right ${canviat ? colorCanvi + ' font-semibold' : ''}">
+                    ${canviat ? `<span class="line-through text-ink/30 mr-2 text-xs">${formatEuros(original)}</span>` : ''}${formatEuros(ajustat)}
+                </span>
+            </div>`;
+    }).join('');
+
+    const algunCanviAquestaSeccio = COMPARACIONS_SECCIO[seccio].some(
+        ({ camp }) => llegirCamp(r.original, camp) !== llegirCamp(r.ajustat, camp)
+    );
+
+    let badge;
+    if (causaSeccio === seccio && disparada) {
+        badge = `<span class="text-xs font-semibold px-2.5 py-1 rounded-full ${esExit ? 'bg-exit-light text-exit-dark' : 'bg-perill-light text-perill-dark'}">llei activada</span>`;
+    } else if (causaSeccio === seccio && r.regla.afectat) {
+        badge = '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gold/15 text-gold-dark">zona sensible</span>';
+    } else if (algunCanviAquestaSeccio) {
+        badge = '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gold/15 text-gold-dark">efecte indirecte</span>';
+    } else {
+        badge = '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-ink/5 text-ink/40">sense efecte aquí</span>';
+    }
+
+    let blocQuota = '';
+    if (seccio === 'irpf') {
+        blocQuota = `
+            <div class="flex justify-between text-xs text-ink/40 pt-2"><span>Tipus marginal</span><span class="font-mono-num">${r.irpf.tipusMarginal}%</span></div>
+            <div class="flex justify-between text-xs text-ink/40 pb-2"><span>Tipus mitjà efectiu</span><span class="font-mono-num">${r.irpf.tipusMitja}%</span></div>
+            <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
+                <p class="font-display font-semibold text-sm">Quota d'IRPF d'aquest individu</p>
+                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.irpf.quota)}</p>
+            </div>`;
+    } else if (seccio === 'patrimoni') {
+        blocQuota = `
+            <div class="flex justify-between text-xs text-ink/40 pt-2 pb-2"><span>Base tributable</span><span class="font-mono-num">${formatEuros(r.patrimoni.baseTributable)}</span></div>
+            <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
+                <p class="font-display font-semibold text-sm">Quota de Patrimoni d'aquest individu</p>
+                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.patrimoni.quota)}</p>
+            </div>`;
+    } else {
+        blocQuota = `
+            <div class="space-y-1 pt-2 pb-2 text-xs text-ink/40">
+                <div class="flex justify-between"><span>IVA sobre bàsiques</span><span class="font-mono-num">${formatEuros(r.iva.quotaBasica)}</span></div>
+                <div class="flex justify-between"><span>IVA sobre normals</span><span class="font-mono-num">${formatEuros(r.iva.quotaNormal)}</span></div>
+                <div class="flex justify-between"><span>IVA sobre luxe</span><span class="font-mono-num">${formatEuros(r.iva.quotaLuxe)}</span></div>
+            </div>
+            <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
+                <p class="font-display font-semibold text-sm">Quota d'IVA d'aquest individu</p>
+                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.iva.total)}</p>
+            </div>`;
+    }
+
+    cont.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+            <p class="font-display font-bold text-lg">${r.perfil}</p>
+            ${badge}
+        </div>
+        <div class="mb-1">${filesComparacio}</div>
+        ${blocQuota}
+    `;
+}
+
+// ---------------------------------------------------------------
+// PESTANYA C · NECESSITATS DEPARTAMENTALS (pressupost editable)
+// ---------------------------------------------------------------
+const DEPT_CLAUS = ['sanitat', 'educacio', 'seguretat', 'foment'];
+
+function crearTargetesDepartaments() {
+    const cont = document.getElementById('departaments-targetes');
+    cont.innerHTML = '';
+    DEPT_CLAUS.forEach(clau => {
+        const info = ICONES_DEPARTAMENTS[clau];
         const card = document.createElement('div');
-        card.className = "bg-white p-6 rounded-xl shadow-sm border border-slate-200";
-        
+        card.className = 'card p-6';
+        card.dataset.dept = clau;
         card.innerHTML = `
-            <div class="flex items-center gap-3 mb-6 border-b pb-4">
-                <div class="text-3xl">${icones[clau]}</div>
-                <h3 class="text-xl font-bold text-slate-800">${noms[clau]}</h3>
+            <div class="flex items-center gap-3 mb-3">
+                <span class="text-2xl">${info.icona}</span>
+                <p class="font-display font-bold text-lg">${info.nom}</p>
             </div>
-            
-            <div class="space-y-4">
-                <div class="flex justify-between items-center p-3 bg-red-50 rounded border-l-4 border-red-500">
-                    <div>
-                        <span class="block font-bold text-red-800">Mínim Vital</span>
-                        <span class="text-xs text-red-600">Risc de col·lapse si no s'arriba</span>
-                    </div>
-                    <span class="font-black text-red-700">${formatEuros(d.minim)}</span>
-                </div>
-                
-                <div class="flex justify-between items-center p-3 bg-yellow-50 rounded border-l-4 border-yellow-500">
-                    <div>
-                        <span class="block font-bold text-yellow-800">Manteniment Normal</span>
-                        <span class="text-xs text-yellow-600">Serveis estables</span>
-                    </div>
-                    <span class="font-black text-yellow-700">${formatEuros(d.normal)}</span>
-                </div>
-                
-                <div class="flex justify-between items-center p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                    <div>
-                        <span class="block font-bold text-blue-800">Manteniment Òptim</span>
-                        <span class="text-xs text-blue-600">Bona qualitat i eficiència</span>
-                    </div>
-                    <span class="font-black text-blue-700">${formatEuros(d.optim)}</span>
-                </div>
-                
-                <div class="flex justify-between items-center p-3 bg-green-50 rounded border-l-4 border-green-500">
-                    <div>
-                        <span class="block font-bold text-green-800">Excel·lència</span>
-                        <span class="text-xs text-green-600">Grans projectes de futur</span>
-                    </div>
-                    <span class="font-black text-green-700">${formatEuros(d.excellencia)}</span>
-                </div>
+            <div class="mb-3">
+                <p class="text-xs uppercase tracking-wide text-ink/40">Assignat aquest any</p>
+                <p class="valor font-mono-num font-bold text-2xl text-institut stat-flip">—</p>
+                <p class="pctlabel text-xs text-ink/40 mt-0.5"></p>
             </div>
+            <div class="verdicte rounded-xl p-3 text-sm font-semibold mb-4"></div>
+            <div class="escala grid grid-cols-4 gap-1.5"></div>
         `;
-        contenidor.appendChild(card);
+        cont.appendChild(card);
+    });
+}
+
+function avaluarNivellPressupost(valor, nivells) {
+    if (valor < nivells.minim) {
+        return { tier: 'catastrofe', emoji: '🚨', classes: 'bg-perill-light text-perill-dark',
+            missatge: 'Per sota del mínim. El departament col·lapsa: talls de servei i queixes ciutadanes.' };
+    }
+    if (valor < nivells.normal) {
+        return { tier: 'ajustat', emoji: '😬', classes: 'bg-gold/15 text-gold-dark',
+            missatge: 'Al llindar mínim. Funciona, però molt ajustat de recursos.' };
+    }
+    if (valor < nivells.optim) {
+        return { tier: 'normal', emoji: '🙂', classes: 'bg-institut/10 text-institut',
+            missatge: 'Nivell normal. El servei funciona amb normalitat.' };
+    }
+    if (valor < nivells.excellencia) {
+        return { tier: 'optim', emoji: '😀', classes: 'bg-exit-light text-exit-dark',
+            missatge: 'Nivell òptim. Els ciutadans n\'estan molt satisfets.' };
+    }
+    return { tier: 'excellencia', emoji: '✨', classes: 'bg-exit text-white ring-2 ring-gold',
+        missatge: 'Excel·lència! Referent absolut en aquest àmbit.' };
+}
+
+function miniNivell(etiqueta, valor, actiu) {
+    return `
+        <div class="rounded-lg px-1.5 py-1.5 text-center ${actiu ? 'bg-institut text-white' : 'bg-paper text-ink/40'}">
+            <p class="text-[9px] font-semibold uppercase tracking-wide">${etiqueta}</p>
+            <p class="font-mono-num text-[10px] mt-0.5">${formatEuros(valor)}</p>
+        </div>`;
+}
+
+function recalcularDepartaments() {
+    if (!estat.pressupostosDepartaments) return;
+
+    const total = parseFloat(document.getElementById('pressupost-total').value) || 0;
+    const pcts = {};
+    let suma = 0;
+    DEPT_CLAUS.forEach(clau => {
+        const v = parseFloat(document.getElementById(`pct-${clau}`).value) || 0;
+        pcts[clau] = v;
+        suma += v;
+    });
+
+    const sumaEl = document.getElementById('suma-percentatges');
+    sumaEl.textContent = `Suma: ${suma}%`;
+    sumaEl.classList.remove('bg-exit-light', 'text-exit-dark', 'bg-perill-light', 'text-perill-dark');
+    if (suma === 100) {
+        sumaEl.classList.add('bg-exit-light', 'text-exit-dark');
+    } else {
+        sumaEl.classList.add('bg-perill-light', 'text-perill-dark');
+    }
+
+    DEPT_CLAUS.forEach(clau => {
+        const nivells = estat.pressupostosDepartaments[clau];
+        const valor = total * (pcts[clau] / 100);
+        const avaluacio = avaluarNivellPressupost(valor, nivells);
+
+        const card = document.querySelector(`[data-dept="${clau}"]`);
+        card.querySelector('.valor').textContent = formatEuros(valor);
+        card.querySelector('.pctlabel').textContent = `${pcts[clau]}% del pressupost total`;
+
+        const verdicte = card.querySelector('.verdicte');
+        verdicte.className = 'verdicte rounded-xl p-3 text-sm font-semibold mb-4 ' + avaluacio.classes;
+        verdicte.textContent = `${avaluacio.emoji} ${avaluacio.missatge}`;
+
+        card.querySelector('.escala').innerHTML =
+            miniNivell('Mínim', nivells.minim, valor >= nivells.minim) +
+            miniNivell('Normal', nivells.normal, valor >= nivells.normal) +
+            miniNivell('Òptim', nivells.optim, valor >= nivells.optim) +
+            miniNivell('Excel·lència', nivells.excellencia, valor >= nivells.excellencia);
     });
 }
