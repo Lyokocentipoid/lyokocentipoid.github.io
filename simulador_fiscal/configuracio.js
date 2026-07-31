@@ -297,5 +297,26 @@ const DADES_SIMULACIO = {
                 consequenciaDefecte: "Percepció d'injustícia: creix el rebuig social davant la baixa fiscalitat als rics."
             }
         ]
-    }
+    },
+
+    // ==========================================
+    // CONTEXT ECONÒMIC (només per al solucionari del professor)
+    // D'on venia el país (fixat per la llavor, no depèn dels impostos)
+    // i quin esdeveniment extern viu enguany (també fixat per la llavor).
+    // ==========================================
+    puntsPartida: [
+        { valor: -1, nom: "Recessió", icona: "📉", descripcio: "El país arrossegava una recessió econòmica: producció a la baixa i atur elevat." },
+        { valor: 0, nom: "Estabilitat", icona: "➖", descripcio: "L'economia del país es trobava en un moment d'estabilitat, sense grans sotragades." },
+        { valor: 1, nom: "Creixement", icona: "📈", descripcio: "El país vivia una fase de creixement econòmic sostingut." }
+    ],
+    esdevenimentsExterns: [
+        { valor: -1, nom: "Sequera prolongada", descripcio: "Una sequera prolongada colpeja l'agricultura i encareix els aliments." },
+        { valor: -1, nom: "Crisi energètica", descripcio: "El preu de l'energia es dispara als mercats internacionals." },
+        { valor: -1, nom: "Tensions comercials", descripcio: "Un conflicte comercial amb un soci important trenca cadenes de subministrament." },
+        { valor: 0, nom: "Any tranquil", descripcio: "No hi ha cap esdeveniment extern especialment rellevant aquest any." },
+        { valor: 0, nom: "Canvis normatius veïns", descripcio: "Un país veí canvia la seva normativa econòmica, sense efecte directe encara." },
+        { valor: 1, nom: "Boom turístic", descripcio: "Un boom turístic omple hotels i comerços de tot el país." },
+        { valor: 1, nom: "Nou acord comercial", descripcio: "Un nou acord comercial obre mercats d'exportació." },
+        { valor: 1, nom: "Inversió estrangera", descripcio: "Grans empreses estrangeres decideixen instal·lar-se al país." }
+    ]
 };
