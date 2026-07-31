@@ -147,6 +147,12 @@ function generarPais(llavorNum, dificultat) {
         pactesPais[cat] = triarElement(DADES_SIMULACIO.pactes[cat]);
     });
 
+    // 3.2c. Context econòmic (només per al solucionari del professor):
+    // d'on venia el país i quin esdeveniment extern viu enguany. Tots dos
+    // depenen NOMÉS de la llavor, mai dels impostos que es proposin.
+    const puntPartida = triarElement(DADES_SIMULACIO.puntsPartida);
+    const esdevenimentExtern = triarElement(DADES_SIMULACIO.esdevenimentsExterns);
+
     // 3.3. Preparar la demografia
     const llistaPerfils = obtenirPerfils(dificultat, random);
     let demografiaFinal = [];
@@ -230,6 +236,7 @@ function generarPais(llavorNum, dificultat) {
         },
         demografia: demografiaFinal,
         pactes: pactesPais,
+        context_economic: { puntPartida, esdevenimentExtern },
         pressupostos_departaments: pressupostos,
         pressupost_any_anterior: pressupostAnyAnterior
     };
