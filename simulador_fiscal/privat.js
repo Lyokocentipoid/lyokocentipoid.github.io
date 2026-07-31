@@ -24,7 +24,8 @@ const NOM_IMPOST_LLARG = {
     patrimoni_minim_exempt: 'Patrimoni (mínim exempt)',
     iva_basic: 'IVA bàsic',
     iva_normal: 'IVA normal',
-    iva_luxe: 'IVA luxe'
+    iva_luxe: 'IVA luxe',
+    societats: 'Societats'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,7 +46,7 @@ function carregarPaisHandler() {
     estatPrivat.numTrams = numTramsPerDificultat(dificultat);
 
     renderInfoPais(pais, dificultat);
-    renderFormularisImpostos(dificultat);
+    renderFormularisImpostos(pais, dificultat);
     renderInputsDepartaments(pais);
 
     document.getElementById('pais-info').classList.remove('hidden');
@@ -69,6 +70,11 @@ function renderInfoPais(pais, dificultat) {
     pistaEl.textContent = pais.metadades.pista_sociologica;
     repetirAnimacio(pistaEl, 'text-pop');
 
+    document.getElementById('info-arquetip-nom').textContent = pais.arquetip.nom;
+    const arquetipPistaEl = document.getElementById('info-arquetip-pista');
+    arquetipPistaEl.textContent = pais.arquetip.pista;
+    repetirAnimacio(arquetipPistaEl, 'text-pop');
+
     const contPactes = document.getElementById('info-pactes');
     contPactes.innerHTML = '';
     Object.keys(pais.pactes).forEach((cat, i) => {
@@ -84,9 +90,9 @@ function renderInfoPais(pais, dificultat) {
 // ---------------------------------------------------------------
 // PAS 2 · FORMULARIS D'IMPOSTOS (igual que a index.html, tots junts)
 // ---------------------------------------------------------------
-function renderFormularisImpostos(dificultat) {
+function renderFormularisImpostos(pais, dificultat) {
     const numTrams = numTramsPerDificultat(dificultat);
-    const tramsSuggerits = tramsIRPFPerDefecte(dificultat);
+    const sug = pais.suggeriments;
 
     const cont = document.getElementById('trams-irpf');
     cont.innerHTML = '';
@@ -96,17 +102,23 @@ function renderFormularisImpostos(dificultat) {
         fila.innerHTML = `
             <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">des de</span>
-                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].desde}">
+                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${sug.trams[i].desde}">
             </div>
             <div class="relative">
-                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].percentatge}">
+                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${sug.trams[i].percentatge}">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">%</span>
             </div>
         `;
         cont.appendChild(fila);
     }
 
-    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe'].forEach(id => {
+    document.getElementById('patrimoni-minim').placeholder = `Ex: ${sug.patrimoni.minimExempt}`;
+    document.getElementById('patrimoni-pct').placeholder = `Ex: ${sug.patrimoni.percentatge}`;
+    document.getElementById('iva-basic').placeholder = `Ex: ${sug.iva.basic}`;
+    document.getElementById('iva-normal').placeholder = `Ex: ${sug.iva.normal}`;
+    document.getElementById('iva-luxe').placeholder = `Ex: ${sug.iva.luxe}`;
+    document.getElementById('societats-pct').placeholder = `Ex: ${sug.societats}`;
+    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe', 'societats-pct'].forEach(id => {
         document.getElementById(id).value = '';
     });
 }
@@ -170,6 +182,11 @@ function calcularResultatsReals() {
         detallPerfils.push({ perfil, r, totalPerfil });
     });
 
+    // Impost de Societats: agregat sobre el valor empresarial del país,
+    // no per perfil — s'hi suma igualment a la recaptació total real.
+    const resultatSocietats = calcularSocietats(pais.valor_empresarial, config.societats);
+    recaptacioTotal += resultatSocietats.quota;
+
     // Resultat per departament, calculat un sol cop i reutilitzat tant per
     // a les targetes com per a la "Situació econòmica del proper any".
     const resultatsDepartaments = Object.keys(pais.pressupostos_departaments).map(clau => {
@@ -180,13 +197,13 @@ function calcularResultatsReals() {
         return { clau, nivells, pct, valorReal, avaluacio };
     });
 
-    renderRecaptacio(recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA);
+    renderRecaptacio(recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA, resultatSocietats.quota);
     renderComparativaAnyAnterior(recaptacioTotal, pais.pressupost_any_anterior);
-    renderAuditoria(pais, config);
+    renderAuditoria(pais, config, resultatSocietats);
     renderDepartamentsReals(pais, resultatsDepartaments);
     renderTaulaPerfils(detallPerfils);
-    renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA);
-    renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils);
+    renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA, resultatSocietats.quota);
+    renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils, resultatSocietats);
 
     document.getElementById('resultats').classList.remove('hidden');
     const resultatsEl = document.getElementById('resultats');
@@ -195,11 +212,12 @@ function calcularResultatsReals() {
     }
 }
 
-function renderRecaptacio(total, irpf, patrimoni, iva) {
+function renderRecaptacio(total, irpf, patrimoni, iva, societats) {
     animarNumero(document.getElementById('recaptacio-total'), total, formatEuros, 900);
     animarNumero(document.getElementById('recaptacio-irpf'), irpf, formatEuros, 900);
     animarNumero(document.getElementById('recaptacio-patrimoni'), patrimoni, formatEuros, 900);
     animarNumero(document.getElementById('recaptacio-iva'), iva, formatEuros, 900);
+    animarNumero(document.getElementById('recaptacio-societats'), societats, formatEuros, 900);
 }
 
 function renderComparativaAnyAnterior(total, anyAnterior) {
@@ -214,11 +232,11 @@ function renderComparativaAnyAnterior(total, anyAnterior) {
 }
 
 // ---------------------------------------------------------------
-// AUDITORIA: Pactes de País + Límits Absoluts
+// AUDITORIA: Pactes de País + Límits Absoluts + Inviabilitat Empresarial
 // ---------------------------------------------------------------
-function renderAuditoria(pais, config) {
+function renderAuditoria(pais, config, resultatSocietats) {
     const pactes = avaluarPactes(pais, config);
-    const limits = avaluarLimitsAbsoluts(config);
+    const limits = avaluarLimitsAbsoluts(pais, config);
 
     const cont = document.getElementById('auditoria-contingut');
     cont.innerHTML = '';
@@ -247,6 +265,16 @@ function renderAuditoria(pais, config) {
             i++
         ));
     });
+
+    cont.appendChild(titolAuditoria('Inviabilitat Empresarial'));
+    const okSocietats = resultatSocietats.pctInviable === 0;
+    cont.appendChild(filaAuditoria(
+        'Societats',
+        `${pais.num_empreses ? formatNumero(pais.num_empreses) + ' empreses estimades · ' : ''}Base efectiva després d'inviabilitat: ${formatEuros(resultatSocietats.baseEfectiva)}`,
+        okSocietats ? '✅ Cap empresa inviable' : `🔥 ${resultatSocietats.pctInviable}% d'empreses inviables`,
+        okSocietats,
+        i++
+    ));
 }
 
 function titolAuditoria(text) {
@@ -349,7 +377,7 @@ function renderTaulaPerfils(detallPerfils) {
 // ---------------------------------------------------------------
 // ANÀLISI DEL SISTEMA TRIBUTARI
 // ---------------------------------------------------------------
-const REFERENCIA_EUROPA = { irpf: 45, iva_normal: 21, iva_basic: 8 };
+const REFERENCIA_EUROPA = { irpf: 45, iva_normal: 21, iva_basic: 8, societats: 23 };
 
 function insightCard(titol, html, index) {
     const div = document.createElement('div');
@@ -359,7 +387,7 @@ function insightCard(titol, html, index) {
     return div;
 }
 
-function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA) {
+function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA, recaptacioSocietats) {
     const cont = document.getElementById('analisi-contingut');
     cont.innerHTML = '';
     if (!detallPerfils.length || recaptacioTotal <= 0) return;
@@ -412,11 +440,14 @@ function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacio
     const pesIRPF = (recaptacioIRPF / recaptacioTotal) * 100;
     const pesPatrimoni = (recaptacioPatrimoni / recaptacioTotal) * 100;
     const pesIVA = (recaptacioIVA / recaptacioTotal) * 100;
+    const pesSocietats = (recaptacioSocietats / recaptacioTotal) * 100;
     let base;
-    if (pesIVA >= pesIRPF && pesIVA >= pesPatrimoni) {
+    if (pesIVA >= pesIRPF && pesIVA >= pesPatrimoni && pesIVA >= pesSocietats) {
         base = 'basat majoritàriament en el <strong>consum</strong> (IVA). És el tipus de base fiscal amb més tendència a ser regressiva, ja que tothom hi paga el mateix tipus independentment del que guanyi.';
-    } else if (pesPatrimoni >= pesIRPF && pesPatrimoni >= pesIVA) {
+    } else if (pesPatrimoni >= pesIRPF && pesPatrimoni >= pesIVA && pesPatrimoni >= pesSocietats) {
         base = 'basat majoritàriament en el <strong>patrimoni</strong> acumulat: penalitza l\'estalvi i la riquesa acumulada per sobre de la renda del treball.';
+    } else if (pesSocietats >= pesIRPF && pesSocietats >= pesIVA && pesSocietats >= pesPatrimoni) {
+        base = 'basat majoritàriament en l\'<strong>impost de societats</strong>: descarrega la ciutadania a canvi de posar en risc la viabilitat de les empreses.';
     } else {
         base = 'basat majoritàriament en la <strong>renda</strong> (IRPF): és el tipus de base fiscal amb més marge per ser progressiva, ja que es pot graduar per trams.';
     }
@@ -425,10 +456,11 @@ function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacio
         : 'Amb un pes de Patrimoni notable, el disseny penalitza mantenir grans patrimonis: incentiva gastar-lo o invertir-lo en lloc d\'acumular-lo.';
     cont.appendChild(insightCard(
         'Pes de cada impost en la recaptació',
-        `<div class="flex gap-4 text-xs font-mono-num text-ink/60 mb-2">
+        `<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono-num text-ink/60 mb-2">
             <span>IRPF: <strong class="text-ink">${pesIRPF.toFixed(1)}%</strong></span>
             <span>Patrimoni: <strong class="text-ink">${pesPatrimoni.toFixed(1)}%</strong></span>
             <span>IVA: <strong class="text-ink">${pesIVA.toFixed(1)}%</strong></span>
+            <span>Societats: <strong class="text-ink">${pesSocietats.toFixed(1)}%</strong></span>
         </div>
         <p class="text-sm text-ink/80 leading-relaxed">Un sistema ${base} ${notaEstalvi}</p>`,
         2
@@ -459,6 +491,7 @@ function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacio
                 ${filaCompara('IRPF (tram més alt)', irpfTop, REFERENCIA_EUROPA.irpf)}
                 ${filaCompara('IVA normal', config.iva.normal, REFERENCIA_EUROPA.iva_normal)}
                 ${filaCompara('IVA bàsic', config.iva.basic, REFERENCIA_EUROPA.iva_basic)}
+                ${filaCompara('Societats', config.societats, REFERENCIA_EUROPA.societats)}
             </tbody>
         </table>
         <p class="text-xs text-ink/50 mt-2">Patrimoni (${config.patrimoni.percentatge}%): la majoria de països d'Europa Occidental no en té; on existeix, sol rondar el 0,2%–1%.</p>`,
@@ -489,10 +522,10 @@ function factorCard(titol, titolPrincipal, descripcio, index) {
  * capçalera adopten el to.
  */
 function calcularVeredicte(total) {
-    if (total <= -4) return { emoji: '📉', nom: 'Recessió profunda', classes: 'bg-perill text-white', mood: 'mood--profunda', glow: 'veredicte-glow-perill' };
+    if (total <= -5) return { emoji: '📉', nom: 'Recessió profunda', classes: 'bg-perill text-white', mood: 'mood--profunda', glow: 'veredicte-glow-perill' };
     if (total <= -2) return { emoji: '🔻', nom: 'Recessió', classes: 'bg-perill-light text-perill-dark', mood: 'mood--recessio', glow: '' };
     if (total <= 1) return { emoji: '➖', nom: 'Estancament', classes: 'bg-gold/15 text-gold-dark', mood: 'mood--estancament', glow: '' };
-    if (total <= 3) return { emoji: '📈', nom: 'Creixement moderat', classes: 'bg-exit-light text-exit-dark', mood: 'mood--creixement', glow: '' };
+    if (total <= 4) return { emoji: '📈', nom: 'Creixement moderat', classes: 'bg-exit-light text-exit-dark', mood: 'mood--creixement', glow: '' };
     return { emoji: '🚀', nom: 'Bonança', classes: 'bg-exit text-white', mood: 'mood--bonanca', glow: 'veredicte-glow-bonanca' };
 }
 
@@ -503,7 +536,7 @@ function aplicarAmbient(mood) {
     document.body.classList.add(mood);
 }
 
-function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils) {
+function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils, resultatSocietats) {
     const cont = document.getElementById('situacio-contingut');
     const puntPartida = pais.context_economic.puntPartida;
     const esdeveniment = pais.context_economic.esdevenimentExtern;
@@ -535,9 +568,36 @@ function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils) {
     else if (fraccioRisc <= 0.75) scoreD = -1;
     else scoreD = -2;
 
+    // E: evolució empresarial — si l'impost de societats no expulsa empreses,
+    // la gent no marxa i se'n poden crear de noves; si en fa inviables moltes,
+    // el teixit empresarial es contreu.
+    const pctInviable = resultatSocietats.pctInviable;
+    let scoreE, empresarialTitol, empresarialDescripcio;
+    if (pctInviable === 0) {
+        scoreE = 2;
+        empresarialTitol = 'Es creen noves empreses';
+        empresarialDescripcio = 'El tipus de societats no expulsa ningú: el teixit empresarial creix amb normalitat.';
+    } else if (pctInviable < 20) {
+        scoreE = 1;
+        empresarialTitol = 'Lleuger creixement empresarial';
+        empresarialDescripcio = `Un ${pctInviable}% de les empreses ho passa malament, però la majoria es manté i en poden néixer de noves.`;
+    } else if (pctInviable < 40) {
+        scoreE = 0;
+        empresarialTitol = 'Teixit empresarial estancat';
+        empresarialDescripcio = `Amb un ${pctInviable}% d'empreses inviables, ni creix ni decreix de manera clara: es couen a foc lent.`;
+    } else if (pctInviable < 65) {
+        scoreE = -1;
+        empresarialTitol = 'Es comencen a tancar empreses';
+        empresarialDescripcio = `Un ${pctInviable}% de les empreses es tornen inviables: comencen a tancar i costa que en neixin de noves.`;
+    } else {
+        scoreE = -2;
+        empresarialTitol = 'Fuga i tancament d\'empreses';
+        empresarialDescripcio = `Amb un ${pctInviable}% d'empreses inviables, el teixit empresarial es desploma: tanquen o marxen a un altre país.`;
+    }
+
     const scoreA = puntPartida.valor;
     const scoreB = esdeveniment.valor;
-    const total = scoreA + scoreB + scoreC + scoreD;
+    const total = scoreA + scoreB + scoreC + scoreD + scoreE;
 
     const veredicte = calcularVeredicte(total);
     aplicarAmbient(veredicte.mood);
@@ -545,13 +605,14 @@ function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils) {
     const nProspera = detallPerfils.length - nRisc;
 
     cont.innerHTML = `
-        <div class="grid sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             ${factorCard("D'on venia el país", `${puntPartida.icona} ${puntPartida.nom}`, puntPartida.descripcio, 0)}
             ${factorCard('Esdeveniment d\'enguany', esdeveniment.nom, esdeveniment.descripcio, 1)}
             ${factorCard('Qualitat del pressupost', `Nivell mitjà: ${NOM_TIER_DEPT[scoreC]}`, `Mitjana dels ${resultatsDepartaments.length} departaments finançats.`, 2)}
             ${factorCard('Salut dels perfils', `${nProspera} de ${detallPerfils.length} perfils prosperen`, nRisc === 0 ? 'Cap perfil empitjora la seva situació respecte a l\'any anterior.' : notesRisc.join(' '), 3)}
+            ${factorCard('Evolució empresarial', empresarialTitol, empresarialDescripcio, 4)}
         </div>
-        <div class="rounded-2xl p-5 mt-4 entrada ${veredicte.classes} ${veredicte.glow}" style="animation-delay:340ms">
+        <div class="rounded-2xl p-5 mt-4 entrada ${veredicte.classes} ${veredicte.glow}" style="animation-delay:420ms">
             <p class="text-xs font-semibold uppercase tracking-wide opacity-70">Veredicte per al proper any</p>
             <p class="font-display font-bold text-xl mt-1">${veredicte.emoji} ${veredicte.nom}</p>
         </div>
