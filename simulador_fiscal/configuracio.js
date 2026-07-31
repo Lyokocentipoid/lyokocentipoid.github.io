@@ -247,8 +247,10 @@ const DADES_SIMULACIO = {
             {
                 clau: "patrimoni_minim_cohesio",
                 min: 0.2,
-                descripcio: "Pacte de cohesió territorial: cal recaptar almenys un 0,2% en Patrimoni per mantenir els fons de cohesió.",
-                consequenciaDefecte: "Sanció de cohesió: es retiren els fons de compensació territorial."
+                max: 8,
+                descripcio: "Pacte de cohesió territorial: cal recaptar com a mínim un 0,2% en Patrimoni per mantenir els fons de cohesió, però sense superar el 8% per no expulsar la inversió.",
+                consequenciaDefecte: "Sanció de cohesió: es retiren els fons de compensació territorial.",
+                consequenciaExces: "Fuga d'inversors: superar aquest sostre expulsa la inversió del país."
             }
         ],
         iva_basic: [
