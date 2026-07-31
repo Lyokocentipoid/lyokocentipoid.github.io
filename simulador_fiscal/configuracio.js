@@ -3,25 +3,22 @@
 const DADES_SIMULACIO = {
     noms: {
         ciutats: [
-            "Vila-real de Dalt", "Sant Feliu del Racó", "Nou Horitzó", "Vallclara", "La Pineda Alta",
-            "Castellfosc", "Riuverd", "Montserè", "Les Planes del Sud", "Aigüesblanques",
-            "Torre del Vent", "Rocafort de l'Oest", "Prats de Llum", "Vilanova del Pont",
-            "Sant Elm de les Roques", "Boscam", "Altamura", "Pobla de la Vall", "Cervera del Pla",
-            "Fontclara", "Puigverd", "Les Fonts de l'Abadia", "Riba-roja d'Amunt", "Campdorat",
-            "Vilabella", "Sant Hilari del Bosc", "Albaflor", "Torrelles de la Costa", "Vallfreda",
-            "Mont-roig del Camp", "Perafita Nova", "Roca-salada", "Aiguafreda de Baix",
-            "Sant Joan de les Abadesses Nou", "Bellmunt", "Prada de la Serra", "Vallderoure",
-            "Castellterçol Nou", "Vilafranca del Nord", "Les Gorges", "Vilanova del Mar",
-            "Sot del Pi", "Coma-ruga Alta", "Sant Pere dels Horts", "Riudellots Vells"
+            "Refreburg", "Zolvenna", "Còdol Fosc", "Vent-i-Sal", "Trencaboira",
+            "Llumbrina", "Fumaroja", "Marboira", "Cendrafall", "Argenmar",
+            "Pontfosc", "Gebrall", "Solraig", "Nuvolet Alt", "Torrelluna",
+            "Vidreflor", "Cristalona", "Bruixamar", "Ombraverd", "Ferroneu",
+            "Salmarina", "Pedrafoc", "Aurinvent", "Cranquell", "Tempestor",
+            "Riufum", "Estelboira", "Verdanit", "Ombravella", "Flamarosa",
+            "Grisalona", "Ventiscor", "Fosquívol", "Lluminosa del Cim", "Rovellac",
+            "Bromera Alta", "Càntir Fosc", "Nevorella", "Sotaboira", "Vidrall"
         ],
         paisos: [
-            "República de Novàlia", "Regne d'Oceana", "Unió de Terraferma", "Estat de Meridiana",
-            "Federació d'Aura", "Principat de Llevant", "República Ígnia", "Confederació dels Cims",
-            "Gran Ducat de Valls", "Aliança de les Illes Lliures", "República de Tramuntana",
-            "Nació de Garbí", "Unió dels Quatre Rius", "Principat de Valira", "Estat del Delta",
-            "Federació de l'Ebre", "República de l'Alba", "Regne de Tàrraco", "Ducat d'Ibèria",
-            "República Celta", "Aliança del Nord", "Estat Sobirà de les Valls", "República de Dàcia",
-            "Unió Continental", "Confederació de la Costa"
+            "Confederació de Brumàntia", "Unió de Fumàrdia", "Principat de Ventúria", "Regne de Solvenna",
+            "República de Nébrica", "Estat de Cendrària", "Federació d'Ombrelàndia", "Gran Ducat de Zeltòria",
+            "Aliança de Marbrenc", "Nació de Rovellònia", "Unió de Còdolàndia", "Principat de Fosquívia",
+            "Estat del Gebre", "Federació de Trencaflam", "República de l'Argenta", "Regne de Vidrell",
+            "Ducat de Salrovenc", "República Ambriosa", "Aliança de Flamúrbia", "Estat Sobirà de Nívolis",
+            "República de Bruixània", "Unió Continental de Zolveria", "Confederació de la Boirosa", "Regne de Tempestània"
         ]
     },
 
