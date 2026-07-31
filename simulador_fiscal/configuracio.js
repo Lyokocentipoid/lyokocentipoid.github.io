@@ -296,8 +296,65 @@ const DADES_SIMULACIO = {
                 descripcio: "Un pacte d'equitat fiscal exigeix un mínim del 15% d'IVA en productes de luxe.",
                 consequenciaDefecte: "Percepció d'injustícia: creix el rebuig social davant la baixa fiscalitat als rics."
             }
+        ],
+        societats: [
+            {
+                clau: "societats_sostre_competitivitat",
+                max: 30,
+                descripcio: "Pacte de competitivitat internacional: l'impost de societats no pot superar el 30%.",
+                consequenciaExces: "Deslocalització empresarial: les seus socials es traslladen a jurisdiccions més competitives."
+            },
+            {
+                clau: "societats_minim_financament",
+                min: 12,
+                descripcio: "Un pla de finançament públic exigeix un mínim del 12% en l'impost de societats.",
+                consequenciaDefecte: "El pla de finançament públic es cancel·la per manca d'ingressos garantits."
+            }
         ]
     },
+
+    // ==========================================
+    // ARQUETIPS ECONÒMICS
+    // Cada país generat adopta un dels 4 arquetips, que ajusta dues coses
+    // alhora: el cost dels departaments (factorPressupost) i la
+    // sensibilitat de la ciutadania als impostos alts (factorSensibilitat,
+    // que escala els Límits Absoluts). "economia_patrimonial" també altera
+    // com es generen els perfils (menys ingressos, més patrimoni i despesa).
+    // ==========================================
+    arquetipsEconomics: [
+        {
+            clau: "estat_minim",
+            nom: "Estat Mínim",
+            pista: "Aquest país aposta per un sector públic reduït: els departaments necessiten menys recursos per funcionar, però la ciutadania no tolera gens bé la pressió fiscal alta.",
+            factorPressupost: 0.65,
+            factorSensibilitat: 0.55,
+            modificadorPerfils: null
+        },
+        {
+            clau: "benestar_exigent",
+            nom: "Benestar Exigent",
+            pista: "Aquest país té un estat del benestar molt desenvolupat: els departaments requereixen molts més recursos per funcionar amb normalitat, però la ciutadania tolera millor la pressió fiscal.",
+            factorPressupost: 1.55,
+            factorSensibilitat: 1.10,
+            modificadorPerfils: null
+        },
+        {
+            clau: "economia_patrimonial",
+            nom: "Economia Patrimonial",
+            pista: "La riquesa d'aquest país està concentrada en patrimoni acumulat, no en la renda del treball: els ingressos declarats són baixos, però el patrimoni i les despeses de la ciutadania són alts.",
+            factorPressupost: 1.0,
+            factorSensibilitat: 1.0,
+            modificadorPerfils: { ingressos: 0.65, patrimoni: 1.75, despeses: 1.25 }
+        },
+        {
+            clau: "equilibrada",
+            nom: "Economia Equilibrada",
+            pista: "Aquest país no té cap particularitat econòmica destacable: ni l'estat ni la ciutadania mostren sensibilitats especials.",
+            factorPressupost: 1.0,
+            factorSensibilitat: 1.0,
+            modificadorPerfils: null
+        }
+    ],
 
     // ==========================================
     // CONTEXT ECONÒMIC (només per al solucionari del professor)
