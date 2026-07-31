@@ -26,86 +26,6 @@ const estat = {
     chart: null
 };
 
-const ICONES_DEPARTAMENTS = {
-    sanitat:          { nom: 'Sanitat',          icona: '🏥' },
-    educacio:         { nom: 'Educació',         icona: '🎓' },
-    seguretat:        { nom: 'Seguretat',        icona: '🛡️' },
-    foment:           { nom: 'Foment',           icona: '🏗️' },
-    serveis_socials:  { nom: 'Serveis Socials',  icona: '🤝' },
-    cultura:          { nom: 'Cultura',          icona: '🎭' },
-    justicia:         { nom: 'Justícia',         icona: '⚖️' },
-    medi_ambient:     { nom: 'Medi Ambient',     icona: '🌳' },
-    habitatge:        { nom: 'Habitatge',        icona: '🏠' }
-};
-
-// Missatges de conseqüència PER DEPARTAMENT i per nivell assolit.
-// {lloc} s'substitueix pel nom del país/ciutat generat.
-const MISSATGES_DEPARTAMENT = {
-    sanitat: {
-        catastrofe: "🚨 Col·lapse sanitari a {lloc}: les urgències desborden i la gent espera hores al carrer.",
-        ajustat: "😬 Sanitat molt justa a {lloc}: les llistes d'espera no paren de créixer.",
-        normal: "🙂 La sanitat de {lloc} funciona amb normalitat, sense grans queixes.",
-        optim: "😀 {lloc} té una sanitat de referència: llistes curtes i bon material.",
-        excellencia: "✨ Sanitat d'excel·lència a {lloc}: hospitals capdavanters que atrauen pacients d'altres llocs."
-    },
-    educacio: {
-        catastrofe: "🚨 Crisi educativa a {lloc}: aules superpoblades i professorat que plega.",
-        ajustat: "😬 Educació ajustada a {lloc}: falten recursos, però les escoles es mantenen obertes.",
-        normal: "🙂 L'educació de {lloc} compleix amb normalitat el currículum.",
-        optim: "😀 Escoles ben dotades a {lloc}: ràtios baixes i bons resultats acadèmics.",
-        excellencia: "✨ Sistema educatiu d'excel·lència a {lloc}: referent en innovació pedagògica."
-    },
-    seguretat: {
-        catastrofe: "🚨 Inseguretat descontrolada a {lloc}: la delinqüència es dispara i la policia no dona l'abast.",
-        ajustat: "😬 Seguretat justa a {lloc}: pocs efectius per cobrir tot el territori.",
-        normal: "🙂 {lloc} manté un nivell de seguretat normal i controlat.",
-        optim: "😀 {lloc} és un dels llocs més segurs de la regió.",
-        excellencia: "✨ Seguretat exemplar a {lloc}: la delinqüència és pràcticament inexistent."
-    },
-    foment: {
-        catastrofe: "🚨 Infraestructures en ruïnes a {lloc}: carreteres plenes de sotracs i talls constants.",
-        ajustat: "😬 Manteniment mínim a {lloc}: les infraestructures es van fent malbé lentament.",
-        normal: "🙂 Les infraestructures de {lloc} es mantenen en un estat correcte.",
-        optim: "😀 {lloc} inverteix bé en infraestructures modernes i ben connectades.",
-        excellencia: "✨ {lloc} és un model d'infraestructures de primer nivell."
-    },
-    serveis_socials: {
-        catastrofe: "🚨 Xarxa social trencada a {lloc}: la gent gran i les famílies vulnerables queden desateses.",
-        ajustat: "😬 Serveis socials sota mínims a {lloc}: llargues llistes d'espera per a ajudes bàsiques.",
-        normal: "🙂 Els serveis socials de {lloc} atenen els casos amb normalitat.",
-        optim: "😀 {lloc} té una bona xarxa de suport social i acompanyament.",
-        excellencia: "✨ Model de referència en serveis socials: {lloc} no deixa ningú enrere."
-    },
-    cultura: {
-        catastrofe: "🚨 Vida cultural apagada a {lloc}: tanquen biblioteques, museus i sales.",
-        ajustat: "😬 Cultura amb el mínim indispensable a {lloc}: poca oferta i pressupost ajustat.",
-        normal: "🙂 {lloc} manté una oferta cultural normal i estable.",
-        optim: "😀 {lloc} té una escena cultural vibrant, amb festivals i activitats regulars.",
-        excellencia: "✨ {lloc} es converteix en referent cultural que atrau visitants de tot arreu."
-    },
-    justicia: {
-        catastrofe: "🚨 Col·lapse judicial a {lloc}: els casos triguen anys a resoldre's.",
-        ajustat: "😬 Jutjats saturats a {lloc}: la justícia funciona, però amb molts endarreriments.",
-        normal: "🙂 El sistema judicial de {lloc} resol els casos en terminis raonables.",
-        optim: "😀 Justícia àgil a {lloc}: pocs endarreriments i bon accés als tribunals.",
-        excellencia: "✨ {lloc} té un sistema judicial exemplar, ràpid i de plena confiança ciutadana."
-    },
-    medi_ambient: {
-        catastrofe: "🚨 Emergència ambiental a {lloc}: contaminació i espais naturals abandonats.",
-        ajustat: "😬 Protecció ambiental mínima a {lloc}: els problemes ambientals es van acumulant.",
-        normal: "🙂 {lloc} manté uns nivells ambientals correctes i estables.",
-        optim: "😀 {lloc} cuida bé el seu entorn: parcs, reciclatge i aire net.",
-        excellencia: "✨ {lloc} és un model de sostenibilitat ambiental, admirat arreu."
-    },
-    habitatge: {
-        catastrofe: "🚨 Emergència habitacional a {lloc}: lloguers disparats i famílies sense casa.",
-        ajustat: "😬 Habitatge just a {lloc}: pocs pisos assequibles i llistes d'espera llargues.",
-        normal: "🙂 El mercat de l'habitatge de {lloc} es manté estable.",
-        optim: "😀 {lloc} té una bona oferta d'habitatge assequible.",
-        excellencia: "✨ {lloc} resol l'accés a l'habitatge de manera exemplar."
-    }
-};
-
 const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42', '#4A3868', '#8A6816'];
 
 // Quin "impost" del motor de regles correspon a quina subpestanya de la interfície
@@ -118,9 +38,8 @@ const IMPOST_A_SECCIO = {
 };
 const NOM_SECCIO = { irpf: "de l'IRPF", patrimoni: 'del Patrimoni', iva: "de l'IVA" };
 
-function interpolar(text, lloc) {
-    return text.replace(/\{lloc\}/g, lloc);
-}
+// interpolar(), ICONES_DEPARTAMENTS i MISSATGES_DEPARTAMENT venen de motor-fiscal.js
+// (compartits amb privat.js perquè els noms i missatges siguin idèntics als dos webs).
 
 // ---------------------------------------------------------------
 // INICIALITZACIÓ
@@ -354,12 +273,27 @@ function renderSeccioImpost(seccio, r) {
     const causaSeccio = (regla && regla.afectat) ? IMPOST_A_SECCIO[regla.regla.impost] : null;
     const esAquestaLaCausa = causaSeccio === seccio;
     const disparada = regla && regla.disparada;
+    const limitInfo = obtenirLimitsAbsolutsSeccio(seccio, r.limitsAbsoluts);
 
-    renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio);
-    renderFitxaSeccio(seccio, r, causaSeccio, disparada);
+    renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio, limitInfo);
+    renderFitxaSeccio(seccio, r, causaSeccio, disparada, limitInfo);
 }
 
-function renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio) {
+/** Retorna la llista de límits absoluts superats que pertanyen a aquesta secció */
+function obtenirLimitsAbsolutsSeccio(seccio, limitsAbsoluts) {
+    if (!limitsAbsoluts) return [];
+    if (seccio === 'irpf') return limitsAbsoluts.irpf.superat ? [limitsAbsoluts.irpf] : [];
+    if (seccio === 'patrimoni') {
+        return ['patrimoni', 'patrimoni_minim_exempt']
+            .map(cat => limitsAbsoluts[cat])
+            .filter(info => info.superat);
+    }
+    return ['iva_basic', 'iva_normal', 'iva_luxe']
+        .map(cat => limitsAbsoluts[cat])
+        .filter(info => info.superat);
+}
+
+function renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio, limitInfo) {
     const banner = document.getElementById(`alerta-${seccio}`);
     const icona = banner.querySelector('.alerta-icona');
     const titol = banner.querySelector('.alerta-titol');
@@ -372,7 +306,16 @@ function renderAlertaSeccio(seccio, r, esAquestaLaCausa, disparada, causaSeccio)
         'bg-gold/15', 'text-gold-dark'
     );
 
-    if (esAquestaLaCausa && disparada) {
+    // Els límits absoluts tenen sempre la màxima prioritat visual:
+    // són certs, sempre, independentment del país o de la sociologia.
+    if (limitInfo && limitInfo.length > 0) {
+        banner.classList.add('bg-perill-light', 'text-perill-dark');
+        icona.textContent = '🔥';
+        titol.textContent = limitInfo.length > 1 ? 'Límits absoluts superats!' : 'Límit absolut superat!';
+        text.textContent = limitInfo.map(l => l.consequencia).join(' ');
+        perque.textContent = 'Cap país del món aguanta aquest nivell d\'impost, tingui la sociologia que tingui: per sobre d\'aquest punt, l\'economia deixa de funcionar de manera realista.';
+        banner.classList.add('show');
+    } else if (esAquestaLaCausa && disparada) {
         const esExit = SENTIMENT_SOCIOLOGIES[r.regla.sociologia.clau] === 'exit';
         banner.classList.add(esExit ? 'bg-exit-light' : 'bg-perill-light', esExit ? 'text-exit-dark' : 'text-perill-dark');
         icona.textContent = esExit ? '✅' : '⚠️';
@@ -406,23 +349,24 @@ function llegirCamp(obj, path) {
     return path.split('.').reduce((acc, k) => acc[k], obj);
 }
 
-function renderFitxaSeccio(seccio, r, causaSeccio, disparada) {
+function renderFitxaSeccio(seccio, r, causaSeccio, disparada, limitInfo) {
     const cont = document.getElementById(`fitxa-${seccio}`);
     const esExit = disparada && r.regla.sociologia ? SENTIMENT_SOCIOLOGIES[r.regla.sociologia.clau] === 'exit' : false;
     const colorCanvi = esExit ? 'text-exit' : 'text-perill';
+    const hiHaLimitSuperat = limitInfo && limitInfo.length > 0;
 
     const filesComparacio = COMPARACIONS_SECCIO[seccio].map(({ camp, etiqueta }) => {
         const original = llegirCamp(r.original, camp);
         const ajustat = llegirCamp(r.ajustat, camp);
         const canviat = original !== ajustat;
-        const efecteIndirecte = canviat && causaSeccio && causaSeccio !== seccio;
+        const efecteIndirecte = canviat && causaSeccio && causaSeccio !== seccio && !hiHaLimitSuperat;
         return `
             <div class="flex justify-between items-start text-sm py-1.5">
                 <span class="text-ink/50">
                     ${etiqueta}
                     ${efecteIndirecte ? `<br><span class="text-[10px] text-gold-dark">↳ conseqüència ${NOM_SECCIO[causaSeccio]}</span>` : ''}
                 </span>
-                <span class="font-mono-num text-right ${canviat ? colorCanvi + ' font-semibold' : ''}">
+                <span class="font-mono-num text-right ${canviat ? (hiHaLimitSuperat ? 'text-perill' : colorCanvi) + ' font-semibold' : ''}">
                     ${canviat ? `<span class="line-through text-ink/30 mr-2 text-xs">${formatEuros(original)}</span>` : ''}${formatEuros(ajustat)}
                 </span>
             </div>`;
@@ -433,7 +377,9 @@ function renderFitxaSeccio(seccio, r, causaSeccio, disparada) {
     );
 
     let badge;
-    if (causaSeccio === seccio && disparada) {
+    if (hiHaLimitSuperat) {
+        badge = '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-perill-light text-perill-dark">límit absolut superat</span>';
+    } else if (causaSeccio === seccio && disparada) {
         badge = `<span class="text-xs font-semibold px-2.5 py-1 rounded-full ${esExit ? 'bg-exit-light text-exit-dark' : 'bg-perill-light text-perill-dark'}">llei activada</span>`;
     } else if (causaSeccio === seccio && r.regla.afectat) {
         badge = '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gold/15 text-gold-dark">zona sensible</span>';
@@ -528,13 +474,7 @@ function renderPacteIva(pactes) {
 // ---------------------------------------------------------------
 // PESTANYA C · PRESSUPOST GENERAL (pressupost editable, multi-departament)
 // ---------------------------------------------------------------
-function avaluarNivellPressupost(valor, nivells) {
-    if (valor < nivells.minim) return { tier: 'catastrofe', classes: 'bg-perill-light text-perill-dark' };
-    if (valor < nivells.normal) return { tier: 'ajustat', classes: 'bg-gold/15 text-gold-dark' };
-    if (valor < nivells.optim) return { tier: 'normal', classes: 'bg-institut/10 text-institut' };
-    if (valor < nivells.excellencia) return { tier: 'optim', classes: 'bg-exit-light text-exit-dark' };
-    return { tier: 'excellencia', classes: 'bg-exit text-white ring-2 ring-gold' };
-}
+// avaluarNivellPressupost() ve de motor-fiscal.js (compartida amb privat.js)
 
 function miniNivell(etiqueta, valor, actiu) {
     return `
