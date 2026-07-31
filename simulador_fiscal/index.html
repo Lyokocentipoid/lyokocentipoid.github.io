@@ -95,9 +95,6 @@
   .subtab-btn.active { background:#2B3A67; color:#fff; border-color:#2B3A67; }
   .subtab-btn:not(.active):hover { color:#2B3A67; border-color:#2B3A67; }
 
-  /* ---- pista permanent al laboratori ---- */
-  .pista-hint { background:#4A3868; }
-
   /* ---- targeta de pacte de país ---- */
   .pacte-card { border: 1.5px solid #E2E4E1; background:#fff; transition: background .25s ease, border-color .25s ease; }
   .pacte-card.ok { background:#DCF3E8; border-color:#157F5C33; }
@@ -209,10 +206,9 @@
           </div>
 
           <!-- pista sociologica -->
-          <div class="card p-6 lg:col-span-2 bg-pista relative overflow-hidden">
-            <div class="absolute inset-0 stripe-flag text-gold pointer-events-none"></div>
-            <p class="relative text-xs font-semibold uppercase tracking-wide text-gold-light/80">🔍 Pista sociològica del país</p>
-            <p id="pista-sociologica" class="relative font-display text-lg text-white mt-2 leading-relaxed"></p>
+          <div class="card p-6 lg:col-span-2 bg-white border border-pista/20 relative overflow-hidden">
+            <p class="text-xs font-semibold uppercase tracking-wide text-pista">🔍 Pista sociològica del país</p>
+            <p id="pista-sociologica" class="font-display text-lg text-ink mt-2 leading-relaxed"></p>
           </div>
         </div>
 
@@ -240,12 +236,11 @@
       <div id="laboratori-contingut" class="hidden space-y-5">
 
         <!-- pista permanent, per entendre el "per què" -->
-        <div class="pista-hint rounded-2xl p-4 flex items-start gap-3 relative overflow-hidden">
-          <div class="absolute inset-0 stripe-flag text-gold pointer-events-none"></div>
-          <span class="relative text-lg">🔍</span>
-          <div class="relative">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gold-light/80">Pista sociològica del país</p>
-            <p id="pista-laboratori" class="text-sm text-white/90 mt-0.5"></p>
+        <div class="rounded-2xl p-4 flex items-start gap-3 bg-white border border-pista/20">
+          <span class="text-lg">🔍</span>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-pista">Pista sociològica del país</p>
+            <p id="pista-laboratori" class="text-sm text-ink/70 mt-0.5"></p>
           </div>
         </div>
 
