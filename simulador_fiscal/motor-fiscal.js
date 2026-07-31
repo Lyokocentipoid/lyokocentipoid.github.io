@@ -416,6 +416,49 @@ function formatNumero(num) {
 }
 
 // ---------------------------------------------------------------
+// ANIMACIÓ DE NÚMEROS (compartida entre public.js i privat.js)
+// Fa comptar un element de "l'últim valor mostrat" fins al nou valor,
+// en lloc de canviar el text de cop. Guarda el valor cru a
+// data-valor-numeric perquè la següent crida sàpiga d'on partir.
+// ---------------------------------------------------------------
+const requestFrame = (typeof window !== 'undefined' && window.requestAnimationFrame)
+    ? window.requestAnimationFrame.bind(window)
+    : function (cb) { return setTimeout(() => cb(Date.now()), 16); };
+
+function animarNumero(el, valorObjectiu, formatter, duracioMs) {
+    if (!el) return;
+    duracioMs = duracioMs || 700;
+    const valorInicial = parseFloat(el.dataset.valorNumeric || '0') || 0;
+    if (valorInicial === valorObjectiu) {
+        el.textContent = formatter(valorObjectiu);
+        return;
+    }
+    const inici = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    function pas(ara) {
+        const transcorregut = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - inici;
+        const progres = Math.min(transcorregut / duracioMs, 1);
+        const ease = 1 - Math.pow(1 - progres, 3); // easeOutCubic
+        const valorActual = valorInicial + (valorObjectiu - valorInicial) * ease;
+        el.textContent = formatter(valorActual);
+        if (progres < 1) {
+            requestFrame(pas);
+        } else {
+            el.textContent = formatter(valorObjectiu);
+            el.dataset.valorNumeric = valorObjectiu;
+        }
+    }
+    requestFrame(pas);
+}
+
+/** Reinicia una animació CSS d'un element (treu la classe, força reflow, la torna a posar) */
+function repetirAnimacio(el, classe) {
+    if (!el) return;
+    el.classList.remove(classe);
+    void el.offsetWidth; // força el reflow
+    el.classList.add(classe);
+}
+
+// ---------------------------------------------------------------
 // 6. DADES I AVALUACIÓ DE DEPARTAMENTS
 // Compartit entre public.js (pestanya C, pressupost proposat a mà per
 // l'alumne) i privat.js (pressupost calculat a partir de la recaptació
@@ -514,3 +557,7 @@ function avaluarNivellPressupost(valor, nivells) {
     if (valor < nivells.excellencia) return { tier: 'optim', classes: 'bg-exit-light text-exit-dark' };
     return { tier: 'excellencia', classes: 'bg-exit text-white ring-2 ring-gold' };
 }
+
+// Paleta compartida per donar una identitat de color coherent als perfils i
+// departaments (gràfic, xips, targetes...) als dos webs.
+const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42', '#4A3868', '#8A6816'];
