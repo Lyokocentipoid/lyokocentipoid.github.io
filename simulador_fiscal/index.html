@@ -16,12 +16,13 @@
     theme: {
       extend: {
         colors: {
-          paper:   '#F2F3ED',
+          paper:   '#F3F4F6',
           ink:      '#1B2430',
           institut: { DEFAULT:'#2B3A67', light:'#4A5B94', dark:'#1C2748' },
           gold:     { DEFAULT:'#C9971F', light:'#E3B94A', dark:'#8A6816' },
           exit:     { DEFAULT:'#157F5C', light:'#DCF3E8', dark:'#0E5C42' },
           perill:   { DEFAULT:'#C43D3D', light:'#FBE1E1', dark:'#8F2727' },
+          pista:    { DEFAULT:'#4A3868', light:'#EEE8F5', dark:'#332648' },
         },
         fontFamily: {
           display: ['"Space Grotesk"', 'sans-serif'],
@@ -38,16 +39,9 @@
 </script>
 
 <style>
-  body { font-family: 'Inter', sans-serif; background-color: #F2F3ED; color: #1B2430; }
+  body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; color: #1B2430; }
   .font-display { font-family: 'Space Grotesk', sans-serif; }
   .font-mono-num { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
-
-  /* ---- textura de paper subtil ---- */
-  .paper-texture {
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(27,36,48,0.035) 1px, transparent 0);
-    background-size: 22px 22px;
-  }
 
   /* ---- pestanyes ---- */
   .tab-btn { position: relative; transition: color .25s ease; }
@@ -102,7 +96,12 @@
   .subtab-btn:not(.active):hover { color:#2B3A67; border-color:#2B3A67; }
 
   /* ---- pista permanent al laboratori ---- */
-  .pista-hint { background:#2B3A67; }
+  .pista-hint { background:#4A3868; }
+
+  /* ---- targeta de pacte de país ---- */
+  .pacte-card { border: 1.5px solid #E2E4E1; background:#fff; transition: background .25s ease, border-color .25s ease; }
+  .pacte-card.ok { background:#DCF3E8; border-color:#157F5C33; }
+  .pacte-card.fora { background:#FBE1E1; border-color:#C43D3D33; }
 
   /* ---- inputs ---- */
   .field {
@@ -126,7 +125,7 @@
   ::-webkit-scrollbar-thumb { background:#D9DBD1; border-radius:4px; }
 </style>
 </head>
-<body class="paper-texture min-h-screen pb-24">
+<body class="min-h-screen pb-24">
 
   <!-- ============ CAPÇALERA ============ -->
   <header class="sticky top-0 z-30 bg-paper/90 backdrop-blur border-b border-ink/10">
@@ -136,7 +135,7 @@
           <div class="w-10 h-10 rounded-xl bg-institut flex items-center justify-center text-gold-light font-display font-bold text-lg shrink-0">€</div>
           <div>
             <h1 class="font-display font-bold text-xl leading-tight">Simulador Fiscal</h1>
-            <p class="text-xs text-ink/50 -mt-0.5">Eina educativa · dissenya els impostos d'un país</p>
+            <p class="text-xs text-ink/50 -mt-0.5">Eina educativa · Impostos</p>
           </div>
         </div>
         <div id="pais-badge" class="hidden sm:flex items-center gap-2 text-sm font-mono-num text-ink/60">
@@ -146,15 +145,15 @@
       <!-- pestanyes -->
       <nav class="flex gap-6 mt-5 text-sm font-semibold font-display">
         <button data-tab="demografia" class="tab-btn active pb-3">
-          A · Demografia
+          A - País: Visió General
           <span class="tab-underline"></span>
         </button>
         <button data-tab="laboratori" class="tab-btn pb-3">
-          B · Laboratori d'Impostos
+          B - Sistema Tributari
           <span class="tab-underline"></span>
         </button>
         <button data-tab="departaments" class="tab-btn pb-3">
-          C · Necessitats Departamentals
+          C - Pressupost General
           <span class="tab-underline"></span>
         </button>
       </nav>
@@ -172,7 +171,7 @@
       <div class="card p-6 flex flex-col md:flex-row md:items-end gap-4">
         <div class="flex-1">
           <label class="block text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1.5">Llavor</label>
-          <input id="input-llavor" type="number" value="12345" class="field w-full px-3 py-2.5 text-sm" placeholder="Ex: 12345">
+          <input id="input-llavor" type="number" class="field w-full px-3 py-2.5 text-sm" placeholder="Ex: 1234">
         </div>
         <div class="flex-1">
           <label class="block text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1.5">Dificultat</label>
@@ -210,7 +209,7 @@
           </div>
 
           <!-- pista sociologica -->
-          <div class="card p-6 lg:col-span-2 bg-institut relative overflow-hidden">
+          <div class="card p-6 lg:col-span-2 bg-pista relative overflow-hidden">
             <div class="absolute inset-0 stripe-flag text-gold pointer-events-none"></div>
             <p class="relative text-xs font-semibold uppercase tracking-wide text-gold-light/80">🔍 Pista sociològica del país</p>
             <p id="pista-sociologica" class="relative font-display text-lg text-white mt-2 leading-relaxed"></p>
@@ -265,10 +264,17 @@
 
         <!-- ========== SUBPESTANYA IRPF ========== -->
         <div id="subtab-irpf" class="subtab-panel grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div class="lg:col-span-2 card p-5">
-            <p class="font-display font-semibold text-sm mb-1">IRPF — trams progressius</p>
-            <p class="text-xs text-ink/40 mb-3">Introdueix, per a cada tram, des de quants euros comença i quin percentatge s'aplica. Aquest impost NOMÉS grava els ingressos.</p>
-            <div id="trams-irpf" class="space-y-2"></div>
+          <div class="lg:col-span-2 space-y-4">
+            <div class="card p-5">
+              <p class="font-display font-semibold text-sm mb-1">IRPF — trams progressius</p>
+              <p class="text-xs text-ink/40 mb-3">Introdueix, per a cada tram, des de quants euros comença i quin percentatge s'aplica. Aquest impost NOMÉS grava els ingressos.</p>
+              <div id="trams-irpf" class="space-y-2"></div>
+            </div>
+            <div id="pacte-irpf" class="pacte-card rounded-2xl p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1">📜 Pacte de País</p>
+              <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-2"></p>
+              <p class="pacte-estat text-sm font-semibold"></p>
+            </div>
           </div>
           <div class="lg:col-span-3 space-y-4">
             <div id="alerta-irpf" class="alerta-banner rounded-2xl relative overflow-hidden px-5">
@@ -287,18 +293,25 @@
 
         <!-- ========== SUBPESTANYA PATRIMONI ========== -->
         <div id="subtab-patrimoni" class="subtab-panel hidden grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div class="lg:col-span-2 card p-5">
-            <p class="font-display font-semibold text-sm mb-1">Impost sobre el Patrimoni</p>
-            <p class="text-xs text-ink/40 mb-3">Grava el patrimoni acumulat (per sobre del mínim exempt) amb un tipus únic. NOMÉS afecta el patrimoni, no els ingressos.</p>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-ink/50 mb-1">Mínim exempt (€)</label>
-                <input id="patrimoni-minim" type="number" class="field w-full px-3 py-2 text-sm">
+          <div class="lg:col-span-2 space-y-4">
+            <div class="card p-5">
+              <p class="font-display font-semibold text-sm mb-1">Impost sobre el Patrimoni</p>
+              <p class="text-xs text-ink/40 mb-3">Grava el patrimoni acumulat (per sobre del mínim exempt) amb un tipus únic. NOMÉS afecta el patrimoni, no els ingressos.</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-ink/50 mb-1">Mínim exempt (€)</label>
+                  <input id="patrimoni-minim" type="number" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 100000">
+                </div>
+                <div>
+                  <label class="block text-xs text-ink/50 mb-1">% impost</label>
+                  <input id="patrimoni-pct" type="number" step="0.1" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 1">
+                </div>
               </div>
-              <div>
-                <label class="block text-xs text-ink/50 mb-1">% impost</label>
-                <input id="patrimoni-pct" type="number" step="0.1" class="field w-full px-3 py-2 text-sm">
-              </div>
+            </div>
+            <div id="pacte-patrimoni" class="pacte-card rounded-2xl p-4">
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1">📜 Pacte de País</p>
+              <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-2"></p>
+              <p class="pacte-estat text-sm font-semibold"></p>
             </div>
           </div>
           <div class="lg:col-span-3 space-y-4">
@@ -318,21 +331,41 @@
 
         <!-- ========== SUBPESTANYA IVA ========== -->
         <div id="subtab-iva" class="subtab-panel hidden grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div class="lg:col-span-2 card p-5">
-            <p class="font-display font-semibold text-sm mb-1">IVA</p>
-            <p class="text-xs text-ink/40 mb-3">Grava el consum en tres categories de despesa. NOMÉS afecta el que es gasta, no els ingressos ni el patrimoni.</p>
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block text-xs text-ink/50 mb-1">Bàsic %</label>
-                <input id="iva-basic" type="number" step="0.5" class="field w-full px-3 py-2 text-sm">
+          <div class="lg:col-span-2 space-y-4">
+            <div class="card p-5">
+              <p class="font-display font-semibold text-sm mb-1">IVA</p>
+              <p class="text-xs text-ink/40 mb-3">Grava el consum en tres categories de despesa. NOMÉS afecta el que es gasta, no els ingressos ni el patrimoni.</p>
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs text-ink/50 mb-1">Bàsic %</label>
+                  <input id="iva-basic" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 4">
+                </div>
+                <div>
+                  <label class="block text-xs text-ink/50 mb-1">Normal %</label>
+                  <input id="iva-normal" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 10">
+                </div>
+                <div>
+                  <label class="block text-xs text-ink/50 mb-1">Luxe %</label>
+                  <input id="iva-luxe" type="number" step="0.5" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 21">
+                </div>
               </div>
-              <div>
-                <label class="block text-xs text-ink/50 mb-1">Normal %</label>
-                <input id="iva-normal" type="number" step="0.5" class="field w-full px-3 py-2 text-sm">
+            </div>
+            <div id="pacte-iva" class="pacte-card rounded-2xl p-4 space-y-3">
+              <p class="text-xs font-semibold uppercase tracking-wide text-ink/50">📜 Pactes de País</p>
+              <div class="pacte-fila" data-cat="iva_basic">
+                <p class="text-[11px] font-semibold text-ink/50 mb-0.5">IVA bàsic</p>
+                <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-1"></p>
+                <p class="pacte-estat text-sm font-semibold"></p>
               </div>
-              <div>
-                <label class="block text-xs text-ink/50 mb-1">Luxe %</label>
-                <input id="iva-luxe" type="number" step="0.5" class="field w-full px-3 py-2 text-sm">
+              <div class="pacte-fila border-t border-ink/10 pt-3" data-cat="iva_normal">
+                <p class="text-[11px] font-semibold text-ink/50 mb-0.5">IVA normal</p>
+                <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-1"></p>
+                <p class="pacte-estat text-sm font-semibold"></p>
+              </div>
+              <div class="pacte-fila border-t border-ink/10 pt-3" data-cat="iva_luxe">
+                <p class="text-[11px] font-semibold text-ink/50 mb-0.5">IVA luxe</p>
+                <p class="pacte-descripcio text-xs text-ink/60 leading-relaxed mb-1"></p>
+                <p class="pacte-estat text-sm font-semibold"></p>
               </div>
             </div>
           </div>
@@ -364,38 +397,29 @@
       </div>
       <div id="departaments-contingut" class="hidden space-y-6">
 
+        <!-- pressupost de l'any anterior -->
+        <div class="card p-6 bg-institut relative overflow-hidden">
+          <div class="absolute inset-0 stripe-flag text-gold pointer-events-none"></div>
+          <p class="relative text-xs font-semibold uppercase tracking-wide text-gold-light/80">Pressupost de l'any anterior</p>
+          <p id="pressupost-any-anterior-valor" class="relative font-mono-num font-bold text-3xl text-white mt-1 stat-flip"></p>
+          <p id="pressupost-any-anterior-explicacio" class="relative text-sm text-white/80 mt-1"></p>
+        </div>
+
         <div class="card p-6">
-          <p class="font-display font-semibold text-sm mb-1">Configura el pressupost</p>
-          <p class="text-xs text-ink/40 mb-4">Introdueix quants diners té el país per gastar aquest any, i quin percentatge en destines a cada ministeri. La suma dels 4 percentatges ha de ser 100%.</p>
+          <p class="font-display font-semibold text-sm mb-1">Configura el pressupost d'enguany</p>
+          <p class="text-xs text-ink/40 mb-4">Introdueix quants diners té el país per gastar aquest any, i quin percentatge en destines a cada ministeri.</p>
 
           <div class="grid sm:grid-cols-2 gap-4 mb-5">
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1.5">Pressupost total disponible (€)</label>
-              <input id="pressupost-total" type="number" value="1000000" min="0" class="field w-full px-3 py-2.5 text-sm">
+              <input id="pressupost-total" type="number" min="0" class="field w-full px-3 py-2.5 text-sm" placeholder="Ex: 1000000">
             </div>
             <div class="flex items-end">
-              <div id="suma-percentatges" class="w-full text-center text-sm font-mono-num font-semibold px-4 py-2.5 rounded-lg"></div>
+              <div id="comparativa-any-anterior" class="w-full text-center text-sm font-mono-num font-semibold px-4 py-2.5 rounded-lg"></div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-xs text-ink/50 mb-1">🏥 Sanitat %</label>
-              <input id="pct-sanitat" type="number" value="25" min="0" max="100" class="field w-full px-3 py-2 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs text-ink/50 mb-1">🎓 Educació %</label>
-              <input id="pct-educacio" type="number" value="25" min="0" max="100" class="field w-full px-3 py-2 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs text-ink/50 mb-1">🛡️ Seguretat %</label>
-              <input id="pct-seguretat" type="number" value="25" min="0" max="100" class="field w-full px-3 py-2 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs text-ink/50 mb-1">🏗️ Foment %</label>
-              <input id="pct-foment" type="number" value="25" min="0" max="100" class="field w-full px-3 py-2 text-sm">
-            </div>
-          </div>
+          <div id="pct-departaments-inputs" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
         </div>
 
         <div id="departaments-targetes" class="grid grid-cols-1 sm:grid-cols-2 gap-5"></div>
