@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador Fiscal Educatiu</title>
-<link rel="icon" type="image/x-icon" href="/assets/img/economic.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
@@ -109,14 +109,74 @@
   .field:focus { outline:none; border-color:#2B3A67; box-shadow: 0 0 0 3px rgba(43,58,103,0.15); }
 
   .btn-primary {
-    background:#2B3A67; color:#fff; transition: background .2s ease, transform .15s ease;
+    background:#2B3A67; color:#fff; transition: background .2s ease, transform .15s ease, box-shadow .2s ease;
   }
-  .btn-primary:hover { background:#1C2748; transform: translateY(-1px); }
-  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:hover { background:#1C2748; transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(43,58,103,.55); }
+  .btn-primary:active { transform: translateY(0) scale(.98); }
 
   /* number tick animation for headline stats */
   .stat-flip { animation: flipUp .5s cubic-bezier(.16,1,.3,1) both; }
   @keyframes flipUp { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:translateY(0);} }
+
+  /* ---- pols ràpid per a números que es recalculen sovint ---- */
+  .stat-pop { animation: statPop .38s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes statPop {
+    0%   { opacity:.3; transform: scale(.88); }
+    55%  { transform: scale(1.04); }
+    100% { opacity:1; transform: scale(1); }
+  }
+
+  /* ---- entrada esglaonada de targetes (fes servir amb style="animation-delay:...") ---- */
+  .entrada {
+    animation: entradaCard .5s cubic-bezier(.16,1,.3,1) both;
+  }
+  @keyframes entradaCard {
+    from { opacity:0; transform: translateY(14px) scale(.98); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  /* ---- flaix de ressaltat per a text que canvia (nom país, pista...) ---- */
+  .text-pop { animation: textPop .55s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes textPop {
+    0%   { opacity:0; transform: translateY(4px); }
+    100% { opacity:1; transform: translateY(0); }
+  }
+
+  /* ---- brillantor per a l'excel·lència ---- */
+  .excellencia-shine { position:relative; overflow:hidden; }
+  .excellencia-shine::after {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.55) 40%, transparent 60%);
+    transform: translateX(-120%);
+    animation: shineSweep 2.6s ease-in-out infinite;
+  }
+  @keyframes shineSweep {
+    0%, 30% { transform: translateX(-120%); }
+    60%, 100% { transform: translateX(120%); }
+  }
+
+  /* ---- punt de color lligat al gràfic, per als xips de perfil ---- */
+  .chip-dot { width:.5rem; height:.5rem; border-radius:9999px; display:inline-block; margin-right:.4rem; transition: transform .2s ease; }
+  .profile-chip.selected .chip-dot { transform: scale(1.3); }
+
+  /* ---- barra d'accent superior a les targetes de departament/perfil ---- */
+  .accent-top { height:4px; border-radius: 16px 16px 0 0; margin: -1.5rem -1.5rem 1.25rem -1.5rem; }
+
+  /* ---- subpestanyes amb identitat de color pròpia ---- */
+  .subtab-btn[data-subtab="irpf"].active { background:#2B3A67; border-color:#2B3A67; }
+  .subtab-btn[data-subtab="patrimoni"].active { background:#8A6816; border-color:#8A6816; }
+  .subtab-btn[data-subtab="iva"].active { background:#0E5C42; border-color:#0E5C42; }
+
+  /* ---- capçalera: petita respiració a l'icona ---- */
+  .logo-breathe { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.08); }
+  }
+
+  /* ---- barres mini de nivell (pestanya C): omplen animades ---- */
+  .mini-bar-track { background:#EDEEEA; border-radius:9999px; overflow:hidden; height:5px; }
+  .mini-bar-fill { height:100%; border-radius:9999px; width:0%; transition: width .8s cubic-bezier(.16,1,.3,1); }
 
   ::-webkit-scrollbar { height:8px; width:8px; }
   ::-webkit-scrollbar-thumb { background:#D9DBD1; border-radius:4px; }
@@ -129,7 +189,7 @@
     <div class="max-w-6xl mx-auto px-5 pt-5">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-institut flex items-center justify-center text-gold-light font-display font-bold text-lg shrink-0">€</div>
+          <div class="w-10 h-10 rounded-xl bg-institut flex items-center justify-center text-gold-light font-display font-bold text-lg shrink-0 logo-breathe">€</div>
           <div>
             <h1 class="font-display font-bold text-xl leading-tight">Simulador Fiscal</h1>
             <p class="text-xs text-ink/50 -mt-0.5">Eina educativa · Impostos</p>
