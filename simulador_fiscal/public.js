@@ -26,7 +26,8 @@ const estat = {
     chart: null
 };
 
-const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42', '#4A3868', '#8A6816'];
+// COLORS_CHART ve de motor-fiscal.js (compartit amb privat.js perquè els
+// departaments i perfils facin servir sempre la mateixa identitat de color).
 
 // Quin "impost" del motor de regles correspon a quina subpestanya de la interfície
 const IMPOST_A_SECCIO = {
@@ -112,7 +113,9 @@ function generarPaisHandler() {
     estat.perfilSeleccionat = pais.demografia[0].perfil;
 
     renderDemografia(pais, dificultat);
-    document.getElementById('pista-laboratori').textContent = pais.metadades.pista_sociologica;
+    const pistaLabEl = document.getElementById('pista-laboratori');
+    pistaLabEl.textContent = pais.metadades.pista_sociologica;
+    repetirAnimacio(pistaLabEl, 'text-pop');
     renderFormularisImpostos(dificultat);
     renderSelectorPerfils(pais);
     canviarSubtab('irpf');
@@ -121,25 +124,36 @@ function generarPaisHandler() {
 
     document.getElementById('demografia-buida').classList.add('hidden');
     document.getElementById('demografia-resultat').classList.remove('hidden');
+    repetirAnimacio(document.getElementById('demografia-resultat'), 'entrada');
     document.getElementById('laboratori-buit').classList.add('hidden');
     document.getElementById('laboratori-contingut').classList.remove('hidden');
+    repetirAnimacio(document.getElementById('laboratori-contingut'), 'entrada');
     document.getElementById('departaments-buit').classList.add('hidden');
     document.getElementById('departaments-contingut').classList.remove('hidden');
+    repetirAnimacio(document.getElementById('departaments-contingut'), 'entrada');
 
     const badge = document.getElementById('pais-badge');
     badge.classList.remove('hidden');
     badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-exit inline-block"></span> ${pais.metadades.nom_ubicacio}`;
+    repetirAnimacio(badge, 'text-pop');
 }
 
 // ---------------------------------------------------------------
 // PESTANYA A · PAÍS: VISIÓ GENERAL
 // ---------------------------------------------------------------
 function renderDemografia(pais, dificultat) {
-    document.getElementById('nom-pais').textContent = pais.metadades.nom_ubicacio;
+    const nomPaisEl = document.getElementById('nom-pais');
+    nomPaisEl.textContent = pais.metadades.nom_ubicacio;
+    repetirAnimacio(nomPaisEl, 'text-pop');
+
     document.getElementById('dificultat-label').textContent =
         dificultat === 'normal' ? 'Normal' : (dificultat === 'dificil' ? 'Difícil' : 'Repte');
-    document.getElementById('poblacio-total').textContent = formatNumero(pais.metadades.poblacio_total);
-    document.getElementById('pista-sociologica').textContent = pais.metadades.pista_sociologica;
+
+    animarNumero(document.getElementById('poblacio-total'), pais.metadades.poblacio_total, formatNumero, 900);
+
+    const pistaEl = document.getElementById('pista-sociologica');
+    pistaEl.textContent = pais.metadades.pista_sociologica;
+    repetirAnimacio(pistaEl, 'text-pop');
 
     const ctx = document.getElementById('chart-demografia');
     if (estat.chart) estat.chart.destroy();
@@ -157,6 +171,7 @@ function renderDemografia(pais, dificultat) {
         },
         options: {
             responsive: true,
+            animation: { duration: 900, easing: 'easeOutCubic' },
             plugins: {
                 legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 10, padding: 12 } },
                 tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw}%` } }
@@ -170,8 +185,10 @@ function renderDemografia(pais, dificultat) {
         const eco = perfil.economia_anual;
         const color = COLORS_CHART[i % COLORS_CHART.length];
         const card = document.createElement('div');
-        card.className = 'card p-5';
+        card.className = 'card p-5 entrada';
+        card.style.animationDelay = `${i * 60}ms`;
         card.innerHTML = `
+            <div class="accent-top" style="background:${color}"></div>
             <div class="flex items-center justify-between mb-3">
                 <p class="font-display font-semibold text-sm">${perfil.perfil}</p>
                 <span class="text-xs font-mono-num font-semibold px-2 py-0.5 rounded-full" style="background:${color}22; color:${color}">${perfil.percentatge}%</span>
@@ -234,11 +251,13 @@ function renderFormularisImpostos(dificultat) {
 function renderSelectorPerfils(pais) {
     const cont = document.getElementById('selector-perfils');
     cont.innerHTML = '';
-    pais.demografia.forEach(perfil => {
+    pais.demografia.forEach((perfil, i) => {
+        const color = COLORS_CHART[i % COLORS_CHART.length];
         const chip = document.createElement('button');
-        chip.className = 'profile-chip px-4 py-2 rounded-full text-sm font-semibold border border-ink/10' +
+        chip.className = 'profile-chip entrada px-4 py-2 rounded-full text-sm font-semibold border border-ink/10' +
             (perfil.perfil === estat.perfilSeleccionat ? ' selected' : '');
-        chip.textContent = perfil.perfil;
+        chip.style.animationDelay = `${i * 40}ms`;
+        chip.innerHTML = `<span class="chip-dot" style="background:${color}"></span>${perfil.perfil}`;
         chip.addEventListener('click', () => {
             estat.perfilSeleccionat = perfil.perfil;
             cont.querySelectorAll('.profile-chip').forEach(c => c.classList.remove('selected'));
@@ -392,29 +411,29 @@ function renderFitxaSeccio(seccio, r, causaSeccio, disparada, limitInfo) {
     let blocQuota = '';
     if (seccio === 'irpf') {
         blocQuota = `
-            <div class="flex justify-between text-xs text-ink/40 pt-2"><span>Tipus marginal</span><span class="font-mono-num">${r.irpf.tipusMarginal}%</span></div>
-            <div class="flex justify-between text-xs text-ink/40 pb-2"><span>Tipus mitjà efectiu</span><span class="font-mono-num">${r.irpf.tipusMitja}%</span></div>
+            <div class="flex justify-between text-xs text-ink/40 pt-2"><span>Tipus marginal</span><span class="font-mono-num stat-pop">${r.irpf.tipusMarginal}%</span></div>
+            <div class="flex justify-between text-xs text-ink/40 pb-2"><span>Tipus mitjà efectiu</span><span class="font-mono-num stat-pop">${r.irpf.tipusMitja}%</span></div>
             <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
                 <p class="font-display font-semibold text-sm">Quota d'IRPF d'aquest individu</p>
-                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.irpf.quota)}</p>
+                <p class="font-mono-num font-bold text-2xl text-institut stat-pop">${formatEuros(r.irpf.quota)}</p>
             </div>`;
     } else if (seccio === 'patrimoni') {
         blocQuota = `
-            <div class="flex justify-between text-xs text-ink/40 pt-2 pb-2"><span>Base tributable</span><span class="font-mono-num">${formatEuros(r.patrimoni.baseTributable)}</span></div>
+            <div class="flex justify-between text-xs text-ink/40 pt-2 pb-2"><span>Base tributable</span><span class="font-mono-num stat-pop">${formatEuros(r.patrimoni.baseTributable)}</span></div>
             <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
                 <p class="font-display font-semibold text-sm">Quota de Patrimoni d'aquest individu</p>
-                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.patrimoni.quota)}</p>
+                <p class="font-mono-num font-bold text-2xl text-gold-dark stat-pop">${formatEuros(r.patrimoni.quota)}</p>
             </div>`;
     } else {
         blocQuota = `
             <div class="space-y-1 pt-2 pb-2 text-xs text-ink/40">
-                <div class="flex justify-between"><span>IVA sobre bàsiques</span><span class="font-mono-num">${formatEuros(r.iva.quotaBasica)}</span></div>
-                <div class="flex justify-between"><span>IVA sobre normals</span><span class="font-mono-num">${formatEuros(r.iva.quotaNormal)}</span></div>
-                <div class="flex justify-between"><span>IVA sobre luxe</span><span class="font-mono-num">${formatEuros(r.iva.quotaLuxe)}</span></div>
+                <div class="flex justify-between"><span>IVA sobre bàsiques</span><span class="font-mono-num stat-pop">${formatEuros(r.iva.quotaBasica)}</span></div>
+                <div class="flex justify-between"><span>IVA sobre normals</span><span class="font-mono-num stat-pop">${formatEuros(r.iva.quotaNormal)}</span></div>
+                <div class="flex justify-between"><span>IVA sobre luxe</span><span class="font-mono-num stat-pop">${formatEuros(r.iva.quotaLuxe)}</span></div>
             </div>
             <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
                 <p class="font-display font-semibold text-sm">Quota d'IVA d'aquest individu</p>
-                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(r.iva.total)}</p>
+                <p class="font-mono-num font-bold text-2xl text-exit-dark stat-pop">${formatEuros(r.iva.total)}</p>
             </div>`;
     }
 
@@ -476,9 +495,12 @@ function renderPacteIva(pactes) {
 // ---------------------------------------------------------------
 // avaluarNivellPressupost() ve de motor-fiscal.js (compartida amb privat.js)
 
-function miniNivell(etiqueta, valor, actiu) {
+function miniNivell(etiqueta, valor, actiu, esExcellencia) {
+    const classes = actiu
+        ? (esExcellencia ? 'bg-gold text-white excellencia-shine' : 'bg-institut text-white')
+        : 'bg-paper text-ink/40';
     return `
-        <div class="rounded-lg px-1.5 py-1.5 text-center ${actiu ? 'bg-institut text-white' : 'bg-paper text-ink/40'}">
+        <div class="rounded-lg px-1.5 py-1.5 text-center entrada ${classes}">
             <p class="text-[9px] font-semibold uppercase tracking-wide">${etiqueta}</p>
             <p class="font-mono-num text-[10px] mt-0.5">${formatEuros(valor)}</p>
         </div>`;
@@ -489,7 +511,7 @@ function inicialitzarDepartaments(pais) {
 
     const claus = Object.keys(pais.pressupostos_departaments);
 
-    document.getElementById('pressupost-any-anterior-valor').textContent = formatEuros(pais.pressupost_any_anterior);
+    animarNumero(document.getElementById('pressupost-any-anterior-valor'), pais.pressupost_any_anterior, formatEuros, 900);
     document.getElementById('pressupost-any-anterior-explicacio').textContent =
         `${pais.metadades.nom_ubicacio} va destinar aquesta quantitat al conjunt de departaments l'any passat.`;
 
@@ -501,9 +523,11 @@ function inicialitzarDepartaments(pais) {
 function crearInputsPercentatgesDepartaments(claus) {
     const cont = document.getElementById('pct-departaments-inputs');
     cont.innerHTML = '';
-    claus.forEach(clau => {
+    claus.forEach((clau, i) => {
         const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
         const div = document.createElement('div');
+        div.className = 'entrada';
+        div.style.animationDelay = `${i * 40}ms`;
         div.innerHTML = `
             <label class="block text-xs text-ink/50 mb-1">${info.icona} ${info.nom} %</label>
             <input id="pct-${clau}" type="number" min="0" max="100" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 25">
@@ -518,19 +542,22 @@ function crearInputsPercentatgesDepartaments(claus) {
 function crearTargetesDepartaments(claus) {
     const cont = document.getElementById('departaments-targetes');
     cont.innerHTML = '';
-    claus.forEach(clau => {
+    claus.forEach((clau, i) => {
         const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
+        const color = COLORS_CHART[i % COLORS_CHART.length];
         const card = document.createElement('div');
-        card.className = 'card p-6';
+        card.className = 'card p-6 entrada';
         card.dataset.dept = clau;
+        card.style.animationDelay = `${i * 60}ms`;
         card.innerHTML = `
+            <div class="accent-top" style="background:${color}"></div>
             <div class="flex items-center gap-3 mb-3">
                 <span class="text-2xl">${info.icona}</span>
                 <p class="font-display font-bold text-lg">${info.nom}</p>
             </div>
             <div class="mb-3">
                 <p class="text-xs uppercase tracking-wide text-ink/40">Assignat aquest any</p>
-                <p class="valor font-mono-num font-bold text-2xl text-institut stat-flip">—</p>
+                <p class="valor font-mono-num font-bold text-2xl text-institut">—</p>
                 <p class="pctlabel text-xs text-ink/40 mt-0.5"></p>
             </div>
             <div class="verdicte rounded-xl p-3 text-sm font-semibold mb-4"></div>
@@ -557,6 +584,7 @@ function recalcularDepartaments() {
         const signe = diferencia >= 0 ? '+' : '';
         comparativaEl.textContent = `${signe}${diferencia.toFixed(1)}% respecte l'any anterior`;
         comparativaEl.classList.add(diferencia >= 0 ? 'bg-exit-light' : 'bg-perill-light', diferencia >= 0 ? 'text-exit-dark' : 'text-perill-dark');
+        repetirAnimacio(comparativaEl, 'stat-pop');
     }
 
     claus.forEach(clau => {
@@ -567,17 +595,20 @@ function recalcularDepartaments() {
         const missatge = interpolar(MISSATGES_DEPARTAMENT[clau][avaluacio.tier], estat.pais.metadades.nom_ubicacio);
 
         const card = document.querySelector(`[data-dept="${clau}"]`);
-        card.querySelector('.valor').textContent = formatEuros(valor);
+        animarNumero(card.querySelector('.valor'), valor, formatEuros, 350);
         card.querySelector('.pctlabel').textContent = `${pct}% del pressupost total`;
 
         const verdicte = card.querySelector('.verdicte');
         verdicte.className = 'verdicte rounded-xl p-3 text-sm font-semibold mb-4 ' + avaluacio.classes;
         verdicte.textContent = missatge;
+        repetirAnimacio(verdicte, 'text-pop');
+
+        card.classList.toggle('excellencia-shine', avaluacio.tier === 'excellencia');
 
         card.querySelector('.escala').innerHTML =
-            miniNivell('Mínim', nivells.minim, valor >= nivells.minim) +
-            miniNivell('Normal', nivells.normal, valor >= nivells.normal) +
-            miniNivell('Òptim', nivells.optim, valor >= nivells.optim) +
-            miniNivell('Excel·lència', nivells.excellencia, valor >= nivells.excellencia);
+            miniNivell('Mínim', nivells.minim, valor >= nivells.minim, false) +
+            miniNivell('Normal', nivells.normal, valor >= nivells.normal, false) +
+            miniNivell('Òptim', nivells.optim, valor >= nivells.optim, false) +
+            miniNivell('Excel·lència', nivells.excellencia, valor >= nivells.excellencia, true);
     });
 }
