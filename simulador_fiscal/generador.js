@@ -3,7 +3,9 @@
  * Generador Determinista de Poblacions - Simulador Fiscal
  *
  * IMPORTANT: Aquest fitxer requereix que 'configuracio.js' estigui carregat
- * prèviament a l'HTML perquè utilitza l'objecte global DADES_SIMULACIO.
+ * prèviament a l'HTML perquè utilitza l'objecte global DADES_SIMULACIO, i
+ * fa servir escalarLimitsAbsoluts() de motor-fiscal.js (que es crida en
+ * temps d'execució, quan motor-fiscal.js ja està carregat).
  */
 
 // 1. Motor PRNG (Pseudo-Random Number Generator)
@@ -109,8 +111,48 @@ const FACTOR_PRESSUPOST_PER_DIFICULTAT = { normal: 0.05, dificil: 0.041, repte: 
 // de Patrimoni ben aplicat pogués recaptar molt més del que la "riquesa"
 // del país semblava justificar. Per això ara hi afegim una part del
 // patrimoni (ponderat molt més fluix que els ingressos, ja que és un estoc
-// i no es pot recaptar cada any al mateix ritme que la renda).
+// i no es pot recaptar cada any al mateix ritme que la renda), i una part
+// del valor empresarial (l'impost de societats també és una font real
+// d'ingressos que abans no es tenia en compte).
 const FACTOR_RIQUESA_PATRIMONI = 0.06;
+const FACTOR_RIQUESA_EMPRESARIAL = 0.12;
+
+// ---------------------------------------------------------------
+// 2c. Suggeriments fiscals: cada país genera els SEUS, aleatoris.
+// Són NOMÉS per als placeholders dels camps — mai s'apliquen com a
+// valor real — però calia que variessin d'un país a l'altre perquè
+// copiar sempre "el número de l'exemple" no doni un bon resultat
+// arreu.
+// ---------------------------------------------------------------
+function generarSuggerimentsFiscals(dificultat, random) {
+    const numTrams = numTramsPerDificultat(dificultat);
+    const desdeBase = [0, 15000, 30000, 60000, 120000];
+    const pctBase = [16, 22, 29, 36, 44];
+
+    const trams = [];
+    for (let i = 0; i < numTrams; i++) {
+        const desde = i === 0 ? 0 : Math.round((desdeBase[i] * (0.7 + random() * 0.6)) / 1000) * 1000;
+        const percentatge = Math.max(5, Math.round(pctBase[i] * (0.7 + random() * 0.6)));
+        trams.push({ desde, percentatge });
+    }
+    // Assegurem que "desde" sigui estrictament creixent encara que l'atzar el descol·loqui
+    for (let i = 1; i < trams.length; i++) {
+        if (trams[i].desde <= trams[i - 1].desde) trams[i].desde = trams[i - 1].desde + 10000;
+    }
+
+    const patrimoni = {
+        minimExempt: Math.round((80000 + random() * 80000) / 1000) * 1000, // 80.000–160.000
+        percentatge: Math.round((0.5 + random() * 2) * 10) / 10            // 0,5–2,5
+    };
+
+    const basic = Math.round(2 + random() * 6);            // 2–8
+    const normal = Math.round(basic + 4 + random() * 10);  // sempre per sobre del bàsic
+    const luxe = Math.round(normal + 5 + random() * 15);   // sempre per sobre del normal
+
+    const societats = Math.round(15 + random() * 20);      // 15–35
+
+    return { trams, patrimoni, iva: { basic, normal, luxe }, societats };
+}
 
 // 3. Funció Principal de Generació
 function generarPais(llavorNum, dificultat) {
@@ -138,10 +180,15 @@ function generarPais(llavorNum, dificultat) {
     );
     const sociologia = triarElement(sociologiesValides);
 
-    // 3.2b. Escollir els Pactes de País: un per a cada impost, sempre.
-    // Són independents de la sociologia i vigilen TOTS els impostos,
-    // no només el que la sociologia ja controla.
-    const categoriesImpost = ["irpf", "patrimoni", "iva_basic", "iva_normal", "iva_luxe"];
+    // 3.2a. Escollir l'arquetip econòmic del país (afecta el cost dels
+    // departaments, la sensibilitat de la ciutadania als impostos, i
+    // en el cas d'"economia_patrimonial" també com es generen els perfils).
+    const arquetip = triarElement(DADES_SIMULACIO.arquetipsEconomics);
+
+    // 3.2b. Escollir els Pactes de País: un per a cada impost, sempre
+    // (incloent Societats). Són independents de la sociologia i vigilen
+    // TOTS els impostos, no només el que la sociologia ja controla.
+    const categoriesImpost = ["irpf", "patrimoni", "iva_basic", "iva_normal", "iva_luxe", "societats"];
     const pactesPais = {};
     categoriesImpost.forEach(cat => {
         pactesPais[cat] = triarElement(DADES_SIMULACIO.pactes[cat]);
@@ -166,6 +213,7 @@ function generarPais(llavorNum, dificultat) {
     });
 
     let indexRiquesaTotal = 0; // PIB simulat per calcular pressupostos
+    const modPerfils = arquetip.modificadorPerfils;
 
     // Normalització dels percentatges i creació dels perfils finals
     llistaPerfils.forEach((p, index) => {
@@ -179,6 +227,21 @@ function generarPais(llavorNum, dificultat) {
         // Varia ingressos i patrimoni un +/- 10% mantenint múltiples de 1000 per ser calculable a mà
         let ing_final = Math.round(variarPercentatge(p.ing, 0.10) / 1000) * 1000;
         let pat_final = Math.round(variarPercentatge(p.pat, 0.10) / 1000) * 1000;
+        let des_b_final = p.des_b;
+        let des_n_final = p.des_n;
+        let des_l_final = p.des_l;
+
+        // L'arquetip "economia_patrimonial" desplaça la riquesa dels
+        // ingressos cap al patrimoni acumulat (i puja les despeses).
+        if (modPerfils) {
+            if (modPerfils.ingressos !== undefined) ing_final = Math.round((ing_final * modPerfils.ingressos) / 1000) * 1000;
+            if (modPerfils.patrimoni !== undefined) pat_final = Math.round((pat_final * modPerfils.patrimoni) / 1000) * 1000;
+            if (modPerfils.despeses !== undefined) {
+                des_b_final = Math.round(des_b_final * modPerfils.despeses);
+                des_n_final = Math.round(des_n_final * modPerfils.despeses);
+                des_l_final = Math.round(des_l_final * modPerfils.despeses);
+            }
+        }
 
         indexRiquesaTotal += (ing_final * poblacioAbsoluta) + (pat_final * poblacioAbsoluta * FACTOR_RIQUESA_PATRIMONI);
 
@@ -192,19 +255,33 @@ function generarPais(llavorNum, dificultat) {
                 patrimoni: pat_final,
                 deduccions_irpf: p.deduccions,
                 despeses: {
-                    basiques: p.des_b,
-                    normals: p.des_n,
-                    luxe: p.des_l
+                    basiques: des_b_final,
+                    normals: des_n_final,
+                    luxe: des_l_final
                 }
             }
         });
     });
 
-    // 3.4. Calcular els costos pressupostaris segons la riquesa total i la dificultat
-    // Un país més ric tindrà ministeris més cars de mantenir
+    // 3.3b. Sector empresarial: valor_empresarial és la base agregada sobre
+    // la qual s'aplica l'Impost de Societats. num_empreses és només una
+    // xifra orientativa (per explicar "quantes empreses" hi ha darrere del
+    // percentatge d'inviabilitat, no s'usa en cap càlcul fiscal).
+    const factorEmpresarial = 0.5 + random() * 0.6; // 50%–110% de l'índex de riquesa (ingressos+patrimoni)
+    const valorEmpresarial = Math.round((indexRiquesaTotal * factorEmpresarial) / 1000) * 1000;
+    const numEmpreses = Math.round(poblacioTotal * (0.04 + random() * 0.04)); // 4%–8% de la població
+
+    // El valor empresarial també compta per a la "riquesa" del país (i per
+    // tant per als pressupostos departamentals): l'impost de societats és
+    // una font real d'ingressos públics que abans no es tenia en compte.
+    indexRiquesaTotal += valorEmpresarial * FACTOR_RIQUESA_EMPRESARIAL;
+
+    // 3.4. Calcular els costos pressupostaris segons la riquesa total, la
+    // dificultat I l'arquetip econòmic (un "Benestar Exigent" necessita
+    // molts més recursos; un "Estat Mínim", molts menys).
     const departamentsAplicables = DEPARTAMENTS_PER_DIFICULTAT[dificultat] || DEPARTAMENTS_PER_DIFICULTAT.normal;
     const factorPressupost = FACTOR_PRESSUPOST_PER_DIFICULTAT[dificultat] || FACTOR_PRESSUPOST_PER_DIFICULTAT.normal;
-    const pressupostBase = indexRiquesaTotal * factorPressupost;
+    const pressupostBase = indexRiquesaTotal * factorPressupost * arquetip.factorPressupost;
 
     const pressupostos = {};
     let sumaNivellsNormals = 0;
@@ -224,6 +301,12 @@ function generarPais(llavorNum, dificultat) {
     // tots els departaments d'aquest país, incrementada un 5%.
     const pressupostAnyAnterior = Math.round(sumaNivellsNormals * 1.05);
 
+    // 3.4b. Límits Absoluts escalats segons la sensibilitat d'aquest país.
+    const limitsAbsolutsPais = escalarLimitsAbsoluts(arquetip.factorSensibilitat);
+
+    // 3.4c. Suggeriments fiscals (placeholders), propis d'aquest país.
+    const suggeriments = generarSuggerimentsFiscals(dificultat, random);
+
     // 3.5. Retornar el document JSON final
     return {
         metadades: {
@@ -236,6 +319,11 @@ function generarPais(llavorNum, dificultat) {
         },
         demografia: demografiaFinal,
         pactes: pactesPais,
+        arquetip: { clau: arquetip.clau, nom: arquetip.nom, pista: arquetip.pista },
+        limits_absoluts: limitsAbsolutsPais,
+        suggeriments: suggeriments,
+        valor_empresarial: valorEmpresarial,
+        num_empreses: numEmpreses,
         context_economic: { puntPartida, esdevenimentExtern },
         pressupostos_departaments: pressupostos,
         pressupost_any_anterior: pressupostAnyAnterior
