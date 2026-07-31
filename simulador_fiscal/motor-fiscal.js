@@ -5,13 +5,17 @@
  * i ABANS de public.js / privat.js.
  *
  * Conté:
- *  - Valors per defecte dels trams/tipus (editables per l'usuari)
+ *  - Valors suggerits dels trams/tipus (NOMÉS per als placeholders dels
+ *    camps — ja no s'apliquen automàticament com a valor; l'alumne
+ *    comença sempre amb els camps buits i ha de proposar-los ell mateix)
  *  - Càlcul de l'IRPF progressiu per trams
  *  - Càlcul de l'Impost sobre el Patrimoni
  *  - Càlcul de l'IVA (bàsic / normal / luxe)
  *  - El "Motor de Regles": detecta si la sociologia activa del país
  *    es dispara per a un perfil concret, i n'aplica els modificadors
  *    ABANS de calcular la quota d'aquell perfil.
+ *  - Els "Pactes de País": límits (min/max) que TOTS els impostos han
+ *    de complir sempre, independentment de la sociologia activa.
  */
 
 // ---------------------------------------------------------------
@@ -135,9 +139,10 @@ function comprovarRegla(pais, dificultat, perfilNom, configImpostos) {
     const sociologia = trobarSociologiaActiva(pais);
     if (!sociologia) return { afectat: false, disparada: false };
 
+    const perfil = pais.demografia.find(p => p.perfil === perfilNom);
     const regla = sociologia.regles_impostos;
     const llistaAfectats = regla.afecta_a_modes[dificultat] || [];
-    const afectat = llistaAfectats.includes("Tots") || llistaAfectats.includes(perfilNom);
+    const afectat = llistaAfectats.includes("Tots") || (!!perfil && llistaAfectats.includes(perfil.id));
 
     if (!afectat) {
         return { afectat: false, disparada: false, sociologia, regla };
@@ -146,7 +151,6 @@ function comprovarRegla(pais, dificultat, perfilNom, configImpostos) {
     // Determinem el valor a comprovar segons quin impost vigila la regla
     let valorComprovat;
     if (regla.impost === "irpf") {
-        const perfil = pais.demografia.find(p => p.perfil === perfilNom);
         const baseImposable = Math.max(
             0,
             perfil.economia_anual.ingressos - (perfil.economia_anual.deduccions_irpf || 0)
@@ -242,6 +246,58 @@ function llegirConfiguracioImpostosDelDOM(numTrams) {
             luxe: parseFloat(document.getElementById('iva-luxe').value) || 0
         }
     };
+}
+
+// ---------------------------------------------------------------
+// 4. PACTES DE PAÍS
+// Cada país té, per a CADA impost, un pacte amb un rang (min i/o max).
+// A diferència del motor de regles sociològiques (que només vigila
+// UN impost concret i UNS perfils concrets), els pactes vigilen
+// TOTS els impostos, sempre, independentment del perfil seleccionat.
+// ---------------------------------------------------------------
+
+/** El tipus marginal més alt configurat actualment (el tram de dalt de tot) */
+function tramMesAlt(trams) {
+    if (!trams || !trams.length) return 0;
+    return Math.max(...trams.map(t => t.percentatge));
+}
+
+/** Compara un valor concret amb el rang d'un pacte. */
+function comprovarPacte(pacte, valor) {
+    if (!pacte) return { fora: false };
+    if (pacte.max !== undefined && valor > pacte.max) {
+        return { fora: true, tipus: 'exces', missatge: pacte.consequenciaExces };
+    }
+    if (pacte.min !== undefined && valor < pacte.min) {
+        return { fora: true, tipus: 'defecte', missatge: pacte.consequenciaDefecte };
+    }
+    return { fora: false };
+}
+
+/**
+ * Avalua els 5 pactes del país (irpf, patrimoni, iva_basic, iva_normal,
+ * iva_luxe) contra la configuració fiscal actual. Retorna, per a cada
+ * un, el pacte, el valor comprovat i el resultat de comprovarPacte.
+ */
+function avaluarPactes(pais, configImpostos) {
+    const valors = {
+        irpf: tramMesAlt(configImpostos.trams),
+        patrimoni: configImpostos.patrimoni.percentatge,
+        iva_basic: configImpostos.iva.basic,
+        iva_normal: configImpostos.iva.normal,
+        iva_luxe: configImpostos.iva.luxe
+    };
+
+    const resultat = {};
+    Object.keys(valors).forEach(cat => {
+        const pacte = pais.pactes[cat];
+        resultat[cat] = {
+            pacte,
+            valor: valors[cat],
+            resultat: comprovarPacte(pacte, valors[cat])
+        };
+    });
+    return resultat;
 }
 
 // De totes les sociologies, "paradis_fiscal_vei" és l'única que representa un
