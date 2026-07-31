@@ -8,6 +8,10 @@
  * dels impostos. Cada impost es mostra sempre per separat, individualment.
  * (El pressupost departamental sí és editable, però el total el proposa
  * l'alumne a mà — no surt de sumar les quotes fiscals.)
+ *
+ * Tots els camps numèrics comencen SEMPRE buits (només amb un placeholder
+ * d'exemple) — l'alumne ha de proposar-ho tot ell mateix, no hi ha valors
+ * per defecte enlloc de la interfície.
  */
 
 // ---------------------------------------------------------------
@@ -19,18 +23,90 @@ const estat = {
     numTrams: 3,
     perfilSeleccionat: null,
     subtabActiu: 'irpf',
-    chart: null,
-    pressupostosDepartaments: null
+    chart: null
 };
 
 const ICONES_DEPARTAMENTS = {
-    sanitat:   { nom: 'Sanitat',   icona: '🏥' },
-    educacio:  { nom: 'Educació',  icona: '🎓' },
-    seguretat: { nom: 'Seguretat', icona: '🛡️' },
-    foment:    { nom: 'Foment',    icona: '🏗️' }
+    sanitat:          { nom: 'Sanitat',          icona: '🏥' },
+    educacio:         { nom: 'Educació',         icona: '🎓' },
+    seguretat:        { nom: 'Seguretat',        icona: '🛡️' },
+    foment:           { nom: 'Foment',           icona: '🏗️' },
+    serveis_socials:  { nom: 'Serveis Socials',  icona: '🤝' },
+    cultura:          { nom: 'Cultura',          icona: '🎭' },
+    justicia:         { nom: 'Justícia',         icona: '⚖️' },
+    medi_ambient:     { nom: 'Medi Ambient',     icona: '🌳' },
+    habitatge:        { nom: 'Habitatge',        icona: '🏠' }
 };
 
-const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42'];
+// Missatges de conseqüència PER DEPARTAMENT i per nivell assolit.
+// {lloc} s'substitueix pel nom del país/ciutat generat.
+const MISSATGES_DEPARTAMENT = {
+    sanitat: {
+        catastrofe: "🚨 Col·lapse sanitari a {lloc}: les urgències desborden i la gent espera hores al carrer.",
+        ajustat: "😬 Sanitat molt justa a {lloc}: les llistes d'espera no paren de créixer.",
+        normal: "🙂 La sanitat de {lloc} funciona amb normalitat, sense grans queixes.",
+        optim: "😀 {lloc} té una sanitat de referència: llistes curtes i bon material.",
+        excellencia: "✨ Sanitat d'excel·lència a {lloc}: hospitals capdavanters que atrauen pacients d'altres llocs."
+    },
+    educacio: {
+        catastrofe: "🚨 Crisi educativa a {lloc}: aules superpoblades i professorat que plega.",
+        ajustat: "😬 Educació ajustada a {lloc}: falten recursos, però les escoles es mantenen obertes.",
+        normal: "🙂 L'educació de {lloc} compleix amb normalitat el currículum.",
+        optim: "😀 Escoles ben dotades a {lloc}: ràtios baixes i bons resultats acadèmics.",
+        excellencia: "✨ Sistema educatiu d'excel·lència a {lloc}: referent en innovació pedagògica."
+    },
+    seguretat: {
+        catastrofe: "🚨 Inseguretat descontrolada a {lloc}: la delinqüència es dispara i la policia no dona l'abast.",
+        ajustat: "😬 Seguretat justa a {lloc}: pocs efectius per cobrir tot el territori.",
+        normal: "🙂 {lloc} manté un nivell de seguretat normal i controlat.",
+        optim: "😀 {lloc} és un dels llocs més segurs de la regió.",
+        excellencia: "✨ Seguretat exemplar a {lloc}: la delinqüència és pràcticament inexistent."
+    },
+    foment: {
+        catastrofe: "🚨 Infraestructures en ruïnes a {lloc}: carreteres plenes de sotracs i talls constants.",
+        ajustat: "😬 Manteniment mínim a {lloc}: les infraestructures es van fent malbé lentament.",
+        normal: "🙂 Les infraestructures de {lloc} es mantenen en un estat correcte.",
+        optim: "😀 {lloc} inverteix bé en infraestructures modernes i ben connectades.",
+        excellencia: "✨ {lloc} és un model d'infraestructures de primer nivell."
+    },
+    serveis_socials: {
+        catastrofe: "🚨 Xarxa social trencada a {lloc}: la gent gran i les famílies vulnerables queden desateses.",
+        ajustat: "😬 Serveis socials sota mínims a {lloc}: llargues llistes d'espera per a ajudes bàsiques.",
+        normal: "🙂 Els serveis socials de {lloc} atenen els casos amb normalitat.",
+        optim: "😀 {lloc} té una bona xarxa de suport social i acompanyament.",
+        excellencia: "✨ Model de referència en serveis socials: {lloc} no deixa ningú enrere."
+    },
+    cultura: {
+        catastrofe: "🚨 Vida cultural apagada a {lloc}: tanquen biblioteques, museus i sales.",
+        ajustat: "😬 Cultura amb el mínim indispensable a {lloc}: poca oferta i pressupost ajustat.",
+        normal: "🙂 {lloc} manté una oferta cultural normal i estable.",
+        optim: "😀 {lloc} té una escena cultural vibrant, amb festivals i activitats regulars.",
+        excellencia: "✨ {lloc} es converteix en referent cultural que atrau visitants de tot arreu."
+    },
+    justicia: {
+        catastrofe: "🚨 Col·lapse judicial a {lloc}: els casos triguen anys a resoldre's.",
+        ajustat: "😬 Jutjats saturats a {lloc}: la justícia funciona, però amb molts endarreriments.",
+        normal: "🙂 El sistema judicial de {lloc} resol els casos en terminis raonables.",
+        optim: "😀 Justícia àgil a {lloc}: pocs endarreriments i bon accés als tribunals.",
+        excellencia: "✨ {lloc} té un sistema judicial exemplar, ràpid i de plena confiança ciutadana."
+    },
+    medi_ambient: {
+        catastrofe: "🚨 Emergència ambiental a {lloc}: contaminació i espais naturals abandonats.",
+        ajustat: "😬 Protecció ambiental mínima a {lloc}: els problemes ambientals es van acumulant.",
+        normal: "🙂 {lloc} manté uns nivells ambientals correctes i estables.",
+        optim: "😀 {lloc} cuida bé el seu entorn: parcs, reciclatge i aire net.",
+        excellencia: "✨ {lloc} és un model de sostenibilitat ambiental, admirat arreu."
+    },
+    habitatge: {
+        catastrofe: "🚨 Emergència habitacional a {lloc}: lloguers disparats i famílies sense casa.",
+        ajustat: "😬 Habitatge just a {lloc}: pocs pisos assequibles i llistes d'espera llargues.",
+        normal: "🙂 El mercat de l'habitatge de {lloc} es manté estable.",
+        optim: "😀 {lloc} té una bona oferta d'habitatge assequible.",
+        excellencia: "✨ {lloc} resol l'accés a l'habitatge de manera exemplar."
+    }
+};
+
+const COLORS_CHART = ['#2B3A67', '#C9971F', '#157F5C', '#C43D3D', '#4A5B94', '#8F2727', '#0E5C42', '#4A3868', '#8A6816'];
 
 // Quin "impost" del motor de regles correspon a quina subpestanya de la interfície
 const IMPOST_A_SECCIO = {
@@ -41,6 +117,10 @@ const IMPOST_A_SECCIO = {
     iva_luxe: 'iva'
 };
 const NOM_SECCIO = { irpf: "de l'IRPF", patrimoni: 'del Patrimoni', iva: "de l'IVA" };
+
+function interpolar(text, lloc) {
+    return text.replace(/\{lloc\}/g, lloc);
+}
 
 // ---------------------------------------------------------------
 // INICIALITZACIÓ
@@ -56,10 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => canviarSubtab(btn.dataset.subtab));
     });
 
-    // Pressupost departamental: sempre disponible, reacciona a qualsevol canvi
-    ['pressupost-total', 'pct-sanitat', 'pct-educacio', 'pct-seguretat', 'pct-foment'].forEach(id => {
-        document.getElementById(id).addEventListener('input', recalcularDepartaments);
-    });
+    document.getElementById('pressupost-total').addEventListener('input', recalcularDepartaments);
 });
 
 function canviarPestanya(tab) {
@@ -68,12 +145,37 @@ function canviarPestanya(tab) {
     document.getElementById(`tab-${tab}`).classList.add('active');
 }
 
+/** Buida els camps d'una secció d'impost (usat en canviar de subpestanya) */
+function netejarCampsSeccio(seccio) {
+    if (seccio === 'irpf') {
+        for (let i = 0; i < estat.numTrams; i++) {
+            const desde = document.getElementById(`irpf-desde-${i}`);
+            const pct = document.getElementById(`irpf-pct-${i}`);
+            if (desde) desde.value = '';
+            if (pct) pct.value = '';
+        }
+    } else if (seccio === 'patrimoni') {
+        document.getElementById('patrimoni-minim').value = '';
+        document.getElementById('patrimoni-pct').value = '';
+    } else if (seccio === 'iva') {
+        document.getElementById('iva-basic').value = '';
+        document.getElementById('iva-normal').value = '';
+        document.getElementById('iva-luxe').value = '';
+    }
+}
+
 function canviarSubtab(subtab) {
+    // En canviar d'impost, s'esborren els valors de la RESTA d'impostos:
+    // cada subpestanya s'analitza sempre de manera aïllada.
+    ['irpf', 'patrimoni', 'iva'].filter(s => s !== subtab).forEach(netejarCampsSeccio);
+
     estat.subtabActiu = subtab;
     document.querySelectorAll('#subtabs-impostos .subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === subtab));
     ['irpf', 'patrimoni', 'iva'].forEach(s => {
         document.getElementById(`subtab-${s}`).classList.toggle('hidden', s !== subtab);
     });
+
+    if (estat.pais) recalcularPerfilSeleccionat();
 }
 
 // ---------------------------------------------------------------
@@ -94,11 +196,9 @@ function generarPaisHandler() {
     document.getElementById('pista-laboratori').textContent = pais.metadades.pista_sociologica;
     renderFormularisImpostos(dificultat);
     renderSelectorPerfils(pais);
-    recalcularPerfilSeleccionat();
+    canviarSubtab('irpf');
 
-    estat.pressupostosDepartaments = pais.pressupostos_departaments;
-    crearTargetesDepartaments();
-    recalcularDepartaments();
+    inicialitzarDepartaments(pais);
 
     document.getElementById('demografia-buida').classList.add('hidden');
     document.getElementById('demografia-resultat').classList.remove('hidden');
@@ -113,7 +213,7 @@ function generarPaisHandler() {
 }
 
 // ---------------------------------------------------------------
-// PESTANYA A · DEMOGRAFIA
+// PESTANYA A · PAÍS: VISIÓ GENERAL
 // ---------------------------------------------------------------
 function renderDemografia(pais, dificultat) {
     document.getElementById('nom-pais').textContent = pais.metadades.nom_ubicacio;
@@ -173,13 +273,11 @@ function renderDemografia(pais, dificultat) {
 }
 
 // ---------------------------------------------------------------
-// PESTANYA B · LABORATORI D'IMPOSTOS (3 subpestanyes independents)
+// PESTANYA B · SISTEMA TRIBUTARI (3 subpestanyes independents)
 // ---------------------------------------------------------------
 function renderFormularisImpostos(dificultat) {
     const numTrams = numTramsPerDificultat(dificultat);
-    const trams = tramsIRPFPerDefecte(dificultat);
-    const patrimoni = patrimoniPerDefecte();
-    const iva = ivaPerDefecte();
+    const tramsSuggerits = tramsIRPFPerDefecte(dificultat); // NOMÉS per suggerir el placeholder
 
     const cont = document.getElementById('trams-irpf');
     cont.innerHTML = '';
@@ -189,21 +287,21 @@ function renderFormularisImpostos(dificultat) {
         fila.innerHTML = `
             <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">des de</span>
-                <input id="irpf-desde-${i}" type="number" value="${trams[i].desde}" class="field w-full pl-16 pr-3 py-2 text-sm text-right">
+                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].desde}">
             </div>
             <div class="relative">
-                <input id="irpf-pct-${i}" type="number" step="0.5" value="${trams[i].percentatge}" class="field w-full pl-3 pr-7 py-2 text-sm text-right">
+                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].percentatge}">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">%</span>
             </div>
         `;
         cont.appendChild(fila);
     }
 
-    document.getElementById('patrimoni-minim').value = patrimoni.minimExempt;
-    document.getElementById('patrimoni-pct').value = patrimoni.percentatge;
-    document.getElementById('iva-basic').value = iva.basic;
-    document.getElementById('iva-normal').value = iva.normal;
-    document.getElementById('iva-luxe').value = iva.luxe;
+    // Patrimoni i IVA ja porten el placeholder fix a l'HTML; només ens assegurem
+    // que comencen buits (per si venim d'una generació anterior de país).
+    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
 
     // Qualsevol canvi a QUALSEVOL impost recalcula els 3 blocs (cadascú mostra només el seu)
     const tots = [
@@ -242,6 +340,8 @@ function recalcularPerfilSeleccionat() {
     renderSeccioImpost('irpf', resultat);
     renderSeccioImpost('patrimoni', resultat);
     renderSeccioImpost('iva', resultat);
+
+    renderPactesSeccio(config);
 }
 
 /**
@@ -383,15 +483,103 @@ function renderFitxaSeccio(seccio, r, causaSeccio, disparada) {
 }
 
 // ---------------------------------------------------------------
-// PESTANYA C · NECESSITATS DEPARTAMENTALS (pressupost editable)
+// PACTES DE PAÍS (advertències vàlides per a QUALSEVOL impost,
+// independents del perfil seleccionat i de la sociologia)
 // ---------------------------------------------------------------
-const DEPT_CLAUS = ['sanitat', 'educacio', 'seguretat', 'foment'];
+function textEstatPacte(resultat) {
+    if (resultat.fora) {
+        return { text: `🚨 Pacte incomplert: ${resultat.missatge}`, classe: 'text-perill' };
+    }
+    return { text: '✅ Dins del pacte', classe: 'text-exit' };
+}
 
-function crearTargetesDepartaments() {
+function renderPactesSeccio(config) {
+    if (!estat.pais) return;
+    const pactes = avaluarPactes(estat.pais, config);
+
+    renderPacteSimple('irpf', pactes.irpf);
+    renderPacteSimple('patrimoni', pactes.patrimoni);
+    renderPacteIva(pactes);
+}
+
+function renderPacteSimple(seccio, info) {
+    const cont = document.getElementById(`pacte-${seccio}`);
+    cont.querySelector('.pacte-descripcio').textContent = info.pacte.descripcio;
+    const { text, classe } = textEstatPacte(info.resultat);
+    const estatEl = cont.querySelector('.pacte-estat');
+    estatEl.textContent = text;
+    estatEl.className = 'pacte-estat text-sm font-semibold ' + classe;
+    cont.classList.remove('ok', 'fora');
+    cont.classList.add(info.resultat.fora ? 'fora' : 'ok');
+}
+
+function renderPacteIva(pactes) {
+    const cont = document.getElementById('pacte-iva');
+    ['iva_basic', 'iva_normal', 'iva_luxe'].forEach(cat => {
+        const fila = cont.querySelector(`.pacte-fila[data-cat="${cat}"]`);
+        fila.querySelector('.pacte-descripcio').textContent = pactes[cat].pacte.descripcio;
+        const { text, classe } = textEstatPacte(pactes[cat].resultat);
+        const estatEl = fila.querySelector('.pacte-estat');
+        estatEl.textContent = text;
+        estatEl.className = 'pacte-estat text-sm font-semibold ' + classe;
+    });
+}
+
+// ---------------------------------------------------------------
+// PESTANYA C · PRESSUPOST GENERAL (pressupost editable, multi-departament)
+// ---------------------------------------------------------------
+function avaluarNivellPressupost(valor, nivells) {
+    if (valor < nivells.minim) return { tier: 'catastrofe', classes: 'bg-perill-light text-perill-dark' };
+    if (valor < nivells.normal) return { tier: 'ajustat', classes: 'bg-gold/15 text-gold-dark' };
+    if (valor < nivells.optim) return { tier: 'normal', classes: 'bg-institut/10 text-institut' };
+    if (valor < nivells.excellencia) return { tier: 'optim', classes: 'bg-exit-light text-exit-dark' };
+    return { tier: 'excellencia', classes: 'bg-exit text-white ring-2 ring-gold' };
+}
+
+function miniNivell(etiqueta, valor, actiu) {
+    return `
+        <div class="rounded-lg px-1.5 py-1.5 text-center ${actiu ? 'bg-institut text-white' : 'bg-paper text-ink/40'}">
+            <p class="text-[9px] font-semibold uppercase tracking-wide">${etiqueta}</p>
+            <p class="font-mono-num text-[10px] mt-0.5">${formatEuros(valor)}</p>
+        </div>`;
+}
+
+function inicialitzarDepartaments(pais) {
+    document.getElementById('pressupost-total').value = '';
+
+    const claus = Object.keys(pais.pressupostos_departaments);
+
+    document.getElementById('pressupost-any-anterior-valor').textContent = formatEuros(pais.pressupost_any_anterior);
+    document.getElementById('pressupost-any-anterior-explicacio').textContent =
+        `${pais.metadades.nom_ubicacio} va destinar aquesta quantitat al conjunt de departaments l'any passat.`;
+
+    crearInputsPercentatgesDepartaments(claus);
+    crearTargetesDepartaments(claus);
+    recalcularDepartaments();
+}
+
+function crearInputsPercentatgesDepartaments(claus) {
+    const cont = document.getElementById('pct-departaments-inputs');
+    cont.innerHTML = '';
+    claus.forEach(clau => {
+        const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label class="block text-xs text-ink/50 mb-1">${info.icona} ${info.nom} %</label>
+            <input id="pct-${clau}" type="number" min="0" max="100" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 25">
+        `;
+        cont.appendChild(div);
+    });
+    claus.forEach(clau => {
+        document.getElementById(`pct-${clau}`).addEventListener('input', recalcularDepartaments);
+    });
+}
+
+function crearTargetesDepartaments(claus) {
     const cont = document.getElementById('departaments-targetes');
     cont.innerHTML = '';
-    DEPT_CLAUS.forEach(clau => {
-        const info = ICONES_DEPARTAMENTS[clau];
+    claus.forEach(clau => {
+        const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
         const card = document.createElement('div');
         card.className = 'card p-6';
         card.dataset.dept = clau;
@@ -412,68 +600,39 @@ function crearTargetesDepartaments() {
     });
 }
 
-function avaluarNivellPressupost(valor, nivells) {
-    if (valor < nivells.minim) {
-        return { tier: 'catastrofe', emoji: '🚨', classes: 'bg-perill-light text-perill-dark',
-            missatge: 'Per sota del mínim. El departament col·lapsa: talls de servei i queixes ciutadanes.' };
-    }
-    if (valor < nivells.normal) {
-        return { tier: 'ajustat', emoji: '😬', classes: 'bg-gold/15 text-gold-dark',
-            missatge: 'Al llindar mínim. Funciona, però molt ajustat de recursos.' };
-    }
-    if (valor < nivells.optim) {
-        return { tier: 'normal', emoji: '🙂', classes: 'bg-institut/10 text-institut',
-            missatge: 'Nivell normal. El servei funciona amb normalitat.' };
-    }
-    if (valor < nivells.excellencia) {
-        return { tier: 'optim', emoji: '😀', classes: 'bg-exit-light text-exit-dark',
-            missatge: 'Nivell òptim. Els ciutadans n\'estan molt satisfets.' };
-    }
-    return { tier: 'excellencia', emoji: '✨', classes: 'bg-exit text-white ring-2 ring-gold',
-        missatge: 'Excel·lència! Referent absolut en aquest àmbit.' };
-}
-
-function miniNivell(etiqueta, valor, actiu) {
-    return `
-        <div class="rounded-lg px-1.5 py-1.5 text-center ${actiu ? 'bg-institut text-white' : 'bg-paper text-ink/40'}">
-            <p class="text-[9px] font-semibold uppercase tracking-wide">${etiqueta}</p>
-            <p class="font-mono-num text-[10px] mt-0.5">${formatEuros(valor)}</p>
-        </div>`;
-}
-
 function recalcularDepartaments() {
-    if (!estat.pressupostosDepartaments) return;
+    if (!estat.pais) return;
 
+    const claus = Object.keys(estat.pais.pressupostos_departaments);
     const total = parseFloat(document.getElementById('pressupost-total').value) || 0;
-    const pcts = {};
-    let suma = 0;
-    DEPT_CLAUS.forEach(clau => {
-        const v = parseFloat(document.getElementById(`pct-${clau}`).value) || 0;
-        pcts[clau] = v;
-        suma += v;
-    });
+    const anyAnterior = estat.pais.pressupost_any_anterior;
 
-    const sumaEl = document.getElementById('suma-percentatges');
-    sumaEl.textContent = `Suma: ${suma}%`;
-    sumaEl.classList.remove('bg-exit-light', 'text-exit-dark', 'bg-perill-light', 'text-perill-dark');
-    if (suma === 100) {
-        sumaEl.classList.add('bg-exit-light', 'text-exit-dark');
+    const comparativaEl = document.getElementById('comparativa-any-anterior');
+    comparativaEl.classList.remove('bg-exit-light', 'text-exit-dark', 'bg-perill-light', 'text-perill-dark', 'bg-ink/5', 'text-ink/40');
+    if (total === 0) {
+        comparativaEl.textContent = "Introdueix un pressupost per comparar-lo amb l'any anterior";
+        comparativaEl.classList.add('bg-ink/5', 'text-ink/40');
     } else {
-        sumaEl.classList.add('bg-perill-light', 'text-perill-dark');
+        const diferencia = ((total - anyAnterior) / anyAnterior) * 100;
+        const signe = diferencia >= 0 ? '+' : '';
+        comparativaEl.textContent = `${signe}${diferencia.toFixed(1)}% respecte l'any anterior`;
+        comparativaEl.classList.add(diferencia >= 0 ? 'bg-exit-light' : 'bg-perill-light', diferencia >= 0 ? 'text-exit-dark' : 'text-perill-dark');
     }
 
-    DEPT_CLAUS.forEach(clau => {
-        const nivells = estat.pressupostosDepartaments[clau];
-        const valor = total * (pcts[clau] / 100);
+    claus.forEach(clau => {
+        const pct = parseFloat(document.getElementById(`pct-${clau}`).value) || 0;
+        const valor = total * (pct / 100);
+        const nivells = estat.pais.pressupostos_departaments[clau];
         const avaluacio = avaluarNivellPressupost(valor, nivells);
+        const missatge = interpolar(MISSATGES_DEPARTAMENT[clau][avaluacio.tier], estat.pais.metadades.nom_ubicacio);
 
         const card = document.querySelector(`[data-dept="${clau}"]`);
         card.querySelector('.valor').textContent = formatEuros(valor);
-        card.querySelector('.pctlabel').textContent = `${pcts[clau]}% del pressupost total`;
+        card.querySelector('.pctlabel').textContent = `${pct}% del pressupost total`;
 
         const verdicte = card.querySelector('.verdicte');
         verdicte.className = 'verdicte rounded-xl p-3 text-sm font-semibold mb-4 ' + avaluacio.classes;
-        verdicte.textContent = `${avaluacio.emoji} ${avaluacio.missatge}`;
+        verdicte.textContent = missatge;
 
         card.querySelector('.escala').innerHTML =
             miniNivell('Mínim', nivells.minim, valor >= nivells.minim) +
