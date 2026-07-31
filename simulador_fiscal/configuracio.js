@@ -25,6 +25,8 @@ const DADES_SIMULACIO = {
     sociologies: [
         // ==========================================
         // SOCIOLOGIES GLOBALS (Funcionen a tots els modes)
+        // Nota: afecta_a_modes fa servir l'"id" estable del perfil
+        // (no el nom, que pot variar de partida en partida).
         // ==========================================
         {
             clau: "fuga_capitals",
@@ -34,9 +36,9 @@ const DADES_SIMULACIO = {
                 impost: "irpf",
                 llindar_perillos: 45,
                 afecta_a_modes: {
-                    normal: ["Renda Alta"],
-                    dificil: ["El Nou Ric", "La Gran Fortuna"],
-                    repte: ["El Nou Ric", "La Gran Fortuna"]
+                    normal: ["renda_alta"],
+                    dificil: ["nou_ric", "gran_fortuna"],
+                    repte: ["nou_ric", "gran_fortuna"]
                 },
                 consequencia: "Fuga de capitals: Traslladen les seves rendes a l'estranger.",
                 modificadors: { ingressos: 0.70 }
@@ -63,9 +65,9 @@ const DADES_SIMULACIO = {
                 llindar_perillos: 20,
                 es_llindar_minim: true,
                 afecta_a_modes: {
-                    normal: ["Renda Alta"],
-                    dificil: ["La Gran Fortuna"],
-                    repte: ["La Gran Fortuna"]
+                    normal: ["renda_alta"],
+                    dificil: ["gran_fortuna"],
+                    repte: ["gran_fortuna"]
                 },
                 consequencia: "Atracció de capitals: Grans fortunes arriben al país.",
                 modificadors: { ingressos: 1.50, patrimoni: 1.50 }
@@ -80,9 +82,9 @@ const DADES_SIMULACIO = {
                 llindar_perillos: 4,
                 es_llindar_minim: true,
                 afecta_a_modes: {
-                    normal: ["Renda Baixa", "Renda Mitjana"],
-                    dificil: ["La Família Ofegada", "El Jubilat amb Pis"],
-                    repte: ["L'Estudiant Precari", "La Família Nombrosa", "El Jubilat Dependent"]
+                    normal: ["renda_baixa", "renda_mitjana"],
+                    dificil: ["familia_ofegada", "jubilat_pis"],
+                    repte: ["estudiant_precari", "familia_nombrosa", "jubilat_dependent"]
                 },
                 consequencia: "Privatització: Cauen els serveis i la gent ha de pagar-los de la seva butxaca.",
                 modificadors: { despeses_basiques: 1.60 }
@@ -101,8 +103,8 @@ const DADES_SIMULACIO = {
                 impost: "patrimoni",
                 llindar_perillos: 2.0,
                 afecta_a_modes: {
-                    dificil: ["El Jubilat amb Pis", "L'Estalviador Clàssic"],
-                    repte: ["El Jubilat Dependent", "L'Estalviador", "La Família Nombrosa"]
+                    dificil: ["jubilat_pis", "estalviador_classic"],
+                    repte: ["jubilat_dependent", "estalviador", "familia_nombrosa"]
                 },
                 consequencia: "Manca de liquiditat: No poden pagar el patrimoni. Les despeses bàsiques pugen per deutes.",
                 modificadors: { despeses_basiques: 1.40 }
@@ -116,8 +118,8 @@ const DADES_SIMULACIO = {
                 impost: "iva_normal",
                 llindar_perillos: 21,
                 afecta_a_modes: {
-                    dificil: ["L'Estalviador Clàssic"],
-                    repte: ["L'Estalviador", "La Família Nombrosa"]
+                    dificil: ["estalviador_classic"],
+                    repte: ["estalviador", "familia_nombrosa"]
                 },
                 consequencia: "Contracció del consum: Tallen radicalment les despeses normals.",
                 modificadors: { despeses_normals: 0.50 }
@@ -131,8 +133,8 @@ const DADES_SIMULACIO = {
                 impost: "irpf",
                 llindar_perillos: 35,
                 afecta_a_modes: {
-                    dificil: ["El Nou Ric", "L'Estalviador Clàssic"],
-                    repte: ["El Nou Ric", "El Fals Autònom"]
+                    dificil: ["nou_ric", "estalviador_classic"],
+                    repte: ["nou_ric", "fals_autonom"]
                 },
                 consequencia: "Fuga de cervells: Els professionals emigren.",
                 modificadors: { ingressos: 0.65 }
@@ -146,8 +148,8 @@ const DADES_SIMULACIO = {
                 impost: "iva_basic",
                 llindar_perillos: 10,
                 afecta_a_modes: {
-                    dificil: ["La Família Ofegada"],
-                    repte: ["L'Estudiant Precari", "La Família Nombrosa"]
+                    dificil: ["familia_ofegada"],
+                    repte: ["estudiant_precari", "familia_nombrosa"]
                 },
                 consequencia: "Pobresa severa: El preu del menjar ofega completament el consum no essencial.",
                 modificadors: { despeses_basiques: 0.80, despeses_normals: 0.00 }
@@ -162,8 +164,8 @@ const DADES_SIMULACIO = {
                 llindar_perillos: 0,
                 es_llindar_minim: true,
                 afecta_a_modes: {
-                    dificil: ["La Família Ofegada"],
-                    repte: ["L'Estudiant Precari", "El Fals Autònom"]
+                    dificil: ["familia_ofegada"],
+                    repte: ["estudiant_precari", "fals_autonom"]
                 },
                 consequencia: "Especulació: Els lloguers es disparen perquè els rics acaparen el mercat.",
                 modificadors: { despeses_basiques: 1.40 }
@@ -181,7 +183,7 @@ const DADES_SIMULACIO = {
             regles_impostos: {
                 impost: "iva_normal",
                 llindar_perillos: 18,
-                afecta_a_modes: { repte: ["El Fals Autònom"] },
+                afecta_a_modes: { repte: ["fals_autonom"] },
                 consequencia: "Insurgència fiscal: Els autònoms deixen de declarar bona part de la seva activitat.",
                 modificadors: { ingressos: 0.50, despeses_normals: 0.50 }
             }
@@ -193,7 +195,7 @@ const DADES_SIMULACIO = {
             regles_impostos: {
                 impost: "patrimoni",
                 llindar_perillos: 1.5,
-                afecta_a_modes: { repte: ["El Jubilat Dependent"] },
+                afecta_a_modes: { repte: ["jubilat_dependent"] },
                 consequencia: "Caiguda de la xarxa de suport: Els jubilats han de vendre's la casa a pèrdua per pagar cures.",
                 modificadors: { patrimoni: 0.50, despeses_basiques: 1.80 }
             }
@@ -205,10 +207,93 @@ const DADES_SIMULACIO = {
             regles_impostos: {
                 impost: "irpf", // Si l'IRPF efectiu final sense deduccions és massa alt...
                 llindar_perillos: 25,
-                afecta_a_modes: { repte: ["La Família Nombrosa"] },
+                afecta_a_modes: { repte: ["familia_nombrosa"] },
                 consequencia: "Ruïna familiar: Les famílies amb fills perden tot el seu poder adquisitiu extra.",
                 modificadors: { despeses_normals: 0.10, despeses_luxe: 0.00 }
             }
         }
-    ]
+    ],
+
+    // ==========================================
+    // PACTES DE PAÍS
+    // Cada país generat queda obligat, per acords previs, a mantenir
+    // CADA impost dins d'un rang concret. Són independents de la
+    // sociologia activa i s'apliquen sempre, a qualsevol perfil:
+    // per això donen resposta a "què passa si poso l'IVA al 200%?"
+    // encara que cap sociologia vigili aquell impost concret.
+    // ==========================================
+    pactes: {
+        irpf: [
+            {
+                clau: "sostre_irpf_constitucional",
+                max: 55,
+                descripcio: "La constitució fixa un sostre del 55% per al tram més alt de l'IRPF.",
+                consequenciaExces: "Anticonstitucional: el Tribunal Suprem tomba la reforma fiscal i el govern entra en crisi."
+            },
+            {
+                clau: "clausula_redistributiva",
+                min: 10,
+                descripcio: "Un pacte de coalició exigeix un mínim del 10% en el tram més alt per finançar la sanitat pública.",
+                consequenciaDefecte: "Trencament de govern: el soci de coalició es retira i cau l'executiu."
+            }
+        ],
+        patrimoni: [
+            {
+                clau: "patrimoni_pacte_estabilitat",
+                max: 2.5,
+                descripcio: "Pacte d'estabilitat amb la banca: l'impost sobre el patrimoni no pot superar el 2,5%.",
+                consequenciaExces: "Retirada de capital bancari: els bancs redueixen dràsticament el crèdit disponible."
+            },
+            {
+                clau: "patrimoni_minim_cohesio",
+                min: 0.2,
+                descripcio: "Pacte de cohesió territorial: cal recaptar almenys un 0,2% en Patrimoni per mantenir els fons de cohesió.",
+                consequenciaDefecte: "Sanció de cohesió: es retiren els fons de compensació territorial."
+            }
+        ],
+        iva_basic: [
+            {
+                clau: "iva_basic_sostre_social",
+                max: 8,
+                descripcio: "Compromís social: l'IVA bàsic (aliments, primera necessitat) no pot superar el 8%.",
+                consequenciaExces: "Revolta social: manifestacions massives per l'encariment de la cistella bàsica."
+            },
+            {
+                clau: "iva_basic_minim_financament",
+                min: 2,
+                descripcio: "Un pla de rescat exigeix un mínim del 2% d'IVA bàsic per garantir ingressos estables.",
+                consequenciaDefecte: "El pla de rescat es cancel·la per manca d'ingressos garantits."
+            }
+        ],
+        iva_normal: [
+            {
+                clau: "iva_normal_unio_duanera",
+                min: 8,
+                max: 16,
+                descripcio: "Membre d'una unió duanera regional que fixa l'IVA normal entre el 8% i el 16%.",
+                consequenciaExces: "Sanció comercial: els socis imposen aranzels de represàlia i cau l'exportació.",
+                consequenciaDefecte: "Dúmping fiscal: els socis acusen el país de competència deslleial i suspenen l'acord."
+            },
+            {
+                clau: "iva_normal_sostre_competitivitat",
+                max: 22,
+                descripcio: "Pacte de competitivitat amb el comerç fronterer: l'IVA normal no pot superar el 22%.",
+                consequenciaExces: "Contraban fronterer: el comerç es trasllada massivament al país veí."
+            }
+        ],
+        iva_luxe: [
+            {
+                clau: "iva_luxe_sostre_turisme",
+                max: 35,
+                descripcio: "Acord amb el sector turístic: l'IVA de luxe no pot superar el 35%.",
+                consequenciaExces: "Fuga d'inversors: el sector de turisme de luxe abandona el país."
+            },
+            {
+                clau: "iva_luxe_minim_equitat",
+                min: 15,
+                descripcio: "Un pacte d'equitat fiscal exigeix un mínim del 15% d'IVA en productes de luxe.",
+                consequenciaDefecte: "Percepció d'injustícia: creix el rebuig social davant la baixa fiscalitat als rics."
+            }
+        ]
+    }
 };
