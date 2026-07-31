@@ -81,21 +81,28 @@ function netejarCampsSeccio(seccio) {
         document.getElementById('iva-basic').value = '';
         document.getElementById('iva-normal').value = '';
         document.getElementById('iva-luxe').value = '';
+    } else if (seccio === 'societats') {
+        document.getElementById('societats-pct').value = '';
     }
 }
+
+const TOTS_ELS_SUBTABS = ['irpf', 'patrimoni', 'iva', 'societats'];
 
 function canviarSubtab(subtab) {
     // En canviar d'impost, s'esborren els valors de la RESTA d'impostos:
     // cada subpestanya s'analitza sempre de manera aïllada.
-    ['irpf', 'patrimoni', 'iva'].filter(s => s !== subtab).forEach(netejarCampsSeccio);
+    TOTS_ELS_SUBTABS.filter(s => s !== subtab).forEach(netejarCampsSeccio);
 
     estat.subtabActiu = subtab;
     document.querySelectorAll('#subtabs-impostos .subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === subtab));
-    ['irpf', 'patrimoni', 'iva'].forEach(s => {
+    TOTS_ELS_SUBTABS.forEach(s => {
         document.getElementById(`subtab-${s}`).classList.toggle('hidden', s !== subtab);
     });
 
-    if (estat.pais) recalcularPerfilSeleccionat();
+    if (estat.pais) {
+        recalcularPerfilSeleccionat();
+        recalcularSocietats();
+    }
 }
 
 // ---------------------------------------------------------------
@@ -113,10 +120,11 @@ function generarPaisHandler() {
     estat.perfilSeleccionat = pais.demografia[0].perfil;
 
     renderDemografia(pais, dificultat);
+    renderArquetip(pais);
     const pistaLabEl = document.getElementById('pista-laboratori');
     pistaLabEl.textContent = pais.metadades.pista_sociologica;
     repetirAnimacio(pistaLabEl, 'text-pop');
-    renderFormularisImpostos(dificultat);
+    renderFormularisImpostos(pais, dificultat);
     renderSelectorPerfils(pais);
     canviarSubtab('irpf');
 
@@ -208,12 +216,22 @@ function renderDemografia(pais, dificultat) {
     });
 }
 
+function renderArquetip(pais) {
+    document.getElementById('arquetip-nom').textContent = pais.arquetip.nom;
+    const pistaEl = document.getElementById('arquetip-pista');
+    pistaEl.textContent = pais.arquetip.pista;
+    repetirAnimacio(pistaEl, 'text-pop');
+
+    animarNumero(document.getElementById('societats-valor-empresarial'), pais.valor_empresarial, formatEuros, 900);
+    document.getElementById('societats-num-empreses').textContent = formatNumero(pais.num_empreses);
+}
+
 // ---------------------------------------------------------------
-// PESTANYA B · SISTEMA TRIBUTARI (3 subpestanyes independents)
+// PESTANYA B · SISTEMA TRIBUTARI (4 subpestanyes independents)
 // ---------------------------------------------------------------
-function renderFormularisImpostos(dificultat) {
+function renderFormularisImpostos(pais, dificultat) {
     const numTrams = numTramsPerDificultat(dificultat);
-    const tramsSuggerits = tramsIRPFPerDefecte(dificultat); // NOMÉS per suggerir el placeholder
+    const sug = pais.suggeriments; // suggeriments propis d'aquest país (NOMÉS per als placeholders)
 
     const cont = document.getElementById('trams-irpf');
     cont.innerHTML = '';
@@ -223,29 +241,38 @@ function renderFormularisImpostos(dificultat) {
         fila.innerHTML = `
             <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">des de</span>
-                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].desde}">
+                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${sug.trams[i].desde}">
             </div>
             <div class="relative">
-                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].percentatge}">
+                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${sug.trams[i].percentatge}">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">%</span>
             </div>
         `;
         cont.appendChild(fila);
     }
 
-    // Patrimoni i IVA ja porten el placeholder fix a l'HTML; només ens assegurem
-    // que comencen buits (per si venim d'una generació anterior de país).
-    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe'].forEach(id => {
+    // Patrimoni, IVA i Societats: buidem el camp i actualitzem el placeholder
+    // amb el suggeriment propi d'aquest país (no és sempre el mateix número).
+    document.getElementById('patrimoni-minim').placeholder = `Ex: ${sug.patrimoni.minimExempt}`;
+    document.getElementById('patrimoni-pct').placeholder = `Ex: ${sug.patrimoni.percentatge}`;
+    document.getElementById('iva-basic').placeholder = `Ex: ${sug.iva.basic}`;
+    document.getElementById('iva-normal').placeholder = `Ex: ${sug.iva.normal}`;
+    document.getElementById('iva-luxe').placeholder = `Ex: ${sug.iva.luxe}`;
+    document.getElementById('societats-pct').placeholder = `Ex: ${sug.societats}`;
+    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe', 'societats-pct'].forEach(id => {
         document.getElementById(id).value = '';
     });
 
-    // Qualsevol canvi a QUALSEVOL impost recalcula els 3 blocs (cadascú mostra només el seu)
+    // Qualsevol canvi a IRPF/Patrimoni/IVA recalcula aquests 3 blocs (cadascú mostra només el seu)
     const tots = [
         ...cont.querySelectorAll('input'),
         document.getElementById('patrimoni-minim'), document.getElementById('patrimoni-pct'),
         document.getElementById('iva-basic'), document.getElementById('iva-normal'), document.getElementById('iva-luxe')
     ];
     tots.forEach(input => input.addEventListener('input', recalcularPerfilSeleccionat));
+
+    // Societats és independent (no depèn de cap perfil seleccionat)
+    document.getElementById('societats-pct').addEventListener('input', recalcularSocietats);
 }
 
 function renderSelectorPerfils(pais) {
@@ -488,6 +515,54 @@ function renderPacteIva(pactes) {
         estatEl.textContent = text;
         estatEl.className = 'pacte-estat text-sm font-semibold ' + classe;
     });
+}
+
+// ---------------------------------------------------------------
+// SOCIETATS (nacional — no depèn de cap perfil seleccionat)
+// ---------------------------------------------------------------
+function recalcularSocietats() {
+    if (!estat.pais) return;
+
+    const pctSocietats = parseFloat(document.getElementById('societats-pct').value) || 0;
+    const resultat = calcularSocietats(estat.pais.valor_empresarial, pctSocietats);
+    renderFitxaSocietats(resultat);
+
+    const pacte = estat.pais.pactes.societats;
+    const resPacte = comprovarPacte(pacte, pctSocietats);
+    renderPacteSimple('societats', { pacte, valor: pctSocietats, resultat: resPacte });
+}
+
+function renderFitxaSocietats(resultat) {
+    const cont = document.getElementById('fitxa-societats');
+
+    let colorClasse, missatgeSeveritat;
+    if (resultat.pctInviable === 0) {
+        colorClasse = 'text-exit';
+        missatgeSeveritat = 'Cap empresa es veu forçada a tancar amb aquest tipus.';
+    } else if (resultat.pctInviable < 30) {
+        colorClasse = 'text-gold-dark';
+        missatgeSeveritat = 'Una part de les empreses comença a ser inviable amb aquest tipus.';
+    } else {
+        colorClasse = 'text-perill';
+        missatgeSeveritat = 'Una part molt gran de les empreses es torna inviable amb aquest tipus.';
+    }
+
+    cont.innerHTML = `
+        <p class="font-display font-bold text-lg mb-4">Resultat nacional</p>
+        <div class="flex justify-between items-center text-sm py-1.5">
+            <span class="text-ink/50">Empreses inviables amb aquest tipus</span>
+            <span class="font-mono-num font-semibold ${colorClasse} stat-pop">${resultat.pctInviable}%</span>
+        </div>
+        <p class="text-xs text-ink/40 mb-2">${missatgeSeveritat}</p>
+        <div class="flex justify-between text-xs text-ink/40 pt-2 pb-2">
+            <span>Base efectiva (després de la inviabilitat)</span>
+            <span class="font-mono-num stat-pop">${formatEuros(resultat.baseEfectiva)}</span>
+        </div>
+        <div class="pt-3 border-t border-ink/10 flex items-center justify-between">
+            <p class="font-display font-semibold text-sm">Recaptació de Societats</p>
+            <p class="font-mono-num font-bold text-2xl text-pista stat-pop">${formatEuros(resultat.quota)}</p>
+        </div>
+    `;
 }
 
 // ---------------------------------------------------------------
