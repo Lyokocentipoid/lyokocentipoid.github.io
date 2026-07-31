@@ -183,7 +183,8 @@ function comprovarRegla(pais, dificultat, perfilNom, configImpostos) {
 
 /**
  * Avalua completament un perfil concret: aplica (si cal) els modificadors
- * de la sociologia i calcula la quota real d'IRPF + Patrimoni + IVA.
+ * de la sociologia I els dels límits absoluts, i calcula la quota real
+ * d'IRPF + Patrimoni + IVA.
  * configImpostos = { trams: [...], patrimoni: {minimExempt, percentatge}, iva: {basic, normal, luxe} }
  */
 function avaluarPerfil(pais, dificultat, perfilNom, configImpostos) {
@@ -192,13 +193,14 @@ function avaluarPerfil(pais, dificultat, perfilNom, configImpostos) {
 
     const eco = perfilBase.economia_anual;
     const resultatRegla = comprovarRegla(pais, dificultat, perfilNom, configImpostos);
+    const limitsAbsoluts = avaluarLimitsAbsoluts(configImpostos);
 
     // Valors econòmics de partida
     let ingressos = eco.ingressos;
     let patrimoni = eco.patrimoni;
     let despeses = { ...eco.despeses };
 
-    // Si la regla es dispara, apliquem els modificadors ABANS de calcular quotes
+    // Si la regla sociològica es dispara, apliquem els seus modificadors ABANS de calcular quotes
     if (resultatRegla.disparada) {
         const mod = resultatRegla.modificadors || {};
         if (mod.ingressos !== undefined) ingressos = Math.round(ingressos * mod.ingressos);
@@ -207,6 +209,16 @@ function avaluarPerfil(pais, dificultat, perfilNom, configImpostos) {
         if (mod.despeses_normals !== undefined) despeses.normals = Math.round(despeses.normals * mod.despeses_normals);
         if (mod.despeses_luxe !== undefined) despeses.luxe = Math.round(despeses.luxe * mod.despeses_luxe);
     }
+
+    // Límits absoluts: s'apliquen SEMPRE que se superin, siguin quins
+    // siguin el país, la sociologia o el perfil — i s'acumulen amb
+    // l'efecte de la sociologia si totes dues es disparen alhora.
+    if (limitsAbsoluts.irpf.superat) ingressos = Math.round(ingressos * LIMITS_ABSOLUTS.irpf.modificador.ingressos);
+    if (limitsAbsoluts.patrimoni.superat) patrimoni = Math.round(patrimoni * LIMITS_ABSOLUTS.patrimoni.modificador.patrimoni);
+    if (limitsAbsoluts.patrimoni_minim_exempt.superat) patrimoni = Math.round(patrimoni * LIMITS_ABSOLUTS.patrimoni_minim_exempt.modificador.patrimoni);
+    if (limitsAbsoluts.iva_basic.superat) despeses.basiques = Math.round(despeses.basiques * LIMITS_ABSOLUTS.iva_basic.modificador.despeses_basiques);
+    if (limitsAbsoluts.iva_normal.superat) despeses.normals = Math.round(despeses.normals * LIMITS_ABSOLUTS.iva_normal.modificador.despeses_normals);
+    if (limitsAbsoluts.iva_luxe.superat) despeses.luxe = Math.round(despeses.luxe * LIMITS_ABSOLUTS.iva_luxe.modificador.despeses_luxe);
 
     const irpf = calcularIRPF(ingressos, eco.deduccions_irpf, configImpostos.trams);
     const patrimoniCalc = calcularPatrimoni(patrimoni, configImpostos.patrimoni.minimExempt, configImpostos.patrimoni.percentatge);
@@ -219,6 +231,7 @@ function avaluarPerfil(pais, dificultat, perfilNom, configImpostos) {
         original: eco,
         ajustat: { ingressos, patrimoni, despeses },
         regla: resultatRegla,
+        limitsAbsoluts,
         irpf,
         patrimoni: patrimoniCalc,
         iva,
@@ -249,7 +262,85 @@ function llegirConfiguracioImpostosDelDOM(numTrams) {
 }
 
 // ---------------------------------------------------------------
-// 4. PACTES DE PAÍS
+// 4. LÍMITS ABSOLUTS
+// A diferència de la sociologia (depèn del país i del perfil) i dels
+// Pactes de País (depenen del país i poden ser només mínim o només
+// màxim), els Límits Absoluts són SEMPRE els mateixos i vigilen
+// SEMPRE els 5 impostos, en QUALSEVOL país i per a QUALSEVOL perfil.
+// Representen el punt en què un impost deixa de ser "polèmic" per
+// passar a ser directament inviable. Superar-los no només mostra un
+// avís: també fa caure de veritat la base imposable (evasió, fugida
+// de capitals, economia submergida...), igual que fa el motor de
+// regles sociològiques.
+// ---------------------------------------------------------------
+const LIMITS_ABSOLUTS = {
+    irpf: {
+        llindar: 70,
+        consequencia: "Vaga fiscal general: ningú accepta treballar per quatre cèntims. La base imposable declarada s'enfonsa i l'economia informal es dispara.",
+        modificador: { ingressos: 0.20 }
+    },
+    patrimoni: {
+        llindar: 12,
+        consequencia: "Expropiació de facto: qui pot, treu el patrimoni del país abans que l'Estat se l'emporti.",
+        modificador: { patrimoni: 0.15 }
+    },
+    patrimoni_minim_exempt: {
+        llindar: 30000,
+        esMinim: true,
+        consequencia: "Indignació popular: gravar fins i tot els petits estalvis familiars provoca una allau de queixes i frau fiscal generalitzat.",
+        modificador: { patrimoni: 0.40 }
+    },
+    iva_basic: {
+        llindar: 50,
+        consequencia: "Mercat negre generalitzat en productes bàsics: gairebé ningú compra res de manera legal.",
+        modificador: { despeses_basiques: 0.15 }
+    },
+    iva_normal: {
+        llindar: 55,
+        consequencia: "Economia totalment submergida: el consum legal de productes normals pràcticament desapareix.",
+        modificador: { despeses_normals: 0.15 }
+    },
+    iva_luxe: {
+        llindar: 75,
+        consequencia: "El consum de luxe fuig del país: tothom compra a l'estranger o directament de matrícula.",
+        modificador: { despeses_luxe: 0.10 }
+    }
+};
+
+/**
+ * Comprova, per a cadascun dels impostos, si s'ha superat el seu
+ * límit absolut amb la configuració fiscal actual. La majoria són
+ * "sostres" (es disparen per sobre del llindar), però patrimoni_minim_exempt
+ * és un "terra" (es dispara per SOTA del llindar) — per això cada entrada
+ * pot marcar-se amb esMinim.
+ */
+function avaluarLimitsAbsoluts(configImpostos) {
+    const valors = {
+        irpf: tramMesAlt(configImpostos.trams),
+        patrimoni: configImpostos.patrimoni.percentatge,
+        patrimoni_minim_exempt: configImpostos.patrimoni.minimExempt,
+        iva_basic: configImpostos.iva.basic,
+        iva_normal: configImpostos.iva.normal,
+        iva_luxe: configImpostos.iva.luxe
+    };
+
+    const resultat = {};
+    Object.keys(LIMITS_ABSOLUTS).forEach(cat => {
+        const limit = LIMITS_ABSOLUTS[cat];
+        const valor = valors[cat];
+        const superat = limit.esMinim ? (valor < limit.llindar) : (valor > limit.llindar);
+        resultat[cat] = {
+            valor,
+            llindar: limit.llindar,
+            consequencia: limit.consequencia,
+            superat
+        };
+    });
+    return resultat;
+}
+
+// ---------------------------------------------------------------
+// 5. PACTES DE PAÍS
 // Cada país té, per a CADA impost, un pacte amb un rang (min i/o max).
 // A diferència del motor de regles sociològiques (que només vigila
 // UN impost concret i UNS perfils concrets), els pactes vigilen
@@ -322,4 +413,104 @@ function formatEuros(num) {
 }
 function formatNumero(num) {
     return Math.round(num).toLocaleString('ca-ES');
+}
+
+// ---------------------------------------------------------------
+// 6. DADES I AVALUACIÓ DE DEPARTAMENTS
+// Compartit entre public.js (pestanya C, pressupost proposat a mà per
+// l'alumne) i privat.js (pressupost calculat a partir de la recaptació
+// real), perquè els noms, icones, missatges i llindars de cada nivell
+// siguin exactament els mateixos als dos webs.
+// ---------------------------------------------------------------
+const ICONES_DEPARTAMENTS = {
+    sanitat:          { nom: 'Sanitat',          icona: '🏥' },
+    educacio:         { nom: 'Educació',         icona: '🎓' },
+    seguretat:        { nom: 'Seguretat',        icona: '🛡️' },
+    foment:           { nom: 'Foment',           icona: '🏗️' },
+    serveis_socials:  { nom: 'Serveis Socials',  icona: '🤝' },
+    cultura:          { nom: 'Cultura',          icona: '🎭' },
+    justicia:         { nom: 'Justícia',         icona: '⚖️' },
+    medi_ambient:     { nom: 'Medi Ambient',     icona: '🌳' },
+    habitatge:        { nom: 'Habitatge',        icona: '🏠' }
+};
+
+// Missatges de conseqüència PER DEPARTAMENT i per nivell assolit.
+// {lloc} s'substitueix pel nom del país/ciutat generat.
+const MISSATGES_DEPARTAMENT = {
+    sanitat: {
+        catastrofe: "🚨 Col·lapse sanitari a {lloc}: les urgències desborden i la gent espera hores al carrer.",
+        ajustat: "😬 Sanitat molt justa a {lloc}: les llistes d'espera no paren de créixer.",
+        normal: "🙂 La sanitat de {lloc} funciona amb normalitat, sense grans queixes.",
+        optim: "😀 {lloc} té una sanitat de referència: llistes curtes i bon material.",
+        excellencia: "✨ Sanitat d'excel·lència a {lloc}: hospitals capdavanters que atrauen pacients d'altres llocs."
+    },
+    educacio: {
+        catastrofe: "🚨 Crisi educativa a {lloc}: aules superpoblades i professorat que plega.",
+        ajustat: "😬 Educació ajustada a {lloc}: falten recursos, però les escoles es mantenen obertes.",
+        normal: "🙂 L'educació de {lloc} compleix amb normalitat el currículum.",
+        optim: "😀 Escoles ben dotades a {lloc}: ràtios baixes i bons resultats acadèmics.",
+        excellencia: "✨ Sistema educatiu d'excel·lència a {lloc}: referent en innovació pedagògica."
+    },
+    seguretat: {
+        catastrofe: "🚨 Inseguretat descontrolada a {lloc}: la delinqüència es dispara i la policia no dona l'abast.",
+        ajustat: "😬 Seguretat justa a {lloc}: pocs efectius per cobrir tot el territori.",
+        normal: "🙂 {lloc} manté un nivell de seguretat normal i controlat.",
+        optim: "😀 {lloc} és un dels llocs més segurs de la regió.",
+        excellencia: "✨ Seguretat exemplar a {lloc}: la delinqüència és pràcticament inexistent."
+    },
+    foment: {
+        catastrofe: "🚨 Infraestructures en ruïnes a {lloc}: carreteres plenes de sotracs i talls constants.",
+        ajustat: "😬 Manteniment mínim a {lloc}: les infraestructures es van fent malbé lentament.",
+        normal: "🙂 Les infraestructures de {lloc} es mantenen en un estat correcte.",
+        optim: "😀 {lloc} inverteix bé en infraestructures modernes i ben connectades.",
+        excellencia: "✨ {lloc} és un model d'infraestructures de primer nivell."
+    },
+    serveis_socials: {
+        catastrofe: "🚨 Xarxa social trencada a {lloc}: la gent gran i les famílies vulnerables queden desateses.",
+        ajustat: "😬 Serveis socials sota mínims a {lloc}: llargues llistes d'espera per a ajudes bàsiques.",
+        normal: "🙂 Els serveis socials de {lloc} atenen els casos amb normalitat.",
+        optim: "😀 {lloc} té una bona xarxa de suport social i acompanyament.",
+        excellencia: "✨ Model de referència en serveis socials: {lloc} no deixa ningú enrere."
+    },
+    cultura: {
+        catastrofe: "🚨 Vida cultural apagada a {lloc}: tanquen biblioteques, museus i sales.",
+        ajustat: "😬 Cultura amb el mínim indispensable a {lloc}: poca oferta i pressupost ajustat.",
+        normal: "🙂 {lloc} manté una oferta cultural normal i estable.",
+        optim: "😀 {lloc} té una escena cultural vibrant, amb festivals i activitats regulars.",
+        excellencia: "✨ {lloc} es converteix en referent cultural que atrau visitants de tot arreu."
+    },
+    justicia: {
+        catastrofe: "🚨 Col·lapse judicial a {lloc}: els casos triguen anys a resoldre's.",
+        ajustat: "😬 Jutjats saturats a {lloc}: la justícia funciona, però amb molts endarreriments.",
+        normal: "🙂 El sistema judicial de {lloc} resol els casos en terminis raonables.",
+        optim: "😀 Justícia àgil a {lloc}: pocs endarreriments i bon accés als tribunals.",
+        excellencia: "✨ {lloc} té un sistema judicial exemplar, ràpid i de plena confiança ciutadana."
+    },
+    medi_ambient: {
+        catastrofe: "🚨 Emergència ambiental a {lloc}: contaminació i espais naturals abandonats.",
+        ajustat: "😬 Protecció ambiental mínima a {lloc}: els problemes ambientals es van acumulant.",
+        normal: "🙂 {lloc} manté uns nivells ambientals correctes i estables.",
+        optim: "😀 {lloc} cuida bé el seu entorn: parcs, reciclatge i aire net.",
+        excellencia: "✨ {lloc} és un model de sostenibilitat ambiental, admirat arreu."
+    },
+    habitatge: {
+        catastrofe: "🚨 Emergència habitacional a {lloc}: lloguers disparats i famílies sense casa.",
+        ajustat: "😬 Habitatge just a {lloc}: pocs pisos assequibles i llistes d'espera llargues.",
+        normal: "🙂 El mercat de l'habitatge de {lloc} es manté estable.",
+        optim: "😀 {lloc} té una bona oferta d'habitatge assequible.",
+        excellencia: "✨ {lloc} resol l'accés a l'habitatge de manera exemplar."
+    }
+};
+
+function interpolar(text, lloc) {
+    return text.replace(/\{lloc\}/g, lloc);
+}
+
+/** Determina en quin dels 5 nivells (catàstrofe...excel·lència) cau un import concret */
+function avaluarNivellPressupost(valor, nivells) {
+    if (valor < nivells.minim) return { tier: 'catastrofe', classes: 'bg-perill-light text-perill-dark' };
+    if (valor < nivells.normal) return { tier: 'ajustat', classes: 'bg-gold/15 text-gold-dark' };
+    if (valor < nivells.optim) return { tier: 'normal', classes: 'bg-institut/10 text-institut' };
+    if (valor < nivells.excellencia) return { tier: 'optim', classes: 'bg-exit-light text-exit-dark' };
+    return { tier: 'excellencia', classes: 'bg-exit text-white ring-2 ring-gold' };
 }
