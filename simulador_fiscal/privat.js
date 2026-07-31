@@ -1,202 +1,318 @@
 /**
  * privat.js
- * Lògica de càlcul massiu i validació per al Web Privat (Professors)
+ * Lògica d'interfície del web PRIVAT (privat.html) — Solucionari del Professor.
+ *
+ * A diferència de public.js, aquest fitxer SÍ calcula la recaptació total
+ * del país: multiplica la quota individual de cada perfil per la seva
+ * població absoluta i ho suma tot. És exactament la feina que a paper fa
+ * l'alumne — aquí serveix per corregir-la.
+ *
+ * Reutilitza els mateixos ids de camps (irpf-desde-N, patrimoni-pct, etc.)
+ * que index.html perquè pot fer servir directament
+ * llegirConfiguracioImpostosDelDOM() de motor-fiscal.js sense cap canvi.
  */
 
-let paisPrivat = null;
+const estatPrivat = {
+    pais: null,
+    dificultat: 'normal',
+    numTrams: 3
+};
 
-function carregarPaisPrivat() {
-    const llavor = parseInt(document.getElementById('privat-llavor').value);
-    const dificultat = document.getElementById('privat-dificultat').value;
+const NOM_IMPOST_LLARG = {
+    irpf: 'IRPF (tram més alt)',
+    patrimoni: 'Patrimoni (%)',
+    patrimoni_minim_exempt: 'Patrimoni (mínim exempt)',
+    iva_basic: 'IVA bàsic',
+    iva_normal: 'IVA normal',
+    iva_luxe: 'IVA luxe'
+};
 
-    if (!llavor) {
-        alert("Introdueix una llavor numèrica vàlida.");
-        return;
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-carregar').addEventListener('click', carregarPaisHandler);
+    document.getElementById('btn-calcular').addEventListener('click', calcularResultatsReals);
+});
 
-    paisPrivat = generarPais(llavor, dificultat);
+// ---------------------------------------------------------------
+// PAS 1 · CARREGAR PAÍS
+// ---------------------------------------------------------------
+function carregarPaisHandler() {
+    const llavor = parseInt(document.getElementById('input-llavor').value) || 0;
+    const dificultat = document.getElementById('select-dificultat').value;
 
-    // Dibuixar els inputs d'impostos segons la dificultat
+    const pais = generarPais(llavor, dificultat);
+    estatPrivat.pais = pais;
+    estatPrivat.dificultat = dificultat;
+    estatPrivat.numTrams = numTramsPerDificultat(dificultat);
+
+    renderInfoPais(pais, dificultat);
+    renderFormularisImpostos(dificultat);
+    renderInputsDepartaments(pais);
+
+    document.getElementById('pais-info').classList.remove('hidden');
+    document.getElementById('bloc-impostos').classList.remove('hidden');
+    document.getElementById('bloc-despesa').classList.remove('hidden');
+    document.getElementById('bloc-calcular').classList.remove('hidden');
+    document.getElementById('resultats').classList.add('hidden');
+}
+
+function renderInfoPais(pais, dificultat) {
+    document.getElementById('info-nom-pais').textContent = pais.metadades.nom_ubicacio;
+    document.getElementById('info-poblacio').textContent = formatNumero(pais.metadades.poblacio_total);
+    document.getElementById('info-num-perfils').textContent = pais.demografia.length;
+
+    document.getElementById('info-sociologia-clau').textContent = `clau: ${pais.metadades.sociologia_clau}`;
+    document.getElementById('info-pista').textContent = pais.metadades.pista_sociologica;
+
+    const contPactes = document.getElementById('info-pactes');
+    contPactes.innerHTML = '';
+    Object.keys(pais.pactes).forEach(cat => {
+        const pacte = pais.pactes[cat];
+        const fila = document.createElement('p');
+        fila.innerHTML = `<span class="font-semibold text-ink">${NOM_IMPOST_LLARG[cat]}:</span> ${pacte.descripcio}`;
+        contPactes.appendChild(fila);
+    });
+}
+
+// ---------------------------------------------------------------
+// PAS 2 · FORMULARIS D'IMPOSTOS (igual que a index.html, tots junts)
+// ---------------------------------------------------------------
+function renderFormularisImpostos(dificultat) {
     const numTrams = numTramsPerDificultat(dificultat);
-    const defaults = tramsIRPFPerDefecte(dificultat);
-    const contTrams = document.getElementById('privat-trams-irpf');
-    contTrams.innerHTML = '';
+    const tramsSuggerits = tramsIRPFPerDefecte(dificultat);
 
+    const cont = document.getElementById('trams-irpf');
+    cont.innerHTML = '';
     for (let i = 0; i < numTrams; i++) {
-        const def = defaults[i] || { desde: 0, percentatge: 0 };
-        const readonly = i === 0 ? 'readonly disabled class="w-full px-2 py-1 border rounded bg-slate-100 text-xs"' : 'class="w-full px-2 py-1 border rounded text-xs tax-input-privat"';
-        contTrams.innerHTML += `
-            <div class="flex gap-2 items-center">
-                <span class="text-xs text-slate-500 w-12">Tram ${i+1}:</span>
-                <input type="number" id="privat-irpf-desde-${i}" value="${def.desde}" ${readonly}>
-                <input type="number" step="0.1" id="privat-irpf-pct-${i}" value="${def.percentatge}" class="w-16 px-2 py-1 border rounded text-right tax-input-privat">
-                <span class="text-xs text-slate-500">%</span>
+        const fila = document.createElement('div');
+        fila.className = 'grid grid-cols-2 gap-2 items-center';
+        fila.innerHTML = `
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">des de</span>
+                <input id="irpf-desde-${i}" type="number" class="field w-full pl-16 pr-3 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].desde}">
+            </div>
+            <div class="relative">
+                <input id="irpf-pct-${i}" type="number" step="0.5" class="field w-full pl-3 pr-7 py-2 text-sm text-right" placeholder="Ex: ${tramsSuggerits[i].percentatge}">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink/30">%</span>
             </div>
         `;
+        cont.appendChild(fila);
     }
 
-    // Valors per defecte patrimoni i iva
-    const defPat = patrimoniPerDefecte();
-    document.getElementById('privat-pat-minim').value = defPat.minimExempt;
-    document.getElementById('privat-pat-pct').value = defPat.percentatge;
-
-    const defIva = ivaPerDefecte();
-    document.getElementById('privat-iva-basic').value = defIva.basic;
-    document.getElementById('privat-iva-normal').value = defIva.normal;
-    document.getElementById('privat-iva-luxe').value = defIva.luxe;
-
-    // Mostrar seccions
-    document.getElementById('seccio-impostos-privat').classList.remove('hidden');
-    document.getElementById('seccio-repartiment').classList.remove('hidden');
-    document.getElementById('seccio-resultats').classList.add('hidden');
+    ['patrimoni-minim', 'patrimoni-pct', 'iva-basic', 'iva-normal', 'iva-luxe'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
 }
 
-// Funció auxiliar per llegir impostos específica del web privat
-function llegirConfiguracioPrivat() {
-    const dificultat = document.getElementById('privat-dificultat').value;
-    const numTrams = numTramsPerDificultat(dificultat);
-    const trams = [];
-    for (let i = 0; i < numTrams; i++) {
-        const desde = parseFloat(document.getElementById(`privat-irpf-desde-${i}`).value) || 0;
-        const pct = parseFloat(document.getElementById(`privat-irpf-pct-${i}`).value) || 0;
-        trams.push({ desde, percentatge: pct });
-    }
-    return {
-        trams,
-        patrimoni: {
-            minimExempt: parseFloat(document.getElementById('privat-pat-minim').value) || 0,
-            percentatge: parseFloat(document.getElementById('privat-pat-pct').value) || 0
-        },
-        iva: {
-            basic: parseFloat(document.getElementById('privat-iva-basic').value) || 0,
-            normal: parseFloat(document.getElementById('privat-iva-normal').value) || 0,
-            luxe: parseFloat(document.getElementById('privat-iva-luxe').value) || 0
-        }
-    };
+// ---------------------------------------------------------------
+// PAS 3 · PRESSUPOST DEL DEPARTAMENT (% que ha decidit l'alumne)
+// ---------------------------------------------------------------
+function renderInputsDepartaments(pais) {
+    const claus = Object.keys(pais.pressupostos_departaments);
+    const cont = document.getElementById('pct-departaments-inputs');
+    cont.innerHTML = '';
+    claus.forEach(clau => {
+        const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label class="block text-xs text-ink/50 mb-1">${info.icona} ${info.nom} %</label>
+            <input id="pct-${clau}" type="number" min="0" max="100" class="field w-full px-3 py-2 text-sm" placeholder="Ex: 25">
+        `;
+        cont.appendChild(div);
+    });
+    claus.forEach(clau => {
+        document.getElementById(`pct-${clau}`).addEventListener('input', recalcularSumaPercentatges);
+    });
+    recalcularSumaPercentatges();
 }
 
-// Executar el càlcul real de tot el país
-function executarValidacio() {
-    if (!paisPrivat) return;
+function recalcularSumaPercentatges() {
+    if (!estatPrivat.pais) return;
+    const claus = Object.keys(estatPrivat.pais.pressupostos_departaments);
+    let suma = 0;
+    claus.forEach(clau => {
+        suma += parseFloat(document.getElementById(`pct-${clau}`).value) || 0;
+    });
+    const el = document.getElementById('suma-percentatges');
+    el.textContent = `Suma: ${suma}%`;
+    el.classList.remove('bg-exit-light', 'text-exit-dark', 'bg-perill-light', 'text-perill-dark');
+    el.classList.add(suma === 100 ? 'bg-exit-light' : 'bg-perill-light', suma === 100 ? 'text-exit-dark' : 'text-perill-dark');
+}
 
-    // Validar percentatges de pressupost (han de sumar 100)
-    const pSanitat = parseFloat(document.getElementById('pct-sanitat').value) || 0;
-    const pEducacio = parseFloat(document.getElementById('pct-educacio').value) || 0;
-    const pSeguretat = parseFloat(document.getElementById('pct-seguretat').value) || 0;
-    const pFoment = parseFloat(document.getElementById('pct-foment').value) || 0;
-    const sumaPct = pSanitat + pEducacio + pSeguretat + pFoment;
+// ---------------------------------------------------------------
+// CÀLCUL DELS RESULTATS REALS
+// ---------------------------------------------------------------
+function calcularResultatsReals() {
+    const pais = estatPrivat.pais;
+    if (!pais) return;
 
-    const lblSuma = document.getElementById('avís-suma-pct');
-    lblSuma.innerText = `Suma total: ${sumaPct}%`;
-    if (sumaPct !== 100) {
-        lblSuma.className = "text-sm font-bold text-red-600";
-        alert("Atenció: La suma dels percentatges de pressupost ha de ser exactament del 100%.");
-        return;
-    } else {
-        lblSuma.className = "text-sm font-semibold text-green-600";
-    }
+    const config = llegirConfiguracioImpostosDelDOM(estatPrivat.numTrams);
 
-    const dificultat = document.getElementById('privat-dificultat').value;
-    const configImpostos = llegirConfiguracioPrivat();
+    let recaptacioTotal = 0, recaptacioIRPF = 0, recaptacioPatrimoni = 0, recaptacioIVA = 0;
+    const detallPerfils = [];
 
-    // Càlcul Massiu: Recaptació Total del País
-    let recaptacioTotalReal = 0;
-    let hiHaEvasiomGeneral = false;
+    pais.demografia.forEach(perfil => {
+        const r = avaluarPerfil(pais, estatPrivat.dificultat, perfil.perfil, config);
+        const totalPerfil = r.totalIndividual * perfil.poblacio_absoluta;
 
-    paisPrivat.demografia.forEach(grup => {
-        // Avaluem el perfil individual amb el motor fiscal
-        const resPerfil = avaluarPerfil(paisPrivat, dificultat,rup.perfil = grup.perfil, configImpostos);
-        
-        // Multipliquem la quota individual per la població absoluta d'aquest grup
-        const recaptacioGrup = resPerfil.totalIndividual * grup.poblacio_absoluta;
-        recaptacioTotalReal += recaptacioGrup;
+        recaptacioTotal += totalPerfil;
+        recaptacioIRPF += r.irpf.quota * perfil.poblacio_absoluta;
+        recaptacioPatrimoni += r.patrimoni.quota * perfil.poblacio_absoluta;
+        recaptacioIVA += r.iva.total * perfil.poblacio_absoluta;
 
-        if (resPerfil.regla.disparada && SENTIMENT_SOCIOLOGIES[resPerfil.regla.sociologia.clau] === 'perill') {
-            hiHaEvasiomGeneral = true;
-        }
+        detallPerfils.push({ perfil, r, totalPerfil });
     });
 
-    recaptacioTotalReal = Math.round(recaptacioTotalReal);
+    renderRecaptacio(recaptacioTotal, recaptacioIRPF, recaptacioPatrimoni, recaptacioIVA);
+    renderComparativaAnyAnterior(recaptacioTotal, pais.pressupost_any_anterior);
+    renderAuditoria(pais, config);
+    renderDepartamentsReals(pais, recaptacioTotal);
+    renderTaulaPerfils(detallPerfils);
 
-    // Mostrar secció resultats
-    document.getElementById('seccio-resultats').classList.remove('hidden');
-    document.getElementById('resum-reaptacio-total').innerText = formatEuros(recaptacioTotalReal);
-
-    const lblEstat = document.getElementById('resum-estat-general');
-    if (hiHaEvasiomGeneral) {
-        lblEstat.innerText = "⚠️ Alerta: S'han activat fugues o crisis econòmiques";
-        lblEstat.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mt-1 bg-red-100 text-red-700";
-    } else {
-        lblEstat.innerText = "✅ Economia estable sense fugues crítiques";
-        lblEstat.className = "inline-block px-3 py-1 rounded-full text-xs font-bold mt-1 bg-green-100 text-green-700";
+    document.getElementById('resultats').classList.remove('hidden');
+    const resultatsEl = document.getElementById('resultats');
+    if (typeof resultatsEl.scrollIntoView === 'function') {
+        resultatsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+}
 
-    // Calcular pressupostos reals per departament segons els % de l'alumne
-    const pressupostosReals = {
-        sanitat: recaptacioTotalReal * (pSanitat / 100),
-        educacio: recaptacioTotalReal * (pEducacio / 100),
-        seguretat: recaptacioTotalReal * (pSeguretat / 100),
-        foment: recaptacioTotalReal * (pFoment / 100)
-    };
+function renderRecaptacio(total, irpf, patrimoni, iva) {
+    document.getElementById('recaptacio-total').textContent = formatEuros(total);
+    document.getElementById('recaptacio-irpf').textContent = formatEuros(irpf);
+    document.getElementById('recaptacio-patrimoni').textContent = formatEuros(patrimoni);
+    document.getElementById('recaptacio-iva').textContent = formatEuros(iva);
+}
 
-    // Avaluar contra els requisits del país (Mínim, Normal, Òptim, Excel·lència)
-    const departamentsBase = paisPrivat.pressupostos_departaments;
-    const graella = document.getElementById('graella-resultats-departaments');
-    graella.innerHTML = '';
+function renderComparativaAnyAnterior(total, anyAnterior) {
+    document.getElementById('comparativa-valor-anterior').textContent = formatEuros(anyAnterior);
+    const diferencia = ((total - anyAnterior) / anyAnterior) * 100;
+    const signe = diferencia >= 0 ? '+' : '';
+    const el = document.getElementById('comparativa-percentatge');
+    el.textContent = `${signe}${diferencia.toFixed(1)}% respecte l'any anterior`;
+    el.classList.remove('bg-exit-light', 'text-exit-dark', 'bg-perill-light', 'text-perill-dark');
+    el.classList.add(diferencia >= 0 ? 'bg-exit-light' : 'bg-perill-light', diferencia >= 0 ? 'text-exit-dark' : 'text-perill-dark');
+}
 
-    const nomsDep = { sanitat: "Sanitat Pública", educacio: "Educació Pública", seguretat: "Seguretat i Justícia", foment: "Foment i Economia" };
+// ---------------------------------------------------------------
+// AUDITORIA: Pactes de País + Límits Absoluts
+// ---------------------------------------------------------------
+function renderAuditoria(pais, config) {
+    const pactes = avaluarPactes(pais, config);
+    const limits = avaluarLimitsAbsoluts(config);
 
-    Object.keys(pressupostosReals).forEach(clau => {
-        const dinersReals = pressupostosReals[clau];
-        const reqs = departamentsBase[clau];
-        
-        // Determinar nivell assolit
-        let nivellAssolit = "";
-        let classeCSS = "";
-        let icona = "";
+    const cont = document.getElementById('auditoria-contingut');
+    cont.innerHTML = '';
 
-        if (dinersReals >= reqs.excellencia) {
-            nivellAssolit = "🏆 Excel·lència (Objectiu Enorme Assolit!)";
-            classeCSS = "bg-emerald-50 border-emerald-300 text-emerald-900";
-            icona = "fa-solid fa-trophy text-emerald-600";
-        } else if (dinersReals >= reqs.optim) {
-            nivellAssolit = "🟢 Manteniment Òptim (Molt Bona Gestió)";
-            classeCSS = "bg-blue-50 border-blue-300 text-blue-900";
-            icona = "fa-solid fa-circle-check text-blue-600";
-        } else if (dinersReals >= reqs.normal) {
-            nivellAssolit = "🟡 Manteniment Normal (Estable)";
-            classeCSS = "bg-yellow-50 border-yellow-300 text-yellow-900";
-            icona = "fa-solid fa-triangle-exclamation text-yellow-600";
-        } else if (dinersReals >= reqs.minim) {
-            nivellAssolit = "🟠 Mínim Vital (Risc de Col·lapse!)";
-            classeCSS = "bg-orange-50 border-orange-300 text-orange-900";
-            icona = "fa-solid fa-circle-exclamation text-orange-600";
-        } else {
-            nivellAssolit = "🔴 INSUFICIENT (Tancament i Crisi)";
-            classeCSS = "bg-red-50 border-red-300 text-red-900";
-            icona = "fa-solid fa-ban text-red-600";
-        }
+    cont.appendChild(titolAuditoria('Pactes de País'));
+    Object.keys(pactes).forEach(cat => {
+        const info = pactes[cat];
+        cont.appendChild(filaAuditoria(
+            NOM_IMPOST_LLARG[cat],
+            info.pacte.descripcio,
+            info.resultat.fora ? `🚨 Incomplert: ${info.resultat.missatge}` : '✅ Complert',
+            !info.resultat.fora
+        ));
+    });
+
+    cont.appendChild(titolAuditoria('Límits Absoluts'));
+    Object.keys(limits).forEach(cat => {
+        const info = limits[cat];
+        cont.appendChild(filaAuditoria(
+            NOM_IMPOST_LLARG[cat],
+            `Llindar: ${info.llindar}${cat === 'patrimoni_minim_exempt' ? ' €' : '%'} · Valor introduït: ${info.valor}${cat === 'patrimoni_minim_exempt' ? ' €' : '%'}`,
+            info.superat ? `🔥 Superat: ${info.consequencia}` : '✅ Dins del límit',
+            !info.superat
+        ));
+    });
+}
+
+function titolAuditoria(text) {
+    const p = document.createElement('p');
+    p.className = 'font-display font-semibold text-xs uppercase tracking-wide text-ink/40 pt-3 first:pt-0';
+    p.textContent = text;
+    return p;
+}
+
+function filaAuditoria(etiqueta, descripcio, estatText, ok) {
+    const div = document.createElement('div');
+    div.className = 'auditoria-fila py-2.5 flex items-start justify-between gap-4 flex-wrap';
+    div.innerHTML = `
+        <div class="flex-1 min-w-[220px]">
+            <p class="text-sm font-semibold">${etiqueta}</p>
+            <p class="text-xs text-ink/50">${descripcio}</p>
+        </div>
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${ok ? 'bg-exit-light text-exit-dark' : 'bg-perill-light text-perill-dark'}">${estatText}</span>
+    `;
+    return div;
+}
+
+// ---------------------------------------------------------------
+// TARGETES DE DEPARTAMENTS (amb la recaptació REAL)
+// ---------------------------------------------------------------
+function renderDepartamentsReals(pais, recaptacioTotal) {
+    const cont = document.getElementById('departaments-targetes');
+    cont.innerHTML = '';
+
+    Object.keys(pais.pressupostos_departaments).forEach(clau => {
+        const info = ICONES_DEPARTAMENTS[clau] || { nom: clau, icona: '📁' };
+        const nivells = pais.pressupostos_departaments[clau];
+        const pct = parseFloat(document.getElementById(`pct-${clau}`).value) || 0;
+        const valorReal = recaptacioTotal * (pct / 100);
+        const avaluacio = avaluarNivellPressupost(valorReal, nivells);
+        const missatge = interpolar(MISSATGES_DEPARTAMENT[clau][avaluacio.tier], pais.metadades.nom_ubicacio);
 
         const card = document.createElement('div');
-        card.className = `p-6 rounded-xl border shadow-sm ${classeCSS}`;
+        card.className = 'card p-6';
         card.innerHTML = `
-            <div class="flex justify-between items-start mb-4">
-                <div class="flex items-center gap-2">
-                    <i class="${icona} text-xl"></i>
-                    <h3 class="font-bold text-lg">${nomsDep[clau]}</h3>
-                </div>
-                <span class="font-black text-xl">${formatEuros(dinersReals)}</span>
+            <div class="flex items-center gap-3 mb-3">
+                <span class="text-2xl">${info.icona}</span>
+                <p class="font-display font-bold text-lg">${info.nom}</p>
             </div>
-            
-            <div class="font-bold text-sm mb-3">Veredicte: ${nivellAssolit}</div>
-
-            <div class="text-xs space-y-1 opacity-80 border-t pt-2 border-slate-200">
-                <div class="flex justify-between"><span>Mínim necessari:</span> <span>${formatEuros(reqs.minim)}</span></div>
-                <div class="flex justify-between"><span>Normal:</span> <span>${formatEuros(reqs.normal)}</span></div>
-                <div class="flex justify-between"><span>Òptim:</span> <span>${formatEuros(reqs.optim)}</span></div>
-                <div class="flex justify-between"><span>Excel·lència:</span> <span>${formatEuros(reqs.excellencia)}</span></div>
+            <div class="mb-3">
+                <p class="text-xs uppercase tracking-wide text-ink/40">Recaptació real assignada (${pct}%)</p>
+                <p class="font-mono-num font-bold text-2xl text-institut stat-flip">${formatEuros(valorReal)}</p>
+            </div>
+            <div class="rounded-xl p-3 text-sm font-semibold mb-4 ${avaluacio.classes}">${missatge}</div>
+            <div class="grid grid-cols-4 gap-1.5">
+                ${miniNivell('Mínim', nivells.minim, valorReal >= nivells.minim)}
+                ${miniNivell('Normal', nivells.normal, valorReal >= nivells.normal)}
+                ${miniNivell('Òptim', nivells.optim, valorReal >= nivells.optim)}
+                ${miniNivell('Excel·lència', nivells.excellencia, valorReal >= nivells.excellencia)}
             </div>
         `;
-        graella.appendChild(card);
+        cont.appendChild(card);
+    });
+}
+
+function miniNivell(etiqueta, valor, actiu) {
+    return `
+        <div class="rounded-lg px-1.5 py-1.5 text-center ${actiu ? 'bg-institut text-white' : 'bg-paper text-ink/40'}">
+            <p class="text-[9px] font-semibold uppercase tracking-wide">${etiqueta}</p>
+            <p class="font-mono-num text-[10px] mt-0.5">${formatEuros(valor)}</p>
+        </div>`;
+}
+
+// ---------------------------------------------------------------
+// TAULA PER PERFIL
+// ---------------------------------------------------------------
+function renderTaulaPerfils(detallPerfils) {
+    const cos = document.getElementById('taula-perfils');
+    cos.innerHTML = '';
+
+    detallPerfils.forEach(({ perfil, r, totalPerfil }) => {
+        const notes = [];
+        if (r.regla.disparada) notes.push('sociologia activada');
+        const limitsSuperats = Object.keys(r.limitsAbsoluts).filter(cat => r.limitsAbsoluts[cat].superat);
+        if (limitsSuperats.length) notes.push(`límit absolut (${limitsSuperats.map(c => NOM_IMPOST_LLARG[c]).join(', ')})`);
+
+        const fila = document.createElement('tr');
+        fila.className = 'border-b border-ink/5';
+        fila.innerHTML = `
+            <td class="py-2 pr-3 font-medium">${perfil.perfil}</td>
+            <td class="py-2 pr-3 text-right font-mono-num text-ink/60">${formatNumero(perfil.poblacio_absoluta)}</td>
+            <td class="py-2 pr-3 text-right font-mono-num">${formatEuros(r.totalIndividual)}</td>
+            <td class="py-2 pr-3 text-right font-mono-num font-semibold">${formatEuros(totalPerfil)}</td>
+            <td class="py-2 pl-3 text-xs text-ink/50">${notes.length ? notes.join(' · ') : '—'}</td>
+        `;
+        cos.appendChild(fila);
     });
 }
