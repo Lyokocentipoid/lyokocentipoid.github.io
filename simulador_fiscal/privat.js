@@ -360,11 +360,14 @@ function renderTaulaPerfils(detallPerfils) {
         const limitsSuperats = Object.keys(r.limitsAbsoluts).filter(cat => r.limitsAbsoluts[cat].superat);
         if (limitsSuperats.length) notes.push(`límit absolut (${limitsSuperats.map(c => NOM_IMPOST_LLARG[c]).join(', ')})`);
 
+        const classe = classificarEvolucioPerfil(r);
+
         const fila = document.createElement('tr');
         fila.className = 'border-b border-ink/5 entrada';
         fila.style.animationDelay = `${i * 45}ms`;
         fila.innerHTML = `
             <td class="py-2 pr-3 font-medium">${perfil.perfil}</td>
+            <td class="py-2 pr-3 text-center" title="${classe.etiqueta}">${classe.emoji}</td>
             <td class="py-2 pr-3 text-right font-mono-num text-ink/60">${formatNumero(perfil.poblacio_absoluta)}</td>
             <td class="py-2 pr-3 text-right font-mono-num">${formatEuros(r.totalIndividual)}</td>
             <td class="py-2 pr-3 text-right font-mono-num font-semibold">${formatEuros(totalPerfil)}</td>
@@ -504,6 +507,41 @@ function renderAnalisiSistema(config, detallPerfils, recaptacioTotal, recaptacio
 // ---------------------------------------------------------------
 const PUNTUACIO_TIER_DEPT = { catastrofe: -2, ajustat: -1, normal: 0, optim: 1, excellencia: 2 };
 const NOM_TIER_DEPT = { '-2': 'Catàstrofe', '-1': 'Ajustat', '0': 'Normal', '1': 'Òptim', '2': 'Excel·lència' };
+const LLINDAR_PROSPERITAT = 1.10; // +10% en ingressos o patrimoni per considerar-ho una prosperitat notable
+
+/**
+ * Classifica com evoluciona un perfil en tres categories (no només
+ * "bé/malament"): empitjora, es manté estable, o prospera notablement.
+ * Compartida entre la taula de perfils i "Situació econòmica" perquè
+ * els dos llocs facin servir exactament el mateix criteri.
+ */
+function classificarEvolucioPerfil(r) {
+    const necessitat = r.original.despeses.basiques + r.original.despeses.normals;
+    // Només comptem que "empitjora" si la política fiscal ha causat una
+    // reducció real (evasió, fuga...) i aquesta reducció el deixa per sota
+    // de les seves despeses habituals. Si els ingressos ja hi eren per sota
+    // sense cap efecte fiscal (ajustat === original), no és culpa d'aquest
+    // any: és una condició prèvia del país, no de la política proposada.
+    const empitjoraIngressos = r.ajustat.ingressos < r.original.ingressos && r.ajustat.ingressos < necessitat;
+    const empitjoraPatrimoni = r.ajustat.patrimoni < r.original.patrimoni;
+    if (empitjoraIngressos || empitjoraPatrimoni) {
+        const motiu = [];
+        if (empitjoraIngressos) motiu.push("els ingressos ja no li permeten mantenir les seves despeses habituals");
+        if (empitjoraPatrimoni) motiu.push("el seu patrimoni s'erosiona respecte a l'original");
+        return { tier: 'empitjora', emoji: '🔴', etiqueta: 'Empitjora', motiu: motiu.join(' i ') };
+    }
+
+    const prosperaIngressos = r.original.ingressos > 0 && r.ajustat.ingressos >= r.original.ingressos * LLINDAR_PROSPERITAT;
+    const prosperaPatrimoni = r.original.patrimoni > 0 && r.ajustat.patrimoni >= r.original.patrimoni * LLINDAR_PROSPERITAT;
+    if (prosperaIngressos || prosperaPatrimoni) {
+        const motiu = [];
+        if (prosperaIngressos) motiu.push('els ingressos li han pujat notablement');
+        if (prosperaPatrimoni) motiu.push('el seu patrimoni ha crescut notablement');
+        return { tier: 'prospera', emoji: '🟢', etiqueta: 'Prospera', motiu: motiu.join(' i ') };
+    }
+
+    return { tier: 'estable', emoji: '⚪', etiqueta: 'Estable', motiu: '' };
+}
 
 function factorCard(titol, titolPrincipal, descripcio, index) {
     return `
@@ -545,28 +583,25 @@ function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils, res
     const mitjanaDept = resultatsDepartaments.reduce((acc, d) => acc + PUNTUACIO_TIER_DEPT[d.avaluacio.tier], 0) / resultatsDepartaments.length;
     const scoreC = Math.round(mitjanaDept);
 
-    // D: perfils que empitjoren
-    let nRisc = 0;
-    const notesRisc = [];
+    // D: com evoluciona cada perfil — tres categories, no només "bé/malament"
+    let nEmpitjora = 0, nEstable = 0, nProspera = 0;
+    const notesEmpitjora = [];
+    const notesProspera = [];
     detallPerfils.forEach(({ perfil, r }) => {
-        const necessitat = r.original.despeses.basiques + r.original.despeses.normals;
-        const riscIngressos = r.ajustat.ingressos < necessitat;
-        const riscPatrimoni = r.ajustat.patrimoni < r.original.patrimoni;
-        if (riscIngressos || riscPatrimoni) {
-            nRisc++;
-            const motiu = [];
-            if (riscIngressos) motiu.push("els ingressos ja no li permeten mantenir les seves despeses habituals");
-            if (riscPatrimoni) motiu.push("el seu patrimoni s'erosiona respecte a l'original");
-            notesRisc.push(`<strong>${perfil.perfil}</strong>: ${motiu.join(' i ')}.`);
+        const classe = classificarEvolucioPerfil(r);
+        if (classe.tier === 'empitjora') {
+            nEmpitjora++;
+            notesEmpitjora.push(`<strong>${perfil.perfil}</strong>: ${classe.motiu}.`);
+        } else if (classe.tier === 'prospera') {
+            nProspera++;
+            notesProspera.push(`<strong>${perfil.perfil}</strong>: ${classe.motiu}.`);
+        } else {
+            nEstable++;
         }
     });
-    const fraccioRisc = nRisc / detallPerfils.length;
-    let scoreD;
-    if (fraccioRisc === 0) scoreD = 2;
-    else if (fraccioRisc < 0.25) scoreD = 1;
-    else if (fraccioRisc <= 0.5) scoreD = 0;
-    else if (fraccioRisc <= 0.75) scoreD = -1;
-    else scoreD = -2;
+    // Puntuació: cada perfil que prospera suma, cada un que empitjora resta;
+    // quedar-se estable ni suma ni resta. Rang final: -2..+2.
+    const scoreD = Math.round(((nProspera - nEmpitjora) / detallPerfils.length) * 2);
 
     // E: evolució empresarial — si l'impost de societats no expulsa empreses,
     // la gent no marxa i se'n poden crear de noves; si en fa inviables moltes,
@@ -602,14 +637,17 @@ function renderSituacioEconomica(pais, resultatsDepartaments, detallPerfils, res
     const veredicte = calcularVeredicte(total);
     aplicarAmbient(veredicte.mood);
 
-    const nProspera = detallPerfils.length - nRisc;
+    const notesSalut = [...notesEmpitjora, ...notesProspera];
+    const descripcioSalut = notesSalut.length
+        ? notesSalut.join(' ')
+        : `Cap perfil canvia de manera notable: tothom es manté econòmicament estable respecte a l'any anterior.`;
 
     cont.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             ${factorCard("D'on venia el país", `${puntPartida.icona} ${puntPartida.nom}`, puntPartida.descripcio, 0)}
             ${factorCard('Esdeveniment d\'enguany', esdeveniment.nom, esdeveniment.descripcio, 1)}
             ${factorCard('Qualitat del pressupost', `Nivell mitjà: ${NOM_TIER_DEPT[scoreC]}`, `Mitjana dels ${resultatsDepartaments.length} departaments finançats.`, 2)}
-            ${factorCard('Salut dels perfils', `${nProspera} de ${detallPerfils.length} perfils prosperen`, nRisc === 0 ? 'Cap perfil empitjora la seva situació respecte a l\'any anterior.' : notesRisc.join(' '), 3)}
+            ${factorCard('Salut dels perfils', `🔴 ${nEmpitjora} empitjoren · ⚪ ${nEstable} estables · 🟢 ${nProspera} prosperen`, descripcioSalut, 3)}
             ${factorCard('Evolució empresarial', empresarialTitol, empresarialDescripcio, 4)}
         </div>
         <div class="rounded-2xl p-5 mt-4 entrada ${veredicte.classes} ${veredicte.glow}" style="animation-delay:420ms">

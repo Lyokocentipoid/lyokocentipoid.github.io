@@ -102,7 +102,13 @@ const DEPARTAMENTS_PER_DIFICULTAT = {
     repte: ["sanitat", "educacio", "seguretat", "foment", "serveis_socials", "cultura", "justicia", "medi_ambient", "habitatge"]
 };
 
-const FACTOR_PRESSUPOST_PER_DIFICULTAT = { normal: 0.05, dificil: 0.041, repte: 0.026 };
+// Aquests factors es van recalibrar empíricament: amb tipus fiscals "estàndard"
+// (ajustats al pacte de cada país) la recaptació real donava de mitjana 2x el
+// pressupost de l'any anterior (fins a gairebé 3x en mode Normal). Amb els
+// valors actuals, la mateixa prova dona ~1,2x de mitjana i cap departament
+// arriba a Excel·lència per defecte — cal un disseny fiscal per sobre de
+// l'estàndard per aconseguir-ho.
+const FACTOR_PRESSUPOST_PER_DIFICULTAT = { normal: 0.10, dificil: 0.065, repte: 0.042 };
 
 // L'índex de "riquesa" del país (que fixa la mida del pressupost) es calculava
 // abans NOMÉS a partir dels ingressos anuals declarats, ignorant per complet
