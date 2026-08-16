@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proporcionalitat i Percentatges</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1923; --card: #1a2635;
+      --accent: #00e5a0; --accent2: #ff6b6b; --accent3: #ffd166;
+      --text: #e8f4f8; --muted: #7a9bb5; --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); font-family: 'Nunito', sans-serif;
+      color: var(--text); min-height: 100vh; padding: 2rem 1rem 5rem; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; top: -200px; left: -200px; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,229,160,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed; bottom: -150px; right: -150px; width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,107,107,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* HEADER */
+    header { text-align: center; margin-bottom: 1.8rem; animation: fadeDown 0.6s ease both; }
+    .badge {
+      display: inline-block; background: rgba(0,229,160,0.15); border: 1px solid rgba(0,229,160,0.35);
+      color: var(--accent); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 0.35rem 1rem; border-radius: 50px; margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: 'Baloo 2', cursive; font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 800; line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.6rem;
+    }
+    .subtitle { color: var(--muted); font-size: 1rem; font-weight: 600; }
+
+    /* PROGRESS DOTS */
+    #progressSection {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      animation: fadeDown 0.6s 0.05s ease both;
+    }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; }
+    .progress-label { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    #progressCount { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; color: var(--accent); }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .dot-ball {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.12);
+      transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+    }
+    .dot-ball.done { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(0,229,160,0.5); }
+    .dot-ball.pop  { animation: popDot 0.4s ease; }
+
+    /* INSTRUCTIONS */
+    .instructions {
+      background: var(--card); border: 1px solid rgba(255,209,102,0.25);
+      border-left: 4px solid var(--accent3); border-radius: var(--radius);
+      padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      animation: fadeDown 0.6s 0.1s ease both;
+    }
+    .instructions .icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .instructions p { color: #c8dde8; font-size: 0.97rem; line-height: 1.6; }
+
+    /* ROUND LABEL */
+    #roundLabel {
+      text-align: center; margin-bottom: 1rem;
+      font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.04em;
+    }
+
+    /* CARDS */
+    .exercises { display: flex; flex-direction: column; gap: 1.4rem; }
+    .card {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.6rem 1.8rem;
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s, background 0.3s;
+    }
+    .card.animate-in { animation: fadeUp 0.45s ease both; }
+    .card:nth-child(1).animate-in { animation-delay: 0.05s; }
+    .card:nth-child(2).animate-in { animation-delay: 0.15s; }
+    .card:nth-child(3).animate-in { animation-delay: 0.25s; }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+    .card.correct { border-color: rgba(0,229,160,0.5); background: linear-gradient(135deg, #1a2635, #1a2e2a); }
+    .card.wrong   { border-color: rgba(255,107,107,0.5); background: linear-gradient(135deg, #1a2635, #2e1a1a); }
+
+    .card-num {
+      position: absolute; top: 1.2rem; right: 1.5rem;
+      font-family: 'Baloo 2', cursive; font-size: 2.5rem; font-weight: 800;
+      color: rgba(255,255,255,0.04); line-height: 1; user-select: none;
+    }
+    .card-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.2rem 0.7rem; border-radius: 50px; margin-bottom: 0.9rem;
+    }
+    .card:nth-child(1) .card-tag { background: rgba(0,229,160,0.15);   color: var(--accent);  }
+    .card:nth-child(2) .card-tag { background: rgba(255,209,102,0.15); color: var(--accent3); }
+    .card:nth-child(3) .card-tag { background: rgba(255,107,107,0.15); color: var(--accent2); }
+
+    .sentence {
+      font-size: 1.05rem; font-weight: 600; color: var(--text);
+      line-height: 2.2; margin-bottom: 0.8rem;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    }
+
+    input[type="text"] {
+      width: 90px; background: rgba(255,255,255,0.07);
+      border: 2px solid rgba(255,255,255,0.15); border-radius: 10px;
+      color: var(--text); font-family: 'Baloo 2', cursive;
+      font-size: 1rem; font-weight: 700; text-align: center;
+      padding: 0.35rem 0.5rem; outline: none;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent); background: rgba(0,229,160,0.08);
+      box-shadow: 0 0 0 3px rgba(0,229,160,0.12);
+    }
+    input.correct-input { border-color: var(--accent);  background: rgba(0,229,160,0.12); }
+    input.wrong-input   { border-color: var(--accent2); background: rgba(255,107,107,0.12); }
+
+    /* HINT — hidden by default, shown on error */
+    .hint {
+      font-size: 0.82rem; color: var(--accent3); font-weight: 700;
+      margin-top: 0.6rem; padding: 0.45rem 0.8rem;
+      background: rgba(255,209,102,0.08); border-left: 3px solid var(--accent3);
+      border-radius: 6px;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, margin-top 0.35s ease;
+    }
+    .hint.visible { max-height: 80px; opacity: 1; }
+
+    .feedback {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-top: 0.7rem; font-size: 0.9rem; font-weight: 700;
+      min-height: 1.4rem; opacity: 0; transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok   { color: var(--accent); }
+    .feedback.err  { color: var(--accent2); }
+    .feedback .fdot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* BUTTONS */
+    .btn-row { margin-top: 2.5rem; text-align: center; }
+    #checkBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700;
+      background: var(--accent); color: #0f1923; border: none;
+      border-radius: 50px; padding: 0.85rem 2.8rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 24px rgba(0,229,160,0.3);
+    }
+    #checkBtn:hover  { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,229,160,0.4); }
+    #checkBtn:active { transform: scale(0.97); }
+    #checkBtn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    #scoreBox {
+      margin-top: 1.5rem; text-align: center;
+      font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 800;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 2.2rem; color: var(--accent); display: block; }
+    #scoreBox .score-msg { color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
+
+    #retryBtn {
+      display: none; margin-top: 1rem;
+      font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 700;
+      background: transparent; color: var(--muted);
+      border: 2px solid rgba(255,255,255,0.1); border-radius: 50px;
+      padding: 0.6rem 2rem; cursor: pointer; transition: color 0.2s, border-color 0.2s;
+    }
+    #retryBtn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+    /* CELEBRATION */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(10,20,30,0.88);
+      justify-content: center; align-items: center; flex-direction: column; text-align: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.4s ease; }
+    .celeb-inner {
+      background: var(--card); border: 2px solid rgba(0,229,160,0.4);
+      border-radius: 28px; padding: 3rem 2.5rem; max-width: 440px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,160,0.15);
+    }
+    .celeb-emoji { font-size: 4rem; margin-bottom: 1rem; display: block; animation: bounce 0.7s ease infinite alternate; }
+    .celeb-title { font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .celeb-sub   { color: var(--muted); font-size: 1rem; font-weight: 600; margin-bottom: 2rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700;
+      background: var(--accent); color: #0f1923; border: none;
+      border-radius: 50px; padding: 0.8rem 2.2rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 18px rgba(0,229,160,0.35);
+    }
+    #celebCloseBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,229,160,0.5); }
+
+    /* CONFETTI */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* FINAL */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeUp 0.6s ease; }
+    .final-emoji { font-size: 5rem; display: block; margin-bottom: 1rem; }
+    .final-title { font-family: 'Baloo 2', cursive; font-size: 2.5rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .final-sub   { color: var(--muted); font-size: 1.1rem; font-weight: 600; margin-bottom: 2rem; line-height: 1.6; }
+    #reloadBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700;
+      background: transparent; color: var(--accent);
+      border: 2px solid var(--accent); border-radius: 50px;
+      padding: 0.75rem 2rem; cursor: pointer; transition: background 0.2s, color 0.2s;
+    }
+    #reloadBtn:hover { background: var(--accent); color: #0f1923; }
+
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+    @keyframes popDot   { 0%{transform:scale(1)} 50%{transform:scale(1.6)} 100%{transform:scale(1)} }
+    @keyframes bounce   { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  </style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<div id="celebration">
+  <div class="celeb-inner">
+    <span class="celeb-emoji">🏆</span>
+    <div class="celeb-title">Perfecte! 3/3!</div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Següent repte →</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <header>
+    <div class="badge">📐 Exercici interactiu</div>
+    <h1>Proporcionalitat<br>i Percentatges</h1>
+    <p class="subtitle">Demostra el que saps! Omple els buits amb la resposta correcta.</p>
+  </header>
+
+  <div id="progressSection">
+    <div class="progress-header">
+      <span class="progress-label">⬤ Progrés total</span>
+      <span id="progressCount">0 / 30</span>
+    </div>
+    <div id="dotsGrid"></div>
+  </div>
+
+  <div class="instructions">
+    <span class="icon">💡</span>
+    <p>Llegeix bé cada frase i escriu el número que falta. Quan tinguis les 3 respostes, fes clic a <strong>"Comprova respostes"</strong>. Si t'equivoques, apareixerà una pista. Encerta-les totes per avançar al repte següent!</p>
+  </div>
+
+  <div id="roundLabel"></div>
+  <div class="exercises" id="exercises"></div>
+
+  <div class="btn-row">
+    <button id="checkBtn" onclick="checkAnswers()">✅ Comprova respostes</button>
+    <div id="scoreBox">
+      <span class="score-num" id="scoreNum"></span>
+      <span class="score-msg" id="scoreMsg"></span>
+    </div>
+    <br>
+    <button id="retryBtn" onclick="retryRound()">🔄 Tornar a intentar</button>
+  </div>
+
+  <div id="finalScreen">
+    <span class="final-emoji">🌟</span>
+    <div class="final-title">Ho has aconseguit!</div>
+    <div class="final-sub">Has completat tots els 30 exercicis.<br>Ets un/a crack de les matemàtiques! 🎉</div>
+    <button id="reloadBtn" onclick="location.reload()">Tornar a començar 🔄</button>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis
+//   s[]  → parts de la frase:
+//          string   = text pla
+//          ['x']    = negreta
+//          '_'      = camp d'entrada
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ── Percentatge bàsic (6) ───────────────────────────────────
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['25%'],' de ',['200'],' és ','_','.'],
+    answer:50, hint:"🔑 Pista: 200 × 25 ÷ 100", exp:"200 × 25 ÷ 100 = 50"
+  },
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['10%'],' de ',['350'],' és ','_','.'],
+    answer:35, hint:"🔑 Pista: 350 × 10 ÷ 100", exp:"350 × 10 ÷ 100 = 35"
+  },
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['50%'],' de ',['124'],' és ','_','.'],
+    answer:62, hint:"🔑 Pista: divideix 124 entre 2", exp:"124 ÷ 2 = 62"
+  },
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['20%'],' de ',['300'],' és ','_','.'],
+    answer:60, hint:"🔑 Pista: 300 × 20 ÷ 100", exp:"300 × 20 ÷ 100 = 60"
+  },
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['5%'],' de ',['600'],' és ','_','.'],
+    answer:30, hint:"🔑 Pista: 600 × 5 ÷ 100", exp:"600 × 5 ÷ 100 = 30"
+  },
+  {
+    tag:"Percentatge bàsic",
+    s:['El ',['30%'],' de ',['150'],' és ','_','.'],
+    answer:45, hint:"🔑 Pista: 150 × 30 ÷ 100", exp:"150 × 30 ÷ 100 = 45"
+  },
+
+  // ── Proporcionalitat directa (6) ────────────────────────────
+  {
+    tag:"Prop. directa",
+    s:['Si 4 llapis costen ',['6 €'],', aleshores 10 llapis costaran ','_',' €.'],
+    answer:15, hint:"🔑 Pista: preu d'1 llapis = 6÷4; després × 10", exp:"6 ÷ 4 × 10 = 15"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Si 3 bolis costen ',['9 €'],', aleshores 7 bolis costaran ','_',' €.'],
+    answer:21, hint:"🔑 Pista: preu d'1 boli = 9÷3; després × 7", exp:"9 ÷ 3 × 7 = 21"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Si 5 llibres costen ',['20 €'],', aleshores 8 llibres costaran ','_',' €.'],
+    answer:32, hint:"🔑 Pista: preu d'1 llibre = 20÷5; després × 8", exp:"20 ÷ 5 × 8 = 32"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Un cotxe recorre ',['180 km'],' en 3 hores. A la mateixa velocitat, en 5 hores recorrerà ','_',' km.'],
+    answer:300, hint:"🔑 Pista: km per hora = 180÷3; després × 5", exp:"180 ÷ 3 × 5 = 300"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Si 6 entrades costen ',['30 €'],', aleshores 9 entrades costaran ','_',' €.'],
+    answer:45, hint:"🔑 Pista: preu d'1 entrada = 30÷6; després × 9", exp:"30 ÷ 6 × 9 = 45"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Per fer 5 pastissos calen ',['250 g'],' de farina. Per fer 8 pastissos en calen ','_',' g.'],
+    answer:400, hint:"🔑 Pista: grams per pastís = 250÷5; després × 8", exp:"250 ÷ 5 × 8 = 400"
+  },
+
+  // ── Proporcionalitat inversa (6) ────────────────────────────
+  {
+    tag:"Prop. inversa",
+    s:['Si 4 operaris tarden ',['12 dies'],' en fer una feina, 6 operaris la faran en ','_',' dies.'],
+    answer:8,
+    hint:"🔑 Pista: en prop. inversa, multiplica i divideix: 4 × 12 ÷ 6",
+    exp:"4 × 12 ÷ 6 = 8 dies"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Si 3 persones pinten una habitació en ',['9 hores'],', 9 persones ho faran en ','_',' hores.'],
+    answer:3,
+    hint:"🔑 Pista: en prop. inversa: 3 × 9 ÷ 9",
+    exp:"3 × 9 ÷ 9 = 3 hores"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Un dipòsit s\'omple en ',['6 hores'],' amb 4 aixetes obertes. Amb 8 aixetes s\'omplirà en ','_',' hores.'],
+    answer:3,
+    hint:"🔑 Pista: en prop. inversa: 4 × 6 ÷ 8",
+    exp:"4 × 6 ÷ 8 = 3 hores"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Si 5 camions transporten una càrrega en ',['4 viatges'],', 10 camions la transportarien en ','_',' viatges.'],
+    answer:2,
+    hint:"🔑 Pista: en prop. inversa: 5 × 4 ÷ 10",
+    exp:"5 × 4 ÷ 10 = 2 viatges"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Anant a ',['60 km/h'],', un trajecte dura 4 hores. Anant a 80 km/h, durarà ','_',' hores.'],
+    answer:3,
+    hint:"🔑 Pista: en prop. inversa: 60 × 4 ÷ 80",
+    exp:"60 × 4 ÷ 80 = 3 hores"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Si 8 treballadors fan una obra en ',['15 dies'],', 12 treballadors la faran en ','_',' dies.'],
+    answer:10,
+    hint:"🔑 Pista: en prop. inversa: 8 × 15 ÷ 12",
+    exp:"8 × 15 ÷ 12 = 10 dies"
+  },
+
+  // ── Descompte (4) ───────────────────────────────────────────
+  {
+    tag:"Descompte",
+    s:['Una samarreta val ',['40 €'],'. Descompte del ',['15%'],'. El preu final és ','_',' €.'],
+    answer:34, hint:"🔑 Pista: 40 − (40 × 15 ÷ 100)", exp:"40 − 6 = 34"
+  },
+  {
+    tag:"Descompte",
+    s:['Unes sabatilles valen ',['80 €'],'. Descompte del ',['25%'],'. El preu final és ','_',' €.'],
+    answer:60, hint:"🔑 Pista: 80 − (80 × 25 ÷ 100)", exp:"80 − 20 = 60"
+  },
+  {
+    tag:"Descompte",
+    s:['Un videojoc val ',['60 €'],'. Descompte del ',['10%'],'. El preu final és ','_',' €.'],
+    answer:54, hint:"🔑 Pista: 60 − (60 × 10 ÷ 100)", exp:"60 − 6 = 54"
+  },
+  {
+    tag:"Descompte",
+    s:['Un mòbil val ',['500 €'],'. Descompte del ',['20%'],'. El preu final és ','_',' €.'],
+    answer:400, hint:"🔑 Pista: 500 − (500 × 20 ÷ 100)", exp:"500 − 100 = 400"
+  },
+
+  // ── Augment percentual (2) ──────────────────────────────────
+  {
+    tag:"Augment percentual",
+    s:['Un producte val ',['50 €'],'. Augmenta un ',['10%'],'. El nou preu és ','_',' €.'],
+    answer:55, hint:"🔑 Pista: 50 + (50 × 10 ÷ 100)", exp:"50 + 5 = 55"
+  },
+  {
+    tag:"Augment percentual",
+    s:['El salari és ',['1.200 €'],'. Puja un ',['5%'],'. El nou salari és ','_',' €.'],
+    answer:1260, hint:"🔑 Pista: 1200 + (1200 × 5 ÷ 100)", exp:"1200 + 60 = 1260"
+  },
+
+  // ── Calcula el percentatge (3) ──────────────────────────────
+  {
+    tag:"Calcula el %",
+    s:['De 200 alumnes, 50 porten bicicleta. Quin percentatge és? ','_',' %'],
+    answer:25, hint:"🔑 Pista: (50 ÷ 200) × 100", exp:"50 ÷ 200 × 100 = 25%"
+  },
+  {
+    tag:"Calcula el %",
+    s:["En un examen de 40 preguntes, l'Alícia en encerta 32. Quin % ha encertat? ",'_',' %'],
+    answer:80, hint:"🔑 Pista: (32 ÷ 40) × 100", exp:"32 ÷ 40 × 100 = 80%"
+  },
+  {
+    tag:"Calcula el %",
+    s:["D'una classe de 30 alumnes, 6 porten ulleres. Quin percentatge? ",'_',' %'],
+    answer:20, hint:"🔑 Pista: (6 ÷ 30) × 100", exp:"6 ÷ 30 × 100 = 20%"
+  },
+
+  // ── Proporcionalitat directa — compra (3) ───────────────────
+  {
+    tag:"Prop. directa",
+    s:['Si 2 kg de taronges costen ',['3 €'],', aleshores 6 kg costaran ','_',' €.'],
+    answer:9, hint:"🔑 Pista: preu per kg = 3÷2; després × 6", exp:"3 ÷ 2 × 6 = 9"
+  },
+  {
+    tag:"Prop. directa",
+    s:['Un ciclista fa ',['45 km'],' en 3 hores. A la mateixa velocitat, en 7 hores farà ','_',' km.'],
+    answer:105, hint:"🔑 Pista: km per hora = 45÷3; després × 7", exp:"45 ÷ 3 × 7 = 105"
+  },
+  {
+    tag:"Prop. inversa",
+    s:['Si 2 bombes buidaven una piscina en ',['12 hores'],', amb 6 bombes la buidarien en ','_',' hores.'],
+    answer:4,
+    hint:"🔑 Pista: en prop. inversa: 2 × 12 ÷ 6",
+    exp:"2 × 12 ÷ 6 = 4 hores"
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ESTAT
+// ═══════════════════════════════════════════════════════════════
+const TOTAL = 30, PER = 3;
+let order = [], solved = 0, roundIdx = 0, currentEx = [], checked = false;
+
+// ═══════════════════════════════════════════════════════════════
+// INICI
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i = TOTAL - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  buildDots();
+  loadRound(0);
+}
+
+function buildDots() {
+  const g = document.getElementById('dotsGrid');
+  g.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-ball'; d.id = 'dot' + i;
+    g.appendChild(d);
+  }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved + ' / ' + TOTAL;
+}
+
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el = document.getElementById('dot' + gi);
+      if (!el) return;
+      el.classList.add('done','pop');
+      el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+    }, delay * 180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+function loadRound(ri) {
+  checked = false; roundIdx = ri;
+  const start = ri * PER;
+  currentEx = order.slice(start, start + PER).map(i => BANK[i]);
+
+  document.getElementById('roundLabel').textContent =
+    'Repte ' + (ri + 1) + ' de ' + (TOTAL / PER);
+
+  const container = document.getElementById('exercises');
+  container.innerHTML = '';
+
+  currentEx.forEach((ex, i) => {
+    const card = document.createElement('div');
+    card.className = 'card animate-in'; card.id = 'card' + i;
+
+    let sentHTML = '';
+    ex.s.forEach(part => {
+      if (part === '_') {
+        sentHTML += '<span style="display:inline-flex;align-items:center">' +
+          '<input type="text" id="ans' + i + '" placeholder="?" autocomplete="off" maxlength="10">' +
+          '</span>';
+      } else if (Array.isArray(part)) {
+        sentHTML += '<strong>' + part[0] + '</strong>';
+      } else {
+        sentHTML += part;
+      }
+    });
+
+    card.innerHTML =
+      '<div class="card-num">' + (i + 1) + '</div>' +
+      '<div class="card-tag">' + ex.tag + '</div>' +
+      '<div class="sentence">' + sentHTML + '</div>' +
+      '<div class="hint" id="hint' + i + '">' + ex.hint + '</div>' +
+      '<div class="feedback" id="fb' + i + '"><span class="fdot"></span><span class="msg"></span></div>';
+
+    container.appendChild(card);
+  });
+
+  // Enter per navegar
+  currentEx.forEach((_, i) => {
+    document.getElementById('ans' + i).addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const nxt = document.getElementById('ans' + (i + 1));
+        if (nxt) nxt.focus(); else checkAnswers();
+      }
+    });
+  });
+
+  // Reset UI
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent = '';
+  document.getElementById('scoreMsg').textContent = '';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  document.getElementById('checkBtn').style.display = 'inline-block';
+
+  setTimeout(() => { const f = document.getElementById('ans0'); if (f) f.focus(); }, 300);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVAR RESPOSTES
+// ═══════════════════════════════════════════════════════════════
+function checkAnswers() {
+  if (checked) return;
+  const TOL = 0.06;
+  let ok = 0;
+
+  currentEx.forEach((ex, i) => {
+    const inp   = document.getElementById('ans'  + i);
+    const fb    = document.getElementById('fb'   + i);
+    const card  = document.getElementById('card' + i);
+    const hint  = document.getElementById('hint' + i);
+    const msg   = fb.querySelector('.msg');
+    const val   = parseFloat(inp.value.replace(',', '.').replace(/\s/g,''));
+
+    if (isNaN(val)) {
+      inp.classList.remove('correct-input','wrong-input');
+      fb.className = 'feedback err show';
+      msg.innerHTML = "Has d'escriure un número.";
+      card.classList.remove('correct','wrong');
+      hint.classList.add('visible');     // mostra pista
+      return;
+    }
+
+    if (Math.abs(val - ex.answer) <= TOL) {
+      ok++;
+      inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+      card.classList.add('correct'); card.classList.remove('wrong');
+      fb.className = 'feedback ok show';
+      msg.innerHTML = 'Correcte! ✔';
+      hint.classList.remove('visible'); // amaga pista si encerts
+    } else {
+      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      card.classList.add('wrong'); card.classList.remove('correct');
+      fb.className = 'feedback err show';
+      msg.innerHTML = 'Incorrecte!';
+      hint.classList.add('visible');    // mostra pista en error
+    }
+  });
+
+  // Puntuació
+  document.getElementById('scoreNum').textContent = ok + ' / ' + PER;
+  document.getElementById('scoreMsg').textContent = [
+    "Revisa les pistes i torna-ho a provar! 💪",
+    "Quasi! Revisa els errors. 🙌",
+    "Bé! Però alguna fallada. Ànims! 😊",
+    "Perfecte! Seguim! 🏆🎉"
+  ][ok];
+  document.getElementById('scoreBox').classList.add('show');
+
+  if (ok === PER) {
+    checked = true;
+    document.getElementById('checkBtn').disabled = true;
+
+    // Amaga totes les pistes quan s'encerten totes
+    for (let i = 0; i < PER; i++) {
+      const h = document.getElementById('hint' + i);
+      if (h) h.classList.remove('visible');
+    }
+
+    const start  = roundIdx * PER;
+    markDots(order.slice(start, start + PER));
+    solved += PER;
+    updateCount();
+
+    const isLast = (roundIdx + 1) * PER >= TOTAL;
+    if (isLast) setTimeout(showFinal, 800);
+    else         setTimeout(showCelebration, 500);
+  } else {
+    document.getElementById('retryBtn').style.display = 'inline-block';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TORNAR A INTENTAR
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for (let i = 0; i < PER; i++) {
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const hint = document.getElementById('hint' + i);
+    if (inp)  { inp.value = ''; inp.classList.remove('correct-input','wrong-input'); }
+    if (card) card.classList.remove('correct','wrong');
+    if (fb)   { fb.className = 'feedback'; fb.querySelector('.msg').innerHTML = ''; }
+    // Les pistes es mantenen visibles si l'alumne ja s'ha equivocat
+    // (no les amaguem en el retry, es tornaran a amagar si encerta)
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  checked = false;
+  const f = document.getElementById('ans0');
+  if (f) f.focus();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebSub').textContent =
+    'Has encertat les 3 preguntes! Prepara\'t per al repte ' + (roundIdx + 2) + '.';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti();
+  loadRound(roundIdx + 1);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PANTALLA FINAL
+// ═══════════════════════════════════════════════════════════════
+function showFinal() {
+  document.getElementById('exercises').style.display  = 'none';
+  document.getElementById('roundLabel').style.display = 'none';
+  document.querySelector('.btn-row').style.display    = 'none';
+  document.getElementById('finalScreen').classList.add('show');
+  launchConfetti();
+  setTimeout(stopConfetti, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('confettiCanvas');
+const ctx    = canvas.getContext('2d');
+let particles = [], confettiAF = null;
+
+function launchConfetti() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  particles = Array.from({ length: 90 }, makeP);
+  if (confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop() { drawConfetti(); confettiAF = requestAnimationFrame(loop); })();
+}
+
+function stopConfetti() {
+  if (confettiAF) { cancelAnimationFrame(confettiAF); confettiAF = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('show');
+}
+
+function makeP() {
+  const cols = ['#00e5a0','#ffd166','#ff6b6b','#a29bfe','#74b9ff','#fdcb6e'];
+  return {
+    x: Math.random() * window.innerWidth, y: Math.random() * -200,
+    w: 8 + Math.random() * 8, h: 4 + Math.random() * 5,
+    color: cols[Math.floor(Math.random() * cols.length)],
+    speed: 2 + Math.random() * 4, angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2, drift: (Math.random() - 0.5) * 1.5,
+  };
+}
+
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+    if (p.y > canvas.height) Object.assign(p, makeP(), { y: -20 });
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
