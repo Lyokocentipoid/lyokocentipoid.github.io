@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <style>
+    .seccio-card[data-s="recursos"] { --s-color: var(--plum); }
+  </style>
+</head>
+<body>
+
+<!-- Fons decoratiu: paper quadriculat + glifs matemàtics -->
+<div class="calc-bg">
+  <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#211f2c" stroke-width=".5" fill="none">
+      <line x1="0" y1="100" x2="1400" y2="100"/><line x1="0" y1="200" x2="1400" y2="200"/>
+      <line x1="0" y1="300" x2="1400" y2="300"/><line x1="0" y1="400" x2="1400" y2="400"/>
+      <line x1="0" y1="500" x2="1400" y2="500"/><line x1="0" y1="600" x2="1400" y2="600"/>
+      <line x1="0" y1="700" x2="1400" y2="700"/><line x1="0" y1="800" x2="1400" y2="800"/>
+      <line x1="100" y1="0" x2="100" y2="900"/><line x1="200" y1="0" x2="200" y2="900"/>
+      <line x1="300" y1="0" x2="300" y2="900"/><line x1="400" y1="0" x2="400" y2="900"/>
+      <line x1="500" y1="0" x2="500" y2="900"/><line x1="600" y1="0" x2="600" y2="900"/>
+      <line x1="700" y1="0" x2="700" y2="900"/><line x1="800" y1="0" x2="800" y2="900"/>
+      <line x1="900" y1="0" x2="900" y2="900"/><line x1="1000" y1="0" x2="1000" y2="900"/>
+      <line x1="1100" y1="0" x2="1100" y2="900"/><line x1="1200" y1="0" x2="1200" y2="900"/>
+      <line x1="1300" y1="0" x2="1300" y2="900"/>
+    </g>
+    <g font-family="'Space Grotesk', sans-serif" font-weight="700" fill="#0b93a0">
+      <text x="120" y="230" font-size="150">∑</text>
+      <text x="1150" y="200" font-size="120" fill="#e2860a">π</text>
+      <text x="1080" y="720" font-size="140" fill="#e6483a">½</text>
+      <text x="180" y="720" font-size="110" fill="#8452d6">=</text>
+      <text x="650" y="480" font-size="130" fill="#1fa971">%</text>
+    </g>
+  </svg>
+</div>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>CalcMat 1r ESO</a>
+  <ul class="nav-links">
+    <li><a href="#">Inici</a></li>
+    <li><a href="teoria.html">Teoria</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+    <li><a href="../recursos.html">Material</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-tag">Matemàtiques · 1r ESO</span>
+      <h1>
+        El <span class="ac-petrol">càlcul</span><br>
+        fet <span class="ac-amber">visual</span><br>
+        i <span class="ac-terracotta">interactiu</span>
+      </h1>
+      <p>Explora nombres, operacions i mesures amb càpsules interactives pensades per entendre i assentar conceptes de càlcul.</p>
+      <div class="hero-actions">
+        <a href="#seccions" class="btn btn-primary">Comença a explorar →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-canvas">
+        <canvas id="heroCanvasFull"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section id="seccions">
+    <div class="container">
+      <div class="reveal">
+        <h2 class="section-title">3 tipus de recursos</h2>
+        <p class="section-sub">Diferents formats per aprendre, practicar i consolidar conceptes de càlcul.</p>
+      </div>
+      <div class="seccions-grid">
+
+        <a href="teoria.html" class="seccio-card big reveal" data-s="teoria">
+          <div class="seccio-text">
+            <span class="seccio-badge">✦ Interactiu</span>
+            <h3>Càpsules de Teoria</h3>
+            <p>Representacions visuals i interactives de conceptes clau. Manipula xifres, construeix nombres i entén el càlcul de forma intuïtiva.</p>
+          </div>
+          <div class="seccio-preview">∑</div>
+        </a>
+
+        <a href="fitxes.html" class="seccio-card reveal" data-s="fitxes" style="transition-delay:.1s">
+          <span class="seccio-badge">✎ Pràctica</span>
+          <h3>Fitxes de Problemes</h3>
+          <p>Col·lecció de fitxes autocorregibles i digitals similars a les preguntes d'examen.</p>
+        </a>
+
+        <a href="recursos.html" class="seccio-card reveal" data-s="recursos" style="transition-delay:.2s">
+          <span class="seccio-badge">⬡ Recursos</span>
+          <h3>Material General</h3>
+          <p>Enllaços externs per aprofundir en els continguts.</p>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="temes">
+    <div class="container">
+      <div class="reveal">
+        <p style="color:var(--muted);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;">Continguts del curs</p>
+        <h2 class="section-title">Tres temes, tres blocs temàtics</h2>
+        <p class="section-sub">Tot el temari de càlcul de 1r d'ESO, organitzat en blocs clars amb recursos específics per a cada apartat. Clica un bloc per anar-hi directament.</p>
+      </div>
+      <div class="temes-grid">
+
+        <a href="teoria.html#bloc-01" class="tema-card reveal" data-color="petrol" style="transition-delay:.1s">
+          <div class="tema-icon">🔢</div>
+          <p class="tema-num">Bloc 01</p>
+          <h3>Nombres i Divisibilitat</h3>
+          <ul>
+            <li>Sistemes de numeració (base 10, romans, binari)</li>
+            <li>La divisió</li>
+            <li>Múltiples, divisors i criteris</li>
+            <li>MCM i MCD</li>
+          </ul>
+        </a>
+
+        <a href="teoria.html#bloc-02" class="tema-card reveal" data-color="amber" style="transition-delay:.2s">
+          <div class="tema-icon">🧮</div>
+          <p class="tema-num">Bloc 02</p>
+          <h3>Potències, Arrels i Enters</h3>
+          <ul>
+            <li>Potències</li>
+            <li>Arrels quadrades</li>
+            <li>Jerarquia d'operacions</li>
+            <li>Nombres negatius</li>
+          </ul>
+        </a>
+
+        <a href="teoria.html#bloc-03" class="tema-card reveal" data-color="terracotta" style="transition-delay:.3s">
+          <div class="tema-icon">🔟</div>
+          <p class="tema-num">Bloc 03</p>
+          <h3>Decimals, Proporcionalitat i Percentatges</h3>
+          <ul>
+            <li>Càlculs amb decimals</li>
+            <li>Fraccions</li>
+            <li>Proporcionalitat directa i inversa</li>
+            <li>Percentatges</li>
+          </ul>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>CalcMat · Càlcul de 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+  <span>dvalino@xtec.cat</span>
+</footer>
+
+<script src="assets/hero-anim.js"></script>
+<script>
+  initHeroAnim(document.getElementById('heroCanvasFull'), { size: 320 });
+
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

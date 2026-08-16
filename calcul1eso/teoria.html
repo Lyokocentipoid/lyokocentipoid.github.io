@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teoria · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Inici</a></li>
+    <li><a href="teoria.html" class="active">Teoria</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+    <li><a href="../recursos.html">Material</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="page-header-text">
+      <div class="breadcrumb">
+        <a href="index.html">Inici</a> <span>›</span> <span class="cur">Teoria</span>
+      </div>
+      <h1>Càpsules de <em>teoria</em></h1>
+      <p>Conceptes de càlcul explicats de forma visual i interactiva. Manipula xifres, construeix nombres i posa a prova el que has après amb el mode Repte de cada càpsula.</p>
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-num">12</span><span class="stat-label">Càpsules totals</span></div>
+        <div class="stat"><span class="stat-num" style="color:var(--sage)">12</span><span class="stat-label">Disponibles</span></div>
+        <div class="stat"><span class="stat-num" style="color:var(--petrol)">3</span><span class="stat-label">Blocs temàtics</span></div>
+      </div>
+    </div>
+    <div class="page-header-visual">
+      <canvas class="page-hero-canvas" id="pageHero"></canvas>
+    </div>
+  </div>
+</div>
+
+<main class="content">
+
+  <!-- BLOC 01 -->
+  <section class="bloc reveal" id="bloc-01" style="--b-color: var(--petrol)">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 01</span>
+      <span class="bloc-title">Nombres i Divisibilitat</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/sistemes-numeracio.html" class="capsula" style="--b-color:var(--petrol)">
+        <div class="capsula-icon">🔢</div>
+        <div class="capsula-meta"><span class="capsula-tag">Numeració</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Sistemes de numeració</h3>
+        <p>Construeix números amb blocs de valor posicional, prova els numerals romans i juga amb el binari (amb repte inspirat en el joc de bits de Cisco).</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/la-divisio.html" class="capsula" style="--b-color:var(--petrol)">
+        <div class="capsula-icon">➗</div>
+        <div class="capsula-meta"><span class="capsula-tag">Divisió</span><span class="capsula-status available">Disponible</span></div>
+        <h3>La divisió</h3>
+        <p>Reparteix punts en grups arrossegant-los tu mateix i descobreix el quocient i el residu.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/divisibilitat-criteris.html" class="capsula" style="--b-color:var(--petrol)">
+        <div class="capsula-icon">🎯</div>
+        <div class="capsula-meta"><span class="capsula-tag">Divisibilitat</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Múltiples, divisors i criteris</h3>
+        <p>Caça múltiples en una graella i comprova els criteris de divisibilitat clicant les xifres d'un número.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/mcm-mcd.html" class="capsula" style="--b-color:var(--petrol)">
+        <div class="capsula-icon">🔗</div>
+        <div class="capsula-meta"><span class="capsula-tag">Divisibilitat</span><span class="capsula-status available">Disponible</span></div>
+        <h3>MCM i MCD</h3>
+        <p>Factoritza dos números clicant primers i combina els factors comuns per trobar el MCM i el MCD.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- BLOC 02 -->
+  <section class="bloc reveal" id="bloc-02" style="--b-color: var(--amber); transition-delay:.1s">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 02</span>
+      <span class="bloc-title">Potències, Arrels i Nombres Enters</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/potencies.html" class="capsula" style="--b-color:var(--amber)">
+        <div class="capsula-icon">📈</div>
+        <div class="capsula-meta"><span class="capsula-tag">Potències</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Potències</h3>
+        <p>Fes créixer una potència clicant "× base" i arriba a un valor objectiu amb el mínim de clics.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/arrels-quadrades.html" class="capsula" style="--b-color:var(--amber)">
+        <div class="capsula-icon">√</div>
+        <div class="capsula-meta"><span class="capsula-tag">Arrels</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Arrels quadrades</h3>
+        <p>Fes créixer o encongir un quadrat de tessel·les anell a anell i troba l'arrel d'una àrea objectiu.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/jerarquia-operacions.html" class="capsula" style="--b-color:var(--amber)">
+        <div class="capsula-icon">🧩</div>
+        <div class="capsula-meta"><span class="capsula-tag">Operacions</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Jerarquia d'operacions</h3>
+        <p>Clica quina operació toca resoldre primer en una expressió i comprova si l'ordre és correcte.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/nombres-negatius.html" class="capsula" style="--b-color:var(--amber)">
+        <div class="capsula-icon">➖</div>
+        <div class="capsula-meta"><span class="capsula-tag">Enters</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Nombres negatius</h3>
+        <p>Arrossega un punt per la recta numèrica i encadena fitxes de salt (+3, −5...) fins a un valor objectiu.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- BLOC 03 -->
+  <section class="bloc reveal" id="bloc-03" style="--b-color: var(--terracotta); transition-delay:.2s">
+    <div class="bloc-header">
+      <span class="bloc-num">Bloc 03</span>
+      <span class="bloc-title">Decimals, Proporcionalitat i Percentatges</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/operacions-decimals.html" class="capsula" style="--b-color:var(--terracotta)">
+        <div class="capsula-icon">🧮</div>
+        <div class="capsula-meta"><span class="capsula-tag">Decimals</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Càlculs amb decimals</h3>
+        <p>Arrossega els números per alinear la coma i mou el punt decimal fins a la posició correcta.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/fraccions-decimals.html" class="capsula" style="--b-color:var(--terracotta)">
+        <div class="capsula-icon">🥧</div>
+        <div class="capsula-meta"><span class="capsula-tag">Fraccions</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Fraccions</h3>
+        <p>Omple porcions d'un cercle per formar una fracció i descobreix el seu decimal amb una divisió pas a pas.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/proporcionalitat.html" class="capsula" style="--b-color:var(--terracotta)">
+        <div class="capsula-icon">⚖️</div>
+        <div class="capsula-meta"><span class="capsula-tag">Proporcionalitat</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Proporcionalitat directa i inversa</h3>
+        <p>Construeix taules de raons, aplica el patró directe o invers i troba el valor que falta.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/percentatges.html" class="capsula" style="--b-color:var(--terracotta)">
+        <div class="capsula-icon">💯</div>
+        <div class="capsula-meta"><span class="capsula-tag">Percentatges</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Percentatges</h3>
+        <p>Calcula el percentatge d'un número i passa de dos números a un percentatge.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>CalcMat · Càlcul de 1r ESO · Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+  <span>dvalino@xtec.cat</span>
+</footer>
+
+<script src="assets/hero-anim.js"></script>
+<script>
+  initHeroAnim(document.getElementById('navHero'), { size: 34 });
+  initHeroAnim(document.getElementById('pageHero'), { size: 150 });
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
