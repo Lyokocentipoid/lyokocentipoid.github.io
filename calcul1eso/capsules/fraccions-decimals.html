@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraccions · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--terracotta); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+    #canvasWrap { aspect-ratio: 6 / 5; }
+    #fracCanvas { cursor: pointer; }
+    #repteFeedback { font-size: .85rem; font-weight: 600; }
+
+    /* ── DENOMINADOR: fila de xips (salt directe, en lloc d'un stepper ±1) ── */
+    .denom-chips {
+      display: flex; flex-wrap: wrap; gap: .3rem; align-items: center;
+      background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .55rem;
+    }
+    .denom-chips .dc-label { font-size: .74rem; color: var(--muted); padding: 0 .35rem 0 .15rem; white-space: nowrap; }
+    .denom-chips button {
+      min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .76rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .denom-chips button:hover { border-color: var(--terracotta); color: var(--terracotta); transform: translateY(-1px); }
+    .denom-chips button.active { background: var(--terracotta); border-color: var(--terracotta); color: #fff; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--terracotta)">Bloc 03 · Fraccions</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Fraccions</h1>
+      <p>Cada fracció amaga una divisió: el numerador dividit pel denominador, igual que a «La divisió». Clica o arrossega les porcions del cercle per formar la fracció d'un sol gest i, pas a pas, descobreix quin decimal hi correspon amb la clau de divisió. Al mode Repte, fes-ho contra rellotge.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--terracotta)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <div class="denom-chips" id="dChipsRow"><span class="dc-label">Denominador</span></div>
+      <button class="btn btn-primary" id="nextStepBtn">Pas següent →</button>
+      <button class="btn btn-ghost" id="randomFracBtn">🔀 Fracció aleatòria</button>
+    </div>
+
+    <div class="controls-row repte-only" id="repteControlsRow">
+      <div class="denom-chips" id="rdChipsRow"><span class="dc-label">Denominador</span></div>
+      <button class="btn btn-primary" id="checkRepteBtn">Comprova ✓</button>
+      <span id="repteFeedback"></span>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--terracotta)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--terracotta)">
+      <canvas id="fracCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Clica o arrossega les porcions per omplir-les; toca el centre per buidar-les</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--terracotta)">
+      <div class="readout-num" id="readoutNum">3/4</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Fracció carregada</div>
+        <div class="readout-def" id="readoutDef">Prem «Pas següent» per fer la divisió pas a pas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Fraccions freqüents</div>
+
+    <div class="type-card" id="card-1-2" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/2</div>
+        <div class="type-range">= 0,5</div>
+        <div class="type-desc">La meitat del cercle.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-1-4" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/4</div>
+        <div class="type-range">= 0,25</div>
+        <div class="type-desc">Un quart del cercle.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-1-5" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/5</div>
+        <div class="type-range">= 0,2</div>
+        <div class="type-desc">Una cinquena part.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-1-10" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/10</div>
+        <div class="type-range">= 0,1</div>
+        <div class="type-desc">Una desena part: decimal exacte.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-3-4" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">3/4</div>
+        <div class="type-range">= 0,75</div>
+        <div class="type-desc">Tres porcions de quatre.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-1-3" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/3</div>
+        <div class="type-range">= 0,3333…</div>
+        <div class="type-desc">Un terç: decimal periòdic infinit.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> Una fracció és una divisió amagada: numerador ÷ denominador (com a «La divisió»). Si el denominador només té els factors 2 i 5, el decimal és exacte; si no, és periòdic (com 1/3 = 0,333…).
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 03 · Decimals, Proporcionalitat i Percentatges</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  PALETA (derivada de --petrol/--amber/--sage/--terracotta/--plum actuals)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+const PAL = {
+  text:  TEXT_DARK,
+  muted: TEXT_MUTED,
+  petrol: '#0b93a0', petrolTint: '#5fd0d8', petrolBg: 'rgba(11,147,160,0.10)', petrolBorder: 'rgba(11,147,160,0.5)',
+  amber:  '#e2860a', amberTint: '#ffcf7a', amberBg: 'rgba(226,134,10,0.22)',  amberBorder: 'rgba(226,134,10,0.65)',
+  sage:   '#1fa971', sageTint: '#8fe3a8',  sageBg: 'rgba(31,169,113,0.16)',   sageBorder: 'rgba(31,169,113,0.55)',
+  terracotta: '#e6483a', terracottaTint: '#ff9a86', terracottaBg: 'rgba(230,72,58,0.16)', terracottaBorder: 'rgba(230,72,58,0.55)',
+  plum: '#8452d6', plumTint: '#d3c3ee'
+};
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('fracCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const nextStepBtn   = document.getElementById('nextStepBtn');
+const repteFeedback = document.getElementById('repteFeedback');
+
+let D = 4;            // denominador (porcions totals), 2..12
+let num = 3;           // numerador = porcions omplertes (0..D), sempre contigües des de dalt
+let hasInteracted = false;
+let dragging = false;
+let W, H;
+
+// divisió pas a pas (mode Explora) — model precomputat, revelat amb "Pas següent"
+let divLayout = null;   // { dividendTokens:[{ch}], steps:[{qDigit,product,remainder,prefix,tokenStart,tokenEnd}], terminating }
+let stepIndex = -1;
+let finished = false;
+
+// mode Repte
+let repteMode = false, repteEnded = false;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0, bestStreak = 0;
+let target = null;         // { n, d }
+let roundLocked = false;
+
+function numOf() { return num; }
+
+// ─────────────────────────────────────────────
+//  MATEMÀTIQUES
+// ─────────────────────────────────────────────
+function fractionToDecimalString(n, den, maxDigits = 6) {
+  if (n === 0) return '0';
+  const intPart = Math.floor(n / den);
+  let rem = n % den;
+  if (rem === 0) return String(intPart);
+  let s = intPart + ',';
+  let digits = '';
+  const seen = new Map();
+  for (let i = 0; i < maxDigits; i++) {
+    if (seen.has(rem)) { return s + digits + '…'; }
+    seen.set(rem, i);
+    rem *= 10;
+    const d = Math.floor(rem / den);
+    digits += d;
+    rem = rem % den;
+    if (rem === 0) return s + digits;
+  }
+  return s + digits + '…';
+}
+
+// Construeix el model complet de la divisió llarga (numerador ÷ D) per al tauler visual.
+// Cada pas consumeix EXACTAMENT un token nou de dividendTokens (les xifres del numerador
+// per al pas 0, després un "0" baixat per cada pas decimal), tal com s'escriu a la llibreta.
+function computeDivisionLayout(n, den) {
+  const dividendTokens = String(n).split('').map(ch => ({ ch }));
+  const steps = [];
+  const intPart = Math.floor(n / den);
+  const rem0 = n % den;
+  steps.push({ qDigit: intPart, product: intPart * den, remainder: rem0, prefix: n, tokenStart: 0, tokenEnd: dividendTokens.length - 1 });
+
+  if (rem0 === 0) return { dividendTokens, steps, terminating: true };
+
+  dividendTokens.push({ ch: ',' });
+  let remainder = rem0;
+  const maxDigits = 4;
+  for (let i = 0; i < maxDigits && remainder !== 0; i++) {
+    dividendTokens.push({ ch: '0' });
+    const tokenIdx = dividendTokens.length - 1;
+    const prefix = remainder * 10;
+    const qDigit = Math.floor(prefix / den);
+    const product = qDigit * den;
+    remainder = prefix - product;
+    steps.push({ qDigit, product, remainder, prefix, tokenStart: tokenIdx, tokenEnd: tokenIdx });
+  }
+  return { dividendTokens, steps, terminating: remainder === 0 };
+}
+
+function resetDivSteps() {
+  divLayout = computeDivisionLayout(numOf(), D);
+  stepIndex = -1;
+  finished = false;
+  nextStepBtn.textContent = 'Pas següent →';
+}
+
+function stepCaption(idx) {
+  if (idx < 0) return `Prem «Pas següent» per començar la divisió ${numOf()} ÷ ${D}.`;
+  const steps = divLayout.steps;
+  const st = steps[idx];
+  let text;
+  if (idx === 0) {
+    if (steps.length === 1) {
+      text = `${D} cap exactament ${st.qDigit} vegada(es) en ${st.prefix} (perquè ${st.qDigit}×${D}=${st.product}), i no sobra res.`;
+    } else if (st.qDigit === 0) {
+      text = `${D} no cap cap vegada en ${st.prefix} (és més petit), així que la part entera és 0. Posem la coma i baixem un 0.`;
+    } else {
+      text = `${D} cap ${st.qDigit} vegada(es) en ${st.prefix} (perquè ${st.qDigit}×${D}=${st.product}, i sobren ${st.remainder}). Posem la coma i baixem un 0.`;
+    }
+  } else {
+    text = `Baixem un 0: ${steps[idx - 1].remainder} passa a ${st.prefix}. ${D} cap ${st.qDigit} vegada(es) en ${st.prefix} (perquè ${st.qDigit}×${D}=${st.product}), i sobren ${st.remainder}.`;
+  }
+  if (idx === steps.length - 1 && !divLayout.terminating) {
+    text += ` El decimal no s'acaba: es repeteix (per això ho tallem amb …).`;
+  }
+  return text;
+}
+
+// ─────────────────────────────────────────────
+//  REPTE: banc d'objectius
+// ─────────────────────────────────────────────
+const TARGETS = [
+  { n: 1, d: 2 }, { n: 1, d: 4 }, { n: 3, d: 4 },
+  { n: 1, d: 5 }, { n: 2, d: 5 }, { n: 3, d: 5 }, { n: 4, d: 5 },
+  { n: 1, d: 10 }, { n: 3, d: 10 }, { n: 7, d: 10 }, { n: 9, d: 10 },
+  { n: 1, d: 3 }, { n: 2, d: 3 },
+  { n: 1, d: 8 }, { n: 3, d: 8 }, { n: 5, d: 8 }, { n: 7, d: 8 },
+  { n: 1, d: 6 }, { n: 5, d: 6 },
+  { n: 1, d: 12 }, { n: 5, d: 12 }, { n: 7, d: 12 }, { n: 11, d: 12 }
+];
+function pickTarget(prevKey) {
+  let t;
+  do { t = TARGETS[Math.floor(Math.random() * TARGETS.length)]; }
+  while (prevKey && (t.n + '/' + t.d) === prevKey);
+  return t;
+}
+
+// ─────────────────────────────────────────────
+//  CANVAS: mida i zones (cercle a l'esquerra, clau de divisió a la dreta —
+//  la divisió necessita molta alçada per als passos, per això ja no s'apilen)
+// ─────────────────────────────────────────────
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+function zones() {
+  const pad = W * 0.035;
+  const labelH = H * 0.075;
+  const pieColW = W * 0.37;
+  const pie = { x: pad, y: pad + labelH, w: pieColW - pad, h: H - pad * 2 - labelH };
+  pie.cx = pie.x + pie.w / 2;
+  pie.cy = pie.y + pie.h / 2;
+  pie.r  = Math.min(pie.w, pie.h) / 2 * 0.86;
+  pie.labelY = pad * 0.5;
+  const divX = pad + pieColW;
+  const div = { x: divX, y: pad * 0.6, w: W - divX - pad, h: H - pad * 1.2 };
+  return { pie, div };
+}
+
+// ─────────────────────────────────────────────
+//  DRAW
+// ─────────────────────────────────────────────
+function draw() {
+  if (!W || !H) return;
+  ctx.clearRect(0, 0, W, H);
+  const z = zones();
+  drawPie(z.pie);
+  drawPanel(z.div);
+}
+
+function drawPie(r) {
+  const n = numOf();
+  label(r.x, r.labelY, `Fracció: ${n}/${D}`, PAL.text);
+
+  for (let i = 0; i < D; i++) {
+    const a0 = -Math.PI / 2 + i * (2 * Math.PI / D);
+    const a1 = a0 + (2 * Math.PI / D);
+    ctx.beginPath();
+    ctx.moveTo(r.cx, r.cy);
+    ctx.arc(r.cx, r.cy, r.r, a0, a1);
+    ctx.closePath();
+    const inFlash = performance.now() < pieFlashUntil;
+    ctx.fillStyle = i < n ? PAL.sage : (inFlash ? PAL.amberBg : 'rgba(26,31,54,0.05)');
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(26,31,54,.28)';
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(r.cx, r.cy, r.r, 0, Math.PI * 2);
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = PAL.terracottaBorder;
+  ctx.stroke();
+
+  // forat central = zona per "buidar" la fracció d'un sol toc
+  ctx.beginPath();
+  ctx.arc(r.cx, r.cy, r.r * 0.17, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(26,31,54,0.07)';
+  ctx.fill();
+  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(26,31,54,0.3)';
+  ctx.stroke();
+
+  // pols ambre a les porcions "sobrants" quan avancem un pas de la divisió
+  if (performance.now() < pieFlashUntil && D - n > 0) {
+    const alpha = 0.45 + 0.4 * Math.sin(performance.now() / 90);
+    for (let i = n; i < D; i++) {
+      const a0 = -Math.PI / 2 + i * (2 * Math.PI / D);
+      const a1 = a0 + (2 * Math.PI / D);
+      ctx.beginPath();
+      ctx.moveTo(r.cx, r.cy);
+      ctx.arc(r.cx, r.cy, r.r, a0, a1);
+      ctx.closePath();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = `rgba(226,134,10,${alpha})`;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawPanel(r) {
+  roundRect(r.x, r.y, r.w, r.h, 12, 'rgba(26,31,54,0.03)', 'rgba(26,31,54,0.12)');
+  if (repteMode) { drawRepteInstructions(r); return; }
+  drawDivisionBoard(r);
+}
+
+function drawRepteInstructions(r) {
+  label(r.x + 10, r.y + 14, 'La teva fracció', PAL.text);
+  const n = numOf();
+  ctx.font = `700 ${Math.max(20, r.w * 0.15)}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = PAL.amberTint;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${n}/${D}`, r.x + r.w / 2, r.y + r.h * 0.4);
+  ctx.textAlign = 'left';
+
+  const font = `500 ${Math.max(10, r.w * 0.038)}px 'Inter', sans-serif`;
+  const lines = wrapLines(`Ajusta les porcions omplertes i el denominador i prem «Comprova» quan creguis que és igual a l'objectiu.`, r.w - 26, font);
+  let ly = r.y + r.h * 0.56;
+  ctx.fillStyle = PAL.muted;
+  ctx.textAlign = 'center';
+  lines.forEach(line => { ctx.font = font; ctx.fillText(line, r.x + r.w / 2, ly); ly += Math.max(15, r.h * 0.05); });
+  ctx.textAlign = 'left';
+}
+
+// ── clau de divisió visual: dividend | divisor, quocient a sobre, resta apilada a sota ──
+function divMetrics(r) {
+  const totalTokens = divLayout.dividendTokens.length;
+  const numSteps = divLayout.steps.length;
+  const padX = r.w * 0.06, padTop = r.h * 0.05, padBottom = r.h * 0.03;
+  const totalRows = 1 + numSteps * 2;
+  const rowH = (r.h - padTop - padBottom) / totalRows;
+  let fontSize = Math.max(12, Math.min(rowH * 0.56, r.h * 0.075));
+  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  let charW = ctx.measureText('0').width;
+  const rightColChars = Math.max(numSteps, totalTokens) + 1.6;
+  const totalW = padX + charW * 1.2 + totalTokens * charW + charW * 1.6 + rightColChars * charW + padX;
+  if (totalW > r.w) {
+    fontSize = Math.max(10, fontSize * (r.w / totalW));
+    ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+    charW = ctx.measureText('0').width;
+  }
+  const dividendStartX = r.x + padX + charW * 1.2;
+  const barX = dividendStartX + totalTokens * charW + charW * 0.7;
+  const rightColX = barX + charW * 0.7;
+  return { totalTokens, numSteps, padTop, padBottom, rowH, fontSize, charW, dividendStartX, barX, rightColX, totalRows };
+}
+
+function dividendDisplayTokens() {
+  const endIdx = stepIndex < 0 ? divLayout.steps[0].tokenEnd : divLayout.steps[Math.max(0, stepIndex)].tokenEnd;
+  return divLayout.dividendTokens.slice(0, endIdx + 1).map(t => t.ch);
+}
+function quotientDisplayTokens() {
+  if (stepIndex < 0) return [];
+  const steps = divLayout.steps;
+  const toks = [String(steps[0].qDigit)];
+  if (steps.length > 1) toks.push(',');
+  for (let k = 1; k <= stepIndex; k++) toks.push(String(steps[k].qDigit));
+  if (stepIndex === steps.length - 1 && !divLayout.terminating) toks.push('…');
+  return toks;
+}
+
+function drawTokensAt(tokensArr, rightEdgeX, y, charW, fontSize, colorFn, highlight) {
+  const n = tokensArr.length;
+  const leftEdgeX = rightEdgeX - n * charW;
+  if (highlight) {
+    const hx = rightEdgeX - (n - highlight.start) * charW;
+    const hw = (highlight.end - highlight.start + 1) * charW;
+    roundRect(hx + 2, y - fontSize * 0.8, hw - 4, fontSize * 1.22, 6, highlight.bg, highlight.border);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  tokensArr.forEach((ch, idx) => {
+    const cx = leftEdgeX + idx * charW + charW / 2;
+    ctx.fillStyle = colorFn ? colorFn(idx) : PAL.text;
+    ctx.fillText(String(ch), cx, y);
+  });
+  return { leftEdgeX, rightEdgeX };
+}
+function drawMinus(leftEdgeX, y, fontSize, color) {
+  ctx.fillStyle = color; ctx.textAlign = 'right';
+  ctx.fillText('−', leftEdgeX - fontSize * 0.22, y);
+}
+function drawRule(rightEdgeX, w, y, color, lw) {
+  ctx.strokeStyle = color; ctx.lineWidth = lw;
+  ctx.beginPath(); ctx.moveTo(rightEdgeX - w, y); ctx.lineTo(rightEdgeX + 2, y); ctx.stroke();
+}
+
+function drawDivisionBoard(r) {
+  if (!divLayout) return;
+  const M = divMetrics(r);
+  const { numSteps, padTop, rowH, fontSize, charW, dividendStartX, barX, rightColX, totalRows } = M;
+  const colRightEdge = tokenIdx => dividendStartX + tokenIdx * charW + charW;
+  const top = r.y + padTop;
+
+  label(r.x, r.y - r.h * 0.005, 'Clau de divisió', PAL.text);
+
+  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.lineJoin = 'round';
+
+  // barra vertical (separa dividend/treball de divisor/quocient)
+  ctx.strokeStyle = PAL.petrol;
+  ctx.lineWidth = Math.max(2, fontSize * 0.06);
+  ctx.beginPath();
+  ctx.moveTo(barX, top - rowH * 0.28);
+  ctx.lineTo(barX, top + rowH * totalRows * 0.99);
+  ctx.stroke();
+
+  // fila 0: dividend (numerador, + coma i zeros baixats revelats fins ara) i divisor
+  const row0Y = top + rowH * 0.68;
+  const shown = dividendDisplayTokens();
+  drawTokensAt(shown, colRightEdge(shown.length - 1), row0Y, charW, fontSize, () => PAL.text);
+
+  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = PAL.amberTint; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(String(D), rightColX, row0Y);
+
+  const lineY = top + rowH * 1.0;
+  ctx.strokeStyle = 'rgba(26,31,54,0.45)';
+  ctx.lineWidth = Math.max(1.5, fontSize * 0.055);
+  ctx.beginPath();
+  ctx.moveTo(rightColX - charW * 0.3, lineY);
+  ctx.lineTo(rightColX + charW * (numSteps + 0.8), lineY);
+  ctx.stroke();
+
+  // fila del quocient (part entera + coma + xifres decimals, creix cap a la dreta)
+  const qY = top + rowH * 1.68;
+  const qToks = quotientDisplayTokens();
+  const qStr = qToks.join('');
+  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = finished ? PAL.sageTint : PAL.amberTint;
+  ctx.shadowColor = PAL.sageTint; ctx.shadowBlur = finished ? fontSize * 0.4 : 0;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(qStr, rightColX, qY);
+  ctx.shadowBlur = 0;
+  if (!finished) {
+    const w = ctx.measureText(qStr).width;
+    ctx.fillStyle = 'rgba(26,31,54,0.4)';
+    ctx.fillText('?', rightColX + w + charW * 0.15, qY);
+  }
+
+  // passos ja completats: producte (amb −) i residu (+ pròxim dígit baixat), un sota l'altre
+  for (let k = 0; k <= stepIndex; k++) {
+    const st = divLayout.steps[k];
+    const prodY = top + rowH * (1 + 2 * k + 0.68);
+    const remY  = top + rowH * (1 + 2 * k + 1.68);
+    const rightEdge = colRightEdge(st.tokenEnd);
+
+    ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+    const prodDigits = String(st.product).split('');
+    const info = drawTokensAt(prodDigits, rightEdge, prodY, charW, fontSize, () => 'rgba(26,31,54,0.62)');
+    drawMinus(info.leftEdgeX, prodY, fontSize, 'rgba(26,31,54,0.62)');
+    ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+    drawRule(rightEdge, prodDigits.length * charW + charW * 0.7, prodY + fontSize * 0.32, 'rgba(26,31,54,0.4)', Math.max(1.2, fontSize * 0.045));
+
+    const isLastOverall = k === numSteps - 1;
+    const highlightThisRow = (k === stepIndex) && !finished;
+    ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+    if (isLastOverall) {
+      const remDigits = String(st.remainder).split('');
+      drawTokensAt(remDigits, rightEdge, remY, charW, fontSize, () => PAL.terracottaTint,
+        highlightThisRow ? { start: 0, end: remDigits.length - 1, bg: PAL.amberBg, border: PAL.amberBorder } : null);
+    } else {
+      const nextSt = divLayout.steps[k + 1];
+      const nextDigits = String(nextSt.prefix).split('');
+      const nextRightEdge = rightEdge + charW;
+      drawTokensAt(nextDigits, nextRightEdge, remY, charW, fontSize,
+        idx => (idx === nextDigits.length - 1 ? PAL.amberTint : PAL.text),
+        highlightThisRow ? { start: 0, end: nextDigits.length - 1, bg: PAL.amberBg, border: PAL.amberBorder } : null);
+    }
+  }
+
+  ctx.font = `600 ${Math.max(9, r.w * 0.028)}px 'Inter', sans-serif`;
+  ctx.fillStyle = 'rgba(26,31,54,0.4)';
+  ctx.textAlign = 'right';
+  ctx.fillText(stepIndex < 0 ? `0/${numSteps} passos` : `${stepIndex + 1}/${numSteps} passos`, r.x + r.w - 6, r.y + r.h - 6);
+  ctx.textAlign = 'left';
+}
+
+function wrapLines(text, maxWidth, font) {
+  ctx.font = font;
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  words.forEach(w => {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  });
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function roundRectPath(x, y, w, h, rad) {
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
+}
+function roundRect(x, y, w, h, rad, fill, stroke) {
+  roundRectPath(x, y, w, h, rad);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
+}
+function label(x, y, text, color) {
+  ctx.font = `600 ${Math.max(10, W * 0.014)}px 'Inter', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(text, x, y);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ: clic = "omple fins aquí" (com nombres-decimals) + clic al forat = buida
+//  arrossega = segueix el dit/ratolí en continu al voltant del cercle (gest únic)
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.touches ? e.touches[0] : e;
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+
+function hitSector(px, py, z) {
+  const dx = px - z.pie.cx, dy = py - z.pie.cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist > z.pie.r) return null;
+  if (dist < z.pie.r * 0.17) return { hub: true };
+  const twoPi = Math.PI * 2;
+  // normalitza a [0, 2π) de forma robusta (evita que un angle just al límit
+  // s'arrodoneixi a un valor negatiu minúscul i s'envesqui cap a l'últim sector)
+  const angle = ((Math.atan2(dy, dx) + Math.PI / 2) % twoPi + twoPi) % twoPi;
+  let idx = Math.floor(angle / (twoPi / D));
+  if (idx < 0) idx = 0;
+  if (idx > D - 1) idx = D - 1;
+  return { idx };
+}
+
+function afterNumChange() {
+  resetDivSteps();
+  if (repteMode && !roundLocked) repteFeedback.textContent = '';
+  draw();
+  updateReadout();
+}
+
+function onStart(e) {
+  const { x, y } = pointerXY(e);
+  const z = zones();
+  const hit = hitSector(x, y, z);
+  if (!hit) return;
+  e.preventDefault();
+  if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); }
+  dragging = true;
+  if (hit.hub) { num = 0; }
+  else { let n = hit.idx + 1; if (n === num) n = hit.idx; num = n; }
+  afterNumChange();
+}
+function onMove(e) {
+  if (!dragging) return;
+  const { x, y } = pointerXY(e);
+  const z = zones();
+  const hit = hitSector(x, y, z);
+  if (!hit) return;
+  e.preventDefault();
+  num = hit.hub ? 0 : (hit.idx + 1);
+  afterNumChange();
+}
+function onEnd() { dragging = false; }
+
+canvas.addEventListener('mousedown', onStart);
+canvas.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onEnd);
+canvas.addEventListener('touchstart', onStart, { passive: false });
+canvas.addEventListener('touchmove', onMove, { passive: false });
+canvas.addEventListener('touchend', onEnd);
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  POLS AMBRE que lliga les porcions sobrants del cercle amb la resta numèrica
+// ─────────────────────────────────────────────
+let pieFlashUntil = 0;
+function triggerPieFlash() {
+  pieFlashUntil = performance.now() + 750;
+  requestAnimationFrame(pieFlashTick);
+}
+function pieFlashTick() {
+  draw();
+  if (performance.now() < pieFlashUntil) requestAnimationFrame(pieFlashTick);
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateReadout() {
+  readoutBadge.classList.add('active');
+
+  if (repteMode) {
+    if (!target) return;
+    readoutNum.textContent = fractionToDecimalString(target.n, target.d);
+    readoutName.textContent = 'Objectiu a aconseguir';
+    readoutDef.textContent = `Ajusta les porcions omplertes i el nombre de porcions perquè la fracció sigui equivalent a aquest decimal. La teva fracció ara: ${numOf()}/${D}.`;
+    return;
+  }
+
+  const n = numOf();
+  readoutNum.textContent = `${n}/${D}`;
+  if (stepIndex < 0) {
+    readoutName.textContent = 'Fracció carregada';
+    readoutDef.textContent = `Prem «Pas següent» per fer la divisió ${n} ÷ ${D} i trobar el decimal, pas a pas.`;
+  } else if (!finished) {
+    readoutName.textContent = `Pas ${stepIndex + 1} de ${divLayout.steps.length}`;
+    readoutDef.textContent = stepCaption(stepIndex);
+  } else {
+    const dec = fractionToDecimalString(n, D);
+    readoutName.textContent = `${n}/${D} = ${dec}`;
+    readoutDef.textContent = stepCaption(stepIndex);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  PAS SEGÜENT (divisió llarga manual)
+// ─────────────────────────────────────────────
+nextStepBtn.addEventListener('click', () => {
+  if (finished) { resetDivSteps(); draw(); updateReadout(); return; }
+  stepIndex++;
+  if (stepIndex >= divLayout.steps.length) stepIndex = divLayout.steps.length - 1;
+  if (stepIndex === divLayout.steps.length - 1) {
+    finished = true;
+    nextStepBtn.textContent = 'Reinicia passos ↻';
+    flash(readoutBadge, 'var(--sage)');
+  }
+  triggerPieFlash();
+  draw();
+  updateReadout();
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA → carreguen la fracció
+// ─────────────────────────────────────────────
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+function loadFraction(n, d, color) {
+  if (repteMode) { btnExplora.click(); }
+  D = d;
+  num = n;
+  syncChips();
+  resetDivSteps();
+  resize();
+  updateReadout();
+  flash(wrap, color);
+}
+
+document.getElementById('card-1-2').addEventListener('click',  () => loadFraction(1, 2, 'var(--petrol)'));
+document.getElementById('card-1-4').addEventListener('click',  () => loadFraction(1, 4, 'var(--amber)'));
+document.getElementById('card-1-5').addEventListener('click',  () => loadFraction(1, 5, 'var(--sage)'));
+document.getElementById('card-1-10').addEventListener('click', () => loadFraction(1, 10, 'var(--plum)'));
+document.getElementById('card-3-4').addEventListener('click',  () => loadFraction(3, 4, 'var(--terracotta)'));
+document.getElementById('card-1-3').addEventListener('click',  () => loadFraction(1, 3, 'var(--petrol)'));
+
+// ─────────────────────────────────────────────
+//  DENOMINADOR: xips de salt directe 2..12 (en lloc de step ±1)
+// ─────────────────────────────────────────────
+function buildChipRow(container) {
+  for (let d = 2; d <= 12; d++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = String(d);
+    b.dataset.denom = String(d);
+    container.appendChild(b);
+  }
+}
+buildChipRow(document.getElementById('dChipsRow'));
+buildChipRow(document.getElementById('rdChipsRow'));
+
+function syncChips() {
+  document.querySelectorAll('.denom-chips button[data-denom]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.denom, 10) === D);
+  });
+}
+document.querySelectorAll('.denom-chips').forEach(row => {
+  row.addEventListener('click', e => {
+    const b = e.target.closest('button[data-denom]');
+    if (!b) return;
+    setD(parseInt(b.dataset.denom, 10));
+  });
+});
+
+function setD(newD) {
+  newD = Math.max(2, Math.min(12, newD));
+  if (newD === D) { syncChips(); return; }
+  const oldNum = numOf(), oldD = D;
+  D = newD;
+  num = Math.max(0, Math.min(D, Math.round(oldNum * D / oldD)));
+  syncChips();
+  resetDivSteps();
+  if (repteMode && !roundLocked) repteFeedback.textContent = '';
+  resize();
+  updateReadout();
+}
+
+document.getElementById('randomFracBtn').addEventListener('click', () => {
+  const d = 2 + Math.floor(Math.random() * 11);
+  D = d;
+  num = Math.floor(Math.random() * (d + 1));
+  syncChips();
+  resetDivSteps();
+  resize();
+  updateReadout();
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const rpTime = document.getElementById('rpTime'), rpScore = document.getElementById('rpScore'), rpStreak = document.getElementById('rpStreak');
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRound() {
+  if (repteEnded) return;
+  target = pickTarget(target ? (target.n + '/' + target.d) : null);
+  // La clau del pas 3 de la redisseny: el denominador inicial ÉS el del propi
+  // objectiu (no un valor aleatori independent), així l'única feina real de
+  // cada ronda és ajustar el numerador amb un clic/arrossegament.
+  D = target.d;
+  num = 0;
+  roundLocked = false;
+  syncChips();
+  repteFeedback.textContent = '';
+  resize();
+  updateReadout();
+}
+
+function startRepte(seconds) {
+  repteMode = true; repteEnded = false;
+  score = 0; streak = 0; bestStreak = 0; timeLeft = seconds; repteMaxTime = seconds;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  newRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      repteEnded = true;
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutNum.textContent = score;
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} fraccions equivalents trobades (ratxa màxima ${bestStreak}).`;
+      repteFeedback.textContent = '';
+    }
+  }, 1000);
+}
+
+function onRepteCorrect() {
+  score++; streak++; bestStreak = Math.max(bestStreak, streak);
+  rpScore.textContent = score; rpStreak.textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+  flash(wrap, 'var(--sage)');
+  setTimeout(newRound, 900);
+}
+function onRepteWrong() {
+  streak = 0; rpStreak.textContent = streak;
+  score = Math.max(0, score - 1); rpScore.textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3);
+  flash(wrap, 'var(--terracotta)');
+}
+
+function checkRepte() {
+  if (!repteMode || repteEnded || roundLocked || !target) return;
+  const n = numOf();
+  const dec = fractionToDecimalString(n, D);
+  const correct = n * target.d === target.n * D;
+  if (correct) {
+    roundLocked = true;
+    repteFeedback.textContent = `✔ Correcte! ${n}/${D} = ${dec}`;
+    repteFeedback.style.color = 'var(--sage)';
+    onRepteCorrect();
+  } else {
+    repteFeedback.textContent = `✕ ${n}/${D} = ${dec}, no és l'objectiu`;
+    repteFeedback.style.color = 'var(--terracotta)';
+    onRepteWrong();
+  }
+}
+document.getElementById('checkRepteBtn').addEventListener('click', checkRepte);
+document.getElementById('rpNewRound').addEventListener('click', () => { if (repteMode && !repteEnded) newRound(); });
+
+const repteSetupEl       = document.getElementById('repteSetup');
+const repteBarEl         = document.getElementById('repteBar');
+const repteControlsRowEl = document.getElementById('repteControlsRow');
+const repteTimeSlider    = document.getElementById('repteTimeSlider');
+const repteTimeVal       = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  repteControlsRowEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; repteEnded = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = ''; repteControlsRowEl.style.display = '';
+  D = 4; num = 3;
+  syncChips();
+  resetDivSteps();
+  resize();
+  updateReadout();
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+  repteControlsRowEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+syncChips();
+resetDivSteps();
+resize();
+updateReadout();
+if (window.ResizeObserver) {
+  new ResizeObserver(() => resize()).observe(wrap);
+} else {
+  window.addEventListener('load', resize);
+}
+</script>
+</body>
+</html>

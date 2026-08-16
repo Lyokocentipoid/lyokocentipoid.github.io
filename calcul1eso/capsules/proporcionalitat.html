@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proporcionalitat · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--terracotta); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    .mode-toggle.sub { padding: .2rem; }
+    .mode-toggle.sub button { padding: .45rem .9rem; font-size: .8rem; }
+
+    #propCanvas { touch-action: none; cursor: grab; }
+    #propCanvas:active { cursor: grabbing; }
+
+    /* ── PANELL DE RESPOSTA (reutilitzat per l'exercici d'Explora i la ronda de Repte) ── */
+    .answer-panel {
+      display: flex; flex-direction: column; gap: .6rem; background: var(--card); border: 1px solid var(--terracotta);
+      border-radius: 12px; padding: 1rem 1.3rem;
+    }
+    .answer-panel .rs-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .answer-panel .answer-label { font-size: .85rem; font-weight: 600; color: var(--muted); }
+    .answer-input {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; text-align: center; width: 92px;
+      padding: .4rem .3rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink);
+    }
+    .answer-input:focus { outline: none; border-color: var(--terracotta); box-shadow: 0 0 0 2px color-mix(in srgb, var(--terracotta) 25%, transparent); }
+    .answer-input::-webkit-inner-spin-button, .answer-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .answer-feedback { font-size: .85rem; font-weight: 600; min-height: 1.1em; }
+    .exercise-title { font-family: var(--font-display); font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: .6rem; line-height: 1.4; }
+    .exercise-title span:first-child { flex: 1; }
+    .exercise-type-badge {
+      font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .2rem .6rem;
+      border-radius: 100px; background: color-mix(in srgb, var(--terracotta) 14%, transparent); color: var(--terracotta); flex-shrink: 0;
+    }
+
+    /* ── BANNER FITXES EXTERNES (autocontingut: copiable a percentatges.html) ── */
+    .fitxes-banner {
+      display: flex; align-items: center; gap: .8rem;
+      background: color-mix(in srgb, var(--terracotta) 10%, var(--surface));
+      border: 1.5px solid var(--terracotta); border-radius: 12px;
+      padding: .8rem 1.1rem; text-decoration: none; color: var(--ink);
+      transition: all var(--tr); box-shadow: 0 2px 10px rgba(230,72,58,.08);
+    }
+    .fitxes-banner:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(230,72,58,.22); border-color: var(--terracotta); }
+    .fitxes-banner-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .fitxes-banner-text { flex: 1; font-size: .88rem; font-weight: 600; line-height: 1.4; }
+    .fitxes-banner-text strong { color: var(--terracotta); }
+    .fitxes-banner-arrow { font-size: 1.15rem; font-weight: 700; color: var(--terracotta); transition: transform var(--tr); flex-shrink: 0; }
+    .fitxes-banner:hover .fitxes-banner-arrow { transform: translate(3px,-3px); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--terracotta)">Bloc 03 · Proporcionalitat</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Proporcionalitat directa i inversa</h1>
+      <p>Escala una recepta arrossegant un factor multiplicador ×k i mira com persones i ingredient creixen juntes en directe (directa), o troba l'equilibri exacte d'una balança que canvia de pas en pas (inversa). Al mode Repte, fes-ho contra rellotge.</p>
+    </div>
+
+    <a class="fitxes-banner" href="../proporcionalitat1eso/index.html" target="_blank" rel="noopener">
+      <span class="fitxes-banner-icon">📘</span>
+      <span class="fitxes-banner-text">Fitxes de Proporcionalitat i Percentatges: <strong>Clica aquí</strong></span>
+      <span class="fitxes-banner-arrow">↗</span>
+    </a>
+
+    <div class="mode-toggle" style="--m-color: var(--terracotta)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="mode-toggle sub explora-only" id="relToggle" style="--m-color: var(--terracotta)">
+      <button id="btnDirecta" class="active" data-rel="directa">➕ Directa · Escala una recepta</button>
+      <button id="btnInversa" data-rel="inversa">🔄 Inversa · Repartiment d'una feina</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--terracotta)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--terracotta)">
+      <canvas id="propCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega el factor ×k fins que les persones coincideixin amb l'objectiu, i després escriu la quantitat d'ingredient.</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--terracotta)">
+      <div class="readout-num" id="readoutNum">?</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Encara no hi ha cap valor descobert</div>
+        <div class="readout-def" id="readoutDef">Resol l'exercici per descobrir la constant de proporcionalitat.</div>
+      </div>
+    </div>
+
+    <div class="answer-panel explora-only flash-target" id="exercisePanel" style="--flash-color:var(--sage)">
+      <div class="exercise-title"><span id="exTitleText">🧩 Carregant exercici…</span><span class="exercise-type-badge" id="exTypeBadge">Directa</span></div>
+      <div class="rs-row">
+        <span class="answer-label" id="exAnswerLabel">Resposta:</span>
+        <input type="number" step="any" class="answer-input" id="exAnswerInput" inputmode="decimal">
+        <button class="btn btn-primary" id="exCheckBtn">Comprova ✔</button>
+        <button class="btn btn-ghost" id="exNewBtn">🎲 Nou exercici</button>
+      </div>
+      <span class="answer-feedback" id="exFeedback"></span>
+    </div>
+
+    <div class="answer-panel repte-only" id="repteAnswerPanel" style="display:none">
+      <div class="exercise-title"><span id="rpTitleText">🧩 Carregant exercici…</span><span class="exercise-type-badge" id="rpTypeBadge">Directa</span></div>
+      <div class="rs-row">
+        <span class="answer-label" id="rpAnswerLabel">Resposta:</span>
+        <input type="number" step="any" class="answer-input" id="rpAnswerInput" inputmode="decimal">
+        <button class="btn btn-primary" id="rpCheckBtn">Comprova ✔</button>
+      </div>
+      <span class="answer-feedback" id="rpFeedback"></span>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Directa, inversa i regla de tres</div>
+
+    <div class="type-card" id="card-directa" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Escalador de factor</div>
+        <div class="type-range">y = k · x</div>
+        <div class="type-desc">Un factor multiplicador ×k escala alhora les persones i la quantitat d'ingredient: si el factor és ×3, totes dues xifres queden multiplicades per 3. Troba el factor que fa arribar al nombre de persones objectiu.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-inversa" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Balança de braços</div>
+        <div class="type-range">pes × distància = k</div>
+        <div class="type-desc">Un pes fix en un braç i una distància que tu controles a l'altre: quan pes × distància coincideix amb la constant, la balança s'anivella.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-constant" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Constant de proporcionalitat</div>
+        <div class="type-range">k</div>
+        <div class="type-desc">El valor que no canvia mai: y/x (directa) o pintors·hores (inversa). Resol l'exercici per descobrir-lo a la lectura de sota del llenç.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-regla3" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Regla de tres</div>
+        <div class="type-range">a/b = c/x</div>
+        <div class="type-desc">Per trobar un valor que falta: multiplica en creu i divideix. Directa: x=(b·c)/a. Inversa: x=(a·b)/c.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> En una proporció <strong>directa</strong> (la recepta), si multipliques les persones per un número, la quantitat d'ingredient queda multiplicada pel mateix número (y=k·x) — per això l'escalador mou totes dues xifres alhora amb un sol factor ×k. En una <strong>inversa</strong> (el repartiment de la feina), si multipliques el nombre de treballadors per un número, el temps que hi triguen queda dividit pel mateix número (x·y=k) — per això la balança busca l'equilibri exacte entre el pes i la distància.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 03 · Decimals, Proporcionalitat i Percentatges</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  PALETA
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const PAL = {
+  petrol: cssVar('--petrol', '#0b93a0'),
+  amber: cssVar('--amber', '#e2860a'),
+  terracotta: cssVar('--terracotta', '#e6483a'),
+  sage: cssVar('--sage', '#177e54'),
+  plum: cssVar('--plum', '#8452d6')
+};
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+function hexToRgba(hex, a) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ─────────────────────────────────────────────
+//  ELEMENTS COMPARTITS
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('propCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+let W, H;
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+function roundRect(x, y, w, h, r, fill, stroke, lw) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1.4; ctx.stroke(); }
+}
+function txt(str, x, y, size, color, align, weight, font) {
+  ctx.font = `${weight || 600} ${size}px '${font || 'Inter'}', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(str, x, y);
+}
+function fmt(n) {
+  if (n == null) return '?';
+  return Number.isInteger(n) ? String(n) : Math.round(n * 100) / 100 + '';
+}
+function fmt1(n) { return n.toFixed(1).replace('.', ','); }
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  CONTEXTOS D'EXERCICI
+// ─────────────────────────────────────────────
+const RECIPE_CONTEXTS = [
+  { icon: '🥞', name: 'les crepes', ingIcon: '🌾', ingName: 'farina', unit: 'g', kPool: [40, 50, 60] },
+  { icon: '🍋', name: 'la llimonada', ingIcon: '🍬', ingName: 'sucre', unit: 'g', kPool: [15, 20, 25] },
+  { icon: '🍳', name: 'les truites', ingIcon: '🥚', ingName: 'ous', unit: 'unitats', kPool: [2, 3, 4] }
+];
+const FACTOR_GRID = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+
+const LEVER_CONTEXTS = [
+  { icon: '🎨', task: 'Pintar una tanca', workerIcon: '🖌️', workerLabel: 'pintors', timeUnit: 'hores', art: 'les', kPool: [12, 18, 24, 36] },
+  { icon: '🚰', task: 'Omplir una piscina', workerIcon: '💧', workerLabel: 'mànegues', timeUnit: 'hores', art: 'les', kPool: [8, 12, 16, 24] },
+  { icon: '👷', task: 'Acabar una obra', workerIcon: '👷', workerLabel: 'treballadors', timeUnit: 'dies', art: 'els', kPool: [10, 20, 30, 40] }
+];
+
+function divisorsOf(n) {
+  const out = [];
+  for (let i = 1; i <= n; i++) if (n % i === 0) out.push(i);
+  return out;
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const MAX_TILT = 12 * Math.PI / 180;
+function leverAngle(workers, d, k) {
+  const diff = workers * d - k;
+  const tol = Math.max(k * 0.03, 0.3);
+  if (Math.abs(diff) < tol) return 0;
+  const norm = Math.max(k * 0.6, 4);
+  const raw = clamp(diff / norm, -1, 1);
+  // signe negatiu: amb rotació de canvas (y avall), un angle negatiu fa baixar
+  // el costat esquerre (x local negatiu) quan leftTorque > k ("massa pes·distància").
+  return -raw * MAX_TILT;
+}
+
+function genFactorScaler() {
+  const rc = RECIPE_CONTEXTS[Math.floor(Math.random() * RECIPE_CONTEXTS.length)];
+  const k = rc.kPool[Math.floor(Math.random() * rc.kPool.length)];
+  const x0 = 2 + Math.floor(Math.random() * 4); // 2..5 persones a la recepta base
+  const validFactors = FACTOR_GRID.filter(f => f !== 1 && Number.isInteger(x0 * f));
+  const targetFactor = validFactors[Math.floor(Math.random() * validFactors.length)];
+  const targetX = Math.round(x0 * targetFactor);
+  const y0 = x0 * k;
+  const answer = targetX * k;
+  return {
+    type: 'directa', rc, x0, y0, k, targetFactor, targetX,
+    factor: 1, snapped: false, dragging: false, revealed: false, answer
+  };
+}
+function pickStartD(maxHoresScale, answer) {
+  let d0 = maxHoresScale * (0.15 + Math.random() * 0.65);
+  if (Math.abs(d0 - answer) < maxHoresScale * 0.12) {
+    d0 = clamp(d0 + maxHoresScale * 0.3, maxHoresScale * 0.05, maxHoresScale * 0.95);
+  }
+  return d0;
+}
+function genLever() {
+  const lc = LEVER_CONTEXTS[Math.floor(Math.random() * LEVER_CONTEXTS.length)];
+  const k = lc.kPool[Math.floor(Math.random() * lc.kPool.length)];
+  const divs = divisorsOf(k).filter(d => d >= 2 && d < k);
+  const chosenWorkers = shuffleArr(divs).slice(0, Math.min(3, divs.length));
+  const steps = chosenWorkers.map(w => ({ workers: w, answer: k / w }));
+  const maxHoresScale = Math.max(Math.ceil(Math.max(...steps.map(s => s.answer)) * 2.4), 8);
+  const st = {
+    type: 'inversa', lc, k, steps, stepIdx: 0, log: [],
+    workers: steps[0].workers, answer: steps[0].answer,
+    maxHoresScale, d: pickStartD(maxHoresScale, steps[0].answer), dragging: false, revealed: false
+  };
+  st.angle = leverAngle(st.workers, st.d, st.k);
+  return st;
+}
+function advanceInversaStep(st) {
+  const step = st.steps[st.stepIdx];
+  st.log.push({ workers: step.workers, answer: step.answer });
+  st.stepIdx++;
+  const next = st.steps[st.stepIdx];
+  st.workers = next.workers;
+  st.answer = next.answer;
+  st.d = pickStartD(st.maxHoresScale, st.answer);
+  st.angle = leverAngle(st.workers, st.d, st.k);
+}
+
+function deElided(word) { return /^[aeiouàèéíòóúh]/i.test(word) ? `d'${word}` : `de ${word}`; }
+function nlQuestion(rc, n) {
+  return rc.unit === 'unitats'
+    ? `Quants ${rc.ingName} calen per a ${n} persones?`
+    : `Quants ${rc.unit} ${deElided(rc.ingName)} calen per a ${n} persones?`;
+}
+function exerciseTitleFor(st) {
+  if (st.type === 'directa') {
+    const q = nlQuestion(st.rc, st.targetX);
+    return `${st.rc.icon} Escala la recepta de ${st.rc.name}: si per a ${st.x0} persones calen ${fmt(st.y0)} ${st.rc.unit}, ${q.charAt(0).toLowerCase()}${q.slice(1)}`;
+  }
+  const stepInfo = st.steps.length > 1 ? ` (pas ${st.stepIdx + 1}/${st.steps.length})` : '';
+  return `${st.lc.icon} ${st.lc.task}${stepInfo}: amb ${st.workers} ${st.lc.workerLabel}, arrossega la plataforma fins que la balança s'anivelli, i després escriu ${st.lc.art} ${st.lc.timeUnit} exactes.`;
+}
+function answerLabelFor(st) {
+  if (st.type === 'directa') return `${capitalize(st.rc.ingName)} (${st.rc.unit}):`;
+  return `${capitalize(st.lc.timeUnit)}:`;
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX — ESCALADOR DE FACTOR (Directa)
+// ─────────────────────────────────────────────
+let factorGeom = null;
+
+function drawIconRow(icon, count, cx, y, size, color) {
+  const n = Math.max(0, Math.round(count));
+  const shown = Math.min(n, 6);
+  const spacing = size * 0.85;
+  const startX = cx - (shown - 1) * spacing / 2;
+  for (let j = 0; j < shown; j++) {
+    txt(icon, startX + j * spacing, y, size, color, 'center', 600);
+  }
+  if (n > 6) txt(`×${n}`, cx + (shown - 1) * spacing / 2 + size * 1.1, y, Math.max(12, size * 0.55), color, 'left', 700, 'JetBrains Mono');
+}
+
+function drawFactorScaler(state) {
+  const rc = state.rc;
+  const liveX = state.x0 * state.factor;
+  const liveY = state.y0 * state.factor;
+  const mainColor = state.snapped || state.revealed ? PAL.sage : PAL.terracotta;
+
+  txt(`${rc.icon} Escala ${rc.name}`, W / 2, H * 0.09, Math.max(15, W * 0.028), TEXT_DARK, 'center', 700, 'Space Grotesk');
+  txt(`Recepta base: ${state.x0} persones → ${fmt(state.y0)} ${rc.unit}`, W / 2, H * 0.165, Math.max(11, W * 0.017), TEXT_MUTED, 'center', 600);
+
+  // fila de persones (viva)
+  drawIconRow('👤', liveX, W / 2, H * 0.29, Math.max(16, W * 0.03), PAL.petrol);
+  txt(`${fmt(liveX)} persones`, W / 2, H * 0.365, Math.max(13, W * 0.023), PAL.petrol, 'center', 700, 'JetBrains Mono');
+
+  // fila d'ingredient (viva) — mateix nombre de repeticions que persones, per fer visible el mateix factor
+  drawIconRow(rc.ingIcon, liveX, W / 2, H * 0.465, Math.max(16, W * 0.03), mainColor);
+  txt(`${fmt(liveY)} ${rc.unit}`, W / 2, H * 0.54, Math.max(13, W * 0.023), mainColor, 'center', 700, 'JetBrains Mono');
+
+  // factor gran
+  txt(`×${fmt(state.factor)}`, W / 2, H * 0.635, Math.max(22, W * 0.045), mainColor, 'center', 800, 'JetBrains Mono');
+  if (state.snapped && !state.revealed) txt('🔒', W * 0.5 + Math.max(58, W * 0.1), H * 0.635, Math.max(18, W * 0.03), PAL.sage, 'center', 700);
+
+  if (!state.revealed) {
+    const trackX0 = W * 0.12, trackX1 = W * 0.88, trackY = H * 0.74;
+    const minF = FACTOR_GRID[0], maxF = FACTOR_GRID[FACTOR_GRID.length - 1];
+    factorGeom = { trackX0, trackX1, trackY, minF, maxF };
+
+    ctx.strokeStyle = 'rgba(26,31,54,0.18)'; ctx.lineWidth = Math.max(3, H * 0.01);
+    ctx.beginPath(); ctx.moveTo(trackX0, trackY); ctx.lineTo(trackX1, trackY); ctx.stroke();
+
+    FACTOR_GRID.forEach(f => {
+      const tx = trackX0 + (f - minF) / (maxF - minF) * (trackX1 - trackX0);
+      const isTargetTick = f === state.targetFactor;
+      ctx.strokeStyle = isTargetTick ? PAL.amber : 'rgba(26,31,54,0.3)';
+      ctx.lineWidth = isTargetTick ? 3 : 1.6;
+      const th = isTargetTick ? 12 : 7;
+      ctx.beginPath(); ctx.moveTo(tx, trackY - th); ctx.lineTo(tx, trackY + th); ctx.stroke();
+      if (Number.isInteger(f) || isTargetTick) {
+        txt(`×${fmt(f)}`, tx, trackY + th + Math.max(12, H * 0.03), Math.max(9, W * 0.014), isTargetTick ? PAL.amber : TEXT_MUTED, 'center', isTargetTick ? 700 : 500);
+      }
+    });
+
+    const handleX = trackX0 + (state.factor - minF) / (maxF - minF) * (trackX1 - trackX0);
+    ctx.beginPath(); ctx.arc(handleX, trackY, Math.max(9, H * 0.024), 0, Math.PI * 2);
+    ctx.fillStyle = mainColor; ctx.shadowColor = mainColor; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.stroke();
+
+    txt(`Objectiu: ${state.x0} × ? = ${state.targetX} persones`, W / 2, H * 0.9, Math.max(11, W * 0.018), TEXT_MUTED, 'center', 600);
+  } else {
+    factorGeom = null;
+    txt(`✔ ×${fmt(state.targetFactor)}: ${state.x0}×${fmt(state.targetFactor)}=${state.targetX} persones, ${fmt(state.y0)}×${fmt(state.targetFactor)}=${fmt(state.answer)} ${rc.unit}`,
+      W / 2, H * 0.82, Math.max(11, W * 0.016), PAL.sage, 'center', 700, 'JetBrains Mono');
+  }
+}
+
+function applyFactorDrag(state, x) {
+  if (!factorGeom) return;
+  const g = factorGeom;
+  const t = clamp((x - g.trackX0) / (g.trackX1 - g.trackX0), 0, 1);
+  const raw = g.minF + t * (g.maxF - g.minF);
+  const factor = Math.round(raw * 2) / 2;
+  const nowSnapped = Math.abs(factor - state.targetFactor) < 1e-6;
+  if (factor === state.factor && nowSnapped === state.snapped) return;
+  const wasSnapped = state.snapped;
+  state.factor = factor;
+  state.snapped = nowSnapped;
+  draw();
+  const input = repteMode ? rpAnswerInput : exAnswerInput;
+  if (input) {
+    if (nowSnapped && !wasSnapped) input.value = fmt(state.answer);
+    else if (!nowSnapped && wasSnapped) input.value = '';
+  }
+  updateFactorHint(state);
+}
+function updateFactorHint(state) {
+  const liveX = state.x0 * state.factor;
+  if (state.snapped) {
+    hint.textContent = `🔒 Factor correcte! Amb ×${fmt(state.factor)} la recepta és per a ${fmt(liveX)} persones. Escriu la quantitat i clica «Comprova».`;
+    return;
+  }
+  hint.textContent = liveX < state.targetX
+    ? `Amb ×${fmt(state.factor)} obtens ${fmt(liveX)} persones — puja una mica el factor.`
+    : `Amb ×${fmt(state.factor)} obtens ${fmt(liveX)} persones — baixa una mica el factor.`;
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX — BALANÇA (Inversa)
+// ─────────────────────────────────────────────
+let leverGeom = null;
+
+function drawLever(state) {
+  const lc = state.lc;
+  const pivot = { x: W * 0.5, y: H * 0.56 };
+  const armLen = W * 0.35;
+  const beamThick = Math.max(10, H * 0.05);
+  const armDragMaxPix = armLen * 0.86;
+  const dPixMin = Math.max(14, armLen * 0.06);
+  const pxPerHour = armDragMaxPix / state.maxHoresScale;
+  const dMinValue = dPixMin / pxPerHour;
+  const flagPix = armLen * 0.62;
+
+  leverGeom = { pivot, armLen, armDragMaxPix, dPixMin, pxPerHour, dMinValue, maxHoresScale: state.maxHoresScale };
+
+  txt(`${lc.icon} ${lc.task}`, W / 2, H * 0.1, Math.max(14, W * 0.026), TEXT_DARK, 'center', 700, 'Space Grotesk');
+  txt(`${state.workers} ${lc.workerLabel} ara`, W / 2, H * 0.17, Math.max(11, W * 0.017), TEXT_MUTED, 'center', 600);
+  if (state.steps.length > 1) {
+    txt(`Pas ${state.stepIdx + 1} de ${state.steps.length}`, W / 2, H * 0.225, Math.max(10, W * 0.016), PAL.plum, 'center', 700);
+  }
+
+  // línia de nivell de referència
+  ctx.save();
+  ctx.setLineDash([4, 5]);
+  ctx.strokeStyle = 'rgba(26,31,54,0.18)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(pivot.x - armLen * 1.05, pivot.y); ctx.lineTo(pivot.x + armLen * 1.05, pivot.y); ctx.stroke();
+  ctx.restore();
+
+  // fulcre estàtic
+  const fulcrumH = H * 0.09, fulcrumW = W * 0.09;
+  ctx.beginPath();
+  ctx.moveTo(pivot.x, pivot.y);
+  ctx.lineTo(pivot.x - fulcrumW / 2, pivot.y + fulcrumH);
+  ctx.lineTo(pivot.x + fulcrumW / 2, pivot.y + fulcrumH);
+  ctx.closePath();
+  ctx.fillStyle = hexToRgba(PAL.plum, 0.85);
+  ctx.fill();
+
+  const leftTorque = state.workers * state.d;
+  const tol = Math.max(state.k * 0.03, 0.3);
+  const isLevel = Math.abs(leftTorque - state.k) < tol;
+  const angle = state.revealed ? 0 : state.angle || 0;
+
+  ctx.save();
+  ctx.translate(pivot.x, pivot.y);
+  ctx.rotate(angle);
+
+  roundRect(-armLen, -beamThick / 2, armLen * 2, beamThick, 6, hexToRgba(PAL.amber, 0.85), PAL.amber, 1.5);
+
+  const dPix = clamp(state.d * pxPerHour, dPixMin, armDragMaxPix);
+  const platX = -dPix;
+  const platW = Math.max(26, W * 0.05), platH = Math.max(8, H * 0.02);
+  roundRect(platX - platW / 2, -beamThick / 2 - platH, platW, platH, 3, PAL.petrol, PAL.petrol, 1);
+
+  const iconsToShow = Math.min(state.workers, 6);
+  const iconSize = Math.max(13, W * 0.022);
+  for (let j = 0; j < iconsToShow; j++) {
+    const ix = platX - (iconsToShow - 1) * iconSize * 0.55 / 2 + j * iconSize * 0.55;
+    txt(lc.workerIcon, ix, -beamThick / 2 - platH - iconSize * 0.7, iconSize, TEXT_DARK, 'center', 600);
+  }
+  if (state.workers > 6) txt(`×${state.workers}`, platX, -beamThick / 2 - platH - iconSize * 1.7, Math.max(11, W * 0.016), TEXT_DARK, 'center', 700, 'JetBrains Mono');
+
+  // bandera objectiu — ancoratge purament visual, sense revelar cap número
+  const flagColor = (!state.revealed && isLevel) ? PAL.sage : PAL.plum;
+  ctx.strokeStyle = flagColor; ctx.lineWidth = 2.4;
+  const poleH = Math.max(28, H * 0.08);
+  ctx.beginPath(); ctx.moveTo(flagPix, -beamThick / 2); ctx.lineTo(flagPix, -beamThick / 2 - poleH); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(flagPix, -beamThick / 2 - poleH);
+  ctx.lineTo(flagPix + Math.max(16, W * 0.025), -beamThick / 2 - poleH + Math.max(6, H * 0.02));
+  ctx.lineTo(flagPix, -beamThick / 2 - poleH + Math.max(12, H * 0.04));
+  ctx.closePath();
+  if (!state.revealed && isLevel) { ctx.shadowColor = PAL.sage; ctx.shadowBlur = 12; }
+  ctx.fillStyle = flagColor; ctx.fill(); ctx.shadowBlur = 0;
+
+  ctx.restore();
+
+  txt('🎯 objectiu', pivot.x + flagPix, pivot.y - Math.max(56, H * 0.16), Math.max(10, W * 0.016), PAL.plum, 'center', 700);
+
+  if (!state.revealed && isLevel) {
+    txt('⚖️ Anivellat!', pivot.x, pivot.y - Math.max(70, H * 0.19), Math.max(13, W * 0.022), PAL.sage, 'center', 700, 'Space Grotesk');
+  }
+
+  const label = state.revealed
+    ? `✔ Anivellat a ${fmt(state.answer)} ${lc.timeUnit}`
+    : `${capitalize(lc.timeUnit)}: ${fmt1(state.d)}`;
+  txt(label, W * 0.24, H * 0.87, Math.max(12, W * 0.02), PAL.petrol, 'center', 700, 'JetBrains Mono');
+}
+
+function applyLeverDrag(state, x, y) {
+  if (!leverGeom) return;
+  const g = leverGeom;
+  const angle = state.angle || 0;
+  const dx = x - g.pivot.x, dy = y - g.pivot.y;
+  const localX = dx * Math.cos(angle) + dy * Math.sin(angle);
+  const lx = clamp(localX, -g.armDragMaxPix, -g.dPixMin);
+  const dVal = clamp(-lx / g.pxPerHour, g.dMinValue, state.maxHoresScale);
+  state.d = dVal;
+  state.angle = leverAngle(state.workers, state.d, state.k);
+  draw();
+  updateLeverHint(state);
+}
+function updateLeverHint(state) {
+  const leftTorque = state.workers * state.d;
+  const tol = Math.max(state.k * 0.03, 0.3);
+  const diff = leftTorque - state.k;
+  if (Math.abs(diff) < tol) {
+    hint.textContent = `⚖️ El braç està anivellat! Escriu ${state.lc.art} ${state.lc.timeUnit} exactes per confirmar-ho.`;
+  } else if (diff > 0) {
+    hint.textContent = `El braç es decanta cap avall a l'esquerra: hi ha massa distància. Apropa la plataforma al fulcre.`;
+  } else {
+    hint.textContent = `El braç es decanta cap avall a la dreta: encara falta distància. Allunya la plataforma del fulcre.`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  DRAW — dispatcher
+// ─────────────────────────────────────────────
+function currentState() { return repteMode ? rpState : exState; }
+
+function draw() {
+  if (!W || !H) return;
+  ctx.clearRect(0, 0, W, H);
+  const st = currentState();
+  if (!st) return;
+  if (st.type === 'directa') drawFactorScaler(st);
+  else drawLever(st);
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA DE LA CONSTANT
+// ─────────────────────────────────────────────
+function updateReadout() {
+  const st = currentState();
+  readoutBadge.classList.add('active');
+  if (!st) return;
+  if (st.type === 'directa') {
+    if (st.revealed) {
+      readoutNum.textContent = fmt(st.k);
+      readoutName.textContent = `k = ${fmt(st.k)} ${st.rc.unit} per persona`;
+      readoutDef.textContent = `Descobert amb el factor ×${fmt(st.targetFactor)}! ${st.x0} × ${fmt(st.targetFactor)} = ${st.targetX} persones, i ${fmt(st.y0)} × ${fmt(st.targetFactor)} = ${fmt(st.answer)} ${st.rc.unit}.`;
+    } else {
+      readoutNum.textContent = '?';
+      readoutName.textContent = `${st.rc.icon} ${nlQuestion(st.rc, st.targetX)}`;
+      readoutDef.textContent = `Recepta base: ${st.x0} persones → ${fmt(st.y0)} ${st.rc.unit}. Arrossega el factor ×k fins arribar a ${st.targetX} persones.`;
+    }
+  } else {
+    if (st.revealed) {
+      readoutNum.textContent = fmt(st.k);
+      const pairs = st.log.map(e => `${e.workers} ${st.lc.workerLabel} → ${fmt(e.answer)} ${st.lc.timeUnit}`).join(' · ');
+      if (st.log.length > 1) {
+        readoutName.textContent = `${st.lc.workerLabel} × ${st.lc.timeUnit} = ${fmt(st.k)} (constant) — relació inversa`;
+        readoutDef.textContent = `Fixa't com canvia: ${pairs}. Quan els ${st.lc.workerLabel} pugen, ${st.lc.timeUnit} baixen — el producte es manté sempre a ${fmt(st.k)}.`;
+      } else {
+        readoutName.textContent = `${st.lc.workerLabel} × ${st.lc.timeUnit} = ${fmt(st.k)} (constant)`;
+        readoutDef.textContent = `Amb ${st.workers} ${st.lc.workerLabel}, calen ${fmt(st.answer)} ${st.lc.timeUnit}, perquè ${st.workers} × ${fmt(st.answer)} = ${fmt(st.k)}.`;
+      }
+    } else {
+      readoutNum.textContent = '?';
+      readoutName.textContent = `${st.lc.icon} ${st.lc.task}${st.steps.length > 1 ? ` — pas ${st.stepIdx + 1}/${st.steps.length}` : ''}`;
+      const prevStr = st.log.length ? `Fins ara: ${st.log.map(e => `${e.workers}→${fmt(e.answer)}${st.lc.timeUnit}`).join(', ')}. ` : '';
+      readoutDef.textContent = `${prevStr}Arrossega la plataforma fins que la balança s'anivelli i després escriu ${st.lc.art} ${st.lc.timeUnit} exactes per ${st.workers} ${st.lc.workerLabel}.`;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+//  EXPLORA — SUB-TABS I EXERCICI
+// ─────────────────────────────────────────────
+let relType = 'directa';
+let exState = null;
+const exercisePanel  = document.getElementById('exercisePanel');
+const exTitleText    = document.getElementById('exTitleText');
+const exTypeBadge    = document.getElementById('exTypeBadge');
+const exAnswerLabel  = document.getElementById('exAnswerLabel');
+const exAnswerInput  = document.getElementById('exAnswerInput');
+const exFeedback     = document.getElementById('exFeedback');
+
+function refreshExPanel() {
+  exTitleText.textContent = exerciseTitleFor(exState);
+  exTypeBadge.textContent = exState.type === 'directa' ? 'Directa' : 'Inversa';
+  exAnswerLabel.textContent = answerLabelFor(exState);
+  exAnswerInput.value = '';
+  exFeedback.textContent = '';
+  hint.textContent = exState.type === 'directa'
+    ? "Arrossega el factor ×k fins que les persones coincideixin amb l'objectiu, i després escriu la quantitat d'ingredient."
+    : `Arrossega la plataforma per canviar la distància fins que la balança s'anivelli, i després escriu ${exState.lc.art} ${exState.lc.timeUnit} exactes.`;
+}
+function newExplora() {
+  exState = relType === 'directa' ? genFactorScaler() : genLever();
+  refreshExPanel();
+  draw();
+  updateReadout();
+}
+function setRelType(t) {
+  relType = t;
+  document.getElementById('btnDirecta').classList.toggle('active', t === 'directa');
+  document.getElementById('btnInversa').classList.toggle('active', t === 'inversa');
+  newExplora();
+}
+document.getElementById('btnDirecta').addEventListener('click', () => setRelType('directa'));
+document.getElementById('btnInversa').addEventListener('click', () => setRelType('inversa'));
+
+function checkExplora() {
+  if (!exState || exState.revealed) return;
+  const guess = parseFloat(exAnswerInput.value);
+  if (!Number.isFinite(guess)) {
+    exFeedback.textContent = 'Escriu un número.'; exFeedback.style.color = 'var(--terracotta)';
+    return;
+  }
+  const ok = Math.abs(guess - exState.answer) < 0.01;
+  if (ok) {
+    if (exState.type === 'inversa' && exState.stepIdx < exState.steps.length - 1) {
+      advanceInversaStep(exState);
+      flash(exercisePanel, PAL.sage);
+      refreshExPanel();
+      exFeedback.textContent = `✔ Correcte! Ara canvien els ${exState.lc.workerLabel}: torna a anivellar la balança.`;
+      exFeedback.style.color = 'var(--sage)';
+      draw(); updateReadout();
+      return;
+    }
+    if (exState.type === 'inversa') exState.log.push({ workers: exState.workers, answer: exState.answer });
+    exState.revealed = true;
+    exFeedback.textContent = '✔ Correcte!'; exFeedback.style.color = 'var(--sage)';
+    flash(exercisePanel, PAL.sage); flash(readoutBadge, PAL.sage);
+    draw(); updateReadout();
+    hint.textContent = 'Molt bé! Clica «Nou exercici» per continuar practicant.';
+  } else {
+    exFeedback.textContent = '✕ No és correcte. Torna-ho a provar.'; exFeedback.style.color = 'var(--terracotta)';
+    flash(exercisePanel, PAL.terracotta);
+  }
+}
+document.getElementById('exCheckBtn').addEventListener('click', checkExplora);
+exAnswerInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkExplora(); });
+document.getElementById('exNewBtn').addEventListener('click', newExplora);
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ AMB EL CANVAS
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.changedTouches ? e.changedTouches[0] : (e.touches ? e.touches[0] : e);
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+function onCanvasDown(e) {
+  const st = currentState();
+  if (!st || st.revealed) return;
+  const { x, y } = pointerXY(e);
+  if (st.type === 'directa') {
+    if (!factorGeom) return;
+    if (x < factorGeom.trackX0 - 20 || x > factorGeom.trackX1 + 20) return;
+    if (y < factorGeom.trackY - Math.max(30, H * 0.06) || y > factorGeom.trackY + Math.max(30, H * 0.06)) return;
+    e.preventDefault();
+    st.dragging = true;
+    applyFactorDrag(st, x);
+  } else {
+    if (!leverGeom) return;
+    if (x > leverGeom.pivot.x + 6) return; // arrossega només al braç esquerre
+    e.preventDefault();
+    st.dragging = true;
+    applyLeverDrag(st, x, y);
+  }
+}
+function onCanvasMove(e) {
+  const st = currentState();
+  if (!st || !st.dragging) return;
+  const { x, y } = pointerXY(e);
+  e.preventDefault();
+  if (st.type === 'directa') applyFactorDrag(st, x);
+  else applyLeverDrag(st, x, y);
+}
+function onCanvasUp() {
+  const st = currentState();
+  if (st && st.dragging) st.dragging = false;
+}
+canvas.addEventListener('mousedown', onCanvasDown);
+canvas.addEventListener('mousemove', onCanvasMove);
+window.addEventListener('mouseup', onCanvasUp);
+canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
+canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
+canvas.addEventListener('touchend', onCanvasUp);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+document.getElementById('card-directa').addEventListener('click', () => {
+  flash(wrap, PAL.petrol);
+  if (repteMode) return;
+  setRelType('directa');
+});
+document.getElementById('card-inversa').addEventListener('click', () => {
+  flash(wrap, PAL.plum);
+  if (repteMode) return;
+  setRelType('inversa');
+});
+document.getElementById('card-constant').addEventListener('click', () => {
+  flash(readoutBadge, PAL.sage);
+});
+document.getElementById('card-regla3').addEventListener('click', () => {
+  flash(exercisePanel, PAL.amber);
+  if (!repteMode) exAnswerInput.focus();
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteAnswerPanelEl = document.getElementById('repteAnswerPanel');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+const rpTime = document.getElementById('rpTime'), rpScore = document.getElementById('rpScore'), rpStreak = document.getElementById('rpStreak');
+const rpTitleText   = document.getElementById('rpTitleText');
+const rpTypeBadge   = document.getElementById('rpTypeBadge');
+const rpAnswerLabel = document.getElementById('rpAnswerLabel');
+const rpAnswerInput = document.getElementById('rpAnswerInput');
+const rpFeedback    = document.getElementById('rpFeedback');
+
+let repteMode = false;
+let rpState = null;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRepteRound() {
+  rpState = Math.random() < 0.5 ? genFactorScaler() : genLever();
+  rpTitleText.textContent = exerciseTitleFor(rpState);
+  rpTypeBadge.textContent = rpState.type === 'directa' ? 'Directa' : 'Inversa';
+  rpAnswerLabel.textContent = answerLabelFor(rpState);
+  rpAnswerInput.value = '';
+  rpFeedback.textContent = '';
+  hint.textContent = rpState.type === 'directa'
+    ? "Arrossega el factor ×k fins que les persones coincideixin amb l'objectiu, i després escriu la quantitat d'ingredient."
+    : `Arrossega la plataforma fins anivellar la balança i després escriu ${rpState.lc.art} ${rpState.lc.timeUnit} exactes.`;
+  draw();
+  updateReadout();
+  rpAnswerInput.focus();
+}
+
+function submitRepteAnswer() {
+  if (!repteMode || !rpState || !timer || rpState.revealed) return;
+  const guess = parseFloat(rpAnswerInput.value);
+  if (!Number.isFinite(guess)) {
+    rpFeedback.textContent = 'Escriu un número.'; rpFeedback.style.color = 'var(--terracotta)';
+    return;
+  }
+  if (Math.abs(guess - rpState.answer) < 0.01) {
+    score += 2; streak++;
+    rpScore.textContent = score; rpStreak.textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    flash(wrap, PAL.sage);
+    if (rpState.type === 'inversa' && rpState.stepIdx < rpState.steps.length - 1) {
+      advanceInversaStep(rpState);
+      rpTitleText.textContent = exerciseTitleFor(rpState);
+      rpTypeBadge.textContent = 'Inversa';
+      rpAnswerLabel.textContent = answerLabelFor(rpState);
+      rpAnswerInput.value = '';
+      rpFeedback.textContent = `✔ Pas ${rpState.stepIdx}/${rpState.steps.length} fet! Nous ${rpState.lc.workerLabel}: ${rpState.workers}.`;
+      rpFeedback.style.color = 'var(--sage)';
+      draw(); updateReadout();
+      rpAnswerInput.focus();
+      return;
+    }
+    if (rpState.type === 'inversa') rpState.log.push({ workers: rpState.workers, answer: rpState.answer });
+    rpState.revealed = true;
+    rpFeedback.textContent = '✔ Correcte!'; rpFeedback.style.color = 'var(--sage)';
+    draw(); updateReadout();
+    const roundSnapshot = rpState;
+    setTimeout(() => { if (timer && rpState === roundSnapshot) newRepteRound(); }, 1100);
+  } else {
+    streak = 0; rpStreak.textContent = streak;
+    score = Math.max(0, score - 1); rpScore.textContent = score;
+    timeLeft = Math.max(0, timeLeft - 3);
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpFeedback.textContent = '✕ No és correcte. Torna-ho a provar.'; rpFeedback.style.color = 'var(--terracotta)';
+    flash(wrap, PAL.terracotta);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      repteAnswerPanelEl.style.display = 'none';
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+    }
+  }
+}
+document.getElementById('rpCheckBtn').addEventListener('click', submitRepteAnswer);
+rpAnswerInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitRepteAnswer(); });
+document.getElementById('rpNewRound').addEventListener('click', () => { if (timer) newRepteRound(); });
+
+function startRepte(seconds) {
+  repteMaxTime = seconds;
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  newRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      repteAnswerPanelEl.style.display = 'none';
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+    }
+  }, 1000);
+}
+
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  repteAnswerPanelEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  // Neteja els estils inline de Repte perquè no quedin visibles per sobre de les regles CSS.
+  repteSetupEl.style.display = '';
+  repteBarEl.style.display = '';
+  repteAnswerPanelEl.style.display = 'none';
+  resize(); updateReadout(); draw();
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+  repteAnswerPanelEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INICI
+// ─────────────────────────────────────────────
+newExplora();
+resize();
+</script>
+</body>
+</html>

@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Potències · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--amber); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--amber); color: var(--amber); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 44px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 26px; text-align: center; }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only { display: flex; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    #powCanvas { cursor: grab; touch-action: none; }
+    #canvasWrap.dragging #powCanvas { cursor: grabbing; }
+
+    /* ── COMBINA POTÈNCIES (fusió arrossegant) ── */
+    .merge-box { flex-direction: column; gap: .7rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; }
+    .merge-box-title { font-family: var(--font-display); font-weight: 700; font-size: .85rem; color: var(--ink); }
+    .merge-row { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; }
+    .merge-chip {
+      display: flex; flex-direction: column; align-items: center; gap: .45rem; position: relative;
+      background: color-mix(in srgb, var(--amber) 7%, var(--surface)); border: 1px solid var(--border); border-radius: 10px; padding: .55rem;
+      transition: border-color var(--tr), box-shadow var(--tr);
+    }
+    #chipB { cursor: grab; touch-action: none; user-select: none; }
+    #chipB.dragging { cursor: grabbing; z-index: 5; box-shadow: 0 12px 28px rgba(26,31,54,.4); }
+    #chipA.drop-hover { border-color: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 35%, transparent); }
+    .chip-canvas { width: 84px; height: 84px; border-radius: 6px; }
+    .chip-steppers { display: flex; align-items: center; gap: .5rem; }
+    .chip-btn {
+      width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .85rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .chip-btn:hover { border-color: var(--amber); color: var(--amber); }
+    .chip-expr { font-family: var(--font-mono); font-weight: 700; font-size: .82rem; min-width: 34px; text-align: center; color: var(--ink); }
+    .merge-op { font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; color: var(--muted); }
+    .merge-eq { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--amber); margin-left: auto; }
+    .merge-note { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+    .merge-note strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--amber)">Bloc 02 · Potències</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Potències</h1>
+      <p>Arrossega horitzontalment sobre el llenç per triar l'exponent i observa com creix la figura. Canvia la base amb els botons. Al mode Repte, arriba a l'objectiu abans que s'acabi el temps.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--amber)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row">
+      <div class="stepper">
+        <button id="baseMinus">−</button>
+        <span class="stepper-label">Base</span>
+        <span class="stepper-val" id="baseVal">3</span>
+        <button id="basePlus">+</button>
+      </div>
+      <button class="btn btn-ghost" id="btnResetExp">↺ Exponent a 0</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--amber)">
+      <div class="rp-item"><span class="rp-label">Objectiu</span><span class="rp-value" id="rpTarget">243</span></div>
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--amber)">
+      <canvas id="powCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega el llenç cap als costats per canviar l'exponent</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--amber)">
+      <div class="readout-num" id="readoutNum">1</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">3⁰ = 1</div>
+        <div class="readout-def" id="readoutDef">Per definició, 3⁰ = 1 (producte buit, cap factor).</div>
+      </div>
+    </div>
+
+    <div class="merge-box explora-only" id="mergeBox">
+      <div class="merge-box-title">🧩 Combina dues potències</div>
+      <div class="merge-row">
+        <div class="merge-chip flash-target" id="chipA" style="--flash-color:var(--amber)">
+          <canvas class="chip-canvas" id="chipCanvasA"></canvas>
+          <div class="chip-steppers">
+            <button class="chip-btn" id="chipAMinus">−</button>
+            <span class="chip-expr" id="chipAExpr">3²</span>
+            <button class="chip-btn" id="chipAPlus">+</button>
+          </div>
+        </div>
+        <div class="merge-op">·</div>
+        <div class="merge-chip" id="chipB">
+          <canvas class="chip-canvas" id="chipCanvasB"></canvas>
+          <div class="chip-steppers">
+            <button class="chip-btn" id="chipBMinus">−</button>
+            <span class="chip-expr" id="chipBExpr">3³</span>
+            <button class="chip-btn" id="chipBPlus">+</button>
+          </div>
+        </div>
+        <div class="merge-eq" id="mergeEq">= 3⁵</div>
+      </div>
+      <div class="merge-note" id="mergeNote">Arrossega la peça <strong>B</strong> fins sobre la <strong>A</strong> per fusionar-les i veure com se sumen els exponents.</div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Propietats de les potències</div>
+
+    <div class="type-card" id="card-potpot" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Potència de potència</div>
+        <div class="type-range">(aᵐ)ⁿ = aᵐ·ⁿ</div>
+        <div class="type-desc">Elevar una potència a un altre exponent: es multipliquen els exponents. Prova-ho arrossegant peces més avall.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-prod" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Producte, mateixa base</div>
+        <div class="type-range">aᵐ · aⁿ = aᵐ⁺ⁿ</div>
+        <div class="type-desc">Multiplicar potències amb la mateixa base: se sumen els exponents. Prova-ho arrossegant peces més avall.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-exp0" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Exponent 0</div>
+        <div class="type-range">a⁰ = 1</div>
+        <div class="type-desc">Qualsevol base (no nul·la) elevada a 0 val 1: és el producte buit, sense factors.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-exp1" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Exponent 1</div>
+        <div class="type-range">a¹ = a</div>
+        <div class="type-desc">Elevat a 1, un número queda igual: només hi ha un factor.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> una potència aⁿ és una multiplicació repetida de la base «a» per ella mateixa, «n» vegades. L'exponent compta els factors, no el resultat.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 02 · Potències, Arrels i Nombres Enters</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  PALETA (llegida dels tokens compartits, no hardcoded)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+function hexToRgb(hex) {
+  const m = hex.replace('#', '').match(/.{1,2}/g);
+  return m.map(h => parseInt(h, 16)).join(',');
+}
+const PALETTE = {
+  petrol:     cssVar('--petrol', '#0b93a0'),
+  amber:      cssVar('--amber', '#e2860a'),
+  terracotta: cssVar('--terracotta', '#e6483a'),
+  sage:       cssVar('--sage', '#1fa971'),
+  plum:       cssVar('--plum', '#8452d6')
+};
+const AMBER_RGB = hexToRgb(PALETTE.amber);
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('powCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const baseVal = document.getElementById('baseVal');
+
+const chipA = document.getElementById('chipA');
+const chipB = document.getElementById('chipB');
+const chipCanvasA = document.getElementById('chipCanvasA');
+const chipCanvasB = document.getElementById('chipCanvasB');
+const chipCtxA = chipCanvasA.getContext('2d');
+const chipCtxB = chipCanvasB.getContext('2d');
+
+const MIN_BASE = 2, MAX_BASE = 6, MAX_EXP = 10;
+
+let base = 3;
+let exponent = 0;
+let hasInteracted = false;
+let W, H;
+
+let dragging = false;
+
+let blockAnim = null;   // { dir:'in'|'out', index, t, start, dur }  (cadena de blocs)
+let popAnim   = null;   // { t, start, dur }  (figura sencera, resta de formes)
+let rafId     = null;
+
+let demo = null;        // { type, step, frames }
+let demoTimer = null;
+
+let repteMode = false;
+let target = null;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+
+// combina potències (fusió)
+let mA = 2, mB = 3;
+let chipDrag = null;
+
+// ─────────────────────────────────────────────
+//  UTILITATS
+// ─────────────────────────────────────────────
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹' };
+function sup(n) { return String(n).split('').map(d => SUP[d] || d).join(''); }
+function fmt(n) { return n.toLocaleString('ca-ES'); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+function resizeChips() {
+  [chipCanvasA, chipCanvasB].forEach(c => {
+    const rect = c.getBoundingClientRect();
+    const dpr = devicePixelRatio || 1;
+    c.width  = rect.width  * dpr;
+    c.height = rect.height * dpr;
+    c.style.width  = rect.width  + 'px';
+    c.style.height = rect.height + 'px';
+  });
+  drawChips();
+}
+
+function roundRectOn(rctx, x, y, w, h, r, fill, stroke) {
+  rctx.beginPath();
+  rctx.moveTo(x + r, y);
+  rctx.arcTo(x + w, y, x + w, y + h, r);
+  rctx.arcTo(x + w, y + h, x, y + h, r);
+  rctx.arcTo(x, y + h, x, y, r);
+  rctx.arcTo(x, y, x + w, y, r);
+  rctx.closePath();
+  if (fill) { rctx.fillStyle = fill; rctx.fill(); }
+  if (stroke) { rctx.strokeStyle = stroke; rctx.lineWidth = 1.4; rctx.stroke(); }
+}
+
+function ctextOn(rctx, x, y, text, color, size, align, baseline, mono) {
+  const fam = mono ? "'JetBrains Mono', monospace" : "'Inter', sans-serif";
+  rctx.font = `${mono ? 700 : 600} ${size}px ${fam}`;
+  rctx.fillStyle = color;
+  rctx.textAlign = align || 'left';
+  rctx.textBaseline = baseline || 'alphabetic';
+  rctx.fillText(text, x, y);
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX DE LA FIGURA (a^e) — reutilitzat pel llenç gran i les mini-fitxes
+// ─────────────────────────────────────────────
+function renderShape(rctx, rW, rH, b, e, opts) {
+  opts = opts || {};
+  const compact   = !!opts.compact;
+  const blockAnim = opts.blockAnim || null;
+  const popAnim   = opts.popAnim || null;
+
+  rctx.save();
+  if (popAnim) {
+    const k = ease(popAnim.t);
+    const s = 0.92 + 0.08 * k;
+    rctx.globalAlpha = 0.5 + 0.5 * k;
+    rctx.translate(rW / 2, rH / 2);
+    rctx.scale(s, s);
+    rctx.translate(-rW / 2, -rH / 2);
+  }
+
+  const accentSoft   = `rgba(${AMBER_RGB},0.30)`;
+  const accentStroke = `rgba(${AMBER_RGB},0.75)`;
+
+  if (!compact) {
+    ctextOn(rctx, rW * 0.045, rH * 0.05, `${b}${sup(e)}`, TEXT_DARK, Math.max(20, rW * 0.044), 'left', 'top', true);
+  }
+
+  const figX0 = rW * 0.08, figY0 = rH * (compact ? 0.06 : 0.15), figW = rW * 0.84, figH = rH * (compact ? 0.88 : 0.56);
+  const cx = rW / 2, cyFig = figY0 + figH / 2;
+
+  if (e === 0) {
+    const cell = Math.min(figW, figH) * 0.34;
+    roundRectOn(rctx, cx - cell / 2, cyFig - cell / 2, cell, cell, 12, accentSoft, accentStroke);
+    ctextOn(rctx, cx, cyFig, '1', TEXT_DARK, cell * 0.42, 'center', 'middle', true);
+    if (!compact) ctextOn(rctx, cx, cyFig + cell / 2 + rH * 0.055, `${b}⁰ = 1 · cap factor`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+
+  } else if (e === 1) {
+    const n = b;
+    const cell = Math.min(figW / n, figH * 0.5);
+    const totalW = cell * n;
+    const x0 = cx - totalW / 2, y0 = cyFig - cell / 2;
+    for (let i = 0; i < n; i++) {
+      roundRectOn(rctx, x0 + i * cell + cell * 0.06, y0, cell * 0.88, cell * 0.88, 6, accentSoft, accentStroke);
+    }
+    if (!compact) ctextOn(rctx, cx, y0 + cell + rH * 0.055, `${b}¹ = ${b}`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+
+  } else if (e === 2) {
+    const n = b;
+    const size = Math.min(figW, figH * 0.9);
+    const cell = size / n;
+    const totalW = cell * n, totalH = cell * n;
+    const x0 = cx - totalW / 2, y0 = cyFig - totalH / 2;
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        roundRectOn(rctx, x0 + c * cell + 2, y0 + r * cell + 2, cell - 4, cell - 4, 4, accentSoft, accentStroke);
+      }
+    }
+    if (!compact) ctextOn(rctx, cx, y0 + totalH + rH * 0.055, `${b}² = ${fmt(b * b)}`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+
+  } else if (e === 3) {
+    const n = b;
+    const baseSize = Math.min(figW * 0.62, figH * 0.62);
+    const cell = baseSize / n;
+    const dx = cell * 0.42, dy2 = cell * 0.32;
+    const baseX = cx - baseSize / 2 - (n - 1) * dx / 2;
+    const baseY = cyFig - baseSize / 2 + (n - 1) * dy2 / 2;
+    for (let L = n - 1; L >= 0; L--) {
+      const ox = baseX + L * dx, oy = baseY - L * dy2;
+      const depth = n > 1 ? L / (n - 1) : 0;
+      const alpha = 0.85 - depth * 0.55;
+      const fill = `rgba(${AMBER_RGB},${(alpha * 0.55).toFixed(2)})`;
+      const stroke = `rgba(${AMBER_RGB},${Math.min(1, alpha + 0.15).toFixed(2)})`;
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          roundRectOn(rctx, ox + c * cell + 1, oy + r * cell + 1, cell - 2, cell - 2, 3, fill, stroke);
+        }
+      }
+    }
+    if (!compact) ctextOn(rctx, cx, baseY + baseSize + rH * 0.06, `${b}³ = ${fmt(b * b * b)}`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+
+  } else {
+    // exponent > 3: cadena de multiplicació (blocs + ×), amb entrada/sortida animada d'un bloc
+    const n = e;
+    const ghost = blockAnim && blockAnim.dir === 'out' ? blockAnim : null;
+    const flyIn = blockAnim && blockAnim.dir === 'in'  ? blockAnim : null;
+    const nLayout = ghost ? Math.max(n, ghost.index + 1) : n;
+    const blockSize = Math.max(compact ? 14 : 22, Math.min(compact ? 30 : 50, Math.min(figW, figH) * 0.16));
+    const sep = blockSize * 0.55;
+    const perRow = Math.max(1, Math.min(nLayout, Math.floor((figW + sep) / (blockSize + sep))));
+    const rows = Math.ceil(nLayout / perRow);
+    const rowH = blockSize + rH * 0.06;
+    const totalH = rows * rowH;
+    const startY = cyFig - totalH / 2 + blockSize / 2;
+
+    function blockPos(i) {
+      const rowIdx = Math.floor(i / perRow);
+      const colIdx = i % perRow;
+      const itemsInRow = Math.min(perRow, nLayout - rowIdx * perRow);
+      const rowW = itemsInRow * blockSize + (itemsInRow - 1) * sep;
+      const rowStartX = cx - rowW / 2;
+      return { bx: rowStartX + colIdx * (blockSize + sep), by: startY + rowIdx * rowH, colIdx, itemsInRow };
+    }
+
+    for (let i = 0; i < nLayout; i++) {
+      const { bx, by } = blockPos(i);
+      let scale = 1, alpha = 1, dxOff = 0;
+      if (ghost && i === ghost.index) {
+        const k = 1 - ease(ghost.t);
+        scale = 0.35 + 0.65 * k; alpha = k;
+      } else if (flyIn && i === flyIn.index) {
+        const k = ease(flyIn.t);
+        scale = 0.35 + 0.65 * k; alpha = k; dxOff = (1 - k) * blockSize * 0.5;
+      }
+      rctx.save();
+      rctx.globalAlpha = alpha;
+      rctx.translate(bx + blockSize / 2 + dxOff, by + blockSize / 2);
+      rctx.scale(scale, scale);
+      roundRectOn(rctx, -blockSize / 2, -blockSize / 2, blockSize, blockSize, 8, accentSoft, accentStroke);
+      ctextOn(rctx, 0, 0, String(b), TEXT_DARK, blockSize * 0.4, 'center', 'middle', true);
+      rctx.restore();
+    }
+    for (let i = 0; i < nLayout; i++) {
+      const { bx, by, colIdx, itemsInRow } = blockPos(i);
+      if (colIdx < itemsInRow - 1) {
+        ctextOn(rctx, bx + blockSize + sep / 2, by + blockSize / 2, '×', '#8a8a9a', blockSize * 0.38, 'center', 'middle');
+      }
+    }
+    if (!compact) ctextOn(rctx, cx, startY + totalH + rH * 0.02, `${b}${sup(n)} = ${fmt(Math.pow(b, n))}`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+  }
+
+  rctx.restore();
+
+  if (!compact) drawDialOn(rctx, rW, rH, e);
+}
+
+function drawDialOn(rctx, rW, rH, e) {
+  const padX = rW * 0.08;
+  const x0 = padX, x1 = rW - padX;
+  const y = rH * 0.93;
+  rctx.save();
+  rctx.lineCap = 'round';
+  rctx.lineWidth = Math.max(2, rH * 0.007);
+  rctx.strokeStyle = 'rgba(26,31,54,0.16)';
+  rctx.beginPath(); rctx.moveTo(x0, y); rctx.lineTo(x1, y); rctx.stroke();
+  const hx = x0 + (x1 - x0) * (e / MAX_EXP);
+  rctx.strokeStyle = PALETTE.amber;
+  rctx.beginPath(); rctx.moveTo(x0, y); rctx.lineTo(hx, y); rctx.stroke();
+  rctx.beginPath();
+  rctx.arc(hx, y, Math.max(5, rH * 0.016), 0, Math.PI * 2);
+  rctx.fillStyle = PALETTE.amber;
+  rctx.shadowColor = PALETTE.amber; rctx.shadowBlur = 8;
+  rctx.fill();
+  rctx.shadowBlur = 0;
+  rctx.restore();
+}
+
+// ─────────────────────────────────────────────
+//  DRAW (llenç gran) + mini-fitxes de combinació
+// ─────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  if (demo) {
+    const f = demo.frames[demo.step];
+    renderShape(ctx, W, H, f.base, f.exponent, {});
+    return;
+  }
+  renderShape(ctx, W, H, base, exponent, { blockAnim, popAnim });
+}
+
+function drawChips() {
+  chipCtxA.clearRect(0, 0, chipCanvasA.width, chipCanvasA.height);
+  chipCtxB.clearRect(0, 0, chipCanvasB.width, chipCanvasB.height);
+  renderShape(chipCtxA, chipCanvasA.width, chipCanvasA.height, base, mA, { compact: true });
+  renderShape(chipCtxB, chipCanvasB.width, chipCanvasB.height, base, mB, { compact: true });
+  document.getElementById('chipAExpr').textContent = `${base}${sup(mA)}`;
+  document.getElementById('chipBExpr').textContent = `${base}${sup(mB)}`;
+  document.getElementById('mergeEq').textContent = `= ${base}${sup(mA + mB)} = ${fmt(Math.pow(base, mA + mB))}`;
+  const noteEl = document.getElementById('mergeNote');
+  if (mA === mB) {
+    noteEl.innerHTML = `Mateix exponent als dos costats: en fusionar-les veuràs (${base}${sup(mA)})² = ${base}${sup(mA)}·². Arrossega <strong>B</strong> sobre <strong>A</strong>.`;
+  } else {
+    noteEl.innerHTML = `Arrossega la peça <strong>B</strong> fins sobre la <strong>A</strong> per fusionar-les i veure com se sumen els exponents.`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateReadout() {
+  if (demo) return;
+  const value = Math.pow(base, exponent);
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmt(value);
+  readoutName.textContent = `${base}${sup(exponent)} = ${fmt(value)}`;
+  readoutDef.textContent = exponent === 0
+    ? `Per definició, ${base}⁰ = 1 (producte buit, cap factor).`
+    : `${Array(exponent).fill(base).join(' × ')} = ${fmt(value)}`;
+}
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA → EXEMPLE ANIMAT
+// ─────────────────────────────────────────────
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+const DEMOS = {
+  potpot: [
+    { base: 2, exponent: 2, name: '2² = 4',              def: 'Comencem amb 2² (base 2, exponent 2).' },
+    { base: 2, exponent: 4, name: '(2²)² = 2⁴ = 16',      def: 'Elevem 2² al quadrat: multipliquem els exponents (2 × 2 = 4).' },
+    { base: 2, exponent: 6, name: '(2²)³ = 2⁶ = 64',      def: 'Potència de potència: (aᵐ)ⁿ = aᵐ·ⁿ → (2²)³ = 2⁶ = 64.' }
+  ],
+  prod: [
+    { base: 3, exponent: 2, name: '3² = 9',               def: 'Primer factor: 3² (2 factors de 3).' },
+    { base: 3, exponent: 3, name: '3³ = 27',              def: 'Segon factor: 3³ (3 factors de 3).' },
+    { base: 3, exponent: 5, name: '3² · 3³ = 3⁵ = 243',   def: 'Mateixa base: aᵐ · aⁿ = aᵐ⁺ⁿ → 3² · 3³ = 3⁵ = 243.' }
+  ],
+  exp0: [
+    { base: 5, exponent: 0, name: '5⁰ = 1',               def: 'Qualsevol base elevada a 0 val 1 (producte buit, cap factor).' }
+  ],
+  exp1: [
+    { base: 5, exponent: 1, name: '5¹ = 5',               def: 'Elevat a 1, un número queda igual: un sol factor.' }
+  ]
+};
+const DEMO_COLOR = { potpot: PALETTE.petrol, prod: PALETTE.sage, exp0: PALETTE.terracotta, exp1: PALETTE.plum, merge: PALETTE.amber };
+
+function startDemo(type, framesOverride) {
+  clearDemoTimer();
+  const frames = framesOverride || DEMOS[type];
+  demo = { type, step: 0, frames };
+  flash(wrap, DEMO_COLOR[type] || PALETTE.amber);
+  renderDemoFrame();
+  if (frames.length > 1) {
+    demoTimer = setInterval(() => {
+      demo.step++;
+      if (demo.step >= frames.length) { clearDemoTimer(); return; }
+      renderDemoFrame();
+    }, 950);
+  }
+}
+function clearDemoTimer() { if (demoTimer) clearInterval(demoTimer); demoTimer = null; }
+function renderDemoFrame() {
+  draw();
+  const f = demo.frames[demo.step];
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmt(Math.pow(f.base, f.exponent));
+  readoutName.textContent = f.name;
+  readoutDef.textContent = f.def;
+}
+function exitDemo() {
+  if (!demo) return;
+  demo = null; clearDemoTimer();
+  resize(); updateReadout();
+}
+
+document.getElementById('card-potpot').addEventListener('click', () => startDemo('potpot'));
+document.getElementById('card-prod').addEventListener('click', () => startDemo('prod'));
+document.getElementById('card-exp0').addEventListener('click', () => startDemo('exp0'));
+document.getElementById('card-exp1').addEventListener('click', () => startDemo('exp1'));
+
+// ─────────────────────────────────────────────
+//  ANIMACIONS (pop de figura sencera / vol d'un bloc dins la cadena)
+// ─────────────────────────────────────────────
+function triggerBlockAnim(dir, index) {
+  blockAnim = { dir, index, t: 0, start: performance.now(), dur: dir === 'in' ? 260 : 200 };
+  ensureRaf();
+}
+function triggerPop() {
+  popAnim = { t: 0, start: performance.now(), dur: 220 };
+  ensureRaf();
+}
+function ensureRaf() {
+  if (rafId) return;
+  const step = (now) => {
+    if (blockAnim) blockAnim.t = Math.min(1, (now - blockAnim.start) / blockAnim.dur);
+    if (popAnim)   popAnim.t   = Math.min(1, (now - popAnim.start) / popAnim.dur);
+    draw();
+    if (blockAnim && blockAnim.t >= 1) blockAnim = null;
+    if (popAnim && popAnim.t >= 1) popAnim = null;
+    if (blockAnim || popAnim) rafId = requestAnimationFrame(step);
+    else rafId = null;
+  };
+  rafId = requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────────
+//  CONTROLS COMUNS (base + reinici d'exponent) — funcionen als dos modes
+// ─────────────────────────────────────────────
+function markInteracted() { if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); } }
+
+document.getElementById('baseMinus').addEventListener('click', () => {
+  exitDemo(); markInteracted();
+  if (base > MIN_BASE) { base--; baseVal.textContent = base; triggerPop(); }
+  resize(); updateReadout(); drawChips();
+  if (repteMode) checkRepte();
+});
+document.getElementById('basePlus').addEventListener('click', () => {
+  exitDemo(); markInteracted();
+  if (base < MAX_BASE) { base++; baseVal.textContent = base; triggerPop(); }
+  resize(); updateReadout(); drawChips();
+  if (repteMode) checkRepte();
+});
+document.getElementById('btnResetExp').addEventListener('click', () => {
+  exitDemo(); markInteracted();
+  if (exponent !== 0) { exponent = 0; triggerPop(); }
+  draw(); updateReadout();
+  if (repteMode) checkRepte();
+});
+
+// ─────────────────────────────────────────────
+//  DIAL D'EXPONENT (arrossega horitzontalment sobre el llenç) — mateixa interacció als 2 modes
+// ─────────────────────────────────────────────
+function xToExponent(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const pad = rect.width * 0.08;
+  const x0 = rect.left + pad, x1 = rect.right - pad;
+  const t = (clientX - x0) / Math.max(1, (x1 - x0));
+  return Math.round(clamp(t, 0, 1) * MAX_EXP);
+}
+function dialClientX(e) { const t = e.touches ? e.touches[0] : e; return t.clientX; }
+
+function setExponent(newExp) {
+  const old = exponent;
+  const delta = newExp - old;
+  exponent = newExp;
+  if (Math.abs(delta) === 1 && old > 3 && newExp > 3) {
+    triggerBlockAnim(delta > 0 ? 'in' : 'out', delta > 0 ? newExp - 1 : old - 1);
+  } else if (delta !== 0) {
+    triggerPop();
+  }
+  draw();
+  updateReadout();
+}
+function updateFromDial(e) {
+  const newExp = xToExponent(dialClientX(e));
+  if (newExp !== exponent) setExponent(newExp);
+}
+function onDialStart(e) {
+  e.preventDefault();
+  exitDemo(); markInteracted();
+  dragging = true;
+  wrap.classList.add('dragging');
+  updateFromDial(e);
+}
+function onDialMove(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  updateFromDial(e);
+}
+function onDialEnd() {
+  if (!dragging) return;
+  dragging = false;
+  wrap.classList.remove('dragging');
+  if (repteMode) checkRepte();
+}
+
+canvas.addEventListener('mousedown', onDialStart);
+window.addEventListener('mousemove', onDialMove);
+window.addEventListener('mouseup', onDialEnd);
+canvas.addEventListener('touchstart', onDialStart, { passive: false });
+canvas.addEventListener('touchmove', onDialMove, { passive: false });
+canvas.addEventListener('touchend', onDialEnd);
+window.addEventListener('resize', () => { resize(); resizeChips(); });
+
+// ─────────────────────────────────────────────
+//  COMBINA POTÈNCIES: steppers de cada peça
+// ─────────────────────────────────────────────
+function setChipExp(which, val) {
+  val = clamp(val, 0, 6);
+  if (which === 'A') {
+    if (val + mB > MAX_EXP) val = MAX_EXP - mB;
+    mA = Math.max(0, val);
+  } else {
+    if (mA + val > MAX_EXP) val = MAX_EXP - mA;
+    mB = Math.max(0, val);
+  }
+  drawChips();
+}
+document.getElementById('chipAMinus').addEventListener('click', () => setChipExp('A', mA - 1));
+document.getElementById('chipAPlus').addEventListener('click',  () => setChipExp('A', mA + 1));
+document.getElementById('chipBMinus').addEventListener('click', () => setChipExp('B', mB - 1));
+document.getElementById('chipBPlus').addEventListener('click',  () => setChipExp('B', mB + 1));
+
+// ─────────────────────────────────────────────
+//  COMBINA POTÈNCIES: arrossega la peça B sobre la A → fusió real
+// ─────────────────────────────────────────────
+function chipClientXY(e) { const t = e.touches ? e.touches[0] : e; return { x: t.clientX, y: t.clientY }; }
+function offsetRect(r, dx, dy) { return { left: r.left + dx, right: r.right + dx, top: r.top + dy, bottom: r.bottom + dy, width: r.width, height: r.height }; }
+function rectOverlapRatio(rA, rB) {
+  const x0 = Math.max(rA.left, rB.left), x1 = Math.min(rA.right, rB.right);
+  const y0 = Math.max(rA.top, rB.top), y1 = Math.min(rA.bottom, rB.bottom);
+  const w = Math.max(0, x1 - x0), h = Math.max(0, y1 - y0);
+  const areaB = rB.width * rB.height;
+  return areaB ? (w * h) / areaB : 0;
+}
+
+function onChipStart(e) {
+  if (e.target.closest('.chip-btn')) return;
+  e.preventDefault();
+  const { x, y } = chipClientXY(e);
+  chipDrag = { startX: x, startY: y, dx: 0, dy: 0, natRectB: chipB.getBoundingClientRect() };
+  chipB.classList.add('dragging');
+  chipB.style.transition = 'none';
+}
+function onChipMove(e) {
+  if (!chipDrag) return;
+  e.preventDefault();
+  const { x, y } = chipClientXY(e);
+  chipDrag.dx = x - chipDrag.startX;
+  chipDrag.dy = y - chipDrag.startY;
+  chipB.style.transform = `translate(${chipDrag.dx}px, ${chipDrag.dy}px)`;
+  const rectA = chipA.getBoundingClientRect();
+  const curRectB = offsetRect(chipDrag.natRectB, chipDrag.dx, chipDrag.dy);
+  chipA.classList.toggle('drop-hover', rectOverlapRatio(rectA, curRectB) > 0.3);
+}
+function onChipEnd() {
+  if (!chipDrag) return;
+  const d = chipDrag; chipDrag = null;
+  chipB.classList.remove('dragging');
+  chipA.classList.remove('drop-hover');
+  const rectA = chipA.getBoundingClientRect();
+  const curRectB = offsetRect(d.natRectB, d.dx, d.dy);
+  if (rectOverlapRatio(rectA, curRectB) > 0.3) {
+    completeMerge(rectA, d.natRectB);
+  } else {
+    chipB.style.transition = 'transform .28s cubic-bezier(.34,1.56,.64,1)';
+    chipB.style.transform = '';
+    setTimeout(() => { chipB.style.transition = ''; }, 300);
+  }
+}
+chipB.addEventListener('mousedown', onChipStart);
+window.addEventListener('mousemove', onChipMove);
+window.addEventListener('mouseup', onChipEnd);
+chipB.addEventListener('touchstart', onChipStart, { passive: false });
+window.addEventListener('touchmove', onChipMove, { passive: false });
+window.addEventListener('touchend', onChipEnd);
+
+function completeMerge(rectA, natRectB) {
+  const finalDx = (rectA.left + rectA.width / 2) - (natRectB.left + natRectB.width / 2);
+  const finalDy = (rectA.top + rectA.height / 2) - (natRectB.top + natRectB.height / 2);
+  chipB.style.transition = 'transform .22s ease-in, opacity .22s ease-in .08s';
+  chipB.style.transform = `translate(${finalDx}px, ${finalDy}px) scale(0.6)`;
+  chipB.style.opacity = '0';
+  flash(chipA, PALETTE.amber);
+
+  const baseSnap = base, mAsnap = mA, mBsnap = mB;
+  const sum = mAsnap + mBsnap;
+  const sameExp = mAsnap === mBsnap;
+  const frames = [
+    { base: baseSnap, exponent: mAsnap, name: `${baseSnap}${sup(mAsnap)} = ${fmt(Math.pow(baseSnap, mAsnap))}`, def: `Primer factor: ${baseSnap}${sup(mAsnap)}.` },
+    { base: baseSnap, exponent: mBsnap, name: `${baseSnap}${sup(mBsnap)} = ${fmt(Math.pow(baseSnap, mBsnap))}`, def: `Segon factor: ${baseSnap}${sup(mBsnap)}.` },
+    { base: baseSnap, exponent: sum,
+      name: `${baseSnap}${sup(mAsnap)} · ${baseSnap}${sup(mBsnap)} = ${baseSnap}${sup(sum)} = ${fmt(Math.pow(baseSnap, sum))}`,
+      def: sameExp
+        ? `Mateixa base: se sumen els exponents (${mAsnap}+${mBsnap}=${sum}). Com repeteixes la mateixa peça 2 cops, també és (${baseSnap}${sup(mAsnap)})² = ${baseSnap}${sup(mAsnap)}·² = ${baseSnap}${sup(sum)}.`
+        : `Mateixa base: aᵐ·aⁿ=aᵐ⁺ⁿ → ${mAsnap}+${mBsnap}=${sum}.` }
+  ];
+  setTimeout(() => {
+    startDemo('merge', frames);
+    setTimeout(resetChipB, (frames.length - 1) * 950 + 900);
+  }, 240);
+}
+function resetChipB() {
+  chipB.style.transition = 'transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s';
+  chipB.style.transform = '';
+  chipB.style.opacity = '';
+  setTimeout(() => { chipB.style.transition = ''; }, 320);
+}
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const rpTarget = document.getElementById('rpTarget'), rpTime = document.getElementById('rpTime'),
+      rpScore = document.getElementById('rpScore'), rpStreak = document.getElementById('rpStreak');
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRepteRound() {
+  const rb = MIN_BASE + Math.floor(Math.random() * (MAX_BASE - MIN_BASE + 1));
+  const re = Math.floor(Math.random() * (MAX_EXP + 1)); // 0..10 (tot el rang d'Explora)
+  target = Math.pow(rb, re);
+  rpTarget.textContent = fmt(target);
+  base = MIN_BASE; baseVal.textContent = base;
+  exponent = 0;
+  resize(); updateReadout();
+}
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  newRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} potències encertades.`;
+      readoutNum.textContent = score;
+    }
+  }, 1000);
+}
+
+const repteSetupEl   = document.getElementById('repteSetup');
+const repteBarEl     = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+function checkRepte() {
+  const value = Math.pow(base, exponent);
+  if (value === target) onRepteCorrect();
+  else if (value > target) onRepteOvershoot();
+}
+function onRepteCorrect() {
+  score++; streak++;
+  rpScore.textContent = score; rpStreak.textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+  flash(wrap, PALETTE.sage);
+  readoutName.textContent = 'Encertat! 🎉';
+  readoutDef.textContent = `${base}${sup(exponent)} = ${fmt(target)}`;
+  setTimeout(newRepteRound, 700);
+}
+function onRepteOvershoot() {
+  streak = 0; rpStreak.textContent = streak;
+  score = Math.max(0, score - 1); rpScore.textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3);
+  exponent = 0;
+  flash(wrap, PALETTE.terracotta);
+  resize(); updateReadout();
+  readoutName.textContent = "T'has passat!";
+  readoutDef.textContent = `L'exponent es reinicia. Objectiu: ${fmt(target)}.`;
+}
+
+document.getElementById('rpNewRound').addEventListener('click', () => { if (timer) newRepteRound(); });
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer(); exitDemo();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  base = 3; exponent = 0; baseVal.textContent = base;
+  resize(); updateReadout(); drawChips();
+});
+btnRepte.addEventListener('click', () => {
+  exitDemo();
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resize();
+resizeChips();
+updateReadout();
+</script>
+</body>
+</html>
+

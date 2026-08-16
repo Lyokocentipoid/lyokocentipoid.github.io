@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nombres negatius · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--amber); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--amber); color: var(--amber); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 44px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 26px; text-align: center; }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    .tile-tray { gap: .6rem; }
+    .jump-tile {
+      font-family: var(--font-mono); font-weight: 700; font-size: .95rem;
+      padding: .55rem .95rem; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface); cursor: grab; touch-action: none; user-select: none;
+      transition: transform .15s ease, box-shadow .15s ease, opacity .2s ease;
+    }
+    .jump-tile.pos { border-color: color-mix(in srgb, var(--sage) 55%, transparent); color: var(--sage); background: color-mix(in srgb, var(--sage) 8%, transparent); }
+    .jump-tile.neg { border-color: color-mix(in srgb, var(--terracotta) 55%, transparent); color: var(--terracotta); background: color-mix(in srgb, var(--terracotta) 8%, transparent); }
+    .jump-tile.dragging { cursor: grabbing; box-shadow: 0 10px 26px rgba(33,31,44,.28); transform: scale(1.08); }
+    .jump-tile.used { opacity: .28; pointer-events: none; text-decoration: line-through; }
+
+    /* ── COMBINA-HI (Explora: pila de signes + fitxa arrossegable) ── */
+    .combine-row { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+    .combine-row .cr-label { font-size: .78rem; color: var(--muted); font-weight: 600; }
+    #combineChip { align-self: center; }
+    .sign-stack-controls { display: flex; align-items: center; gap: .4rem; }
+    .sign-stack-controls button { padding: .45rem .8rem; font-size: .78rem; }
+    .sign-stack-controls button:disabled { opacity: .35; cursor: not-allowed; }
+    .sign-stack-controls button:disabled:hover { border-color: var(--border); color: var(--ink); transform: none; }
+    .sign-stack-display {
+      display: flex; align-items: center; gap: .7rem; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: .45rem .9rem;
+    }
+    .ss-stack { display: flex; align-items: center; gap: .2rem; font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; }
+    .ss-sign { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 22px; border-radius: 6px; padding: 0 .1rem; }
+    .ss-sign.neg { color: var(--terracotta); }
+    .ss-sign.pos { color: var(--sage); }
+    .ss-sign-outer { cursor: pointer; border: 1.5px dashed currentColor; transition: transform .15s ease, background .15s ease; }
+    .ss-sign-outer:hover { transform: scale(1.18); background: color-mix(in srgb, currentColor 16%, transparent); }
+    .ss-mag { color: var(--ink); margin-left: .2rem; }
+    .ss-eq { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; color: var(--amber); }
+
+    /* ── REPTE NIVELL 2: fitxes amb signes apilats i × / ÷ ── */
+    .jump-tile.l2 { display: flex; align-items: center; gap: .4rem; }
+    .tile-op-toggle {
+      width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid currentColor; background: transparent;
+      font-family: var(--font-mono); font-weight: 700; font-size: .85rem; cursor: pointer; color: inherit;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all var(--tr);
+    }
+    .tile-op-toggle:hover { transform: scale(1.1); }
+    .jump-tile.mul, .jump-tile.div {
+      border-color: color-mix(in srgb, var(--petrol) 55%, transparent); color: var(--petrol);
+      background: color-mix(in srgb, var(--petrol) 8%, transparent);
+    }
+    .jump-tile.rejected { animation: tileReject .4s ease; }
+    @keyframes tileReject { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+    /* ── EQUACIÓ ACUMULADA (Repte) ── */
+    /* sense "display" propi: .repte-only ja el posa a none per defecte i
+       body.mode-repte .repte-only el torna a flex — si el fixéssim aquí amb
+       la mateixa especificitat, guanyaria per ordre de font i "filtraria"
+       aquest bloc fora del mode Repte (bug corregit) */
+    .repte-equation {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; line-height: 1.4;
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+      padding: .7rem 1.1rem; color: var(--ink); min-height: 1.3em;
+      align-items: center; flex-wrap: wrap; gap: .3rem;
+    }
+    .repte-equation .eq-empty { color: var(--muted); font-weight: 500; font-family: var(--font-body); font-size: .85rem; }
+    .repte-equation .eq-op { color: var(--muted); margin: 0 .15rem; }
+    .repte-equation .eq-result { color: var(--amber); margin-left: .2rem; }
+
+    #rpUndo:disabled { opacity: .35; cursor: not-allowed; }
+    #rpUndo:disabled:hover { border-color: var(--border); color: var(--ink); transform: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--amber)">Bloc 02 · Nombres negatius</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Nombres negatius</h1>
+      <p>Arrossega el punt per la recta numèrica i descobreix el seu valor i el seu valor absolut. Després, construeix una pila de signes a "Combina-hi", mira com se simplifica, i arrossega la fitxa fins a la recta per veure com els dos salts s'apilen o es cancel·len. Al mode Repte, tria durada i nivell: al Nivell 1 arrossega fitxes de salt (+3, −5...) fins a l'objectiu; al Nivell 2 també pots sumar o restar cada fitxa, i hi apareixen fitxes de signes apilats i de × / ÷.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--amber)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <button class="btn btn-ghost" id="btnCenter">↺ Centra a zero</button>
+    </div>
+
+    <div class="combine-row explora-only">
+      <span class="cr-label">Combina-hi:</span>
+      <div class="stepper">
+        <button id="chipDown" type="button">−</button>
+        <span class="stepper-label">número</span>
+        <span class="stepper-val" id="chipMagVal">3</span>
+        <button id="chipUp" type="button">+</button>
+      </div>
+      <div class="sign-stack-controls">
+        <button class="btn btn-ghost" id="stackAddMinus" type="button">afegeix −</button>
+        <button class="btn btn-ghost" id="stackAddPlus" type="button">afegeix +</button>
+        <button class="btn btn-ghost" id="stackReset" type="button">buida la pila</button>
+      </div>
+      <div class="sign-stack-display">
+        <span class="ss-stack" id="ssStack"></span>
+        <span class="ss-eq" id="ssEq">= +3</span>
+      </div>
+      <div class="jump-tile pos" id="combineChip">+3</div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <span class="rs-label">Tria el nivell:</span>
+        <div class="mode-toggle" id="repteLevelToggle" style="--m-color:var(--amber)">
+          <button class="active" data-level="1" type="button">Nivell 1</button>
+          <button data-level="2" type="button">Nivell 2</button>
+        </div>
+        <span class="rs-label" id="repteLevelDesc">Nivell 1: fitxes +/− senzilles.</span>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--amber)">
+      <div class="rp-item"><span class="rp-label">Objectiu</span><span class="rp-value" id="rpTarget">—</span></div>
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpUndo" style="margin-left:auto" disabled>↩ Desfés</button>
+      <button class="btn btn-ghost" id="rpNewRound">Nova ronda ↻</button>
+    </div>
+
+    <div class="repte-only tile-tray" id="tileTray"></div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--amber)">
+      <canvas id="lineCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega el punt per la recta numèrica</div>
+
+    <div class="repte-equation repte-only" id="repteEquation"></div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--amber)">
+      <div class="readout-num" id="readoutNum">0</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Arrossega el punt</div>
+        <div class="readout-def" id="readoutDef">Mou el punt per la recta i observa el seu valor i valor absolut.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Regles dels signes</div>
+
+    <div class="type-card" id="card-same" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Signes iguals se sumen</div>
+        <div class="type-range">(−3) + (−2) = −5</div>
+        <div class="type-desc">Se sumen els valors absoluts i es manté el signe comú.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-diff" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Signes diferents es resten</div>
+        <div class="type-range">5 + (−8) = −3</div>
+        <div class="type-desc">Es resten els valors absoluts i queda el signe del que té més valor absolut.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-opposite" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">L'oposat d'un número</div>
+        <div class="type-range">Op(4) = −4</div>
+        <div class="type-desc">Mateixa distància a zero, a l'altre costat de la recta.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-abs" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Valor absolut</div>
+        <div class="type-range">|−6| = 6</div>
+        <div class="type-desc">La distància des de zero fins al número, sempre positiva.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-subneg" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Restar un negatiu</div>
+        <div class="type-range">5 − (−3) = 8</div>
+        <div class="type-desc">Restar un negatiu equival a sumar el seu oposat (positiu).</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> a la recta numèrica, els positius van a la dreta de zero i els negatius a l'esquerra. El valor absolut |n| és la distància fins a zero: mai és negatiu. Restar un número equival a sumar el seu oposat.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 02 · Potències, Arrels i Nombres Enters</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  DOM
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('lineCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+const tileTray = document.getElementById('tileTray');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const chipDownBtn  = document.getElementById('chipDown');
+const chipUpBtn    = document.getElementById('chipUp');
+const chipMagValEl = document.getElementById('chipMagVal');
+const stackAddMinusBtn = document.getElementById('stackAddMinus');
+const stackAddPlusBtn  = document.getElementById('stackAddPlus');
+const stackResetBtn    = document.getElementById('stackReset');
+const ssStackEl    = document.getElementById('ssStack');
+const ssEqEl       = document.getElementById('ssEq');
+const combineChipEl = document.getElementById('combineChip');
+
+const rpUndo = document.getElementById('rpUndo');
+const repteEquationEl = document.getElementById('repteEquation');
+
+const HINT_EXPLORA = "Arrossega el punt per la recta — o la fitxa per combinar-hi";
+const HINT_REPTE   = 'Arrossega una fitxa fins a la recta';
+
+// ─────────────────────────────────────────────
+//  PALETA (llegida dels tokens compartits, no hardcoded)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const PALETTE = {
+  petrol:     cssVar('--petrol', '#0b93a0'),
+  amber:      cssVar('--amber', '#e2860a'),
+  terracotta: cssVar('--terracotta', '#e6483a'),
+  sage:       cssVar('--sage', '#1fa971'),
+  plum:       cssVar('--plum', '#8452d6')
+};
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+const ACCENT_DEEP = '#a35c07'; // ambre més fosc: punt/etiquetes prominents sobre el fons clar del llenç
+
+// ─────────────────────────────────────────────
+//  UTILITATS
+// ─────────────────────────────────────────────
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+function clampInt(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function clamp01(t) { return Math.max(0, Math.min(1, t)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function fmtSigned(v) { if (v > 0) return '+' + v; if (v < 0) return '−' + Math.abs(v); return '0'; }
+function fmtPlain(v) { return v < 0 ? '−' + Math.abs(v) : String(v); }
+function hexA(hex, a) {
+  const v = hex.replace('#','');
+  const r = parseInt(v.substring(0,2),16), g = parseInt(v.substring(2,4),16), b = parseInt(v.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+let W, H, hasInteracted = false;
+let curValue = 0;
+let draggingPoint = false;
+let pointAnim = null;     // { from, to, start, dur }
+let absHighlight = null;  // { start, dur }
+let signFlipAnim = null;  // { start, dur, text } — vista prèvia del gir de signe (restar un negatiu)
+let lastCombine = null;   // { a, b, op, effectiveDelta, result } — última combinació feta a Explora
+let rafRunning = false;
+
+// controls de "Combina-hi" (Explora): pila de signes + magnitud sempre positiva
+let chipMagnitude = 3;     // 2..9, mai amb signe
+let chipStack = [];        // array de '-'/'+' — índex 0 = signe més extern (el darrer afegit), màx. 4
+
+let repteMode = false, timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+let repteTarget = null, repteStart = 0, hand = [];
+let equationSteps = [], usedStack = [], repteRunningTotal = 0, roundLocked = false, roundEndTimer = null;
+let repteLevel = 1;        // 1 = suma/resta simple (−10..10), 2 = signes apilats + resta real + ×/÷ (−20..20)
+let lineRange = 10;        // mig-rang de la recta numèrica mostrada (−lineRange..+lineRange)
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+// ─────────────────────────────────────────────
+//  GEOMETRIA DE LA RECTA
+// ─────────────────────────────────────────────
+function lineLayout() {
+  const leftPad = W * 0.09, rightPad = W * 0.09;
+  const lineY = H * 0.56;
+  const lineWidth = W - leftPad - rightPad;
+  const R = lineRange;
+  function valueToX(v) { return leftPad + (v + R) / (2 * R) * lineWidth; }
+  function xToValue(x) { return Math.round(((x - leftPad) / lineWidth) * (2 * R) - R); }
+  let dispValue = curValue;
+  if (pointAnim) {
+    const t = easeOutCubic(clamp01((performance.now() - pointAnim.start) / pointAnim.dur));
+    dispValue = lerp(pointAnim.from, pointAnim.to, t);
+  }
+  const pointR = Math.max(7, Math.min(16, W * 0.02));
+  return { leftPad, rightPad, lineY, lineWidth, valueToX, xToValue, pointX: valueToX(dispValue), pointR, dispValue };
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const L = lineLayout();
+
+  ctx.strokeStyle = hexA(TEXT_DARK, 0.28);
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(L.leftPad, L.lineY); ctx.lineTo(L.leftPad + L.lineWidth, L.lineY); ctx.stroke();
+
+  for (let v = -lineRange; v <= lineRange; v++) {
+    const x = L.valueToX(v);
+    const isOrigin = v === 0;
+    const major = v % 5 === 0;
+    const tickH = isOrigin ? 15 : (major ? 10 : 6);
+    ctx.strokeStyle = isOrigin ? ACCENT_DEEP : hexA(TEXT_DARK, 0.35);
+    ctx.lineWidth = isOrigin ? 2.4 : 1.2;
+    ctx.beginPath(); ctx.moveTo(x, L.lineY - tickH); ctx.lineTo(x, L.lineY + tickH); ctx.stroke();
+    if (major || isOrigin) {
+      ctx.font = `${isOrigin ? 700 : 600} ${Math.max(10, W*0.024)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = isOrigin ? ACCENT_DEEP : TEXT_MUTED;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(String(v), x, L.lineY + tickH + 5);
+    }
+  }
+
+  // segment de valor absolut (de 0 fins al punt) — o, si a Explora s'ha fet una
+  // combinació de dos números, els dos segments apilats d'aquesta combinació
+  const isHi = absHighlight != null;
+  let hiAlpha = 1;
+  if (isHi) { const t = (performance.now() - absHighlight.start) / absHighlight.dur; hiAlpha = 0.55 + 0.45*Math.sin(clamp01(t) * Math.PI * 4); }
+  const zeroX = L.valueToX(0);
+  // dividim l'espai per sobre de la recta en "pisos" per no encavalcar-los, escalats amb
+  // el radi del punt (que depèn de la mida del canvas): 1) el punt i el seu valor (a prop),
+  // 2) la barra de valor absolut (o el 1r número d'una combinació), 3) l'objectiu (repte)
+  // o el 2n número d'una combinació
+  const barY = L.lineY - L.pointR - (isHi ? 42 : 36);
+  const showCombo = !repteMode && lastCombine != null;
+  const shownVal = Math.round(L.dispValue);
+  if (showCombo) {
+    drawCombineArcs(L, lastCombine, barY, zeroX);
+  } else {
+    ctx.strokeStyle = hexA(PALETTE.amber, isHi ? hiAlpha : 0.55);
+    ctx.lineWidth = isHi ? 5 : 3;
+    ctx.beginPath(); ctx.moveTo(zeroX, barY); ctx.lineTo(L.pointX, barY); ctx.stroke();
+    ctx.font = `700 ${Math.max(11, W*0.024)}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = hexA(PALETTE.amber, isHi ? 1 : 0.85);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`|${fmtPlain(shownVal)}| = ${Math.abs(shownVal)}`, (zeroX + L.pointX)/2, barY - 7);
+  }
+
+  // objectiu (mode repte)
+  if (repteMode && repteTarget != null) {
+    const tx = L.valueToX(repteTarget);
+    ctx.font = `${Math.max(15, W*0.032)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('🎯', tx, barY - 26);
+    ctx.strokeStyle = hexA(PALETTE.sage, 0.75); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(tx, L.lineY, L.pointR + 6, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // punt
+  ctx.beginPath();
+  ctx.arc(L.pointX, L.lineY, L.pointR, 0, Math.PI*2);
+  ctx.fillStyle = PALETTE.amber;
+  ctx.shadowColor = PALETTE.amber; ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = ACCENT_DEEP; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.font = `700 ${Math.max(13, W*0.032)}px 'JetBrains Mono', monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  if (signFlipAnim) {
+    const t = clamp01((performance.now() - signFlipAnim.start) / signFlipAnim.dur);
+    const a = 0.55 + 0.45 * Math.sin(t * Math.PI * 4);
+    ctx.fillStyle = hexA(PALETTE.terracotta, a);
+    ctx.fillText(signFlipAnim.text, L.pointX, L.lineY - L.pointR - 10);
+  } else {
+    ctx.fillStyle = ACCENT_DEEP;
+    ctx.fillText(fmtSigned(shownVal), L.pointX, L.lineY - L.pointR - 10);
+  }
+}
+
+// dues barres apilades: 0→a (1r número) i a→a+delta efectiu (2n número, amb el seu signe
+// i l'operació aplicada), amb una petita marca vertical que les enllaça a x=a
+function drawCombineArcs(L, combo, rowA, zeroX) {
+  const { a, effectiveDelta, result, op, b } = combo;
+  const ax = L.valueToX(a);
+  const rx = L.valueToX(result);
+  const rowGap = Math.max(20, W * 0.045);
+  const rowB = rowA - rowGap;
+
+  ctx.strokeStyle = hexA(PALETTE.amber, 0.75);
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(zeroX, rowA); ctx.lineTo(ax, rowA); ctx.stroke();
+  if (a !== 0) drawArrowHead(ax, rowA, a >= 0 ? 1 : -1, hexA(PALETTE.amber, 0.9));
+
+  ctx.strokeStyle = hexA(TEXT_DARK, 0.25); ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(ax, rowA + 1); ctx.lineTo(ax, rowB); ctx.stroke();
+
+  const posB = effectiveDelta >= 0;
+  const colB = posB ? PALETTE.sage : PALETTE.terracotta;
+  ctx.strokeStyle = hexA(colB, 0.85);
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(ax, rowB); ctx.lineTo(rx, rowB); ctx.stroke();
+  if (effectiveDelta !== 0) drawArrowHead(rx, rowB, posB ? 1 : -1, hexA(colB, 0.95));
+
+  ctx.font = `700 ${Math.max(10, W*0.019)}px 'JetBrains Mono', monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = hexA(PALETTE.amber, 0.95);
+  ctx.fillText(fmtSigned(a), (zeroX + ax) / 2, rowA - 6);
+  ctx.fillStyle = hexA(colB, 0.95);
+  const opSym = op === 1 ? '+' : '−';
+  ctx.fillText(`${opSym} (${fmtSigned(b)})`, (ax + rx) / 2, rowB - 6);
+}
+function drawArrowHead(x, y, dir, color) {
+  const s = 5.5;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - dir * s, y - s * 0.72);
+  ctx.lineTo(x - dir * s, y + s * 0.72);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateReadout() {
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmtSigned(curValue);
+  if (repteMode) {
+    readoutName.textContent = `Ara ets a ${fmtSigned(curValue)}`;
+    readoutDef.textContent = `Objectiu: ${fmtSigned(repteTarget)} · et falten ${fmtSigned(repteTarget - curValue)}.`;
+  } else {
+    readoutName.textContent = `Valor: ${fmtSigned(curValue)}`;
+    readoutDef.textContent = `Distància a zero (valor absolut): |${fmtPlain(curValue)}| = ${Math.abs(curValue)}.`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ANIMACIÓ (rAF per al dibuix + setTimeout com a disparador d'estat,
+//  ja que requestAnimationFrame es pot pausar en pestanyes en segon pla)
+// ─────────────────────────────────────────────
+function ensureRAF() {
+  if (rafRunning) return;
+  rafRunning = true;
+  requestAnimationFrame(tick);
+}
+function tick(now) {
+  let busy = false;
+  if (pointAnim) busy = true;
+  if (absHighlight) {
+    const t = (now - absHighlight.start) / absHighlight.dur;
+    if (t >= 1) absHighlight = null; else busy = true;
+  }
+  if (signFlipAnim) {
+    const t = (now - signFlipAnim.start) / signFlipAnim.dur;
+    if (t >= 1) signFlipAnim = null; else busy = true;
+  }
+  draw();
+  if (busy) requestAnimationFrame(tick); else rafRunning = false;
+}
+
+// ─────────────────────────────────────────────
+//  MODE EXPLORA: arrossegar el punt
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.touches ? e.touches[0] : e;
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+function updateDragValue(x) {
+  const L = lineLayout();
+  const v = clampInt(L.xToValue(x), -lineRange, lineRange);
+  if (v !== curValue) curValue = v;
+  draw(); updateReadout();
+}
+function onPointerDown(e) {
+  if (repteMode || pointAnim) return;
+  const { x, y } = pointerXY(e);
+  const L = lineLayout();
+  if (Math.abs(y - L.lineY) > L.pointR * 3.5) return;
+  if (x < L.leftPad - 24 || x > L.leftPad + L.lineWidth + 24) return;
+  e.preventDefault();
+  draggingPoint = true;
+  lastCombine = null;
+  if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); }
+  updateDragValue(x);
+}
+function onPointerMove(e) {
+  if (!draggingPoint) return;
+  e.preventDefault();
+  updateDragValue(pointerXY(e).x);
+}
+function onPointerUp() { draggingPoint = false; }
+
+canvas.addEventListener('mousedown', onPointerDown);
+canvas.addEventListener('mousemove', onPointerMove);
+window.addEventListener('mouseup', onPointerUp);
+canvas.addEventListener('touchstart', onPointerDown, { passive:false });
+canvas.addEventListener('touchmove', onPointerMove, { passive:false });
+canvas.addEventListener('touchend', onPointerUp);
+window.addEventListener('resize', resize);
+
+document.getElementById('btnCenter').addEventListener('click', () => {
+  if (repteMode) return;
+  curValue = 0; pointAnim = null; absHighlight = null; signFlipAnim = null; lastCombine = null;
+  draw(); updateReadout();
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA → EXEMPLE ANIMAT (mode Explora)
+// ─────────────────────────────────────────────
+const DEMOS = {
+  same: {
+    start: -3, delta: -2, color: 'var(--sage)',
+    label: 'Signes iguals se sumen',
+    def: () => `(${fmtSigned(-3)}) + (${fmtSigned(-2)}) = ${fmtSigned(-5)}. Se sumen els valors absoluts (3+2=5) i es manté el signe comú.`,
+    setChip: { magnitude: 2, stack: ['-'] }  // − 2 = −2, mateix efecte que abans (op:1,val:-2)
+  },
+  diff: {
+    start: 5, delta: -8, color: 'var(--amber)',
+    label: 'Signes diferents es resten',
+    def: () => `${fmtSigned(5)} + (${fmtSigned(-8)}) = ${fmtSigned(-3)}. Es resten els valors absoluts (8−5=3) i queda el signe del que en té més (−8).`,
+    setChip: { magnitude: 8, stack: ['-'] }  // − 8 = −8, mateix efecte que abans (op:1,val:-8)
+  },
+  opposite: {
+    start: 4, delta: -8, color: 'var(--plum)',
+    label: "L'oposat d'un número",
+    def: () => `L'oposat de ${fmtSigned(4)} és ${fmtSigned(-4)}: mateixa distància a zero, signe contrari.`,
+    setChip: { magnitude: 4, stack: ['-'] }  // − 4 = −4: un sol signe apilat representa "l'oposat de"
+  },
+  abs: {
+    start: -6, delta: 0, color: 'var(--petrol)', absDemo: true,
+    label: 'Valor absolut',
+    def: () => `|${fmtSigned(-6)}| = 6: el valor absolut és la distància a zero, sempre positiva.`,
+    setChip: { magnitude: 6, stack: ['-'] }  // − 6 = −6: mostrem el mateix número (−6) del qual s'ha pres el valor absolut
+  },
+  subneg: {
+    start: 5, delta: 3, b: -3, color: 'var(--terracotta)', subNeg: true,
+    label: 'Restar un negatiu',
+    flipText: () => `− (−3)  =  + 3`,
+    def: () => `5 − (−3) = 5 + (+3) = ${fmtSigned(8)}. Restar un negatiu equival a sumar el seu oposat.`,
+    setChip: { magnitude: 3, stack: ['-','-'] }  // − (−3) = +3, mateix efecte que abans (op:-1,val:-3)
+  }
+};
+
+function runDemo(key) {
+  if (repteMode || pointAnim) return;
+  const d = DEMOS[key];
+  flash(wrap, d.color);
+  curValue = d.start;
+  pointAnim = null; absHighlight = null; signFlipAnim = null; lastCombine = null;
+  draw(); updateReadout();
+  readoutName.textContent = d.label;
+  readoutDef.textContent = d.def();
+
+  if (d.absDemo) {
+    const h = { start: performance.now(), dur: 1300 };
+    absHighlight = h;
+    ensureRAF();
+    if (d.setChip) setChipControls(d.setChip.magnitude, d.setChip.stack);
+    setTimeout(() => { if (absHighlight === h) { absHighlight = null; draw(); } }, h.dur + 30);
+    return;
+  }
+
+  if (d.subNeg) {
+    readoutName.textContent = `${fmtSigned(d.start)} − (${fmtSigned(d.b)})`;
+    const hold = { start: performance.now(), dur: 900, text: d.flipText() };
+    signFlipAnim = hold;
+    ensureRAF();
+    setTimeout(() => {
+      if (signFlipAnim !== hold) return;
+      signFlipAnim = null;
+      const to = clampInt(d.start + d.delta, -lineRange, lineRange);
+      const a = { from: d.start, to, start: performance.now(), dur: 650 };
+      pointAnim = a;
+      ensureRAF();
+      setTimeout(() => {
+        if (pointAnim !== a) return;
+        pointAnim = null; curValue = to;
+        draw();
+        readoutNum.textContent = fmtSigned(curValue);
+        readoutName.textContent = d.label;
+        readoutDef.textContent = d.def();
+        if (d.setChip) setChipControls(d.setChip.magnitude, d.setChip.stack);
+      }, a.dur + 30);
+    }, hold.dur + 30);
+    return;
+  }
+
+  setTimeout(() => {
+    const to = clampInt(d.start + d.delta, -lineRange, lineRange);
+    const a = { from: d.start, to, start: performance.now(), dur: 650 };
+    pointAnim = a;
+    ensureRAF();
+    setTimeout(() => {
+      if (pointAnim !== a) return;
+      pointAnim = null; curValue = to;
+      draw();
+      readoutNum.textContent = fmtSigned(curValue);
+      readoutName.textContent = d.label;
+      readoutDef.textContent = d.def();
+      if (d.setChip) setChipControls(d.setChip.magnitude, d.setChip.stack);
+    }, a.dur + 30);
+  }, 350);
+}
+document.getElementById('card-same').addEventListener('click', () => runDemo('same'));
+document.getElementById('card-diff').addEventListener('click', () => runDemo('diff'));
+document.getElementById('card-opposite').addEventListener('click', () => runDemo('opposite'));
+document.getElementById('card-abs').addEventListener('click', () => runDemo('abs'));
+document.getElementById('card-subneg').addEventListener('click', () => runDemo('subneg'));
+
+// ─────────────────────────────────────────────
+//  MODE EXPLORA: "Combina-hi" — pila de signes + fitxa arrossegable
+//  (l'estudiant apila signes davant d'una magnitud i veu com se simplifiquen)
+// ─────────────────────────────────────────────
+const MAX_SIGN_STACK = 4;
+
+// Nombre de "−" a la pila: parell → efecte net positiu, senar → efecte net negatiu.
+// Els "+" de la pila mai giren el signe. Reutilitzada també per les fitxes de Repte Nivell 2.
+function stackEffectiveSign(stack) {
+  const minusCount = stack.filter(s => s === '-').length;
+  return (minusCount % 2 === 0) ? 1 : -1;
+}
+function stackEffectiveValue(stack, magnitude) {
+  return stackEffectiveSign(stack) * magnitude;
+}
+// Notació amb parèntesis niats: p.ex. stack=['-','-'], magnitude=3 → "−(−3)"
+function nestSigns(stack, magnitude) {
+  if (stack.length === 0) return String(magnitude);
+  const symOuter = stack[0] === '-' ? '−' : '+';
+  if (stack.length === 1) return symOuter + magnitude;
+  return symOuter + '(' + nestSigns(stack.slice(1), magnitude) + ')';
+}
+
+function chipEffectiveValue() { return stackEffectiveValue(chipStack, chipMagnitude); }
+
+function renderChipStack() {
+  ssStackEl.innerHTML = '';
+  chipStack.forEach((s, i) => {
+    const span = document.createElement('span');
+    span.className = 'ss-sign ' + (s === '-' ? 'neg' : 'pos');
+    span.textContent = s === '-' ? '−' : '+';
+    if (i === 0) {
+      span.classList.add('ss-sign-outer');
+      span.title = 'Fes clic per treure aquest signe (el més extern) i veure el valor que queda';
+      span.addEventListener('click', popChipOutermostSign);
+    }
+    ssStackEl.appendChild(span);
+  });
+  const magSpan = document.createElement('span');
+  magSpan.className = 'ss-mag';
+  magSpan.textContent = String(chipMagnitude);
+  ssStackEl.appendChild(magSpan);
+}
+function updateChipUI() {
+  chipMagValEl.textContent = String(chipMagnitude);
+  renderChipStack();
+  const eff = chipEffectiveValue();
+  ssEqEl.textContent = `= ${fmtSigned(eff)}`;
+  combineChipEl.textContent = fmtSigned(eff);
+  combineChipEl.className = 'jump-tile ' + (eff >= 0 ? 'pos' : 'neg');
+  stackAddMinusBtn.disabled = chipStack.length >= MAX_SIGN_STACK;
+  stackAddPlusBtn.disabled  = chipStack.length >= MAX_SIGN_STACK;
+}
+function pushChipSign(sign) {
+  if (chipStack.length >= MAX_SIGN_STACK) return;
+  chipStack.unshift(sign);
+  updateChipUI();
+}
+// "Simplifica pas a pas": treu el signe més extern i el valor mostrat es recalcula
+// automàticament a partir de la pila restant — per això sempre és matemàticament correcte,
+// independentment de quants signes quedin.
+function popChipOutermostSign() {
+  if (chipStack.length === 0) return;
+  chipStack.shift();
+  updateChipUI();
+}
+function resetChipStack() {
+  chipStack = [];
+  updateChipUI();
+}
+function setChipControls(magnitude, stack) {
+  chipMagnitude = clampInt(magnitude, 2, 9);
+  chipStack = (stack || []).slice(0, MAX_SIGN_STACK);
+  updateChipUI();
+}
+chipUpBtn.addEventListener('click', () => {
+  chipMagnitude = clampInt(chipMagnitude + 1, 2, 9);
+  updateChipUI();
+});
+chipDownBtn.addEventListener('click', () => {
+  chipMagnitude = clampInt(chipMagnitude - 1, 2, 9);
+  updateChipUI();
+});
+stackAddMinusBtn.addEventListener('click', () => pushChipSign('-'));
+stackAddPlusBtn.addEventListener('click',  () => pushChipSign('+'));
+stackResetBtn.addEventListener('click', resetChipStack);
+updateChipUI();
+
+function combineExplain(a, b, op, to) {
+  const oppB = -b;
+  if (op === -1) {
+    const kind = b < 0 ? "Restar un negatiu equival a sumar el seu oposat (positiu)." : 'Restar un positiu equival a sumar el seu oposat (negatiu).';
+    return `${fmtSigned(a)} − (${fmtSigned(b)}) = ${fmtSigned(a)} + (${fmtSigned(oppB)}) = ${fmtSigned(to)}. ${kind}`;
+  }
+  if (a === 0 || b === 0 || Math.sign(a) === Math.sign(b)) {
+    return `${fmtSigned(a)} + (${fmtSigned(b)}) = ${fmtSigned(to)}. Signes iguals: se sumen els valors absoluts i es manté el signe comú.`;
+  }
+  return `${fmtSigned(a)} + (${fmtSigned(b)}) = ${fmtSigned(to)}. Signes diferents: es resten els valors absoluts (${Math.abs(a)} i ${Math.abs(b)}) i queda el signe del que en té més.`;
+}
+
+function applyCombine() {
+  if (repteMode || pointAnim) return;
+  const a = curValue;
+  const op = 1;                        // la pila de signes ja ha resolt el signe: sempre "sumem" el valor efectiu
+  const effectiveDelta = chipEffectiveValue();
+  const b = effectiveDelta;
+  const to = clampInt(a + effectiveDelta, -lineRange, lineRange);
+  if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); }
+  lastCombine = { a, b, op, effectiveDelta, result: to };
+  signFlipAnim = null;
+  flash(wrap, effectiveDelta >= 0 ? 'var(--sage)' : 'var(--terracotta)');
+  draw();
+  const opSym = op === 1 ? '+' : '−';
+  readoutBadge.classList.add('active');
+  readoutName.textContent = `${fmtSigned(a)}  ${opSym}  (${fmtSigned(b)})`;
+  readoutDef.textContent = 'Mira com s\'apilen (o es cancel·len) els dos salts per sobre de la recta...';
+  setTimeout(() => {
+    const anim = { from: a, to, start: performance.now(), dur: 600 };
+    pointAnim = anim;
+    ensureRAF();
+    setTimeout(() => {
+      if (pointAnim !== anim) return;
+      pointAnim = null; curValue = to;
+      draw();
+      readoutNum.textContent = fmtSigned(curValue);
+      readoutName.textContent = `${fmtSigned(a)} ${opSym} (${fmtSigned(b)}) = ${fmtSigned(to)}`;
+      readoutDef.textContent = combineExplain(a, b, op, to);
+    }, anim.dur + 30);
+  }, 260);
+}
+function startChipDrag(e) {
+  if (repteMode || pointAnim) return;
+  e.preventDefault();
+  const tileEl = combineChipEl;
+  const rect = tileEl.getBoundingClientRect();
+  const pt0 = e.touches ? e.touches[0] : e;
+  const offX = pt0.clientX - rect.left, offY = pt0.clientY - rect.top;
+  tileEl.classList.add('dragging');
+  tileEl.style.position = 'fixed';
+  tileEl.style.left = rect.left + 'px';
+  tileEl.style.top  = rect.top + 'px';
+  tileEl.style.width = rect.width + 'px';
+  tileEl.style.zIndex = 500;
+
+  function move(ev) {
+    ev.preventDefault();
+    const p = ev.touches ? ev.touches[0] : ev;
+    tileEl.style.left = (p.clientX - offX) + 'px';
+    tileEl.style.top  = (p.clientY - offY) + 'px';
+  }
+  function up(ev) {
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+    tileEl.classList.remove('dragging');
+    tileEl.style.position = ''; tileEl.style.left = ''; tileEl.style.top = '';
+    tileEl.style.width = ''; tileEl.style.zIndex = '';
+
+    const p = ev.changedTouches ? ev.changedTouches[0] : ev;
+    const cRect = canvas.getBoundingClientRect();
+    const within = p.clientX >= cRect.left - 24 && p.clientX <= cRect.right + 24 &&
+                   p.clientY >= cRect.top - 24 && p.clientY <= cRect.bottom + 24;
+    if (within && !repteMode && !pointAnim) applyCombine();
+  }
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+  document.addEventListener('touchmove', move, { passive:false });
+  document.addEventListener('touchend', up);
+}
+combineChipEl.addEventListener('mousedown', startChipDrag);
+combineChipEl.addEventListener('touchstart', startChipDrag, { passive:false });
+
+// ─────────────────────────────────────────────
+//  MODE REPTE: fitxes de salt arrossegables
+// ─────────────────────────────────────────────
+function genRound() {
+  return repteLevel === 2 ? genRoundLevel2() : genRoundLevel1();
+}
+
+// Nivell 1 (sense canvis de comportament): només suma/resta, fitxes {kind:'add', delta}
+function genRoundLevel1() {
+  const start = randInt(-6, 6);
+  let sum = 0;
+  const solCount = randInt(1, 3);
+  const sol = [];
+  for (let i = 0; i < solCount; i++) {
+    let d, tries = 0;
+    do {
+      d = randInt(-6, 6) || (Math.random() < 0.5 ? -1 : 1);
+      tries++;
+    } while (Math.abs(start + sum + d) > 10 && tries < 30);
+    sol.push(d);
+    sum += d;
+  }
+  const target = start + sum;
+  const tileCount = randInt(Math.max(solCount, 3), 5);
+  const extra = [];
+  for (let i = sol.length; i < tileCount; i++) extra.push(randInt(-6, 6) || 1);
+  const tiles = shuffle([...sol, ...extra]).map(delta => ({ kind: 'add', delta, used: false }));
+  return { start, target, tiles };
+}
+
+// Nivell 2: signes apilats + resta real (toggle suma/resta) + fitxes de × i ÷.
+// Es planifica UNA seqüència de passos que, aplicada en aquest ordre, arriba a un
+// enter dins del rang ampliat — així queda garantit que la ronda és resoluble amb
+// ALGUN ordre de les fitxes de la mà, encara que l'estudiant en pugui provar d'altres.
+const LEVEL2_RANGE = 20;
+function makeAddSubTile(delta) {
+  const magnitude = Math.max(1, Math.abs(delta));
+  const wantNeg = delta < 0;
+  const stack = Math.random() < 0.6
+    ? [wantNeg ? '-' : '+']                 // una fitxa amb un sol signe
+    : (wantNeg ? ['-', '+'] : ['-', '-']);   // una fitxa amb dos signes apilats
+  return { kind: 'addsub', stack, magnitude, opChoice: 'add', used: false };
+}
+function genRoundLevel2() {
+  const R = LEVEL2_RANGE;
+  const start = randInt(-8, 8);
+  let cur = start;
+  const solTiles = [];
+
+  const stepsBefore = randInt(1, 2);
+  for (let i = 0; i < stepsBefore; i++) {
+    let d, tries = 0;
+    do { d = randInt(-6, 6) || 1; tries++; } while (Math.abs(cur + d) > R - 6 && tries < 30);
+    solTiles.push(makeAddSubTile(d));
+    cur += d;
+  }
+
+  let twistTile = null;
+  if (Math.random() < 0.7) {
+    const tryMul = () => {
+      const k = randInt(2, 3);
+      if (cur !== 0 && Math.abs(cur * k) <= R) { twistTile = { kind:'mul', factor:k, used:false }; cur = cur * k; return true; }
+      return false;
+    };
+    const tryDiv = () => {
+      const divisors = [2, 3].filter(k => cur !== 0 && cur % k === 0);
+      if (divisors.length) {
+        const k = divisors[randInt(0, divisors.length - 1)];
+        twistTile = { kind:'div', factor:k, used:false }; cur = cur / k; return true;
+      }
+      return false;
+    };
+    if (Math.random() < 0.5) { if (!tryMul()) tryDiv(); } else { if (!tryDiv()) tryMul(); }
+  }
+
+  const stepsAfter = randInt(1, 2);
+  for (let i = 0; i < stepsAfter; i++) {
+    let d, tries = 0;
+    do { d = randInt(-6, 6) || 1; tries++; } while (Math.abs(cur + d) > R && tries < 30);
+    solTiles.push(makeAddSubTile(d));
+    cur += d;
+  }
+
+  const target = cur;
+  const solution = twistTile ? [...solTiles, twistTile] : solTiles.slice();
+  const extraCount = randInt(1, 2);
+  const extra = [];
+  for (let i = 0; i < extraCount; i++) extra.push(makeAddSubTile(randInt(-6, 6) || 1));
+  const tiles = shuffle([...solution, ...extra]);
+  return { start, target, tiles, level: 2 };
+}
+
+function renderTiles() {
+  tileTray.innerHTML = '';
+  hand.forEach(tile => {
+    const el = document.createElement('div');
+    if (tile.kind === 'add') {
+      el.className = 'jump-tile ' + (tile.delta > 0 ? 'pos' : 'neg');
+      el.textContent = fmtSigned(tile.delta);
+    } else if (tile.kind === 'addsub') {
+      const eff = stackEffectiveSign(tile.stack);
+      el.className = 'jump-tile l2 ' + (eff > 0 ? 'pos' : 'neg');
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'tile-op-toggle';
+      const setToggleLabel = () => {
+        toggle.textContent = tile.opChoice === 'add' ? '+' : '−';
+        toggle.title = tile.opChoice === 'add'
+          ? 'Ara la SUMA. Fes clic per restar-la en comptes de sumar-la.'
+          : 'Ara la RESTA. Fes clic per sumar-la en comptes de restar-la.';
+      };
+      setToggleLabel();
+      toggle.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (tile.used) return;
+        tile.opChoice = tile.opChoice === 'add' ? 'sub' : 'add';
+        setToggleLabel();
+      });
+      const label = document.createElement('span');
+      label.textContent = nestSigns(tile.stack, tile.magnitude);
+      el.appendChild(toggle);
+      el.appendChild(label);
+    } else if (tile.kind === 'mul') {
+      el.className = 'jump-tile mul';
+      el.textContent = `× ${tile.factor}`;
+    } else if (tile.kind === 'div') {
+      el.className = 'jump-tile div';
+      el.textContent = `÷ ${tile.factor}`;
+    }
+    if (tile.used) el.classList.add('used');
+    el.addEventListener('mousedown', e => startTileDrag(e, el, tile));
+    el.addEventListener('touchstart', e => startTileDrag(e, el, tile), { passive:false });
+    tileTray.appendChild(el);
+  });
+}
+
+function startTileDrag(e, tileEl, tile) {
+  if (tile.used || pointAnim || !repteMode) return;
+  if (e.target.closest && e.target.closest('.tile-op-toggle')) return;
+  e.preventDefault();
+  const rect = tileEl.getBoundingClientRect();
+  const pt0 = e.touches ? e.touches[0] : e;
+  const offX = pt0.clientX - rect.left, offY = pt0.clientY - rect.top;
+  tileEl.classList.add('dragging');
+  tileEl.style.position = 'fixed';
+  tileEl.style.left = rect.left + 'px';
+  tileEl.style.top  = rect.top + 'px';
+  tileEl.style.width = rect.width + 'px';
+  tileEl.style.zIndex = 500;
+
+  function move(ev) {
+    ev.preventDefault();
+    const p = ev.touches ? ev.touches[0] : ev;
+    tileEl.style.left = (p.clientX - offX) + 'px';
+    tileEl.style.top  = (p.clientY - offY) + 'px';
+  }
+  function up(ev) {
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', up);
+    tileEl.classList.remove('dragging');
+    tileEl.style.position = ''; tileEl.style.left = ''; tileEl.style.top = '';
+    tileEl.style.width = ''; tileEl.style.zIndex = '';
+
+    const p = ev.changedTouches ? ev.changedTouches[0] : ev;
+    const cRect = canvas.getBoundingClientRect();
+    const within = p.clientX >= cRect.left - 24 && p.clientX <= cRect.right + 24 &&
+                   p.clientY >= cRect.top - 24 && p.clientY <= cRect.bottom + 24;
+    if (within && repteMode && !tile.used && !pointAnim) applyTileJump(tile, tileEl);
+  }
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+  document.addEventListener('touchmove', move, { passive:false });
+  document.addEventListener('touchend', up);
+}
+
+// Calcula el resultat d'arrossegar `tile` des del valor `from`. Les divisions que no
+// donarien un enter es rebutgen (ok:false) — es prevenen en comptes de permetre-les i
+// penalitzar després.
+function computeTileResult(tile, from) {
+  const lo = -lineRange, hi = lineRange;
+  if (tile.kind === 'add') {
+    return { ok: true, to: clampInt(from + tile.delta, lo, hi), amount: tile.delta };
+  }
+  if (tile.kind === 'addsub') {
+    const resolved = stackEffectiveValue(tile.stack, tile.magnitude);
+    const amount = tile.opChoice === 'add' ? resolved : -resolved;
+    return { ok: true, to: clampInt(from + amount, lo, hi), amount };
+  }
+  if (tile.kind === 'mul') {
+    return { ok: true, to: clampInt(from * tile.factor, lo, hi) };
+  }
+  if (tile.kind === 'div') {
+    if (tile.factor === 0 || from % tile.factor !== 0) return { ok: false };
+    return { ok: true, to: clampInt(from / tile.factor, lo, hi) };
+  }
+  return { ok: false };
+}
+function makeEquationStep(tile, res) {
+  if (tile.kind === 'add') return { kind: 'add', amount: tile.delta, opSym: '+', label: fmtSigned(tile.delta) };
+  if (tile.kind === 'addsub') {
+    const opSym = tile.opChoice === 'add' ? '+' : '−';
+    return { kind: 'add', amount: res.amount, opSym, label: nestSigns(tile.stack, tile.magnitude) };
+  }
+  if (tile.kind === 'mul') return { kind: 'mul', factor: tile.factor };
+  if (tile.kind === 'div') return { kind: 'div', factor: tile.factor };
+}
+function tileShortLabel(tile) {
+  if (tile.kind === 'add') return fmtSigned(tile.delta);
+  if (tile.kind === 'addsub') return (tile.opChoice === 'add' ? '+' : '−') + nestSigns(tile.stack, tile.magnitude);
+  if (tile.kind === 'mul') return `× ${tile.factor}`;
+  if (tile.kind === 'div') return `÷ ${tile.factor}`;
+  return '';
+}
+
+function applyTileJump(tile, tileEl) {
+  const from = curValue;
+  const res = computeTileResult(tile, from);
+  if (!res.ok) {
+    tileEl.classList.add('rejected');
+    setTimeout(() => tileEl.classList.remove('rejected'), 420);
+    flash(wrap, 'var(--terracotta)');
+    readoutName.textContent = 'Aquesta divisió no dona un enter aquí';
+    readoutDef.textContent = `${fmtSigned(from)} ÷ ${tile.factor} no és un nombre enter, així que la fitxa no es pot fer servir ara. Prova-la quan el punt sigui múltiple de ${tile.factor}.`;
+    return;
+  }
+  const to = res.to;
+  tile.used = true;
+  usedStack.push(tile);
+  equationSteps.push(makeEquationStep(tile, res));
+  repteRunningTotal = recomputeRunningTotal();
+  renderEquation();
+  tileEl.classList.add('used');
+  const a = { from, to, start: performance.now(), dur: 550 };
+  pointAnim = a;
+  ensureRAF();
+  updateUndoState();
+  setTimeout(() => { if (pointAnim === a) finishPointAnim(a); }, a.dur + 30);
+}
+
+function finishPointAnim(a) {
+  if (pointAnim !== a) return;
+  pointAnim = null;
+  curValue = a.to;
+  draw();
+  updateReadout();
+  updateUndoState();
+  if (repteMode) checkRepteProgress();
+}
+
+function checkRepteProgress() {
+  if (curValue === repteTarget) { onRoundSuccess(); return; }
+  if (hand.every(t => t.used)) onRoundFail();
+}
+
+function onRoundSuccess() {
+  const used = hand.filter(t => t.used).length;
+  const pts = Math.max(4, 10 - (used - 1) * 2);
+  score += pts; streak++;
+  rpScore.textContent = score; rpStreak.textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 4);
+  rpTime.textContent = timeLeft + 's';
+  flash(wrap, 'var(--sage)');
+  readoutName.textContent = `Encertat! +${pts} 🎯`;
+  readoutDef.textContent = `Has arribat a ${fmtSigned(repteTarget)} amb ${used} fitxa${used === 1 ? '' : 'es'}.`;
+  roundLocked = true;
+  updateUndoState();
+  if (roundEndTimer) clearTimeout(roundEndTimer);
+  roundEndTimer = setTimeout(() => { if (repteMode && timeLeft > 0) newRound(); }, 900);
+}
+function onRoundFail() {
+  streak = 0; rpStreak.textContent = streak;
+  score = Math.max(0, score - 1); rpScore.textContent = score;
+  timeLeft = Math.max(0, timeLeft - 2);
+  rpTime.textContent = timeLeft + 's';
+  flash(wrap, 'var(--terracotta)');
+  readoutName.textContent = "T'has quedat sense fitxes (−1 punt)";
+  readoutDef.textContent = `Objectiu ${fmtSigned(repteTarget)}, has arribat a ${fmtSigned(curValue)}. Prova "↩ Desfés" per recuperar l'última fitxa.`;
+  updateUndoState();
+  if (roundEndTimer) clearTimeout(roundEndTimer);
+  roundEndTimer = setTimeout(() => { if (repteMode && timeLeft > 0) newRound(); }, 1100);
+}
+
+// ─────────────────────────────────────────────
+//  EQUACIÓ ACUMULADA I DESFÉS (mode Repte)
+// ─────────────────────────────────────────────
+function recomputeRunningTotal() {
+  let v = repteStart;
+  for (const s of equationSteps) {
+    if (s.kind === 'add') v = clampInt(v + s.amount, -lineRange, lineRange);
+    else if (s.kind === 'mul') v = clampInt(v * s.factor, -lineRange, lineRange);
+    else if (s.kind === 'div') v = clampInt(v / s.factor, -lineRange, lineRange);
+  }
+  return v;
+}
+function renderEquation() {
+  if (equationSteps.length === 0) {
+    repteEquationEl.innerHTML = `<span class="eq-empty">Comences a ${fmtSigned(repteStart)}. Arrossega una fitxa per començar l'expressió.</span>`;
+    return;
+  }
+  let html = fmtSigned(repteStart);
+  equationSteps.forEach(s => {
+    if (s.kind === 'add') html += ` <span class="eq-op">${s.opSym}</span> (${s.label})`;
+    else if (s.kind === 'mul') html += ` <span class="eq-op">×</span> ${s.factor}`;
+    else if (s.kind === 'div') html += ` <span class="eq-op">÷</span> ${s.factor}`;
+  });
+  html += ` <span class="eq-op">=</span> <span class="eq-result">${fmtSigned(repteRunningTotal)}</span>`;
+  repteEquationEl.innerHTML = html;
+}
+function updateUndoState() {
+  rpUndo.disabled = !repteMode || pointAnim != null || roundLocked || usedStack.length === 0;
+}
+function undoLastTile() {
+  if (!repteMode || pointAnim || roundLocked || usedStack.length === 0) return;
+  const tile = usedStack.pop();
+  equationSteps.pop();
+  tile.used = false;
+  repteRunningTotal = recomputeRunningTotal();
+  if (roundEndTimer) { clearTimeout(roundEndTimer); roundEndTimer = null; }
+  const from = curValue;
+  const to = repteRunningTotal;
+  renderTiles();
+  renderEquation();
+  flash(wrap, 'var(--amber)');
+  readoutName.textContent = `Fitxa ${tileShortLabel(tile)} retornada a la safata`;
+  readoutDef.textContent = `Ets a ${fmtSigned(from)}, tornant a ${fmtSigned(to)}. Torna-la a arrossegar quan vulguis, o prova’n una altra.`;
+  const a = { from, to, start: performance.now(), dur: 400 };
+  pointAnim = a;
+  ensureRAF();
+  updateUndoState();
+  setTimeout(() => { if (pointAnim === a) finishPointAnim(a); }, a.dur + 30);
+}
+rpUndo.addEventListener('click', undoLastTile);
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const rpTarget = document.getElementById('rpTarget'), rpTime = document.getElementById('rpTime'),
+      rpScore = document.getElementById('rpScore'), rpStreak = document.getElementById('rpStreak');
+
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+const repteLevelToggle = document.getElementById('repteLevelToggle');
+const repteLevelDescEl = document.getElementById('repteLevelDesc');
+let selectedRepteLevel = 1;
+const LEVEL_DESC = {
+  1: 'Nivell 1: fitxes +/− senzilles.',
+  2: 'Nivell 2: signes apilats, tria sumar o restar cada fitxa, i fitxes × / ÷.'
+};
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRound() {
+  if (roundEndTimer) { clearTimeout(roundEndTimer); roundEndTimer = null; }
+  wrap.classList.remove('time-up');
+  const r = genRound();
+  curValue = r.start;
+  repteTarget = r.target;
+  repteStart = r.start;
+  hand = r.tiles;
+  equationSteps = []; usedStack = []; repteRunningTotal = r.start; roundLocked = false;
+  pointAnim = null; absHighlight = null;
+  rpTarget.textContent = fmtSigned(repteTarget);
+  renderTiles();
+  renderEquation();
+  updateUndoState();
+  draw(); updateReadout();
+  hint.textContent = HINT_REPTE; hint.classList.remove('hidden');
+  readoutName.textContent = 'Nova ronda';
+  readoutDef.textContent = `Arrossega fitxes fins arribar a ${fmtSigned(repteTarget)}. Comences a ${fmtSigned(curValue)}.`;
+}
+
+function startRepte(seconds, level) {
+  repteMode = true;
+  repteLevel = level || 1;
+  lineRange = repteLevel === 2 ? 20 : 10;
+  score = 0; streak = 0; timeLeft = seconds || 45; repteMaxTime = timeLeft;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  newRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+    }
+  }, 1000);
+}
+
+document.getElementById('rpNewRound').addEventListener('click', () => { if (repteMode) newRound(); });
+
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+repteLevelToggle.querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    repteLevelToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedRepteLevel = parseInt(btn.dataset.level, 10);
+    repteLevelDescEl.textContent = LEVEL_DESC[selectedRepteLevel];
+  });
+});
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  repteEquationEl.style.display = 'flex';
+  tileTray.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10), selectedRepteLevel);
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  if (roundEndTimer) { clearTimeout(roundEndTimer); roundEndTimer = null; }
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  lineRange = 10;
+  repteSetupEl.style.display = ''; repteBarEl.style.display = ''; repteEquationEl.style.display = ''; tileTray.style.display = '';
+  curValue = 0; pointAnim = null; absHighlight = null; signFlipAnim = null; lastCombine = null; hasInteracted = false;
+  setChipControls(3, []);
+  hint.textContent = HINT_EXPLORA; hint.classList.remove('hidden');
+  draw(); updateReadout();
+  readoutName.textContent = 'Arrossega el punt';
+  readoutDef.textContent = 'Mou el punt per la recta i observa el seu valor i valor absolut.';
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+  repteEquationEl.style.display = 'none';
+  tileTray.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resize();
+updateReadout();
+</script>
+</body>
+</html>

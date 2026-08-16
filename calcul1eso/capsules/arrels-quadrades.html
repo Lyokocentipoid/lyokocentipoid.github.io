@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arrels quadrades · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--amber); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--amber); color: var(--amber); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 50px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 30px; text-align: center; }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    .target-badge {
+      font-family: var(--font-mono); font-weight: 700; font-size: .83rem;
+      background: var(--card); border: 1px solid var(--border); border-radius: 100px;
+      padding: .4rem 1rem; color: var(--sage);
+    }
+    .squares-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem; }
+    .sq-chip {
+      font-family: var(--font-mono); font-size: .74rem; font-weight: 600; padding: .45rem .3rem;
+      border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+      cursor: pointer; transition: all var(--tr);
+    }
+    .sq-chip:hover { border-color: var(--sage); color: var(--sage); transform: translateY(-1px); }
+    .sq-chip.active { border-color: var(--sage); background: color-mix(in srgb, var(--sage) 10%, var(--card)); color: var(--sage); }
+
+    #sqCanvas { cursor: nwse-resize; touch-action: none; }
+    #hint.ring-info { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, transparent); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--amber)">Bloc 02 · Arrels quadrades</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Arrels quadrades</h1>
+      <p>Arrossega la cantonada del quadrat de tessel·les per fer-lo créixer o encongir, anell a anell. La banda ataronjada mostra l'últim anell afegit. Al mode «Troba l'arrel», ajusta el costat i prem «Confirma» per comprovar-ho — fins i tot quan l'objectiu no és un quadrat perfecte.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--amber)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row">
+      <div class="stepper">
+        <button id="sideMinus">−</button>
+        <span class="stepper-label">Costat</span>
+        <span class="stepper-val" id="sideVal">4</span>
+        <button id="sidePlus">+</button>
+      </div>
+    </div>
+
+    <div class="controls-row explora-only">
+      <div class="mode-toggle" id="subModeToggle" style="--m-color: var(--sage)">
+        <button id="btnLliure" class="active">Lliure</button>
+        <button id="btnTrobaArrel">🎯 Troba l'arrel</button>
+      </div>
+      <span class="target-badge" id="findTargetBadge" style="display:none">Objectiu: — tessel·les</span>
+      <button class="btn btn-primary" id="btnConfirmFind" style="display:none">Confirma ✔</button>
+      <button class="btn btn-ghost" id="btnNewTarget" style="display:none">Nou objectiu ↻</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--amber)">
+      <div class="rp-item"><span class="rp-label">Objectiu</span><span class="rp-value" id="rpTarget">45</span></div>
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-primary" id="btnConfirm">Confirma ✔</button>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--amber)">
+      <canvas id="sqCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega la cantonada (●) del quadrat per canviar el costat, o fes servir els botons +/−</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--amber)">
+      <div class="readout-num" id="readoutNum">16</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Costat 4 → Àrea 4² = 16</div>
+        <div class="readout-def" id="readoutDef">L'àrea és el nombre total de tessel·les del quadrat.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Quadrats perfectes</div>
+
+    <div class="type-card" id="card-squares" style="--t-color:#1fa971; cursor:default; flex-direction:column; align-items:stretch;">
+      <div class="type-info" style="width:100%">
+        <div class="type-name" style="margin-bottom:.6rem">1² a 15² · clica per saltar-hi</div>
+        <div class="squares-grid" id="squaresGrid"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> l'arrel quadrada de N és el costat «n» d'un quadrat de N tessel·les (n² = N). Cada anell nou que afegeixes (ataronjat) té (2n+1) tessel·les noves: n² = (n−1)² + (2n+1). Si N no és un quadrat perfecte, la seva arrel queda entre dos nombres enters consecutius.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 02 · Potències, Arrels i Nombres Enters</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  COLORS — es llegeixen de les custom properties de styles.css
+//  perquè el <canvas> no pot interpretar var(...) directament.
+//  Així, si la paleta torna a canviar, aquest fitxer no cal tocar-lo.
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) { const v = rootStyle.getPropertyValue(name).trim(); return v || fallback; }
+const COL = {
+  petrol:     cssVar('--petrol',     '#0b93a0'),
+  amber:      cssVar('--amber',      '#e2860a'),
+  terracotta: cssVar('--terracotta', '#e6483a'),
+  sage:       cssVar('--sage',       '#1fa971'),
+  plum:       cssVar('--plum',       '#8452d6'),
+};
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+function rgba(hex, a) { const { r, g, b } = hexToRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function tint(hex, amt) { // barreja cap a blanc (0..1) — ja NO s'usa per a text (fons clar ara)
+  const { r, g, b } = hexToRgb(hex);
+  const m = c => Math.round(c + (255 - c) * amt);
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('sqCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const sideVal = document.getElementById('sideVal');
+
+// El sandbox (arrossegament/stepper) i la generació d'objectius comparteixen
+// el mateix rang perquè tot objectiu generat sigui sempre assolible: es
+// baixa el límit del sandbox de 18 a 15 en lloc de pujar els objectius,
+// ja que la graella de referència ("1² a 15²") i la branca de quadrats
+// perfectes de randomTarget() ja estaven limitades a 15.
+const MIN_SIDE = 0, MAX_SIDE = 15;
+
+let side = 4;
+let hasInteracted = false;
+let dragging = false;
+let W, H;
+
+let subMode = 'lliure';     // 'lliure' | 'troba'
+let findTarget = null;
+let findDebounceTimer = null;
+let findAdvanceTimer = null;
+
+let repteMode = false;
+let repteTarget = null;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+
+// ─────────────────────────────────────────────
+//  UTILITATS
+// ─────────────────────────────────────────────
+function fmt(n) { return n.toLocaleString('ca-ES'); }
+function area() { return side * side; }
+function tessel(n) { return n === 1 ? 'tessel·la' : 'tessel·les'; }
+
+function randomNonPerfect(max) {
+  let t;
+  do { t = 2 + Math.floor(Math.random() * (max - 2)); } while (Number.isInteger(Math.sqrt(t)));
+  return t;
+}
+function randomTarget() {
+  if (Math.random() < 0.5) {
+    const r = 1 + Math.floor(Math.random() * MAX_SIDE); // 1..MAX_SIDE
+    return r * r;
+  }
+  return randomNonPerfect(MAX_SIDE * MAX_SIDE); // sempre < MAX_SIDE², per tant sempre assolible al sandbox
+}
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+function roundRect(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.2; ctx.stroke(); }
+}
+function ctext(x, y, text, color, size, align, baseline, mono) {
+  const fam = mono ? "'JetBrains Mono', monospace" : "'Inter', sans-serif";
+  ctx.font = `${mono ? 700 : 600} ${size}px ${fam}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'left';
+  ctx.textBaseline = baseline || 'alphabetic';
+  ctx.fillText(text, x, y);
+}
+
+// ─────────────────────────────────────────────
+//  GEOMETRIA / DIBUIX
+//  El quadrat s'ancora sempre a la mateixa cantonada superior-esquerra,
+//  amb una mida de cel·la FIXA (calculada perquè costat=MAX_SIDE ompli
+//  el requadre disponible). Així la cantonada inferior-dreta es MOU de
+//  veritat quan canvia el costat i es pot arrossegar com una capsa real.
+// ─────────────────────────────────────────────
+function squareGeom() {
+  const pad = Math.min(W, H) * 0.15;
+  const avail = Math.min(W, H) - pad * 2;
+  const cell = avail / MAX_SIDE;
+  const totalMax = cell * MAX_SIDE;
+  const x0 = (W - totalMax) / 2;
+  const y0 = (H - totalMax) / 2 + H * 0.02;
+  return { x0, y0, cell, totalMax };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawSquare();
+}
+
+function drawSquare() {
+  const g = squareGeom();
+
+  // marc discontinu: el recorregut màxim que es pot arrossegar
+  ctx.save();
+  const dash = Math.max(3, W * 0.006);
+  ctx.setLineDash([dash, dash]);
+  ctx.strokeStyle = 'rgba(26,31,54,0.16)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(g.x0 + 0.5, g.y0 + 0.5, g.totalMax, g.totalMax);
+  ctx.restore();
+
+  if (side > 0) {
+    for (let r = 0; r < side; r++) {
+      for (let c = 0; c < side; c++) {
+        const isRing = (r === side - 1 || c === side - 1);
+        const fill   = isRing ? rgba(COL.amber, 0.55) : rgba(COL.sage, 0.32);
+        const stroke = isRing ? rgba(COL.amber, 0.9)  : rgba(COL.sage, 0.65);
+        roundRect(g.x0 + c * g.cell + 1, g.y0 + r * g.cell + 1, g.cell - 2, g.cell - 2, Math.min(4, g.cell * 0.18), fill, stroke);
+      }
+    }
+    ctext(g.x0 + g.cell * side / 2, g.y0 - H * 0.045, `costat = ${side}`, TEXT_DARK, Math.max(14, W * 0.026), 'center', 'alphabetic', true);
+    // Connexió explícita costat ↔ arrel: el número que veus aquí ÉS l'arrel quadrada de l'àrea.
+    ctext(g.x0 + g.cell * side / 2, g.y0 + g.totalMax + H * 0.04, `√${fmt(area())} = ${side}`, COL.petrol, Math.max(15, W * 0.028), 'center', 'top', true);
+  } else {
+    ctext(g.x0 + g.totalMax / 2, g.y0 + g.totalMax / 2, '0 tessel·les (costat 0)', TEXT_DARK, Math.max(17, W * 0.031), 'center', 'middle');
+  }
+
+  // nansa d'arrossegament a la cantonada actual (es mou amb el costat)
+  const hx = g.x0 + side * g.cell, hy = g.y0 + side * g.cell;
+  const hr = Math.max(7, W * 0.013);
+  ctx.beginPath();
+  ctx.arc(hx, hy, hr, 0, Math.PI * 2);
+  ctx.fillStyle = COL.amber;
+  ctx.shadowColor = COL.amber;
+  ctx.shadowBlur = Math.max(6, W * 0.012);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = Math.max(2, W * 0.0035);
+  ctx.strokeStyle = 'rgba(26,31,54,0.92)';
+  ctx.stroke();
+
+  if (subMode === 'troba' && !repteMode && findTarget != null) {
+    ctext(W * 0.045, H * 0.055, `🎯 ${fmt(findTarget)}`, TEXT_DARK, Math.max(13, W * 0.026), 'left', 'top', true);
+  }
+  if (repteMode && repteTarget != null) {
+    ctext(W * 0.045, H * 0.055, `🎯 ${fmt(repteTarget)}`, TEXT_DARK, Math.max(13, W * 0.026), 'left', 'top', true);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  MUTACIÓ CENTRAL DEL COSTAT
+//  Stepper, arrossegament, targetes de referència i rondes noves passen
+//  tots per aquí, perquè el dibuix, la lectura i el text de l'anell
+//  (n² = (n−1)² + (2n+1)) es mantinguin sempre sincronitzats.
+// ─────────────────────────────────────────────
+function markInteracted() {
+  if (hasInteracted) return;
+  hasInteracted = true;
+}
+
+function setSide(n, opts) {
+  opts = opts || {};
+  const clamped = Math.max(MIN_SIDE, Math.min(MAX_SIDE, Math.round(n)));
+  const changed = clamped !== side;
+  if (!changed && !opts.force) return false;
+  side = clamped;
+  sideVal.textContent = side;
+  if (opts.interacted !== false) markInteracted();
+  draw();
+  updateReadout();
+  updateRingHint();
+  if (subMode === 'troba' && !repteMode) checkFindProgress();
+  return changed;
+}
+function growSide()   { setSide(side + 1); }
+function shrinkSide() { setSide(side - 1); }
+
+document.getElementById('sideMinus').addEventListener('click', shrinkSide);
+document.getElementById('sidePlus').addEventListener('click', growSide);
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ: arrossegar la cantonada del quadrat
+//  Clicar/tocar salta directament a la mida corresponent; arrossegar la
+//  canvia en directe, arrodonint sempre al costat enter més proper.
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.changedTouches ? e.changedTouches[0] : e;
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+
+function sideFromPointer(px, py) {
+  const g = squareGeom();
+  const raw = Math.max(px - g.x0, py - g.y0) / g.cell;
+  return Math.round(raw);
+}
+
+function onDragStart(e) {
+  e.preventDefault();
+  dragging = true;
+  const { x, y } = pointerXY(e);
+  setSide(sideFromPointer(x, y));
+}
+function onDragMove(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  const { x, y } = pointerXY(e);
+  setSide(sideFromPointer(x, y));
+}
+function onDragEnd() { dragging = false; }
+
+canvas.addEventListener('mousedown', onDragStart);
+window.addEventListener('mousemove', onDragMove);
+window.addEventListener('mouseup', onDragEnd);
+canvas.addEventListener('touchstart', onDragStart, { passive: false });
+canvas.addEventListener('touchmove', onDragMove, { passive: false });
+canvas.addEventListener('touchend', onDragEnd);
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateReadout() {
+  const a = area();
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmt(a);
+  readoutName.textContent = `Costat ${side} → Àrea ${side}² = ${fmt(a)}`;
+  if (repteMode) {
+    readoutDef.textContent = `Ajusta el costat i clica «Confirma» quan creguis que has encaixat l'objectiu.`;
+  } else if (subMode === 'troba') {
+    readoutDef.textContent = findTarget != null
+      ? `Fes créixer o encongir el quadrat fins que l'àrea sigui ${fmt(findTarget)}, o prem «Confirma ✔» per veure com ho portes.`
+      : 'Tria un objectiu per començar.';
+  } else {
+    readoutDef.textContent = `√${fmt(a)} = ${side} (el costat és l'arrel quadrada de l'àrea).`;
+  }
+}
+
+// Mostra, cada vegada que s'afegeix o es treu un anell, la identitat
+// n² = (n−1)² + (2n+1) — connectant explícitament l'anell ataronjat amb l'àlgebra.
+function updateRingHint() {
+  if (!hasInteracted) { hint.classList.remove('ring-info'); return; }
+  if (side <= 0) {
+    hint.textContent = `Costat 0 → cap tessel·la (0² = 0). Arrossega la cantonada per fer créixer el quadrat.`;
+    hint.classList.remove('ring-info');
+    return;
+  }
+  const n = side, prev = n - 1, added = 2 * n + 1;
+  hint.textContent = `${n}² = ${prev}² + (2×${n}+1) → +${fmt(added)} ${tessel(added)} noves`;
+  hint.classList.add('ring-info');
+}
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ─────────────────────────────────────────────
+//  MODE «TROBA L'ARREL» (dins d'Explora)
+// ─────────────────────────────────────────────
+const findTargetBadge = document.getElementById('findTargetBadge');
+const btnConfirmFind = document.getElementById('btnConfirmFind');
+const btnNewTarget = document.getElementById('btnNewTarget');
+const btnLliure = document.getElementById('btnLliure');
+const btnTrobaArrel = document.getElementById('btnTrobaArrel');
+
+// "Troba l'arrel" sempre demana un quadrat perfecte: buscar l'arrel d'un
+// número que no en té una d'exacta no té sentit per a aquest submode
+// (el mode Repte, que sí gestiona bé el crèdit parcial, manté randomTarget()).
+function randomPerfectTarget() {
+  const r = 1 + Math.floor(Math.random() * MAX_SIDE);
+  return r * r;
+}
+function newFindTarget() {
+  clearTimeout(findDebounceTimer);
+  clearTimeout(findAdvanceTimer);
+  findTarget = randomPerfectTarget();
+  findTargetBadge.textContent = `Objectiu: ${fmt(findTarget)} ${tessel(findTarget)}`;
+  setSide(1, { interacted: false, force: true });
+}
+
+function checkFindProgress() {
+  if (findTarget == null) return;
+  const a = area();
+  clearTimeout(findDebounceTimer);
+  if (a === findTarget) {
+    onFindSuccess();
+    return;
+  }
+  findDebounceTimer = setTimeout(showFindBoundHint, 1100);
+}
+function onFindSuccess() {
+  clearTimeout(findDebounceTimer);
+  flash(wrap, COL.sage);
+  findTargetBadge.textContent = `✔ Trobat! √${fmt(findTarget)} = ${side}`;
+  readoutName.textContent = `Trobat! √${fmt(findTarget)} = ${side}`;
+  readoutDef.textContent = `${side}² = ${fmt(findTarget)}. Arrel quadrada exacta. Nou objectiu en un moment...`;
+  clearTimeout(findAdvanceTimer);
+  findAdvanceTimer = setTimeout(newFindTarget, 1400);
+}
+function showFindBoundHint() {
+  if (findTarget == null || area() === findTarget) return;
+  const root = Math.sqrt(findTarget);
+  if (Number.isInteger(root)) {
+    readoutName.textContent = `${fmt(findTarget)} és un quadrat perfecte`;
+    readoutDef.textContent = `${root}² = ${fmt(findTarget)}. Ara mateix el teu quadrat té ${fmt(area())} ${tessel(area())} — ajusta el costat fins a ${root} i prem «Confirma ✔».`;
+    return;
+  }
+  const lower = Math.floor(root);
+  const upper = lower + 1;
+  readoutName.textContent = `${fmt(findTarget)} és entre ${lower}² i ${upper}²`;
+  readoutDef.textContent = `${lower}² = ${fmt(lower * lower)} i ${upper}² = ${fmt(upper * upper)}. L'arrel de ${fmt(findTarget)} no és exacta. Ara mateix el teu quadrat té ${fmt(area())} ${tessel(area())} — prem «Confirma ✔» quan vulguis, o segueix ajustant.`;
+}
+
+// Reutilitza la lògica de crèdit parcial del mode Repte: prement «Confirma»
+// SEMPRE hi ha una manera de tancar la ronda, encara que l'objectiu no
+// sigui un quadrat perfecte (abans, en aquest cas, era impossible d'acabar).
+function confirmFindAnswer() {
+  if (findTarget == null) return;
+  clearTimeout(findDebounceTimer);
+  const a = area();
+  const diff = findTarget - a;
+  if (diff === 0) {
+    onFindSuccess();
+    return;
+  }
+  const root = Math.sqrt(findTarget);
+  const isPerfect = Number.isInteger(root);
+  const lower = Math.floor(root);
+  const upper = lower + 1;
+  const pts = Math.max(0, 5 - Math.ceil(Math.abs(diff) / 3)); // mateixa fórmula de proximitat que el mode Repte
+  const close = pts > 0;
+  readoutName.textContent = close ? 'A prop!' : (isPerfect ? `${fmt(findTarget)} = ${root}²` : `Entre ${lower}² i ${upper}²`);
+  readoutDef.textContent = isPerfect
+    ? `${fmt(findTarget)} és un quadrat perfecte (${root}² = ${fmt(findTarget)}) — encara no l'has trobat. El teu costat és ${side} (àrea ${fmt(a)}); ${diff > 0 ? `et falten ${fmt(diff)} ${tessel(diff)}` : `et sobren ${fmt(-diff)} ${tessel(-diff)}`}. Ajusta el costat a ${root} i torna a confirmar, o prem «Nou objectiu ↻».`
+    : `${lower}² = ${fmt(lower * lower)} i ${upper}² = ${fmt(upper * upper)} — ${fmt(findTarget)} no és un quadrat perfecte, així que la seva arrel no és un nombre enter. El teu costat és ${side} (àrea ${fmt(a)}); ${diff > 0 ? `et falten ${fmt(diff)} ${tessel(diff)}` : `et sobren ${fmt(-diff)} ${tessel(-diff)}`}. Pots seguir ajustant i tornar a confirmar, o prémer «Nou objectiu ↻».`;
+  flash(wrap, close ? COL.amber : COL.terracotta);
+}
+
+btnLliure.addEventListener('click', () => {
+  subMode = 'lliure';
+  btnLliure.classList.add('active'); btnTrobaArrel.classList.remove('active');
+  findTargetBadge.style.display = 'none';
+  btnConfirmFind.style.display = 'none';
+  btnNewTarget.style.display = 'none';
+  findTarget = null;
+  clearTimeout(findDebounceTimer);
+  clearTimeout(findAdvanceTimer);
+  updateReadout();
+});
+btnTrobaArrel.addEventListener('click', () => {
+  subMode = 'troba';
+  btnTrobaArrel.classList.add('active'); btnLliure.classList.remove('active');
+  findTargetBadge.style.display = 'inline-flex';
+  btnConfirmFind.style.display = 'inline-flex';
+  btnNewTarget.style.display = 'inline-flex';
+  newFindTarget();
+});
+btnNewTarget.addEventListener('click', newFindTarget);
+btnConfirmFind.addEventListener('click', confirmFindAnswer);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA: quadrats perfectes 1²-15²
+// ─────────────────────────────────────────────
+const squaresGrid = document.getElementById('squaresGrid');
+for (let n = 1; n <= 15; n++) {
+  const btn = document.createElement('button');
+  btn.className = 'sq-chip';
+  btn.dataset.n = n;
+  btn.textContent = `${n}² = ${n * n}`;
+  btn.addEventListener('click', () => {
+    if (repteMode) { btnExplora.click(); }
+    subMode = 'lliure';
+    btnLliure.classList.add('active'); btnTrobaArrel.classList.remove('active');
+    findTargetBadge.style.display = 'none';
+    btnConfirmFind.style.display = 'none';
+    btnNewTarget.style.display = 'none';
+    findTarget = null;
+    clearTimeout(findDebounceTimer);
+    clearTimeout(findAdvanceTimer);
+    flash(wrap, COL.sage);
+    document.querySelectorAll('.sq-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    setSide(n, { force: true });
+  });
+  squaresGrid.appendChild(btn);
+}
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const rpTarget = document.getElementById('rpTarget'), rpTime = document.getElementById('rpTime'),
+      rpScore = document.getElementById('rpScore'), rpStreak = document.getElementById('rpStreak');
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRepteRound() {
+  repteTarget = randomTarget();
+  rpTarget.textContent = fmt(repteTarget);
+  setSide(1, { interacted: false, force: true });
+}
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  newRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+    }
+  }, 1000);
+}
+
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+function confirmRepteAnswer() {
+  if (!repteMode || timeLeft <= 0) return;
+  const a = area();
+  const diff = Math.abs(a - repteTarget);
+  if (diff === 0) {
+    score += 10; streak++;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+    readoutName.textContent = 'Exacte! 🎉';
+    readoutDef.textContent = `${side}² = ${fmt(repteTarget)}.`;
+    flash(wrap, COL.sage);
+  } else {
+    const pts = Math.max(0, 5 - Math.ceil(diff / 3));
+    score += pts;
+    if (pts > 0) {
+      streak++;
+    } else {
+      // Resposta molt allunyada (sense crèdit parcial): penalització extra d'1 punt.
+      streak = 0;
+      score = Math.max(0, score - 1);
+    }
+    timeLeft = Math.max(0, timeLeft - (diff > 5 ? 3 : 1));
+    const repteRoot = Math.sqrt(repteTarget);
+    const boundText = Number.isInteger(repteRoot)
+      ? `${repteRoot}²`
+      : `entre ${Math.floor(repteRoot)}² i ${Math.floor(repteRoot) + 1}²`;
+    readoutName.textContent = pts > 0 ? `A prop! (+${pts})` : 'Massa lluny';
+    readoutDef.textContent = `Objectiu ${fmt(repteTarget)} (${boundText}). Has fet ${fmt(a)}.`;
+    flash(wrap, pts > 0 ? COL.amber : COL.terracotta);
+  }
+  rpScore.textContent = score; rpStreak.textContent = streak;
+  setTimeout(newRepteRound, 800);
+}
+document.getElementById('btnConfirm').addEventListener('click', confirmRepteAnswer);
+document.getElementById('rpNewRound').addEventListener('click', () => { if (timer) newRepteRound(); });
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  rpTime.classList.remove('time-low');
+  // Amaga els dos panells de Repte (estils inline, que guanyen a les regles
+  // de classe) perquè no quedin visibles per error en tornar a Explora, i
+  // perquè en clicar «Repte» de nou, btnRepte els torni a mostrar frescos.
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'none';
+  if (subMode === 'troba') { newFindTarget(); }
+  else { setSide(4, { interacted: false, force: true }); }
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resize();
+updateReadout();
+updateRingHint();
+</script>
+</body>
+</html>

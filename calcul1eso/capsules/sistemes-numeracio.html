@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistemes de numeració · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--petrol); }
+
+    /* ── SUB-TABS (Base 10 / Romans / Binari) ── */
+    .subtab-bar {
+      display: flex; gap: .3rem; background: var(--card); border: 1px solid var(--border);
+      border-radius: 100px; padding: .3rem; width: fit-content; flex-wrap: wrap;
+    }
+    .subtab-bar button {
+      border: none; background: transparent; font-family: var(--font-body); font-weight: 600; font-size: .85rem;
+      padding: .55rem 1.15rem; border-radius: 100px; cursor: pointer; color: var(--muted); transition: all var(--tr);
+    }
+    .subtab-bar button:hover { color: var(--ink); }
+    .subtab-bar button.active { background: var(--sub-color, var(--petrol)); color: #fff; }
+
+    .subtab-panel { display: none; flex-direction: column; gap: 1.3rem; }
+    .subtab-panel.active { display: flex; }
+    .subtab-desc { color: var(--muted); font-size: .88rem; line-height: 1.6; }
+
+    /* ── CONTROLS ── */
+    .controls-row { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .subtab-panel .repte-only { display: none; }
+    .subtab-panel.mode-repte .explora-only { display: none; }
+    .subtab-panel.mode-repte .repte-only { display: flex; }
+
+    .pan-btn {
+      width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .pan-btn:hover { border-color: var(--petrol); color: var(--petrol); }
+    .pan-btn:disabled { opacity: .3; cursor: default; }
+    .pan-label { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); min-width: 150px; text-align: center; }
+
+    .cisco-link { font-size: .82rem; padding: .55rem 1.1rem; }
+
+    #canvasB10, #canvasRoman, #canvasBin { cursor: pointer; }
+
+    #numRoman { font-size: 1.55rem; line-height: 1.2; word-break: break-all; }
+
+    /* ── INFO SIDE: grouped reference cards ── */
+    .info-group { display: none; flex-direction: column; gap: 1.15rem; }
+    .info-group.active { display: flex; }
+    @media (max-width: 860px) { .info-group.active { grid-column: 1 / -1; } }
+
+    /* ── QUIZ FOOT ── */
+    .quiz-foot { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .quiz-score { font-size: .78rem; color: var(--muted); }
+    .quiz-score strong { color: var(--ink); }
+    .quiz-box h4 { display: flex; align-items: center; gap: .4rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--petrol)">Bloc 01 · Sistemes de numeració</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Sistemes de numeració</h1>
+      <p>Descobreix com representem els números: amb valor posicional en base 10, amb xifres romanes i en binari (el llenguatge dels ordinadors).</p>
+    </div>
+
+    <div class="subtab-bar" id="subtabBar">
+      <button class="active" data-subtab="b10" style="--sub-color:var(--petrol)">Base 10</button>
+      <button data-subtab="roman" style="--sub-color:var(--plum)">Nombres romans</button>
+      <button data-subtab="bin" style="--sub-color:var(--sage)">Binari</button>
+    </div>
+
+    <!-- ═══════════ APARTAT A · BASE 10 ═══════════ -->
+    <div class="subtab-panel active" id="panel-b10" data-subtab="b10">
+      <p class="subtab-desc">Clica <strong>+</strong> i <strong>−</strong> a cada columna per afegir o treure blocs. Si una columna arriba a 10, els blocs s'agrupen i "volen" cap a la columna del costat: així es veu de veritat què és portar-se u. Cada columna té el seu color, que també tenyeix la seva xifra al número gran.</p>
+
+      <div class="mode-toggle" style="--m-color:var(--petrol)">
+        <button id="btnExploraB10" class="active">🔍 Explora</button>
+        <button id="btnRepteB10">🏆 Repte</button>
+      </div>
+
+      <div class="controls-row">
+        <button class="pan-btn" id="panLeftB10">◀</button>
+        <span class="pan-label" id="panLabelB10">Miler → Unitats</span>
+        <button class="pan-btn" id="panRightB10">▶</button>
+        <button class="btn btn-ghost" id="toggleRangeB10">Amplia a desenes de miler, centenes de miler i milions →</button>
+      </div>
+
+      <div class="controls-row explora-only">
+        <button class="btn btn-ghost" id="resetB10">Reinicia a 0</button>
+      </div>
+
+      <div class="repte-only" id="repteSetupB10">
+        <div class="repte-setup">
+          <span class="rs-label">Tria la durada del repte:</span>
+          <div class="rs-row">
+            <input type="range" id="repteTimeSliderB10" min="20" max="300" step="5" value="60">
+            <span class="rs-val" id="repteTimeValB10">60s</span>
+          </div>
+          <button class="btn btn-primary" id="repteStartBtnB10" style="align-self:flex-start">▶ Comença el repte</button>
+        </div>
+      </div>
+
+      <div class="repte-bar repte-only" id="repteBarB10" style="--m-color:var(--petrol)">
+        <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTimeB10">60s</span></div>
+        <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScoreB10">0</span></div>
+        <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreakB10">0</span></div>
+        <button class="btn btn-ghost" id="rpNewRoundB10" style="margin-left:auto">Nova ronda ↻</button>
+      </div>
+
+      <div class="canvas-wrap flash-target" id="wrapB10" style="--flash-color:var(--petrol)">
+        <canvas id="canvasB10"></canvas>
+      </div>
+      <div class="canvas-hint" id="hintB10">Clica + i − a cada columna</div>
+
+      <div class="readout-badge flash-target" id="readoutB10" style="--flash-color:var(--petrol)">
+        <div class="readout-num" id="numB10">1.234.567</div>
+        <div class="readout-info">
+          <div class="readout-name" id="nameB10">Número construït</div>
+          <div class="readout-def" id="defB10">1.000.000 + 200.000 + 30.000 + 4.000 + 500 + 60 + 7</div>
+        </div>
+      </div>
+
+      <div class="quiz-box">
+        <h4>📝 Posa't a prova: Base 10</h4>
+        <div class="quiz-progress" id="b10QProgress">Pregunta 1/9</div>
+        <div class="quiz-question" id="b10QQuestion"></div>
+        <div class="quiz-options" id="b10QOptions"></div>
+        <div class="quiz-feedback" id="b10QFeedback"></div>
+        <div class="quiz-foot">
+          <span class="quiz-score">Encerts: <strong id="b10QScore">0</strong></span>
+          <button class="btn btn-ghost" id="b10QNext" style="display:none">Següent pregunta →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ APARTAT B · NOMBRES ROMANS ═══════════ -->
+    <div class="subtab-panel" id="panel-roman" data-subtab="roman">
+      <p class="subtab-desc">Clica els símbols per construir un numeral romà. Només s'accepten combinacions vàlides (com les restes <strong>IV</strong>, <strong>IX</strong>, <strong>XL</strong>...).</p>
+
+      <div class="mode-toggle" style="--m-color:var(--petrol)">
+        <button id="btnExploraRoman" class="active">🔍 Explora</button>
+        <button id="btnRepteRoman">🏆 Repte</button>
+      </div>
+
+      <div class="controls-row">
+        <button class="btn btn-ghost" id="removeLastRoman">⌫ Treu l'última xifra</button>
+        <button class="btn btn-ghost" id="clearRoman">🗑 Neteja</button>
+      </div>
+
+      <div class="repte-only" id="repteSetupRoman">
+        <div class="repte-setup">
+          <span class="rs-label">Tria la durada del repte:</span>
+          <div class="rs-row">
+            <input type="range" id="repteTimeSliderRoman" min="20" max="300" step="5" value="60">
+            <span class="rs-val" id="repteTimeValRoman">60s</span>
+          </div>
+          <button class="btn btn-primary" id="repteStartBtnRoman" style="align-self:flex-start">▶ Comença el repte</button>
+        </div>
+      </div>
+
+      <div class="repte-bar repte-only" id="repteBarRoman" style="--m-color:var(--petrol)">
+        <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTimeRoman">60s</span></div>
+        <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScoreRoman">0</span></div>
+        <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreakRoman">0</span></div>
+        <button class="btn btn-ghost" id="rpNewRoundRoman" style="margin-left:auto">Nova ronda ↻</button>
+      </div>
+
+      <div class="canvas-wrap flash-target" id="wrapRoman" style="--flash-color:var(--petrol)">
+        <canvas id="canvasRoman"></canvas>
+      </div>
+      <div class="canvas-hint" id="hintRoman">Clica els símbols per construir el numeral</div>
+
+      <div class="readout-badge flash-target" id="readoutRoman" style="--flash-color:var(--petrol)">
+        <div class="readout-num" id="numRoman">XLIV</div>
+        <div class="readout-info">
+          <div class="readout-name" id="nameRoman">Numeral en construcció</div>
+          <div class="readout-def" id="defRoman">Valor decimal: 44</div>
+        </div>
+      </div>
+
+      <div class="quiz-box">
+        <h4>📝 Posa't a prova: Nombres romans</h4>
+        <div class="quiz-progress" id="romanQProgress">Pregunta 1/9</div>
+        <div class="quiz-question" id="romanQQuestion"></div>
+        <div class="quiz-options" id="romanQOptions"></div>
+        <div class="quiz-feedback" id="romanQFeedback"></div>
+        <div class="quiz-foot">
+          <span class="quiz-score">Encerts: <strong id="romanQScore">0</strong></span>
+          <button class="btn btn-ghost" id="romanQNext" style="display:none">Següent pregunta →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ APARTAT C · BINARI ═══════════ -->
+    <div class="subtab-panel" id="panel-bin" data-subtab="bin">
+      <p class="subtab-desc">Clica els bits per activar-los o desactivar-los. Cada bit actiu suma el seu valor posicional (una potència de 2) al total decimal.</p>
+
+      <div class="controls-row">
+        <a class="btn btn-ghost cisco-link" href="https://learningcontent.cisco.com/games/binary/index.html" target="_blank" rel="noopener">🎮 Juga a la versió original de Cisco ↗</a>
+      </div>
+
+      <div class="mode-toggle" style="--m-color:var(--petrol)">
+        <button id="btnExploraBin" class="active">🔍 Explora</button>
+        <button id="btnRepteBin">🏆 Repte</button>
+      </div>
+
+      <div class="controls-row explora-only">
+        <button class="btn btn-ghost" id="resetBin">Reinicia a 0</button>
+      </div>
+
+      <div class="repte-only" id="repteSetupBin">
+        <div class="repte-setup">
+          <span class="rs-label">Tria la durada del repte:</span>
+          <div class="rs-row">
+            <input type="range" id="repteTimeSliderBin" min="20" max="300" step="5" value="45">
+            <span class="rs-val" id="repteTimeValBin">45s</span>
+          </div>
+          <button class="btn btn-primary" id="repteStartBtnBin" style="align-self:flex-start">▶ Comença el repte</button>
+        </div>
+      </div>
+
+      <div class="repte-bar repte-only" id="repteBarBin" style="--m-color:var(--petrol)">
+        <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTimeBin">45s</span></div>
+        <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScoreBin">0</span></div>
+        <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreakBin">0</span></div>
+        <button class="btn btn-ghost" id="rpNewRoundBin" style="margin-left:auto">Nova ronda ↻</button>
+      </div>
+
+      <div class="canvas-wrap flash-target" id="wrapBin" style="--flash-color:var(--petrol)">
+        <canvas id="canvasBin"></canvas>
+      </div>
+      <div class="canvas-hint" id="hintBin">Clica els bits per activar-los</div>
+
+      <div class="readout-badge flash-target" id="readoutBin" style="--flash-color:var(--petrol)">
+        <div class="readout-num" id="numBin">178</div>
+        <div class="readout-info">
+          <div class="readout-name" id="nameBin">Total en binari</div>
+          <div class="readout-def" id="defBin">10110010 en binari</div>
+        </div>
+      </div>
+
+      <div class="quiz-box">
+        <h4>📝 Posa't a prova: Binari</h4>
+        <div class="quiz-progress" id="binQProgress">Pregunta 1/9</div>
+        <div class="quiz-question" id="binQQuestion"></div>
+        <div class="quiz-options" id="binQOptions"></div>
+        <div class="quiz-feedback" id="binQFeedback"></div>
+        <div class="quiz-foot">
+          <span class="quiz-score">Encerts: <strong id="binQScore">0</strong></span>
+          <button class="btn btn-ghost" id="binQNext" style="display:none">Següent pregunta →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+
+    <div class="info-group active" data-group="b10">
+      <div class="info-title">Base 10 · valor posicional</div>
+      <div class="type-card" data-jump="b10" data-place="0" style="--t-color:var(--petrol)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Unitats</div><div class="type-range">× 1</div><div class="type-desc">El valor bàsic, sense multiplicar.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="1" style="--t-color:var(--amber)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Desenes</div><div class="type-range">× 10</div><div class="type-desc">Cada bloc val 10 unitats.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="2" style="--t-color:var(--terracotta)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Centenes</div><div class="type-range">× 100</div><div class="type-desc">Cada bloc val 100 unitats.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="3" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Miler</div><div class="type-range">× 1.000</div><div class="type-desc">Mil unitats en un sol bloc.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="4" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Desenes de miler</div><div class="type-range">× 10.000</div><div class="type-desc">Deu mil unitats en un sol bloc.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="5" style="--t-color:#2f6fe0">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Centenes de miler</div><div class="type-range">× 100.000</div><div class="type-desc">Cent mil unitats en un sol bloc.</div></div>
+      </div>
+      <div class="type-card" data-jump="b10" data-place="6" style="--t-color:#d6428f">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">Milions</div><div class="type-range">× 1.000.000</div><div class="type-desc">La columna més gran d'aquest component.</div></div>
+      </div>
+    </div>
+
+    <div class="info-group" data-group="roman">
+      <div class="info-title">Xifres romanes</div>
+      <div class="type-card" data-jump="roman" data-symbol="I" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">I</div><div class="type-range">val 1</div><div class="type-desc">Es pot repetir fins a 3 cops seguits (III = 3).</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="V" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">V</div><div class="type-range">val 5</div><div class="type-desc">Mai es repeteix. Combinat amb I: IV (4) o VI (6).</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="X" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">X</div><div class="type-range">val 10</div><div class="type-desc">Repetible fins a 3 cops (XXX = 30).</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="L" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">L</div><div class="type-range">val 50</div><div class="type-desc">Mai es repeteix.</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="C" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">C</div><div class="type-range">val 100</div><div class="type-desc">Repetible fins a 3 cops (CCC = 300).</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="D" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">D</div><div class="type-range">val 500</div><div class="type-desc">Mai es repeteix.</div></div>
+      </div>
+      <div class="type-card" data-jump="roman" data-symbol="M" style="--t-color:var(--plum)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">M</div><div class="type-range">val 1.000</div><div class="type-desc">El símbol més gran; es pot repetir.</div></div>
+      </div>
+    </div>
+
+    <div class="info-group" data-group="bin">
+      <div class="info-title">Binari · potències de 2</div>
+      <div class="type-card" data-jump="bin" data-bit="128" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">128</div><div class="type-range">2⁷ · bit més significatiu</div><div class="type-desc">El bit més a l'esquerra dels 8.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="64" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">64</div><div class="type-range">2⁶</div><div class="type-desc">Segon bit des de l'esquerra.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="32" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">32</div><div class="type-range">2⁵</div><div class="type-desc">Tercer bit des de l'esquerra.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="16" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">16</div><div class="type-range">2⁴</div><div class="type-desc">El bit central esquerre.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="8" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">8</div><div class="type-range">2³</div><div class="type-desc">El bit central dret.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="4" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">4</div><div class="type-range">2²</div><div class="type-desc">Tercer bit des de la dreta.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="2" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">2</div><div class="type-range">2¹</div><div class="type-desc">Segon bit des de la dreta.</div></div>
+      </div>
+      <div class="type-card" data-jump="bin" data-bit="1" style="--t-color:var(--sage)">
+        <div class="type-mini-canvas"></div>
+        <div class="type-info"><div class="type-name">1</div><div class="type-range">2⁰ · bit menys significatiu</div><div class="type-desc">El bit més a la dreta dels 8.</div></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Per què la notació posicional guanya:</strong> en base 10, cada posició val ×10 respecte la del costat, així que sumar o multiplicar és operar xifra a xifra. Amb els romans no hi ha "posicions": cal memoritzar patrons de símbols. El binari fa el mateix truc que el decimal, però amb potències de 2 (128, 64, 32...) i només dues xifres possibles: 0 i 1.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 01 · Nombres i Divisibilitat</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  UTILITATS COMPARTIDES
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+function formatNumber(n) { return n.toLocaleString('ca-ES'); }
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+function roundRectOn(c, x, y, w, h, r, fill, stroke) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+  if (fill) { c.fillStyle = fill; c.fill(); }
+  if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); }
+}
+function textOn(c, x, y, text, font, color, align) {
+  c.font = font; c.fillStyle = color; c.textAlign = align || 'left'; c.textBaseline = 'alphabetic';
+  c.fillText(text, x, y);
+}
+function circleBtnOn(c, cx, cy, r, label, fillColor, strokeColor, textColor, fontPx) {
+  c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2);
+  c.fillStyle = fillColor; c.fill();
+  c.lineWidth = 1.5; c.strokeStyle = strokeColor; c.stroke();
+  textOn(c, cx, cy + fontPx * 0.34, label, `700 ${fontPx}px 'JetBrains Mono',monospace`, textColor, 'center');
+}
+function getXY(canvasEl, e) {
+  const rect = canvasEl.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  return { x: (e.clientX - rect.left) * dpr, y: (e.clientY - rect.top) * dpr };
+}
+function shuffleArr(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+// ─────────────────────────────────────────────
+//  SUB-TABS
+// ─────────────────────────────────────────────
+let activeSubtab = 'b10';
+
+function switchSubtab(name) {
+  if (name === activeSubtab) return;
+  activeSubtab = name;
+  document.querySelectorAll('.subtab-bar button').forEach(b => b.classList.toggle('active', b.dataset.subtab === name));
+  document.querySelectorAll('.subtab-panel').forEach(p => p.classList.toggle('active', p.dataset.subtab === name));
+  document.querySelectorAll('.info-group').forEach(g => g.classList.toggle('active', g.dataset.group === name));
+  resizeActive();
+}
+function resizeActive() {
+  if (activeSubtab === 'b10') b10Resize();
+  else if (activeSubtab === 'roman') romanResize();
+  else if (activeSubtab === 'bin') binResize();
+}
+document.querySelectorAll('.subtab-bar button').forEach(b => {
+  b.addEventListener('click', () => switchSubtab(b.dataset.subtab));
+});
+window.addEventListener('resize', () => resizeActive());
+
+/* ════════════════════════════════════════════════════════════
+   APARTAT A · BASE 10
+   ════════════════════════════════════════════════════════════ */
+const wrapB10 = document.getElementById('wrapB10');
+const canvasB10 = document.getElementById('canvasB10');
+const ctx10 = canvasB10.getContext('2d');
+const hintB10 = document.getElementById('hintB10');
+const panelB10 = document.getElementById('panel-b10');
+const readoutB10 = document.getElementById('readoutB10');
+const numB10 = document.getElementById('numB10');
+const nameB10 = document.getElementById('nameB10');
+const defB10 = document.getElementById('defB10');
+const btnExploraB10 = document.getElementById('btnExploraB10');
+const btnRepteB10 = document.getElementById('btnRepteB10');
+const panLeftB10 = document.getElementById('panLeftB10');
+const panRightB10 = document.getElementById('panRightB10');
+const panLabelB10 = document.getElementById('panLabelB10');
+const toggleRangeB10 = document.getElementById('toggleRangeB10');
+const resetB10Btn = document.getElementById('resetB10');
+const rpTimeB10 = document.getElementById('rpTimeB10');
+const rpScoreB10 = document.getElementById('rpScoreB10');
+const rpStreakB10 = document.getElementById('rpStreakB10');
+const rpNewRoundB10 = document.getElementById('rpNewRoundB10');
+const repteSetupB10El = document.getElementById('repteSetupB10');
+const repteBarB10El = document.getElementById('repteBarB10');
+const repteTimeSliderB10 = document.getElementById('repteTimeSliderB10');
+const repteTimeValB10 = document.getElementById('repteTimeValB10');
+
+const B10_PLACE_ORDER = [6, 5, 4, 3, 2, 1, 0]; // esquerra→dreta: milions...unitats
+const B10_LABELS = ['Unitats', 'Desenes', 'Centenes', 'Miler', 'Desenes de miler', 'Centenes de miler', 'Milions'];
+
+// Paleta qualitativa: un color fix per columna (llegida dels tokens compartits +
+// 2 tons addicionals per completar les 7 posicions), perquè cada bloc i la seva
+// xifra al número gran es reconeguin d'un cop d'ull.
+const b10RootStyle = getComputedStyle(document.documentElement);
+function b10CssVar(name, fallback) {
+  const v = b10RootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+function b10HexToRgb(hex) {
+  const m = hex.replace('#', '').match(/.{1,2}/g);
+  return m.map(h => parseInt(h, 16)).join(',');
+}
+const B10_COLORS = [
+  b10CssVar('--petrol', '#0b93a0'),      // 0 Unitats
+  b10CssVar('--amber', '#e2860a'),       // 1 Desenes
+  b10CssVar('--terracotta', '#e6483a'),  // 2 Centenes
+  b10CssVar('--sage', '#1fa971'),        // 3 Miler
+  b10CssVar('--plum', '#8452d6'),        // 4 Desenes de miler
+  '#2f6fe0',                              // 5 Centenes de miler (blau cobalt)
+  '#d6428f',                              // 6 Milions (magenta)
+];
+const B10_COLORS_RGB = B10_COLORS.map(b10HexToRgb);
+const B10_UI = { plus: b10CssVar('--sage', '#1fa971'), minus: b10CssVar('--terracotta', '#e6483a') };
+const B10_UI_PLUS_RGB = b10HexToRgb(B10_UI.plus);
+const B10_UI_MINUS_RGB = b10HexToRgb(B10_UI.minus);
+
+let W10 = 0, H10 = 0;
+let b10Digits = [7, 6, 5, 4, 3, 2, 1]; // índex = posició (0=unitats...6=milions) → 1.234.567
+let b10Scroll = 0;
+let b10WideRange = false; // fals = només unitats..miler (4 columnes, sense desplaçament)
+let b10RepteMode = false;
+let b10Timer = null, b10TimeLeft = 60, b10MaxTime = 60, b10Score = 0, b10Streak = 0;
+let b10Target = 0, b10TargetDigits = [0, 0, 0, 0, 0, 0, 0], b10ClickCount = 0, b10PendingOldTotal = 0;
+let b10Hit = [];
+let b10Interacted = false;
+
+// Estat de l'animació de "portar-se" (carry) / "manllevar" (borrow): una cua de
+// "salts" entre columnes adjacents que es reprodueixen un darrere l'altre.
+let b10Anim = null;       // salt en curs: {type:'carry'|'borrow', from, to, t, start, dur}
+let b10AnimQueue = [];    // salts pendents del mateix gest
+let b10AnimBusy = false;  // cert mentre dura tota la seqüència (bloqueja nous clics)
+let b10AnimRaf = null;
+
+function b10ActivePlaces() { return b10WideRange ? B10_PLACE_ORDER : B10_PLACE_ORDER.filter(p => p <= 3); }
+function b10ColW() { return b10WideRange ? W10 * 0.22 : W10 / b10ActivePlaces().length; }
+function b10MaxScroll() { return Math.max(0, b10ActivePlaces().length * b10ColW() - W10); }
+function b10Compose() { return b10Digits.reduce((s, d, p) => s + d * Math.pow(10, p), 0); }
+function digitsFromNumber(n) {
+  const d = [0, 0, 0, 0, 0, 0, 0];
+  let x = n;
+  for (let p = 0; p < 7; p++) { d[p] = x % 10; x = Math.floor(x / 10); }
+  return d;
+}
+function b10Decomposition(digits) {
+  const parts = [];
+  for (let p = 6; p >= 0; p--) { if (digits[p] > 0) parts.push(formatNumber(digits[p] * Math.pow(10, p))); }
+  return parts.length ? parts.join(' + ') : '0';
+}
+
+function b10Resize() {
+  const rect = wrapB10.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvasB10.width = rect.width * dpr; canvasB10.height = rect.height * dpr;
+  canvasB10.style.width = rect.width + 'px'; canvasB10.style.height = rect.height + 'px';
+  W10 = canvasB10.width; H10 = canvasB10.height;
+  const maxS = b10MaxScroll();
+  if (b10Scroll > maxS) b10Scroll = maxS;
+  b10Draw();
+  b10UpdatePanLabel();
+}
+
+// Dibuixa un grup de blocs en graella. `morph` (opcional) anima l'aparició/desaparició:
+// {dir:'shrink', t:0→1} els fa encongir cap al centre del grup (usat quan una columna
+// es buida en un "carry"); {dir:'grow', t:0→1} els fa créixer des del centre (usat quan
+// 10 blocs "esclaten" en una columna en un "borrow").
+function drawBlockGrid(c, cx, top, size, count, color, morph) {
+  if (count <= 0) return;
+  const cols = 3;
+  const cell = size / 3.6;
+  const gap = cell * 0.22;
+  const totalW = cols * cell + (cols - 1) * gap;
+  const startX = cx - totalW / 2;
+  const rows = Math.ceil(count / cols);
+  const totalH = rows * cell + (rows - 1) * gap;
+  const centerY = top + totalH / 2;
+  let scale = 1;
+  if (morph) {
+    scale = morph.dir === 'shrink' ? Math.max(0, 1 - morph.t) : Math.min(1, Math.max(0, morph.t));
+    if (scale <= 0.02) return;
+  }
+  c.save();
+  if (scale < 1) c.globalAlpha = Math.max(0.08, scale);
+  for (let i = 0; i < count; i++) {
+    const col = i % cols, row = Math.floor(i / cols);
+    const bx = startX + col * (cell + gap) + cell / 2;
+    const by = top + row * (cell + gap) + cell / 2;
+    const x = scale === 1 ? bx - cell / 2 : cx + (bx - cx) * scale - (cell * scale) / 2;
+    const y = scale === 1 ? by - cell / 2 : centerY + (by - centerY) * scale - (cell * scale) / 2;
+    roundRectOn(c, x, y, cell * scale, cell * scale, Math.max(1, 3 * scale), color, null);
+  }
+  c.restore();
+}
+
+function b10Ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+function b10ColCenterX(active, colW, place) {
+  const idx = active.indexOf(place);
+  if (idx === -1) return null;
+  return idx * colW - b10Scroll + colW / 2;
+}
+
+// Dibuixa el bloc "volador" per sobre de tot: durant un carry, un sol bloc (color de
+// la columna destí) vola d'esquerra... cap a l'esquerra (la columna de valor més gran)
+// i "pop" en arribar-hi; durant un borrow, un bloc vola en sentit contrari i "esclata"
+// en 10 blocs en aterrar.
+function b10DrawAnim(active, colW) {
+  if (!b10Anim) return;
+  const a = b10Anim;
+  const fromCx = b10ColCenterX(active, colW, a.from);
+  const toCx = b10ColCenterX(active, colW, a.to);
+  if (fromCx == null || toCx == null) return;
+  const flyStart = a.type === 'carry' ? 0.3 : 0.08;
+  const flyEnd = 0.82;
+  const baseY = H10 * 0.5;
+  const size = Math.max(18, colW * 0.17);
+  const flightColor = a.type === 'carry' ? B10_COLORS[a.to] : B10_COLORS[a.from];
+  const landColor = B10_COLORS[a.to];
+
+  if (a.t < flyStart) return;
+  if (a.t < flyEnd) {
+    const ft = b10Ease((a.t - flyStart) / (flyEnd - flyStart));
+    const x = fromCx + (toCx - fromCx) * ft;
+    const arc = -Math.sin(ft * Math.PI) * H10 * 0.16;
+    ctx10.save();
+    ctx10.shadowColor = flightColor; ctx10.shadowBlur = 14;
+    roundRectOn(ctx10, x - size / 2, baseY + arc - size / 2, size, size, 5, flightColor, 'rgba(26,31,54,0.65)');
+    ctx10.restore();
+  } else {
+    const lt = (a.t - flyEnd) / (1 - flyEnd);
+    if (a.type === 'carry') {
+      const pop = 1 + Math.sin(Math.min(1, lt * 1.6) * Math.PI) * 0.35;
+      ctx10.save();
+      ctx10.shadowColor = landColor; ctx10.shadowBlur = 16;
+      roundRectOn(ctx10, toCx - (size * pop) / 2, baseY - (size * pop) / 2, size * pop, size * pop, 5, landColor, 'rgba(26,31,54,0.75)');
+      ctx10.restore();
+    } else {
+      drawBlockGrid(ctx10, toCx, H10 * 0.36, Math.min(colW * 0.66, H10 * 0.3), 10, landColor, { dir: 'grow', t: Math.min(1, lt * 1.4) });
+    }
+  }
+}
+
+function b10Draw() {
+  ctx10.clearRect(0, 0, W10, H10);
+  const active = b10ActivePlaces();
+  const colW = b10ColW();
+  const busyAlpha = b10AnimBusy ? 0.35 : 1;
+  b10Hit = [];
+  active.forEach((place, i) => {
+    const x0 = i * colW - b10Scroll;
+    if (x0 + colW < 0 || x0 > W10) return;
+    const cx = x0 + colW / 2;
+    const color = B10_COLORS[place];
+    const rgb = B10_COLORS_RGB[place];
+
+    roundRectOn(ctx10, x0 + colW * 0.06, H10 * 0.05, colW * 0.88, H10 * 0.9, 10,
+      `rgba(${rgb},${i % 2 === 0 ? 0.17 : 0.09})`, `rgba(${rgb},0.55)`);
+
+    textOn(ctx10, cx, H10 * 0.115, B10_LABELS[place], `700 ${Math.max(10, W10 * 0.014)}px 'Space Grotesk',sans-serif`, TEXT_DARK, 'center');
+    textOn(ctx10, cx, H10 * 0.17, '× ' + formatNumber(Math.pow(10, place)), `500 ${Math.max(9, W10 * 0.011)}px Inter,sans-serif`, TEXT_MUTED, 'center');
+
+    const r = Math.max(20, colW * 0.19);
+    const plusY = H10 * 0.26;
+    ctx10.save(); ctx10.globalAlpha = busyAlpha;
+    circleBtnOn(ctx10, cx, plusY, r, '+', `rgba(${B10_UI_PLUS_RGB},0.28)`, B10_UI.plus, TEXT_DARK, Math.max(13, r * 1.05));
+    ctx10.restore();
+    b10Hit.push({ place, delta: 1, x: cx, y: plusY, r });
+
+    const digit = b10Digits[place];
+    let renderCount = digit, morph = null;
+    if (b10Anim && b10Anim.from === place) {
+      if (b10Anim.type === 'carry') morph = { dir: 'shrink', t: Math.min(1, b10Anim.t / 0.3) };
+      else renderCount = Math.max(0, digit - 1);
+    }
+    drawBlockGrid(ctx10, cx, H10 * 0.36, Math.min(colW * 0.66, H10 * 0.3), renderCount, color, morph);
+
+    textOn(ctx10, cx, H10 * 0.755, String(digit), `700 ${Math.max(15, colW * 0.22)}px 'JetBrains Mono',monospace`, color, 'center');
+
+    const minusY = H10 * 0.87;
+    ctx10.save(); ctx10.globalAlpha = busyAlpha;
+    circleBtnOn(ctx10, cx, minusY, r, '−', `rgba(${B10_UI_MINUS_RGB},0.22)`, B10_UI.minus, TEXT_DARK, Math.max(13, r * 1.05));
+    ctx10.restore();
+    b10Hit.push({ place, delta: -1, x: cx, y: minusY, r });
+  });
+  b10DrawAnim(active, colW);
+}
+
+function b10HitTest(px, py) {
+  let best = null, bestD = Infinity;
+  b10Hit.forEach(h => {
+    const d = Math.hypot(h.x - px, h.y - py);
+    if (d < h.r * 1.5 && d < bestD) { bestD = d; best = h; }
+  });
+  return best;
+}
+
+function b10UpdatePanLabel() {
+  const active = b10ActivePlaces();
+  const colW = b10ColW();
+  const maxS = b10MaxScroll();
+  const firstIdx = Math.min(active.length - 1, Math.max(0, Math.round(b10Scroll / colW)));
+  const visibleCols = Math.max(1, Math.floor(W10 / colW));
+  const lastIdx = Math.min(active.length - 1, firstIdx + visibleCols - 1);
+  panLabelB10.textContent = B10_LABELS[active[firstIdx]] + ' → ' + B10_LABELS[active[lastIdx]];
+  panLeftB10.disabled = b10Scroll <= 0;
+  panRightB10.disabled = b10Scroll >= maxS;
+}
+
+function b10UpdateRangeToggleUI() {
+  toggleRangeB10.textContent = b10WideRange
+    ? '← Redueix a unitats–miler'
+    : 'Amplia a desenes de miler, centenes de miler i milions →';
+  toggleRangeB10.classList.toggle('active', b10WideRange);
+}
+
+// Construeix el número gran com a xifres de colors (span per xifra, tenyida amb el
+// color de la seva columna) enlloc d'un simple text pla, perquè el número i la graella
+// de blocs es reforcin visualment l'un a l'altre.
+function b10ColoredDigitsHtml() {
+  let topPlace = 6;
+  while (topPlace > 0 && b10Digits[topPlace] === 0) topPlace--;
+  let html = '';
+  for (let p = topPlace; p >= 0; p--) {
+    html += `<span style="color:${B10_COLORS[p]}">${b10Digits[p]}</span>`;
+    if (p > 0 && p % 3 === 0) html += `<span style="color:var(--muted)">.</span>`;
+  }
+  return html;
+}
+
+function b10UpdateReadout() {
+  numB10.innerHTML = b10ColoredDigitsHtml();
+  readoutB10.classList.add('active');
+  if (b10RepteMode) {
+    nameB10.textContent = 'Objectiu: ' + formatNumber(b10Target);
+    const minimal = b10TargetDigits.reduce((a, b) => a + b, 0);
+    defB10.textContent = 'Fes-ho amb el mínim de clics possible (mínim: ' + minimal + ').';
+  } else {
+    nameB10.textContent = 'Número construït';
+    defB10.textContent = b10Decomposition(b10Digits);
+  }
+}
+
+// ── Planificació de portar-se / manllevar ──
+// Calcula, sobre una còpia de treball, tota la cadena de "salts" entre columnes que cal
+// animar. Retorna null quan l'operació no és possible (ja s'ha arribat al 9.999.999 pel
+// cap alt, o al 0 pel cap baix): en aquest cas no es toca res, com el clamp d'abans.
+function b10PlanCarry(startPlace) {
+  const scratch = b10Digits.slice();
+  scratch[startPlace] += 1;
+  const hops = [];
+  let p = startPlace;
+  while (scratch[p] > 9) {
+    if (p === 6) return null; // no hi ha vuitena columna per continuar portant-se'n
+    hops.push({ type: 'carry', from: p, to: p + 1 });
+    scratch[p] -= 10;
+    scratch[p + 1] += 1;
+    p += 1;
+  }
+  return hops;
+}
+function b10PlanBorrow(startPlace) {
+  const scratch = b10Digits.slice();
+  let q = startPlace + 1;
+  while (q <= 6 && scratch[q] === 0) q++; // busca la primera columna no buida a l'esquerra
+  if (q > 6) return null; // no hi ha res a manllevar enlloc
+  const hops = [];
+  for (let col = q; col > startPlace; col--) hops.push({ type: 'borrow', from: col, to: col - 1 });
+  hops[hops.length - 1].final = true; // aquest darrer salt també aplica el −1 original del clic
+  return hops;
+}
+
+function b10ScrollToShowPlace(place) {
+  const active = b10ActivePlaces();
+  const idx = active.indexOf(place);
+  if (idx === -1) return;
+  const colW = b10ColW();
+  const maxS = b10MaxScroll();
+  const colLeft = idx * colW, colRight = colLeft + colW;
+  if (colLeft < b10Scroll) b10Scroll = Math.max(0, colLeft);
+  else if (colRight > b10Scroll + W10) b10Scroll = Math.min(maxS, colRight - W10);
+}
+function b10EnsureRangeForHops(hops) {
+  let maxTouched = 0;
+  hops.forEach(h => { maxTouched = Math.max(maxTouched, h.from, h.to); });
+  if (maxTouched > 3 && !b10WideRange) {
+    b10WideRange = true;
+    b10UpdateRangeToggleUI();
+    const maxS = b10MaxScroll();
+    if (b10Scroll > maxS) b10Scroll = maxS;
+  }
+}
+
+function b10CancelAnim() {
+  b10Anim = null; b10AnimQueue = []; b10AnimBusy = false;
+  if (b10AnimRaf) { cancelAnimationFrame(b10AnimRaf); b10AnimRaf = null; }
+}
+function b10StartHop(hop) {
+  b10ScrollToShowPlace(hop.to);
+  b10ScrollToShowPlace(hop.from);
+  b10UpdatePanLabel();
+  b10Anim = { type: hop.type, from: hop.from, to: hop.to, final: hop.final, t: 0, start: performance.now(), dur: 440 };
+  if (!b10AnimRaf) b10AnimRaf = requestAnimationFrame(b10StepAnim);
+}
+function b10StepAnim(now) {
+  if (!b10Anim) { b10AnimRaf = null; return; }
+  b10Anim.t = Math.min(1, (now - b10Anim.start) / b10Anim.dur);
+  b10Draw();
+  if (b10Anim.t >= 1) b10FinishCurrentHop();
+  if (b10Anim) b10AnimRaf = requestAnimationFrame(b10StepAnim);
+  else b10AnimRaf = null;
+}
+function b10FinishCurrentHop() {
+  const hop = b10Anim;
+  if (hop.type === 'carry') {
+    b10Digits[hop.from] = 0; b10Digits[hop.to] += 1;
+  } else {
+    // Cada salt trenca 1 bloc de `from` en 10 blocs de `to`. En una cadena (manllevar
+    // a través de zeros), les columnes intermèdies queden en 10 fins que el següent
+    // salt en manlleva 1; només el darrer salt (el de la columna on es va clicar −)
+    // aplica també el −1 original del clic.
+    b10Digits[hop.from] -= 1;
+    b10Digits[hop.to] += 10;
+    if (hop.final) b10Digits[hop.to] -= 1;
+  }
+  b10Anim = null;
+  if (b10AnimQueue.length) {
+    b10StartHop(b10AnimQueue.shift());
+    return;
+  }
+  b10AnimBusy = false;
+  b10Draw();
+  b10UpdateReadout();
+  if (b10RepteMode && b10Timer) {
+    const newTotal = b10Compose();
+    if (Math.abs(newTotal - b10Target) >= Math.abs(b10PendingOldTotal - b10Target)) b10OnWrong();
+    if (newTotal === b10Target) b10OnCorrect();
+  }
+}
+function b10RunHopSequence(hops) {
+  b10AnimBusy = true;
+  b10EnsureRangeForHops(hops);
+  b10PendingOldTotal = b10Compose();
+  b10AnimQueue = hops.slice(1);
+  b10StartHop(hops[0]);
+}
+
+function b10AfterSimpleChange(oldTotal) {
+  b10Draw();
+  b10UpdateReadout();
+  if (b10RepteMode && b10Timer) {
+    const newTotal = b10Compose();
+    if (Math.abs(newTotal - b10Target) >= Math.abs(oldTotal - b10Target)) b10OnWrong();
+    if (newTotal === b10Target) b10OnCorrect();
+  }
+}
+function b10RejectMove() {
+  flash(wrapB10, B10_UI.minus);
+  if (b10RepteMode && b10Timer) b10OnWrong();
+}
+function b10Adjust(place, delta) {
+  if (b10AnimBusy) return;
+  if (!b10Interacted) { b10Interacted = true; hintB10.classList.add('hidden'); }
+  const old = b10Digits[place];
+  if (delta > 0) {
+    if (old < 9) {
+      const oldTotal = b10Compose();
+      b10Digits[place] = old + 1;
+      b10ClickCount++;
+      b10AfterSimpleChange(oldTotal);
+    } else {
+      const plan = b10PlanCarry(place);
+      if (!plan) { b10RejectMove(); return; }
+      b10ClickCount++;
+      b10RunHopSequence(plan);
+    }
+  } else {
+    if (old > 0) {
+      const oldTotal = b10Compose();
+      b10Digits[place] = old - 1;
+      b10ClickCount++;
+      b10AfterSimpleChange(oldTotal);
+    } else {
+      const plan = b10PlanBorrow(place);
+      if (!plan) { b10RejectMove(); return; }
+      b10ClickCount++;
+      b10RunHopSequence(plan);
+    }
+  }
+}
+
+canvasB10.addEventListener('click', e => {
+  const { x, y } = getXY(canvasB10, e);
+  const hit = b10HitTest(x, y);
+  if (hit) b10Adjust(hit.place, hit.delta);
+});
+panLeftB10.addEventListener('click', () => {
+  if (b10AnimBusy) return;
+  b10Scroll = Math.max(0, b10Scroll - b10ColW()); b10Draw(); b10UpdatePanLabel();
+});
+panRightB10.addEventListener('click', () => {
+  if (b10AnimBusy) return;
+  b10Scroll = Math.min(b10MaxScroll(), b10Scroll + b10ColW()); b10Draw(); b10UpdatePanLabel();
+});
+toggleRangeB10.addEventListener('click', () => {
+  if (b10AnimBusy) return;
+  b10WideRange = !b10WideRange;
+  const maxS = b10MaxScroll();
+  if (b10Scroll > maxS) b10Scroll = maxS;
+  b10UpdateRangeToggleUI();
+  b10Draw(); b10UpdatePanLabel();
+});
+resetB10Btn.addEventListener('click', () => {
+  b10CancelAnim();
+  b10Digits = [0, 0, 0, 0, 0, 0, 0];
+  b10WideRange = false; b10Scroll = 0;
+  b10UpdateRangeToggleUI();
+  b10Draw(); b10UpdatePanLabel(); b10UpdateReadout();
+});
+
+function b10RandomTarget() {
+  // 60% dels cops es queda en un rang còmode (2-4 xifres, visible per defecte);
+  // 40% exigeix el rang ampliat i portar-se's/manllevars llargs.
+  const dc = Math.random() < 0.6 ? (2 + Math.floor(Math.random() * 3)) : (5 + Math.floor(Math.random() * 3));
+  let n = 1 + Math.floor(Math.random() * 9);
+  for (let i = 1; i < dc; i++) n = n * 10 + Math.floor(Math.random() * 10);
+  return n;
+}
+function b10StartRound() {
+  b10CancelAnim();
+  wrapB10.classList.remove('time-up');
+  b10Target = b10RandomTarget();
+  b10TargetDigits = digitsFromNumber(b10Target);
+  b10Digits = [0, 0, 0, 0, 0, 0, 0];
+  b10ClickCount = 0;
+  let neededMax = 0;
+  for (let p = 6; p >= 0; p--) { if (b10TargetDigits[p] > 0) { neededMax = p; break; } }
+  b10WideRange = neededMax > 3;
+  b10UpdateRangeToggleUI();
+  b10Scroll = 0;
+  b10Draw(); b10UpdatePanLabel(); b10UpdateReadout();
+}
+function b10StopTimer() { if (b10Timer) { clearInterval(b10Timer); b10Timer = null; } }
+function b10StartRepte(seconds) {
+  b10RepteMode = true;
+  b10Score = 0; b10Streak = 0; b10TimeLeft = seconds; b10MaxTime = seconds;
+  wrapB10.classList.remove('time-up');
+  rpScoreB10.textContent = b10Score; rpStreakB10.textContent = b10Streak; rpTimeB10.textContent = b10TimeLeft + 's';
+  rpTimeB10.classList.remove('time-low');
+  b10StartRound();
+  b10StopTimer();
+  b10Timer = setInterval(() => {
+    b10TimeLeft--;
+    rpTimeB10.textContent = Math.max(0, b10TimeLeft) + 's';
+    rpTimeB10.classList.toggle('time-low', b10TimeLeft > 0 && b10TimeLeft <= 10);
+    if (b10TimeLeft <= 0) {
+      b10StopTimer();
+      rpTimeB10.classList.remove('time-low');
+      wrapB10.classList.add('time-up');
+      nameB10.textContent = 'Temps esgotat!';
+      defB10.textContent = 'Puntuació final: ' + b10Score + ' punts.';
+    }
+  }, 1000);
+}
+function b10OnCorrect() {
+  const minimal = b10TargetDigits.reduce((a, b) => a + b, 0);
+  const pts = Math.max(5, 20 - Math.max(0, b10ClickCount - minimal) * 2);
+  b10Score += pts; b10Streak++;
+  rpScoreB10.textContent = b10Score; rpStreakB10.textContent = b10Streak;
+  b10TimeLeft = Math.min(b10MaxTime, b10TimeLeft + 5);
+  nameB10.textContent = 'Correcte! 🎉';
+  defB10.textContent = '+' + pts + ' punts (' + b10ClickCount + ' clics, mínim ' + minimal + ').';
+  setTimeout(b10StartRound, 700);
+}
+function b10OnWrong() {
+  b10Streak = 0; rpStreakB10.textContent = b10Streak;
+  b10Score = Math.max(0, b10Score - 1); rpScoreB10.textContent = b10Score;
+  b10TimeLeft = Math.max(0, b10TimeLeft - 2);
+}
+rpNewRoundB10.addEventListener('click', () => { if (b10Timer) b10StartRound(); });
+repteTimeSliderB10.addEventListener('input', () => { repteTimeValB10.textContent = repteTimeSliderB10.value + 's'; });
+document.getElementById('repteStartBtnB10').addEventListener('click', () => {
+  repteSetupB10El.style.display = 'none';
+  repteBarB10El.style.display = 'flex';
+  b10StartRepte(parseInt(repteTimeSliderB10.value, 10));
+});
+
+function b10SetExplora() {
+  b10RepteMode = false; b10StopTimer(); b10CancelAnim();
+  btnExploraB10.classList.add('active'); btnRepteB10.classList.remove('active');
+  panelB10.classList.remove('mode-repte');
+  wrapB10.classList.remove('time-up');
+  repteSetupB10El.style.display = ''; repteBarB10El.style.display = '';
+  b10Digits = [7, 6, 5, 4, 3, 2, 1];
+  b10WideRange = false; b10Scroll = 0;
+  b10UpdateRangeToggleUI();
+  b10Draw(); b10UpdatePanLabel(); b10UpdateReadout();
+}
+function b10SetRepte() {
+  btnRepteB10.classList.add('active'); btnExploraB10.classList.remove('active');
+  panelB10.classList.add('mode-repte');
+  wrapB10.classList.remove('time-up');
+  repteSetupB10El.style.display = 'flex';
+  repteBarB10El.style.display = 'none';
+}
+btnExploraB10.addEventListener('click', b10SetExplora);
+btnRepteB10.addEventListener('click', b10SetRepte);
+
+function b10ScrollToPlace(place) {
+  const idx = b10ActivePlaces().indexOf(place);
+  if (idx === -1) return;
+  const colW = b10ColW();
+  b10Scroll = Math.min(b10MaxScroll(), Math.max(0, idx * colW - colW));
+}
+function b10JumpTo(place) {
+  switchSubtab('b10');
+  b10SetExplora();
+  b10Digits = [0, 0, 0, 0, 0, 0, 0];
+  b10Digits[place] = 7;
+  if (place > 3) { b10WideRange = true; b10UpdateRangeToggleUI(); }
+  b10ScrollToPlace(place);
+  b10Draw(); b10UpdatePanLabel(); b10UpdateReadout();
+  flash(wrapB10, B10_COLORS[place]);
+}
+document.querySelectorAll('.type-card[data-jump="b10"]').forEach(el => {
+  el.addEventListener('click', () => b10JumpTo(parseInt(el.dataset.place, 10)));
+});
+
+/* ════════════════════════════════════════════════════════════
+   APARTAT B · NOMBRES ROMANS
+   ════════════════════════════════════════════════════════════ */
+const wrapRoman = document.getElementById('wrapRoman');
+const canvasRoman = document.getElementById('canvasRoman');
+const ctxR = canvasRoman.getContext('2d');
+const hintRoman = document.getElementById('hintRoman');
+const panelRoman = document.getElementById('panel-roman');
+const readoutRoman = document.getElementById('readoutRoman');
+const numRoman = document.getElementById('numRoman');
+const nameRoman = document.getElementById('nameRoman');
+const defRoman = document.getElementById('defRoman');
+const btnExploraRoman = document.getElementById('btnExploraRoman');
+const btnRepteRoman = document.getElementById('btnRepteRoman');
+const removeLastRomanBtn = document.getElementById('removeLastRoman');
+const clearRomanBtn = document.getElementById('clearRoman');
+const rpTimeRoman = document.getElementById('rpTimeRoman');
+const rpScoreRoman = document.getElementById('rpScoreRoman');
+const rpStreakRoman = document.getElementById('rpStreakRoman');
+const rpNewRoundRoman = document.getElementById('rpNewRoundRoman');
+const repteSetupRomanEl = document.getElementById('repteSetupRoman');
+const repteBarRomanEl = document.getElementById('repteBarRoman');
+const repteTimeSliderRoman = document.getElementById('repteTimeSliderRoman');
+const repteTimeValRoman = document.getElementById('repteTimeValRoman');
+
+const ROMAN_VALUES = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+const ROMAN_SYMS = ['I', 'V', 'X', 'L', 'C', 'D', 'M'];
+
+let WR = 0, HR = 0;
+let romanTiles = ['X', 'L', 'I', 'V'];
+let romanValue = 44;
+let romanRepteMode = false;
+let romanTimer = null, romanTimeLeft = 60, romanMaxTime = 60, romanScore = 0, romanStreak = 0;
+let romanTarget = 0, romanClickCount = 0;
+let romanHit = [];
+let romanInteracted = false;
+
+function parseRoman(str) {
+  let total = 0;
+  for (let i = 0; i < str.length; i++) {
+    const cur = ROMAN_VALUES[str[i]], next = ROMAN_VALUES[str[i + 1]];
+    if (next && cur < next) total -= cur; else total += cur;
+  }
+  return total;
+}
+function toRoman(num) {
+  const table = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+  let res = '', n = num;
+  for (const pair of table) { while (n >= pair[0]) { res += pair[1]; n -= pair[0]; } }
+  return res;
+}
+
+function romanResize() {
+  const rect = wrapRoman.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvasRoman.width = rect.width * dpr; canvasRoman.height = rect.height * dpr;
+  canvasRoman.style.width = rect.width + 'px'; canvasRoman.style.height = rect.height + 'px';
+  WR = canvasRoman.width; HR = canvasRoman.height;
+  romanDraw();
+}
+
+function romanDraw() {
+  ctxR.clearRect(0, 0, WR, HR);
+  const n = ROMAN_SYMS.length;
+  const padX = WR * 0.04, gap = WR * 0.015;
+  const tileW = (WR - padX * 2 - gap * (n - 1)) / n;
+  const tileH = HR * 0.17;
+  const tileY = HR * 0.08;
+  romanHit = [];
+  ROMAN_SYMS.forEach((s, i) => {
+    const x = padX + i * (tileW + gap);
+    roundRectOn(ctxR, x, tileY, tileW, tileH, 10, 'rgba(107,78,147,0.15)', 'rgba(107,78,147,0.55)');
+    textOn(ctxR, x + tileW / 2, tileY + tileH * 0.42, s, `700 ${Math.max(14, tileW * 0.34)}px 'JetBrains Mono',monospace`, TEXT_DARK, 'center');
+    textOn(ctxR, x + tileW / 2, tileY + tileH * 0.75, String(ROMAN_VALUES[s]), `500 ${Math.max(9, tileW * 0.15)}px Inter,sans-serif`, TEXT_MUTED, 'center');
+    romanHit.push({ sym: s, rx: x, ry: tileY, w: tileW, h: tileH });
+  });
+
+  const seqTop = tileY + tileH + HR * 0.1;
+  textOn(ctxR, WR * 0.04, seqTop - HR * 0.03, 'Numeral construït:', `600 ${Math.max(10, WR * 0.014)}px Inter,sans-serif`, TEXT_MUTED, 'left');
+
+  if (romanTiles.length === 0) {
+    textOn(ctxR, WR / 2, seqTop + HR * 0.14, '— cap xifra encara —', `500 ${Math.max(11, WR * 0.017)}px Inter,sans-serif`, TEXT_MUTED, 'center');
+  } else {
+    const chipW = Math.max(WR * 0.055, 24), chipH = chipW * 1.15, chipGap = WR * 0.012;
+    const perRow = Math.max(1, Math.floor((WR - padX * 2) / (chipW + chipGap)));
+    romanTiles.forEach((s, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow;
+      const x = padX + col * (chipW + chipGap);
+      const y = seqTop + HR * 0.03 + row * (chipH + chipGap * 1.6);
+      roundRectOn(ctxR, x, y, chipW, chipH, 6, 'rgba(63,125,92,0.22)', 'rgba(63,125,92,0.65)');
+      textOn(ctxR, x + chipW / 2, y + chipH * 0.68, s, `700 ${Math.max(12, chipW * 0.5)}px 'JetBrains Mono',monospace`, TEXT_DARK, 'center');
+    });
+  }
+}
+
+function romanHitTest(px, py) {
+  for (const h of romanHit) {
+    if (px >= h.rx && px <= h.rx + h.w && py >= h.ry && py <= h.ry + h.h) return h.sym;
+  }
+  return null;
+}
+
+function romanUpdateReadout() {
+  readoutRoman.classList.add('active');
+  numRoman.textContent = romanTiles.length ? romanTiles.join('') : '—';
+  if (romanRepteMode) {
+    nameRoman.textContent = 'Objectiu: ' + romanTarget;
+    defRoman.textContent = 'Valor actual: ' + romanValue;
+  } else {
+    nameRoman.textContent = 'Numeral en construcció';
+    defRoman.textContent = 'Valor decimal: ' + romanValue;
+  }
+}
+
+function romanInvalid() {
+  flash(wrapRoman, '#e6483a');
+  if (romanRepteMode && romanTimer) romanOnWrong();
+}
+function romanClick(sym) {
+  if (!romanInteracted) { romanInteracted = true; hintRoman.classList.add('hidden'); }
+  const candidate = romanTiles.join('') + sym;
+  if (candidate.length > 18) { romanInvalid(); return; }
+  const val = parseRoman(candidate);
+  if (val <= 0 || val > 3999 || toRoman(val) !== candidate) { romanInvalid(); return; }
+  romanTiles.push(sym);
+  romanValue = val;
+  romanClickCount++;
+  romanDraw();
+  romanUpdateReadout();
+  if (romanRepteMode && romanTimer && romanTiles.join('') === toRoman(romanTarget)) romanOnCorrect();
+}
+function romanRemoveLast() {
+  if (romanTiles.length === 0) return;
+  romanTiles.pop();
+  romanValue = romanTiles.length ? parseRoman(romanTiles.join('')) : 0;
+  romanClickCount++;
+  romanDraw(); romanUpdateReadout();
+}
+function romanClearAll() {
+  romanTiles = []; romanValue = 0;
+  romanDraw(); romanUpdateReadout();
+}
+
+canvasRoman.addEventListener('click', e => {
+  const { x, y } = getXY(canvasRoman, e);
+  const sym = romanHitTest(x, y);
+  if (sym) romanClick(sym);
+});
+removeLastRomanBtn.addEventListener('click', romanRemoveLast);
+clearRomanBtn.addEventListener('click', romanClearAll);
+
+function romanStartRound() {
+  wrapRoman.classList.remove('time-up');
+  romanTarget = 1 + Math.floor(Math.random() * 3999);
+  romanTiles = []; romanValue = 0; romanClickCount = 0;
+  romanDraw(); romanUpdateReadout();
+}
+function romanStopTimer() { if (romanTimer) { clearInterval(romanTimer); romanTimer = null; } }
+function romanStartRepte(seconds) {
+  romanRepteMode = true;
+  romanScore = 0; romanStreak = 0; romanTimeLeft = seconds; romanMaxTime = seconds;
+  wrapRoman.classList.remove('time-up');
+  rpScoreRoman.textContent = romanScore; rpStreakRoman.textContent = romanStreak; rpTimeRoman.textContent = romanTimeLeft + 's';
+  rpTimeRoman.classList.remove('time-low');
+  romanStartRound();
+  romanStopTimer();
+  romanTimer = setInterval(() => {
+    romanTimeLeft--;
+    rpTimeRoman.textContent = Math.max(0, romanTimeLeft) + 's';
+    rpTimeRoman.classList.toggle('time-low', romanTimeLeft > 0 && romanTimeLeft <= 10);
+    if (romanTimeLeft <= 0) {
+      romanStopTimer();
+      rpTimeRoman.classList.remove('time-low');
+      wrapRoman.classList.add('time-up');
+      nameRoman.textContent = 'Temps esgotat!';
+      defRoman.textContent = 'Puntuació final: ' + romanScore + ' punts.';
+    }
+  }, 1000);
+}
+function romanOnCorrect() {
+  const canon = toRoman(romanTarget);
+  const minimal = canon.length;
+  const pts = Math.max(5, 20 - Math.max(0, romanClickCount - minimal) * 2);
+  romanScore += pts; romanStreak++;
+  rpScoreRoman.textContent = romanScore; rpStreakRoman.textContent = romanStreak;
+  romanTimeLeft = Math.min(romanMaxTime, romanTimeLeft + 5);
+  nameRoman.textContent = 'Correcte! 🎉';
+  defRoman.textContent = '+' + pts + ' punts (' + romanClickCount + ' fitxes, mínim ' + minimal + ').';
+  setTimeout(romanStartRound, 700);
+}
+function romanOnWrong() {
+  romanStreak = 0; rpStreakRoman.textContent = romanStreak;
+  romanScore = Math.max(0, romanScore - 1); rpScoreRoman.textContent = romanScore;
+  romanTimeLeft = Math.max(0, romanTimeLeft - 2);
+}
+rpNewRoundRoman.addEventListener('click', () => { if (romanTimer) romanStartRound(); });
+repteTimeSliderRoman.addEventListener('input', () => { repteTimeValRoman.textContent = repteTimeSliderRoman.value + 's'; });
+document.getElementById('repteStartBtnRoman').addEventListener('click', () => {
+  repteSetupRomanEl.style.display = 'none';
+  repteBarRomanEl.style.display = 'flex';
+  romanStartRepte(parseInt(repteTimeSliderRoman.value, 10));
+});
+
+function romanSetExplora() {
+  romanRepteMode = false; romanStopTimer();
+  btnExploraRoman.classList.add('active'); btnRepteRoman.classList.remove('active');
+  panelRoman.classList.remove('mode-repte');
+  wrapRoman.classList.remove('time-up');
+  repteSetupRomanEl.style.display = ''; repteBarRomanEl.style.display = '';
+  romanTiles = ['X', 'L', 'I', 'V']; romanValue = 44;
+  romanDraw(); romanUpdateReadout();
+}
+function romanSetRepte() {
+  btnRepteRoman.classList.add('active'); btnExploraRoman.classList.remove('active');
+  panelRoman.classList.add('mode-repte');
+  wrapRoman.classList.remove('time-up');
+  repteSetupRomanEl.style.display = 'flex';
+  repteBarRomanEl.style.display = 'none';
+}
+btnExploraRoman.addEventListener('click', romanSetExplora);
+btnRepteRoman.addEventListener('click', romanSetRepte);
+
+function romanJumpTo(sym) {
+  switchSubtab('roman');
+  romanSetExplora();
+  romanTiles = [sym];
+  romanValue = ROMAN_VALUES[sym];
+  romanDraw(); romanUpdateReadout();
+  flash(wrapRoman, '#8452d6');
+}
+document.querySelectorAll('.type-card[data-jump="roman"]').forEach(el => {
+  el.addEventListener('click', () => romanJumpTo(el.dataset.symbol));
+});
+
+/* ════════════════════════════════════════════════════════════
+   APARTAT C · BINARI
+   ════════════════════════════════════════════════════════════ */
+const wrapBin = document.getElementById('wrapBin');
+const canvasBin = document.getElementById('canvasBin');
+const ctxB = canvasBin.getContext('2d');
+const hintBin = document.getElementById('hintBin');
+const panelBin = document.getElementById('panel-bin');
+const readoutBin = document.getElementById('readoutBin');
+const numBin = document.getElementById('numBin');
+const nameBin = document.getElementById('nameBin');
+const defBin = document.getElementById('defBin');
+const btnExploraBin = document.getElementById('btnExploraBin');
+const btnRepteBin = document.getElementById('btnRepteBin');
+const resetBinBtn = document.getElementById('resetBin');
+const rpTimeBin = document.getElementById('rpTimeBin');
+const rpScoreBin = document.getElementById('rpScoreBin');
+const rpStreakBin = document.getElementById('rpStreakBin');
+const rpNewRoundBin = document.getElementById('rpNewRoundBin');
+const repteSetupBinEl = document.getElementById('repteSetupBin');
+const repteBarBinEl = document.getElementById('repteBarBin');
+const repteTimeSliderBin = document.getElementById('repteTimeSliderBin');
+const repteTimeValBin = document.getElementById('repteTimeValBin');
+
+const BIN_VALUES = [128, 64, 32, 16, 8, 4, 2, 1];
+
+let WB = 0, HB = 0;
+let binBits = [1, 0, 1, 1, 0, 0, 1, 0]; // 178
+let binRepteMode = false;
+let binTimer = null, binTimeLeft = 45, binMaxTime = 45, binScore = 0, binStreak = 0;
+let binTarget = 0, binTargetBits = [0, 0, 0, 0, 0, 0, 0, 0], binClickCount = 0;
+let binHit = [];
+let binInteracted = false;
+
+function binSum() { return BIN_VALUES.reduce((s, v, i) => s + v * binBits[i], 0); }
+function binBitsFromNumber(n) { return BIN_VALUES.map(v => (n & v) ? 1 : 0); }
+
+function binResize() {
+  const rect = wrapBin.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvasBin.width = rect.width * dpr; canvasBin.height = rect.height * dpr;
+  canvasBin.style.width = rect.width + 'px'; canvasBin.style.height = rect.height + 'px';
+  WB = canvasBin.width; HB = canvasBin.height;
+  binDraw();
+}
+
+function binDraw() {
+  ctxB.clearRect(0, 0, WB, HB);
+  const n = BIN_VALUES.length;
+  const padX = WB * 0.04, gap = WB * 0.015;
+  const boxW = (WB - padX * 2 - gap * (n - 1)) / n;
+  const boxY = HB * 0.2, boxH = HB * 0.46;
+  binHit = [];
+  BIN_VALUES.forEach((v, i) => {
+    const x = padX + i * (boxW + gap);
+    const active = binBits[i] === 1;
+    roundRectOn(ctxB, x, boxY, boxW, boxH, 10,
+      active ? 'rgba(13,110,118,0.4)' : 'rgba(26,31,54,0.04)',
+      active ? '#5fd0d8' : 'rgba(26,31,54,0.18)');
+    textOn(ctxB, x + boxW / 2, boxY + boxH * 0.62, String(binBits[i]), `700 ${Math.max(18, boxW * 0.5)}px 'JetBrains Mono',monospace`, active ? TEXT_DARK : TEXT_MUTED, 'center');
+    textOn(ctxB, x + boxW / 2, boxY + boxH + HB * 0.09, String(v), `600 ${Math.max(10, boxW * 0.2)}px Inter,sans-serif`, active ? '#5fd0d8' : TEXT_MUTED, 'center');
+    binHit.push({ idx: i, x, y: boxY, w: boxW, h: boxH });
+  });
+}
+
+function binHitTest(px, py) {
+  for (const h of binHit) {
+    if (px >= h.x && px <= h.x + h.w && py >= h.y && py <= h.y + h.h) return h.idx;
+  }
+  return null;
+}
+
+function binUpdateReadout() {
+  readoutBin.classList.add('active');
+  const sum = binSum();
+  numBin.textContent = sum;
+  if (binRepteMode) {
+    nameBin.textContent = 'Objectiu: ' + binTarget;
+    defBin.textContent = 'Binari actual: ' + binBits.join('');
+  } else {
+    nameBin.textContent = 'Total en binari';
+    defBin.textContent = binBits.join('') + ' en binari';
+  }
+}
+
+function binToggle(idx) {
+  if (!binInteracted) { binInteracted = true; hintBin.classList.add('hidden'); }
+  binBits[idx] = binBits[idx] ? 0 : 1;
+  binClickCount++;
+  let wrongMove = false;
+  if (binRepteMode && binTimer) {
+    const matches = binBits[idx] === binTargetBits[idx];
+    if (!matches) wrongMove = true;
+  }
+  binDraw();
+  binUpdateReadout();
+  if (binRepteMode && binTimer) {
+    if (wrongMove) binOnWrong();
+    if (binSum() === binTarget) binOnCorrect();
+  }
+}
+
+canvasBin.addEventListener('click', e => {
+  const { x, y } = getXY(canvasBin, e);
+  const idx = binHitTest(x, y);
+  if (idx !== null) binToggle(idx);
+});
+resetBinBtn.addEventListener('click', () => { binBits = [0, 0, 0, 0, 0, 0, 0, 0]; binDraw(); binUpdateReadout(); });
+
+function binStartRound() {
+  wrapBin.classList.remove('time-up');
+  binTarget = Math.floor(Math.random() * 256);
+  binTargetBits = binBitsFromNumber(binTarget);
+  binBits = [0, 0, 0, 0, 0, 0, 0, 0];
+  binClickCount = 0;
+  binDraw(); binUpdateReadout();
+}
+function binStopTimer() { if (binTimer) { clearInterval(binTimer); binTimer = null; } }
+function binStartRepte(seconds) {
+  binRepteMode = true;
+  binScore = 0; binStreak = 0; binTimeLeft = seconds; binMaxTime = seconds;
+  wrapBin.classList.remove('time-up');
+  rpScoreBin.textContent = binScore; rpStreakBin.textContent = binStreak; rpTimeBin.textContent = binTimeLeft + 's';
+  rpTimeBin.classList.remove('time-low');
+  binStartRound();
+  binStopTimer();
+  binTimer = setInterval(() => {
+    binTimeLeft--;
+    rpTimeBin.textContent = Math.max(0, binTimeLeft) + 's';
+    rpTimeBin.classList.toggle('time-low', binTimeLeft > 0 && binTimeLeft <= 10);
+    if (binTimeLeft <= 0) {
+      binStopTimer();
+      rpTimeBin.classList.remove('time-low');
+      wrapBin.classList.add('time-up');
+      nameBin.textContent = 'Temps esgotat!';
+      defBin.textContent = 'Puntuació final: ' + binScore + ' punts.';
+    }
+  }, 1000);
+}
+function binOnCorrect() {
+  binScore += 15; binStreak++;
+  rpScoreBin.textContent = binScore; rpStreakBin.textContent = binStreak;
+  binTimeLeft = Math.min(binMaxTime, binTimeLeft + 4);
+  nameBin.textContent = 'Correcte! 🎉';
+  defBin.textContent = '+15 punts. Ratxa: ' + binStreak + '.';
+  setTimeout(binStartRound, 700);
+}
+function binOnWrong() {
+  binStreak = 0; rpStreakBin.textContent = binStreak;
+  binScore = Math.max(0, binScore - 1); rpScoreBin.textContent = binScore;
+  binTimeLeft = Math.max(0, binTimeLeft - 2);
+}
+rpNewRoundBin.addEventListener('click', () => { if (binTimer) binStartRound(); });
+repteTimeSliderBin.addEventListener('input', () => { repteTimeValBin.textContent = repteTimeSliderBin.value + 's'; });
+document.getElementById('repteStartBtnBin').addEventListener('click', () => {
+  repteSetupBinEl.style.display = 'none';
+  repteBarBinEl.style.display = 'flex';
+  binStartRepte(parseInt(repteTimeSliderBin.value, 10));
+});
+
+function binSetExplora() {
+  binRepteMode = false; binStopTimer();
+  btnExploraBin.classList.add('active'); btnRepteBin.classList.remove('active');
+  panelBin.classList.remove('mode-repte');
+  wrapBin.classList.remove('time-up');
+  repteSetupBinEl.style.display = ''; repteBarBinEl.style.display = '';
+  binBits = [1, 0, 1, 1, 0, 0, 1, 0];
+  binDraw(); binUpdateReadout();
+}
+function binSetRepte() {
+  btnRepteBin.classList.add('active'); btnExploraBin.classList.remove('active');
+  panelBin.classList.add('mode-repte');
+  wrapBin.classList.remove('time-up');
+  repteSetupBinEl.style.display = 'flex';
+  repteBarBinEl.style.display = 'none';
+}
+btnExploraBin.addEventListener('click', binSetExplora);
+btnRepteBin.addEventListener('click', binSetRepte);
+
+function binJumpTo(bitVal) {
+  switchSubtab('bin');
+  binSetExplora();
+  binBits = [0, 0, 0, 0, 0, 0, 0, 0];
+  const idx = BIN_VALUES.indexOf(bitVal);
+  binBits[idx] = 1;
+  binDraw(); binUpdateReadout();
+  flash(wrapBin, '#1fa971');
+}
+document.querySelectorAll('.type-card[data-jump="bin"]').forEach(el => {
+  el.addEventListener('click', () => binJumpTo(parseInt(el.dataset.bit, 10)));
+});
+
+/* ════════════════════════════════════════════════════════════
+   MINI-PROVES (quizzes)
+   ════════════════════════════════════════════════════════════ */
+const BASE10_QUIZ = [
+  { q: "En el número 5.318, quin valor té la xifra 3?", options: ["3", "30", "300", "3.000"], correct: 2 },
+  { q: "En el número 4.629, quin valor té la xifra 4?", options: ["4", "40", "400", "4.000"], correct: 3 },
+  { q: "En el número 90.512, quin valor té la xifra 9?", options: ["9", "90", "900", "90.000"], correct: 3 },
+  { q: "Quin d'aquests números és més gran?", options: ["4.096", "4.906", "4.069", "Són iguals"], correct: 1 },
+  { q: "Quin d'aquests números és més petit?", options: ["12.980", "12.890", "12.908", "12.989"], correct: 1 },
+  { q: "Com es descompon 3.482 en valors posicionals?", options: ["3.000 + 400 + 80 + 2", "3.000 + 40 + 8 + 2", "300 + 400 + 80 + 2", "3.000 + 480 + 2"], correct: 0 },
+  { q: "Com es descompon 706 en valors posicionals?", options: ["70 + 6", "700 + 60", "700 + 6", "7 + 6"], correct: 2 },
+  { q: "Quin d'aquests números té un 5 a les milers?", options: ["5.412", "1.500", "45.120", "8.005"], correct: 0 },
+  { q: "Quin d'aquests números és més gran?", options: ["99.999", "100.000", "Són iguals", "No es pot saber"], correct: 1 },
+];
+
+const ROMAN_QUIZ = [
+  { q: "Converteix a romà: 14", options: ["XVI", "XIV", "XIIII", "VIX"], correct: 1 },
+  { q: "Converteix a decimal: XL", options: ["60", "40", "90", "35"], correct: 1 },
+  { q: "Converteix a romà: 49", options: ["XXXXIX", "LXIX", "XLIX", "IL"], correct: 2 },
+  { q: "Converteix a decimal: CM", options: ["1.100", "600", "900", "400"], correct: 2 },
+  { q: "Converteix a romà: 1994", options: ["MCMLXXXXIV", "MDCCCCXCIV", "MCMIC", "MCMXCIV"], correct: 3 },
+  { q: "Converteix a decimal: XCIX", options: ["101", "89", "99", "91"], correct: 2 },
+  { q: "Converteix a romà: 8", options: ["IIX", "VIIII", "VIII", "IIIV"], correct: 2 },
+  { q: "Converteix a decimal: DCCXL", options: ["750", "740", "640", "730"], correct: 1 },
+  { q: "Converteix a romà: 3", options: ["IIV", "VI", "IV", "III"], correct: 3 },
+];
+
+const BIN_QUIZ = [
+  { q: "Converteix a decimal: 1011", options: ["9", "13", "11", "10"], correct: 2 },
+  { q: "Converteix a decimal: 10000", options: ["8", "16", "10", "32"], correct: 1 },
+  { q: "Converteix a decimal: 11111111", options: ["128", "200", "255", "256"], correct: 2 },
+  { q: "Converteix a binari: 5", options: ["100", "110", "101", "011"], correct: 2 },
+  { q: "Converteix a binari: 18", options: ["10010", "10001", "10100", "01010"], correct: 0 },
+  { q: "Converteix a decimal: 1100", options: ["12", "10", "14", "6"], correct: 0 },
+  { q: "Converteix a binari: 33", options: ["110001", "100001", "100010", "101001"], correct: 1 },
+  { q: "Converteix a decimal: 10101", options: ["19", "21", "23", "17"], correct: 1 },
+  { q: "Converteix a binari: 64", options: ["1000000", "0100000", "1100000", "10000000"], correct: 0 },
+];
+
+function setupQuiz(prefix, bank) {
+  let questions = shuffleArr(bank);
+  let idx = 0, score = 0, answered = false;
+
+  const qBox = document.getElementById(prefix + 'Question');
+  const optsBox = document.getElementById(prefix + 'Options');
+  const progressEl = document.getElementById(prefix + 'Progress');
+  const scoreEl = document.getElementById(prefix + 'Score');
+  const feedbackEl = document.getElementById(prefix + 'Feedback');
+  const nextBtn = document.getElementById(prefix + 'Next');
+
+  function render() {
+    answered = false;
+    feedbackEl.textContent = ''; feedbackEl.className = 'quiz-feedback';
+    nextBtn.style.display = 'none';
+
+    if (idx >= questions.length) {
+      qBox.textContent = 'Has acabat la prova! Puntuació: ' + score + '/' + questions.length;
+      optsBox.innerHTML = '';
+      progressEl.textContent = questions.length + '/' + questions.length;
+      nextBtn.textContent = 'Torna a començar';
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.onclick = () => {
+        idx = 0; score = 0; scoreEl.textContent = score;
+        questions = shuffleArr(bank);
+        nextBtn.onclick = advance;
+        render();
+      };
+      return;
+    }
+
+    const q = questions[idx];
+    progressEl.textContent = 'Pregunta ' + (idx + 1) + '/' + questions.length;
+    qBox.textContent = q.q;
+    optsBox.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = opt;
+      b.addEventListener('click', () => {
+        if (answered) return;
+        answered = true;
+        Array.from(optsBox.children).forEach(btn => btn.disabled = true);
+        if (i === q.correct) {
+          b.classList.add('correct');
+          score++; scoreEl.textContent = score;
+          feedbackEl.textContent = '✔ Correcte!';
+          feedbackEl.classList.add('ok');
+        } else {
+          b.classList.add('wrong');
+          optsBox.children[q.correct].classList.add('correct');
+          feedbackEl.textContent = '✕ Incorrecte. La resposta correcta és: ' + q.options[q.correct];
+          feedbackEl.classList.add('no');
+        }
+        nextBtn.textContent = (idx + 1 < questions.length) ? 'Següent pregunta →' : 'Veure resultat';
+        nextBtn.style.display = 'inline-flex';
+      });
+      optsBox.appendChild(b);
+    });
+  }
+
+  function advance() { idx++; render(); }
+  nextBtn.onclick = advance;
+  scoreEl.textContent = '0';
+  render();
+}
+
+setupQuiz('b10Q', BASE10_QUIZ);
+setupQuiz('romanQ', ROMAN_QUIZ);
+setupQuiz('binQ', BIN_QUIZ);
+
+// ─────────────────────────────────────────────
+//  INICI
+// ─────────────────────────────────────────────
+b10Resize();
+b10UpdateReadout();
+</script>
+</body>
+</html>

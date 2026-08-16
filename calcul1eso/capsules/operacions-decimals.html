@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Càlculs amb decimals · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--terracotta); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+    .mode-toggle.sub { padding: .2rem; }
+    .mode-toggle.sub button { padding: .45rem .9rem; font-size: .8rem; }
+    .mode-toggle.sub.nested { margin-left: -.3rem; }
+    .canvas-wrap canvas { cursor: grab; }
+    .canvas-wrap.dragging canvas { cursor: grabbing; }
+
+    /* ── KEYPAD (tria la xifra de la columna) ── */
+    .keypad { display: none; flex-wrap: wrap; gap: .5rem; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: .8rem 1rem; }
+    .keypad-label { font-size: .78rem; color: var(--muted); font-weight: 600; margin-right: .3rem; }
+    .keypad button {
+      width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .keypad button:hover { border-color: var(--k-color, var(--terracotta)); color: var(--k-color, var(--terracotta)); transform: translateY(-2px); }
+    .keypad button:active { transform: translateY(0); background: color-mix(in srgb, var(--k-color, var(--terracotta)) 14%, var(--surface)); }
+
+    /* ── DESPLAÇA LES DUES COMES (divisió per un decimal) ── */
+    .shift-bar { display: none; flex-wrap: wrap; gap: .9rem; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: .8rem 1rem; }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border); background: var(--card);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover:not(:disabled) { border-color: var(--plum); color: var(--plum); }
+    .stepper button:disabled { opacity: .35; cursor: not-allowed; }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 118px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--terracotta)">Bloc 03 · Decimals</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Càlculs amb decimals</h1>
+      <p>Arrossega un número fins que la coma quedi alineada amb l'altre, o arrossega el punt fins a la posició correcta. Al mode Repte, fes-ho contra rellotge.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--terracotta)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="mode-toggle sub explora-only" id="tabToggle" style="--m-color: var(--terracotta)">
+      <button id="btnTabSum" class="active">➕➖ Suma i resta</button>
+      <button id="btnTabMD">✖️➗ Multiplicació i divisió</button>
+    </div>
+
+    <div class="controls-row explora-only" id="sumRestControls">
+      <div class="mode-toggle sub" style="--m-color: var(--terracotta)">
+        <button id="btnOpSuma" class="active">Suma</button>
+        <button id="btnOpResta">Resta</button>
+      </div>
+      <button class="btn btn-ghost" id="srNewPair">Nous números ↻</button>
+    </div>
+
+    <div class="controls-row explora-only" id="multDivControls" style="display:none">
+      <div class="mode-toggle sub" style="--m-color: var(--terracotta)">
+        <button id="btnKindMult" class="active">Multiplicació</button>
+        <button id="btnKindDiv">Divisió</button>
+      </div>
+      <div class="mode-toggle sub nested" id="divKindToggle" style="--m-color: var(--plum); display:none">
+        <button id="btnDivInt" class="active">÷ enter</button>
+        <button id="btnDivDec">÷ decimal</button>
+      </div>
+      <button class="btn btn-ghost" id="mdNewPuzzle">Nous números ↻</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="50">
+          <span class="rs-val" id="repteTimeVal">50s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--terracotta)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">50s</span></div>
+      <div class="rp-item"><span class="rp-label">Tipus</span><span class="rp-value" id="rpKindLabel">—</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpSkip" style="margin-left:auto">Salta ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--terracotta)">
+      <canvas id="opsCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega el número de baix fins alinear les comes</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--terracotta)">
+      <div class="readout-num" id="readoutNum">≠</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Comença</div>
+        <div class="readout-def" id="readoutDef">Arrossega el número de baix fins que la coma coincideixi amb la de dalt.</div>
+      </div>
+    </div>
+
+    <div class="keypad" id="srKeypad" style="--k-color:var(--terracotta)">
+      <span class="keypad-label">Tria la xifra del resultat:</span>
+      <button type="button" data-d="0">0</button>
+      <button type="button" data-d="1">1</button>
+      <button type="button" data-d="2">2</button>
+      <button type="button" data-d="3">3</button>
+      <button type="button" data-d="4">4</button>
+      <button type="button" data-d="5">5</button>
+      <button type="button" data-d="6">6</button>
+      <button type="button" data-d="7">7</button>
+      <button type="button" data-d="8">8</button>
+      <button type="button" data-d="9">9</button>
+    </div>
+
+    <div class="shift-bar" id="shiftControls">
+      <div class="stepper">
+        <button id="shiftMinus" type="button">−</button>
+        <span class="stepper-label">Desplaça les dues comes</span>
+        <span class="stepper-val" id="shiftVal">0</span>
+        <button id="shiftPlus" type="button">→</button>
+      </div>
+      <button class="btn btn-primary" id="shiftCheck">Comprova el desplaçament</button>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Regles clau</div>
+
+    <div class="type-card" id="card-suma" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Suma</div>
+        <div class="type-range">Alinea les comes</div>
+        <div class="type-desc">Col·loca les xifres perquè les comes coincideixin en vertical; suma columna a columna amb l'acarreament.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-resta" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Resta</div>
+        <div class="type-range">Alinea les comes</div>
+        <div class="type-desc">Igual que la suma: alinea les comes i resta columna a columna, manllevant quan cal.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-mult" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Multiplicació</div>
+        <div class="type-range">Compta i mou la coma</div>
+        <div class="type-desc">Multiplica com si fossin enters. Compta les xifres decimals dels dos factors i mou la coma aquestes posicions cap a l'esquerra.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-div" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Divisió</div>
+        <div class="type-range">La coma segueix el dividend</div>
+        <div class="type-desc">Divideix com si fossin enters. El quocient porta tantes xifres decimals com en tenia el dividend.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> en sumar o restar, la coma sempre ha de quedar alineada en vertical (si falten xifres decimals, s'omplen amb zeros). En multiplicar, les xifres decimals del resultat són la suma de les dels dos factors. En dividir per un nombre enter, el quocient té les mateixes xifres decimals que el dividend. Si el divisor és decimal, primer desplacem la coma del divisor i del dividend el mateix nombre de posicions perquè el divisor esdevingui enter. I no sempre la divisió és exacta: de vegades el quocient s'ha d'arrodonir.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 03 · Decimals, Proporcionalitat i Percentatges</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('opsCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const srKeypad      = document.getElementById('srKeypad');
+const shiftControls = document.getElementById('shiftControls');
+const shiftVal      = document.getElementById('shiftVal');
+const shiftMinusBtn = document.getElementById('shiftMinus');
+const shiftPlusBtn  = document.getElementById('shiftPlus');
+
+let W, H;
+let opTab = 'sumrest';           // 'sumrest' | 'multdiv' (mode Explora)
+let repteMode = false;
+let repteRoundFamily = 'sumrest';
+
+// ─────────────────────────────────────────────
+//  PALETA (derivada de --petrol/--amber/--sage/--terracotta/--plum actuals)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+const PAL = {
+  text:  TEXT_DARK,
+  petrol: '#0b93a0', petrolTint: '#5fd0d8',
+  amber:  '#e2860a', amberTint: '#ffcf7a',
+  sage:   '#1fa971', sageTint: '#8fe3a8',
+  terracotta: '#e6483a', terracottaTint: '#ff9a86',
+  plum: '#8452d6', plumTint: '#d3c3ee'
+};
+
+// suma/resta
+let sr = { fixed: null, drag: null, op: 'suma', dragOffsetCols: 0, aligned: false, dragging: false,
+           columns: null, colIdx: 0, carry: 0, resultDigits: [], done: false, extraDigit: null,
+           wrongPick: null, hadWrongAttempt: false };
+let srDragLocked = false;
+let srDragRect = null;
+let srDw = 0, srCommaW = 0, srCommaTargetX = 0, srYRes = 0;
+
+// multiplicació/divisió
+let md = { kind: 'mult', divByDecimal: false, a: null, b: null, dividend: null, divisor: null,
+           stage: 'comma', shiftSlot: 0, shiftMax: 0,
+           digitsStr: '', correctPlaces: 0, slotPos: 0, dragging: false, dragPx: null,
+           solved: false, hadWrongAttempt: false, hadAnyWrongThisRound: false, approx: false };
+let mdRowY = 0, mdDw = 0, mdRowOriginX = 0, mdNearestSlot = 0;
+
+// arrossegament (compartit)
+let dragTarget = null; // null | 'srNum' | 'mdMarker'
+let dragStartX = 0, dragStartOffsetCols = 0;
+
+let timer = null, timeLeft = 50, repteMaxTime = 50, score = 0, streak = 0;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+// ─────────────────────────────────────────────
+//  SUMA / RESTA — generació de nombres
+// ─────────────────────────────────────────────
+function randWholeDigits(n) {
+  if (n === 1) return [1 + Math.floor(Math.random() * 9)];
+  return [1 + Math.floor(Math.random() * 9), Math.floor(Math.random() * 10)];
+}
+function randDecDigits(n) {
+  if (n === 1) return [1 + Math.floor(Math.random() * 9)];
+  return [1 + Math.floor(Math.random() * 9), Math.floor(Math.random() * 10)];
+}
+function digitsToValue(wholeDigits, decDigits) {
+  return Number(wholeDigits.join('') + '.' + (decDigits.join('') || '0'));
+}
+function mkNum(wholeDigits, decDigits) {
+  return { wholeDigits, decDigits, value: digitsToValue(wholeDigits, decDigits) };
+}
+function makeRandomNum() {
+  const wLen = 1 + Math.floor(Math.random() * 2);
+  const dLen = 1 + Math.floor(Math.random() * 2);
+  return mkNum(randWholeDigits(wLen), randDecDigits(dLen));
+}
+function resetSrProgress() {
+  const sign = Math.random() < 0.5 ? -1 : 1;
+  sr.dragOffsetCols = sign * (0.9 + Math.random() * 1.6);
+  sr.aligned = false; sr.dragging = false;
+  sr.columns = null; sr.colIdx = 0; sr.carry = 0; sr.resultDigits = []; sr.done = false; sr.extraDigit = null;
+  sr.wrongPick = null; sr.hadWrongAttempt = false;
+  srDragLocked = false;
+}
+function generateSumRestPair(op) {
+  let f = makeRandomNum(), d = makeRandomNum();
+  if (op === 'resta' && f.value < d.value) { const t = f; f = d; d = t; }
+  sr.fixed = f; sr.drag = d; sr.op = op;
+  resetSrProgress();
+}
+function loadSumaExample() {
+  sr.fixed = mkNum([1, 2], [4]);
+  sr.drag  = mkNum([3], [7, 5]);
+  sr.op = 'suma';
+  resetSrProgress();
+}
+function loadRestaExample() {
+  sr.fixed = mkNum([9], [0]);
+  sr.drag  = mkNum([4], [2, 5]);
+  sr.op = 'resta';
+  resetSrProgress();
+}
+
+function getPaddedDigits() {
+  const decLen = Math.max(sr.fixed.decDigits.length, sr.drag.decDigits.length);
+  const wholeLen = Math.max(sr.fixed.wholeDigits.length, sr.drag.wholeDigits.length);
+  return {
+    decLen, wholeLen,
+    fixedDec: sr.fixed.decDigits.concat(Array(decLen - sr.fixed.decDigits.length).fill(0)),
+    dragDec:  sr.drag.decDigits.concat(Array(decLen - sr.drag.decDigits.length).fill(0)),
+    fixedWhole: Array(wholeLen - sr.fixed.wholeDigits.length).fill(0).concat(sr.fixed.wholeDigits),
+    dragWhole:  Array(wholeLen - sr.drag.wholeDigits.length).fill(0).concat(sr.drag.wholeDigits),
+    fixedPad: decLen - sr.fixed.decDigits.length,
+    dragPad:  decLen - sr.drag.decDigits.length
+  };
+}
+
+function buildColumns() {
+  const P = getPaddedDigits();
+  const cols = [];
+  for (let i = P.decLen - 1; i >= 0; i--) cols.push({ exp: -(i + 1), top: P.fixedDec[i], bot: P.dragDec[i] });
+  for (let i = P.wholeLen - 1; i >= 0; i--) cols.push({ exp: (P.wholeLen - 1 - i), top: P.fixedWhole[i], bot: P.dragWhole[i] });
+  sr.columns = cols;
+  sr.colIdx = 0; sr.carry = 0; sr.resultDigits = []; sr.done = false; sr.extraDigit = null; sr.wrongPick = null;
+  srDragLocked = true;
+}
+
+// Calcula la resposta correcta de la columna activa SENSE mutar l'estat
+// (l'estat només es confirma quan l'alumne encerta la xifra al teclat).
+function currentColumnAnswer() {
+  const col = sr.columns[sr.colIdx];
+  if (sr.op === 'suma') {
+    const sum = col.top + col.bot + sr.carry;
+    return { digit: sum % 10, nextCarry: Math.floor(sum / 10) };
+  }
+  let diff = col.top - col.bot - sr.carry;
+  let nextCarry;
+  if (diff < 0) { diff += 10; nextCarry = 1; } else { nextCarry = 0; }
+  return { digit: diff, nextCarry };
+}
+
+function submitSrDigit(d) {
+  if (!sr.aligned || !sr.columns || sr.done) return;
+  if (repteMode && !timer) return;
+  const { digit, nextCarry } = currentColumnAnswer();
+  if (d === digit) {
+    sr.resultDigits[sr.colIdx] = digit;
+    sr.carry = nextCarry;
+    sr.wrongPick = null;
+    sr.colIdx++;
+    flash(readoutBadge, PAL.sage);
+    if (sr.colIdx >= sr.columns.length) {
+      if (sr.op === 'suma' && sr.carry > 0) sr.extraDigit = sr.carry;
+      sr.done = true;
+      onSumRestComplete();
+    }
+  } else {
+    sr.wrongPick = d;
+    sr.hadWrongAttempt = true;
+    flash(readoutBadge, PAL.terracotta);
+    if (repteMode) {
+      streak = 0; document.getElementById('rpStreak').textContent = streak;
+      score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+      timeLeft = Math.max(0, timeLeft - 2);
+    }
+  }
+  draw();
+  updateReadout();
+}
+
+function formatNum(numObj) {
+  return numObj.decDigits.length ? `${numObj.wholeDigits.join('')},${numObj.decDigits.join('')}` : numObj.wholeDigits.join('');
+}
+function formatSrResult() {
+  const decParts = [], wholeParts = [];
+  sr.columns.forEach((col, i) => {
+    const val = sr.resultDigits[i];
+    if (col.exp < 0) decParts.push({ exp: col.exp, val }); else wholeParts.push({ exp: col.exp, val });
+  });
+  decParts.sort((a, b) => b.exp - a.exp);
+  wholeParts.sort((a, b) => b.exp - a.exp);
+  let wholeStr = wholeParts.map(p => p.val).join('');
+  const decStr = decParts.map(p => p.val).join('');
+  if (sr.extraDigit !== null) wholeStr = String(sr.extraDigit) + wholeStr;
+  return decStr ? `${wholeStr},${decStr}` : wholeStr;
+}
+
+// ─────────────────────────────────────────────
+//  MULTIPLICACIÓ / DIVISIÓ — generació
+// ─────────────────────────────────────────────
+function formatFromDigits(digits, places) {
+  const s = String(digits);
+  if (places === 0) return s;
+  if (places >= s.length) return '0,' + s.padStart(places, '0');
+  return s.slice(0, s.length - places) + ',' + s.slice(s.length - places);
+}
+function formatWithSlot(digitsStr, slotPos) {
+  if (slotPos >= digitsStr.length) return digitsStr;
+  return digitsStr.slice(0, slotPos) + ',' + digitsStr.slice(slotPos);
+}
+
+function finalizeMD(rawDigitsStr, correctPlaces) {
+  let digitsStr = rawDigitsStr;
+  if (correctPlaces >= digitsStr.length) digitsStr = digitsStr.padStart(correctPlaces + 1, '0');
+  md.digitsStr = digitsStr;
+  md.correctPlaces = correctPlaces;
+  md.slotPos = digitsStr.length;
+  md.stage = 'comma'; md.approx = false;
+  md.solved = false; md.hadWrongAttempt = false; md.dragging = false; md.dragPx = null;
+}
+
+// Divisió llarga que continua més enllà del dividend original afegint zeros
+// (fins a maxExtra xifres extra) quan la divisió no és exacta. Si el residu
+// arriba a 0 abans, exact=true; si no, el quocient s'ha d'arrodonir (approx).
+function longDivExtend(numerDigits, divisor, basePlaces, maxExtra) {
+  let intPart = Math.floor(numerDigits / divisor);
+  let rem = numerDigits % divisor;
+  let extra = '';
+  let n = 0;
+  while (rem !== 0 && n < maxExtra) {
+    rem *= 10;
+    extra += String(Math.floor(rem / divisor));
+    rem = rem % divisor;
+    n++;
+  }
+  return { digits: String(intPart) + extra, places: basePlaces + n, exact: rem === 0 };
+}
+
+// Desplaça la coma d'un nombre (digits enter + places decimals) `shiftBy`
+// posicions cap a la dreta, afegint zeros si cal (això és el "zero-padding"
+// visible del pas de desplaçament de comes).
+function shiftedDigitsAndPlaces(digitsInt, places, shiftBy) {
+  let s = String(digitsInt);
+  let p = places - shiftBy;
+  if (p < 0) { s += '0'.repeat(-p); p = 0; }
+  return { digits: s, places: p };
+}
+
+function finalizeDivResult(dividendDigitsInt, dividendPlaces, divisorDigitsInt) {
+  const ld = longDivExtend(dividendDigitsInt, divisorDigitsInt, dividendPlaces, 2);
+  finalizeMD(ld.digits, ld.places);
+  md.approx = !ld.exact;
+}
+
+function randPlacesMD() {
+  const r = Math.random();
+  if (r < 0.45) return 1;
+  if (r < 0.8) return 2;
+  return 0;
+}
+function makeFactor() { return { digits: 10 + Math.floor(Math.random() * 90), places: randPlacesMD() }; }
+function makeWholeDivisor() { return { digits: 2 + Math.floor(Math.random() * 8), places: 0 }; }
+// Divisor decimal amb una xifra decimal (0,2 .. 0,9) — prou per introduir el
+// concepte sense que les xifres del quocient desbordin el canvas.
+function makeDecimalDivisor() { return { digits: 2 + Math.floor(Math.random() * 8), places: 1 }; }
+
+function generateMult() {
+  let a = makeFactor(), b = makeFactor();
+  let guard = 0;
+  while ((a.places === 0 && b.places === 0) || (a.places === 2 && b.places === 2)) {
+    b = makeFactor(); guard++;
+    if (guard > 20) break;
+  }
+  md.kind = 'mult'; md.divByDecimal = false; md.a = a; md.b = b;
+  md.hadAnyWrongThisRound = false;
+  finalizeMD(String(a.digits * b.digits), a.places + b.places);
+}
+
+// wantDecDivisor: si el divisor ha de ser decimal (activa l'etapa 'shift' prèvia).
+function generateDiv(wantDecDivisor = md.divByDecimal) {
+  const divisor = wantDecDivisor ? makeDecimalDivisor() : makeWholeDivisor();
+  const dividendPlaces = Math.floor(Math.random() * 3); // 0, 1 o 2
+  const wantExact = Math.random() < 0.6;
+  let dividendWhole;
+  if (wantExact) {
+    const q = 2 + Math.floor(Math.random() * 13);
+    dividendWhole = q * divisor.digits;
+  } else {
+    do { dividendWhole = 10 + Math.floor(Math.random() * 90); } while (dividendWhole % divisor.digits === 0);
+  }
+  md.kind = 'div'; md.divByDecimal = wantDecDivisor;
+  md.dividend = { digits: dividendWhole, places: dividendPlaces };
+  md.divisor = divisor;
+  md.hadAnyWrongThisRound = false;
+
+  if (wantDecDivisor) {
+    md.stage = 'shift'; md.shiftSlot = 0; md.shiftMax = divisor.places + 1;
+    md.solved = false; md.hadWrongAttempt = false; md.dragging = false; md.dragPx = null; md.approx = false;
+    md.digitsStr = ''; md.correctPlaces = 0; md.slotPos = 0;
+  } else {
+    finalizeDivResult(dividendWhole, dividendPlaces, divisor.digits);
+  }
+}
+
+function completeShiftStage() {
+  const shift = md.divisor.places;
+  const dv = shiftedDigitsAndPlaces(md.dividend.digits, md.dividend.places, shift);
+  const ds = shiftedDigitsAndPlaces(md.divisor.digits, md.divisor.places, shift);
+  md.stage = 'comma';
+  finalizeDivResult(Number(dv.digits), dv.places, Number(ds.digits));
+}
+
+function loadMultExample() {
+  md.kind = 'mult'; md.divByDecimal = false; md.a = { digits: 23, places: 1 }; md.b = { digits: 14, places: 1 };
+  finalizeMD(String(md.a.digits * md.b.digits), md.a.places + md.b.places);
+}
+function loadDivExample() {
+  md.kind = 'div'; md.divByDecimal = false;
+  md.dividend = { digits: 84, places: 1 }; md.divisor = { digits: 4, places: 0 };
+  finalizeDivResult(md.dividend.digits, md.dividend.places, md.divisor.digits);
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX — helpers
+// ─────────────────────────────────────────────
+function label(x, y, text, color, size) {
+  ctx.font = `600 ${size || Math.max(10, W * 0.016)}px 'Inter', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(text, x, y);
+}
+
+function drawNumRow(originX, y, dw, commaW, wholeDigits, decDigits, color, highlight, padCount) {
+  padCount = padCount || 0;
+  let x = originX;
+  wholeDigits.forEach(d => {
+    ctx.beginPath(); ctx.rect(x + 2, y, dw - 4, dw * 0.95);
+    ctx.fillStyle = highlight ? 'rgba(230,72,58,0.15)' : 'rgba(26,31,54,0.05)';
+    ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `700 ${dw * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = TEXT_DARK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(d), x + dw / 2, y + dw * 0.48);
+    x += dw;
+  });
+  ctx.font = `700 ${dw * 0.6}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(',', x + commaW / 2, y + dw * 0.85);
+  x += commaW;
+  decDigits.forEach((d, i) => {
+    const isPad = i >= decDigits.length - padCount;
+    ctx.beginPath(); ctx.rect(x + 2, y, dw - 4, dw * 0.95);
+    ctx.fillStyle = highlight ? 'rgba(230,72,58,0.15)' : (isPad ? 'rgba(26,31,54,0.02)' : 'rgba(26,31,54,0.05)');
+    ctx.fill();
+    if (isPad) ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = isPad ? 'rgba(26,31,54,0.35)' : color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = `700 ${dw * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = isPad ? TEXT_MUTED : TEXT_DARK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(d), x + dw / 2, y + dw * 0.48);
+    x += dw;
+  });
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+}
+
+function colX(exp) {
+  if (exp >= 0) return srCommaTargetX - srCommaW / 2 - exp * srDw - srDw / 2;
+  const k = -exp;
+  return srCommaTargetX + srCommaW / 2 + (k - 1) * srDw + srDw / 2;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const activeKind = repteMode ? repteRoundFamily : opTab;
+  if (activeKind === 'sumrest') drawSumRest(); else drawMultDiv();
+}
+
+function drawSumRest() {
+  const pad = W * 0.06;
+  const dw = Math.min(W * 0.1, H * 0.15);
+  const commaW = dw * 0.5;
+  const commaTargetX = W * 0.58;
+  const y1 = H * 0.14, y2 = H * 0.38, ySep = H * 0.56, yRes = H * 0.64;
+
+  srDw = dw; srCommaW = commaW; srCommaTargetX = commaTargetX; srYRes = yRes;
+
+  ctx.font = `700 ${dw * 0.7}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = TEXT_DARK;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(sr.op === 'suma' ? '+' : '−', pad + dw * 0.35, (y1 + y2) / 2 + dw * 0.5);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+
+  const P = getPaddedDigits();
+  const fixedOriginX = commaTargetX - sr.fixed.wholeDigits.length * dw - commaW / 2;
+  const dragCorrectOriginX = commaTargetX - sr.drag.wholeDigits.length * dw - commaW / 2;
+  const dragOriginX = dragCorrectOriginX + sr.dragOffsetCols * dw;
+
+  drawNumRow(fixedOriginX, y1, dw, commaW, sr.fixed.wholeDigits, P.fixedDec, PAL.petrol, false, P.fixedPad);
+  drawNumRow(dragOriginX, y2, dw, commaW, sr.drag.wholeDigits, P.dragDec, PAL.terracotta, sr.dragging, P.dragPad);
+
+  const dragW = (sr.drag.wholeDigits.length + P.decLen) * dw + commaW;
+  srDragRect = { x: dragOriginX - dw * 0.15, y: y2 - dw * 0.15, w: dragW + dw * 0.3, h: dw * 1.15 };
+
+  const fixedCommaX = fixedOriginX + sr.fixed.wholeDigits.length * dw + commaW / 2;
+  const dragCommaX  = dragOriginX  + sr.drag.wholeDigits.length  * dw + commaW / 2;
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = sr.aligned ? 'rgba(31,169,113,0.75)' : 'rgba(230,72,58,0.55)';
+  ctx.setLineDash(sr.aligned ? [] : [5, 4]);
+  ctx.beginPath(); ctx.moveTo(fixedCommaX, y1 - dw * 0.6); ctx.lineTo(fixedCommaX, ySep + dw * 0.15); ctx.stroke();
+  if (!sr.aligned) {
+    ctx.beginPath(); ctx.moveTo(dragCommaX, y2 - dw * 0.6); ctx.lineTo(dragCommaX, y2 + dw * 1.1); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  const lineX0 = Math.min(fixedOriginX, dragOriginX) - dw * 0.35;
+  const lineX1 = Math.max(
+    fixedOriginX + sr.fixed.wholeDigits.length * dw + commaW + P.decLen * dw,
+    dragOriginX  + sr.drag.wholeDigits.length  * dw + commaW + P.decLen * dw
+  ) + dw * 0.35;
+  ctx.strokeStyle = TEXT_DARK; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(lineX0, ySep); ctx.lineTo(lineX1, ySep); ctx.stroke();
+
+  if (sr.aligned && sr.columns) {
+    sr.columns.forEach((col, i) => {
+      const cx = colX(col.exp);
+      const isActive = (i === sr.colIdx && !sr.done);
+      ctx.beginPath();
+      ctx.rect(cx - dw / 2 + 2, yRes, dw - 4, dw * 0.85);
+      ctx.fillStyle = isActive ? 'rgba(230,72,58,0.18)' : 'rgba(26,31,54,0.04)';
+      ctx.fill();
+      ctx.strokeStyle = isActive ? PAL.terracotta : 'rgba(26,31,54,0.2)';
+      ctx.lineWidth = isActive ? 2.5 : 1;
+      ctx.stroke();
+      if (i < sr.colIdx) {
+        ctx.font = `700 ${dw * 0.5}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PAL.sageTint;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(sr.resultDigits[i]), cx, yRes + dw * 0.42);
+      }
+      if (isActive && sr.carry !== 0) {
+        ctx.font = `600 ${dw * 0.3}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PAL.amberTint;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText((sr.op === 'suma' ? '+' : '−') + sr.carry, cx, yRes - dw * 0.12);
+      }
+      if (isActive && sr.wrongPick !== null) {
+        ctx.font = `700 ${dw * 0.32}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = PAL.terracottaTint;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillText('✕' + sr.wrongPick, cx, yRes - dw * 0.48);
+      }
+    });
+  }
+}
+
+function drawMultDiv() {
+  if (md.kind === 'div' && md.divByDecimal && md.stage === 'shift') { drawDivShiftStage(); return; }
+
+  const pad = W * 0.06;
+  const fsBig = Math.max(13, W * 0.026);
+  const fsSmall = Math.max(11, W * 0.018);
+  let y = H * 0.15;
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `600 ${fsBig}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = PAL.text;
+  const exprText = md.kind === 'mult'
+    ? `${formatFromDigits(md.a.digits, md.a.places)} × ${formatFromDigits(md.b.digits, md.b.places)}`
+    : `${formatFromDigits(md.dividend.digits, md.dividend.places)} ÷ ${formatFromDigits(md.divisor.digits, md.divisor.places)}`;
+  ctx.fillText(exprText, pad, y);
+
+  y += fsBig * 1.7;
+  ctx.font = `500 ${fsSmall}px 'Inter', sans-serif`;
+  ctx.fillStyle = TEXT_MUTED;
+  let rawText;
+  if (md.kind === 'mult') {
+    rawText = `→ com si fossin enters: ${md.a.digits} × ${md.b.digits} = ${md.a.digits * md.b.digits}`;
+  } else if (md.divByDecimal) {
+    const shift = md.divisor.places;
+    const dv = shiftedDigitsAndPlaces(md.dividend.digits, md.dividend.places, shift);
+    const ds = shiftedDigitsAndPlaces(md.divisor.digits, md.divisor.places, shift);
+    rawText = `→ ja desplaçat: ${dv.digits} ÷ ${ds.digits} (com si fossin enters)`;
+  } else {
+    rawText = `→ com si fossin enters: ${md.dividend.digits} ÷ ${md.divisor.digits}`;
+  }
+  ctx.fillText(rawText, pad, y);
+
+  y += fsSmall * 2.4;
+  const dw = Math.min(W * 0.11, H * 0.16);
+  const rowOriginX = pad + dw * 0.5;
+  const len = md.digitsStr.length;
+  mdRowY = y; mdDw = dw; mdRowOriginX = rowOriginX;
+
+  for (let i = 0; i < len; i++) {
+    const bx = rowOriginX + i * dw;
+    ctx.beginPath();
+    ctx.rect(bx + 2, y, dw - 4, dw * 0.95);
+    ctx.fillStyle = 'rgba(26,31,54,0.05)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(26,31,54,0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = `700 ${dw * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = TEXT_DARK;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(md.digitsStr[i], bx + dw / 2, y + dw * 0.48);
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+
+  const markerX = (md.dragging && md.dragPx !== null) ? md.dragPx : (rowOriginX + md.slotPos * dw);
+  const nearestSlot = clamp(Math.round((markerX - rowOriginX) / dw), 0, len);
+  mdNearestSlot = nearestSlot;
+
+  ctx.strokeStyle = md.solved ? PAL.sage : (md.dragging ? PAL.terracotta : PAL.amber);
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(markerX, y - dw * 0.35);
+  ctx.lineTo(markerX, y + dw * 1.25);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(markerX, y - dw * 0.45, dw * 0.16, 0, Math.PI * 2);
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.fill();
+
+  y += dw * 1.6;
+  const movedPlaces = len - nearestSlot;
+  ctx.font = `600 ${fsSmall}px 'Inter', sans-serif`;
+  ctx.fillStyle = PAL.text;
+  ctx.fillText(`Desplaçat ${movedPlaces} ${movedPlaces === 1 ? 'posició' : 'posicions'} cap a l'esquerra`, pad, y);
+
+  y += fsSmall * 2;
+  ctx.font = `700 ${fsBig}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = md.solved ? PAL.sageTint : TEXT_DARK;
+  const resultStr = formatWithSlot(md.digitsStr, nearestSlot);
+  const showApprox = md.solved && md.approx;
+  ctx.fillText((showApprox ? '≈ ' : '= ') + resultStr + (showApprox ? '…' : ''), pad, y);
+
+  if (showApprox) {
+    y += fsSmall * 1.6;
+    ctx.font = `500 ${fsSmall * 0.86}px 'Inter', sans-serif`;
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.fillText('divisió no exacta — quocient arrodonit', pad, y);
+  }
+}
+
+function drawDivShiftStage() {
+  const pad = W * 0.06;
+  const fsBig = Math.max(15, W * 0.03);
+  const fsSmall = Math.max(11, W * 0.018);
+  const shift = md.shiftSlot;
+  const dv = shiftedDigitsAndPlaces(md.dividend.digits, md.dividend.places, shift);
+  const ds = shiftedDigitsAndPlaces(md.divisor.digits, md.divisor.places, shift);
+  const dvStr = formatFromDigits(Number(dv.digits), dv.places);
+  const dsStr = formatFromDigits(Number(ds.digits), ds.places);
+  const isCorrect = shift === md.divisor.places;
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `500 ${fsSmall}px 'Inter', sans-serif`;
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.fillText('Perquè el divisor esdevingui enter, desplacem les dues comes alhora:', pad, H * 0.16);
+
+  let y = H * 0.36;
+  ctx.font = `700 ${fsBig}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = TEXT_DARK;
+  const prefix = `${dvStr}  ÷  `;
+  ctx.fillText(prefix, pad, y);
+  const w1 = ctx.measureText(prefix).width;
+  ctx.fillStyle = isCorrect ? PAL.sageTint : PAL.amberTint;
+  ctx.fillText(dsStr, pad + w1, y);
+
+  y += fsBig * 1.5;
+  ctx.font = `600 ${fsSmall}px 'Inter', sans-serif`;
+  ctx.fillStyle = PAL.plumTint;
+  ctx.fillText(`Desplaçat ${shift} ${shift === 1 ? 'posició' : 'posicions'} cap a la dreta →`, pad, y);
+
+  y += fsSmall * 2.2;
+  ctx.font = `600 ${fsSmall}px 'Inter', sans-serif`;
+  ctx.fillStyle = isCorrect ? PAL.sageTint : TEXT_MUTED;
+  ctx.fillText(isCorrect ? '✔ el divisor ja és un nombre enter' : `el divisor "${dsStr}" encara no és enter`, pad, y);
+
+  if (md.hadWrongAttempt && !isCorrect) {
+    y += fsSmall * 1.8;
+    ctx.font = `600 ${fsSmall}px 'Inter', sans-serif`;
+    ctx.fillStyle = PAL.terracottaTint;
+    ctx.fillText('✕ encara no és correcte — ajusta el comptador i torna-ho a comprovar', pad, y);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.touches ? e.touches[0] : e;
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+
+function hitMDMarker(mx, my) {
+  const markerX = mdRowOriginX + md.slotPos * mdDw;
+  return Math.abs(mx - markerX) < mdDw * 0.65 && my >= mdRowY - mdDw * 0.65 && my <= mdRowY + mdDw * 1.4;
+}
+
+function onCanvasDown(e) {
+  const { x, y } = pointerXY(e);
+  const activeKind = repteMode ? repteRoundFamily : opTab;
+  let acted = false;
+  if (activeKind === 'sumrest') {
+    if (!srDragLocked && srDragRect && x >= srDragRect.x && x <= srDragRect.x + srDragRect.w && y >= srDragRect.y && y <= srDragRect.y + srDragRect.h) {
+      dragTarget = 'srNum'; sr.dragging = true; dragStartX = x; dragStartOffsetCols = sr.dragOffsetCols;
+      wrap.classList.add('dragging');
+      acted = true;
+    }
+  } else {
+    if (md.stage === 'comma' && !md.solved && hitMDMarker(x, y)) {
+      dragTarget = 'mdMarker'; md.dragging = true; md.dragPx = x;
+      wrap.classList.add('dragging');
+      acted = true;
+    }
+  }
+  if (acted) { e.preventDefault(); draw(); updateReadout(); }
+}
+function onCanvasMove(e) {
+  if (!dragTarget) return;
+  e.preventDefault();
+  const { x } = pointerXY(e);
+  if (dragTarget === 'srNum') {
+    sr.dragOffsetCols = dragStartOffsetCols + (x - dragStartX) / srDw;
+    sr.aligned = Math.abs(sr.dragOffsetCols) < 0.02;
+  } else if (dragTarget === 'mdMarker') {
+    md.dragPx = x;
+  }
+  draw();
+}
+function onCanvasUp() {
+  if (!dragTarget) return;
+  wrap.classList.remove('dragging');
+  if (dragTarget === 'srNum') {
+    sr.dragging = false;
+    if (Math.abs(sr.dragOffsetCols) < 0.16) {
+      sr.dragOffsetCols = 0;
+      sr.aligned = true;
+      if (!sr.columns) buildColumns();
+    } else {
+      sr.aligned = false;
+    }
+  } else if (dragTarget === 'mdMarker') {
+    md.dragging = false;
+    const len = md.digitsStr.length;
+    const finalSlot = clamp(Math.round((md.dragPx - mdRowOriginX) / mdDw), 0, len);
+    md.slotPos = finalSlot;
+    md.dragPx = null;
+    const movedPlaces = len - finalSlot;
+    if (movedPlaces === md.correctPlaces) {
+      md.solved = true;
+      onMultDivSolved(!md.hadAnyWrongThisRound);
+    } else {
+      md.hadWrongAttempt = true; md.hadAnyWrongThisRound = true;
+      if (repteMode) {
+        streak = 0; document.getElementById('rpStreak').textContent = streak;
+        score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+        timeLeft = Math.max(0, timeLeft - 2);
+      }
+    }
+  }
+  dragTarget = null;
+  draw();
+  updateReadout();
+}
+canvas.addEventListener('mousedown', onCanvasDown);
+canvas.addEventListener('mousemove', onCanvasMove);
+window.addEventListener('mouseup', onCanvasUp);
+canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
+canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
+canvas.addEventListener('touchend', onCanvasUp);
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateHint() {
+  const activeKind = repteMode ? repteRoundFamily : opTab;
+  if (activeKind === 'sumrest') {
+    hint.textContent = !sr.aligned ? 'Arrossega el número de baix fins alinear les comes'
+      : (!sr.done ? 'Tria la xifra de la columna ressaltada al teclat de sota' : 'Suma/resta completa!');
+  } else if (md.kind === 'div' && md.divByDecimal && md.stage === 'shift') {
+    hint.textContent = 'Desplaça les dues comes amb el comptador i comprova-ho';
+  } else {
+    hint.textContent = !md.solved ? 'Arrossega el punt fins a la posició correcta' : 'Correcte! Coma ben col·locada.';
+  }
+}
+
+function updateAuxControlsVisibility() {
+  const activeKind = repteMode ? repteRoundFamily : opTab;
+  const showSrKeypad = activeKind === 'sumrest' && sr.aligned && !!sr.columns && !sr.done;
+  srKeypad.style.display = showSrKeypad ? 'flex' : 'none';
+  const showShift = activeKind === 'multdiv' && md.kind === 'div' && md.divByDecimal && md.stage === 'shift';
+  shiftControls.style.display = showShift ? 'flex' : 'none';
+  if (showShift) {
+    shiftVal.textContent = String(md.shiftSlot);
+    shiftMinusBtn.disabled = md.shiftSlot <= 0;
+    shiftPlusBtn.disabled = md.shiftSlot >= md.shiftMax;
+  }
+}
+
+function updateReadout() {
+  readoutBadge.classList.add('active');
+  const activeKind = repteMode ? repteRoundFamily : opTab;
+  if (activeKind === 'sumrest') {
+    if (!sr.aligned) {
+      readoutNum.textContent = '≠';
+      readoutName.textContent = 'Comes no alineades';
+      readoutDef.textContent = 'Arrossega el número de baix fins que la coma quedi just sota la de dalt.';
+    } else if (!sr.done) {
+      if (sr.wrongPick !== null) {
+        readoutNum.textContent = '✕';
+        readoutName.textContent = 'Xifra incorrecta';
+        readoutDef.textContent = `${sr.wrongPick} no és la xifra correcta d'aquesta columna. Torna-ho a provar amb el teclat.`;
+      } else {
+        readoutNum.textContent = '✔';
+        readoutName.textContent = 'Alineat! Tria la xifra';
+        readoutDef.textContent = 'Calcula la columna ressaltada (de dreta a esquerra) i tria la xifra correcta al teclat de sota.';
+      }
+    } else {
+      const resultStr = formatSrResult();
+      readoutNum.textContent = resultStr;
+      readoutName.textContent = sr.op === 'suma' ? 'Suma completa!' : 'Resta completa!';
+      readoutDef.textContent = `${formatNum(sr.fixed)} ${sr.op === 'suma' ? '+' : '−'} ${formatNum(sr.drag)} = ${resultStr}`;
+    }
+  } else if (md.kind === 'div' && md.divByDecimal && md.stage === 'shift') {
+    readoutNum.textContent = String(md.shiftSlot);
+    readoutName.textContent = 'Desplaça les dues comes';
+    readoutDef.textContent = `Mou la coma del divisor ${formatFromDigits(md.divisor.digits, md.divisor.places)} fins que sigui un nombre enter, i la del dividend el mateix nombre de posicions. Després, comprova-ho.`;
+  } else {
+    if (!md.solved) {
+      readoutNum.textContent = String(md.digitsStr.length - mdNearestSlot);
+      readoutName.textContent = 'Col·loca la coma';
+      readoutDef.textContent = md.kind === 'mult'
+        ? 'Compta les xifres decimals dels dos factors i mou la coma aquestes posicions des de la dreta.'
+        : (md.divByDecimal
+          ? 'Ara que el divisor és enter, situa la coma del quocient igual que en una divisió normal.'
+          : 'La coma del quocient va tantes posicions com decimals té el dividend.');
+    } else {
+      const resultStr = formatWithSlot(md.digitsStr, md.slotPos);
+      readoutNum.textContent = resultStr + (md.approx ? '…' : '');
+      readoutName.textContent = md.approx ? 'Correcte! (valor arrodonit)' : 'Correcte!';
+      const eq = md.approx ? '≈' : '=';
+      readoutDef.textContent = md.kind === 'mult'
+        ? `${formatFromDigits(md.a.digits, md.a.places)} × ${formatFromDigits(md.b.digits, md.b.places)} = ${resultStr}`
+        : `${formatFromDigits(md.dividend.digits, md.dividend.places)} ÷ ${formatFromDigits(md.divisor.digits, md.divisor.places)} ${eq} ${resultStr}${md.approx ? '… (no exacta)' : ''}`;
+    }
+  }
+  updateHint();
+  updateAuxControlsVisibility();
+}
+
+// ─────────────────────────────────────────────
+//  TABS I TOGGLES (mode Explora)
+// ─────────────────────────────────────────────
+const btnTabSum = document.getElementById('btnTabSum');
+const btnTabMD  = document.getElementById('btnTabMD');
+const sumRestControls = document.getElementById('sumRestControls');
+const multDivControls = document.getElementById('multDivControls');
+
+function updateTabUI() {
+  btnTabSum.classList.toggle('active', opTab === 'sumrest');
+  btnTabMD.classList.toggle('active', opTab === 'multdiv');
+  sumRestControls.style.display = opTab === 'sumrest' ? 'flex' : 'none';
+  multDivControls.style.display = opTab === 'multdiv' ? 'flex' : 'none';
+}
+btnTabSum.addEventListener('click', () => { opTab = 'sumrest'; updateTabUI(); resize(); updateReadout(); });
+btnTabMD.addEventListener('click',  () => { opTab = 'multdiv'; updateTabUI(); resize(); updateReadout(); });
+
+function syncOpButtons() {
+  document.getElementById('btnOpSuma').classList.toggle('active', sr.op === 'suma');
+  document.getElementById('btnOpResta').classList.toggle('active', sr.op === 'resta');
+}
+document.getElementById('btnOpSuma').addEventListener('click', () => { generateSumRestPair('suma'); syncOpButtons(); resize(); updateReadout(); });
+document.getElementById('btnOpResta').addEventListener('click', () => { generateSumRestPair('resta'); syncOpButtons(); resize(); updateReadout(); });
+document.getElementById('srNewPair').addEventListener('click', () => { generateSumRestPair(sr.op); resize(); updateReadout(); });
+
+const divKindToggle = document.getElementById('divKindToggle');
+function syncKindButtons() {
+  document.getElementById('btnKindMult').classList.toggle('active', md.kind === 'mult');
+  document.getElementById('btnKindDiv').classList.toggle('active', md.kind === 'div');
+  divKindToggle.style.display = md.kind === 'div' ? 'flex' : 'none';
+  document.getElementById('btnDivInt').classList.toggle('active', !md.divByDecimal);
+  document.getElementById('btnDivDec').classList.toggle('active', md.divByDecimal);
+}
+document.getElementById('btnKindMult').addEventListener('click', () => { generateMult(); syncKindButtons(); resize(); updateReadout(); });
+document.getElementById('btnKindDiv').addEventListener('click',  () => { generateDiv(false); syncKindButtons(); resize(); updateReadout(); });
+document.getElementById('btnDivInt').addEventListener('click', () => { generateDiv(false); syncKindButtons(); resize(); updateReadout(); });
+document.getElementById('btnDivDec').addEventListener('click', () => { generateDiv(true);  syncKindButtons(); resize(); updateReadout(); });
+document.getElementById('mdNewPuzzle').addEventListener('click', () => { md.kind === 'mult' ? generateMult() : generateDiv(); resize(); updateReadout(); });
+
+// ─────────────────────────────────────────────
+//  TECLAT (suma/resta) I COMPTADOR DE DESPLAÇAMENT (divisió per decimal)
+// ─────────────────────────────────────────────
+document.querySelectorAll('#srKeypad button[data-d]').forEach(b => {
+  b.addEventListener('click', () => submitSrDigit(parseInt(b.dataset.d, 10)));
+});
+window.addEventListener('keydown', e => {
+  if (srKeypad.style.display === 'none') return;
+  if (/^[0-9]$/.test(e.key)) submitSrDigit(parseInt(e.key, 10));
+});
+
+function shiftBy(delta) {
+  md.shiftSlot = clamp(md.shiftSlot + delta, 0, md.shiftMax);
+  md.hadWrongAttempt = false;
+  draw(); updateReadout();
+}
+document.getElementById('shiftMinus').addEventListener('click', () => shiftBy(-1));
+document.getElementById('shiftPlus').addEventListener('click', () => shiftBy(1));
+document.getElementById('shiftCheck').addEventListener('click', () => {
+  if (md.shiftSlot === md.divisor.places) {
+    flash(readoutBadge, PAL.sage);
+    completeShiftStage();
+    draw(); updateReadout();
+    if (repteMode) onDivShiftCorrect();
+  } else {
+    flash(readoutBadge, PAL.terracotta);
+    md.hadWrongAttempt = true; md.hadAnyWrongThisRound = true;
+    if (repteMode) {
+      streak = 0; document.getElementById('rpStreak').textContent = streak;
+      score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+      timeLeft = Math.max(0, timeLeft - 2);
+    }
+    draw(); updateReadout();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+function exitRepteIfNeeded() { if (repteMode) btnExplora.click(); }
+
+document.getElementById('card-suma').addEventListener('click', () => {
+  exitRepteIfNeeded(); opTab = 'sumrest'; updateTabUI(); loadSumaExample(); syncOpButtons();
+  resize(); updateReadout(); flash(wrap, PAL.petrol); flash(readoutBadge, PAL.petrol);
+});
+document.getElementById('card-resta').addEventListener('click', () => {
+  exitRepteIfNeeded(); opTab = 'sumrest'; updateTabUI(); loadRestaExample(); syncOpButtons();
+  resize(); updateReadout(); flash(wrap, PAL.terracotta); flash(readoutBadge, PAL.terracotta);
+});
+document.getElementById('card-mult').addEventListener('click', () => {
+  exitRepteIfNeeded(); opTab = 'multdiv'; updateTabUI(); loadMultExample(); syncKindButtons();
+  resize(); updateReadout(); flash(wrap, PAL.amber); flash(readoutBadge, PAL.amber);
+});
+document.getElementById('card-div').addEventListener('click', () => {
+  exitRepteIfNeeded(); opTab = 'multdiv'; updateTabUI(); loadDivExample(); syncKindButtons();
+  resize(); updateReadout(); flash(wrap, PAL.plum); flash(readoutBadge, PAL.plum);
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const rpTime = document.getElementById('rpTime');
+const rpScore = document.getElementById('rpScore');
+const rpStreak = document.getElementById('rpStreak');
+const rpKindLabel = document.getElementById('rpKindLabel');
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function registerCorrect(firstTry) {
+  score += firstTry ? 2 : 1;
+  streak++;
+  rpScore.textContent = score; rpStreak.textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + (firstTry ? 5 : 3));
+}
+function onSumRestComplete() {
+  if (repteMode) { registerCorrect(!sr.hadWrongAttempt); setTimeout(nextRepteRound, 700); }
+}
+function onMultDivSolved(firstTry) {
+  if (repteMode) { registerCorrect(firstTry); setTimeout(nextRepteRound, 700); }
+}
+function onDivShiftCorrect() {
+  // Encara falta col·locar la coma del quocient: petit avanç, no tanca la ronda.
+  timeLeft = Math.min(repteMaxTime, timeLeft + 2);
+  rpTime.textContent = Math.max(0, timeLeft) + 's';
+}
+
+function nextRepteRound() {
+  repteRoundFamily = Math.random() < 0.5 ? 'sumrest' : 'multdiv';
+  if (repteRoundFamily === 'sumrest') {
+    const op = Math.random() < 0.5 ? 'suma' : 'resta';
+    generateSumRestPair(op);
+    rpKindLabel.textContent = op === 'suma' ? 'Suma (alinea)' : 'Resta (alinea)';
+  } else {
+    const r = Math.random();
+    if (r < 0.4) { generateMult(); rpKindLabel.textContent = 'Multiplicació (coma)'; }
+    else if (r < 0.75) { generateDiv(false); rpKindLabel.textContent = 'Divisió (coma)'; }
+    else { generateDiv(true); rpKindLabel.textContent = 'Divisió per un decimal'; }
+  }
+  resize();
+  updateReadout();
+}
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  rpTime.classList.remove('time-low');
+  nextRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts, ratxa màxima recent ${streak}.`;
+    }
+  }, 1000);
+}
+
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+document.getElementById('rpSkip').addEventListener('click', nextRepteRound);
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  resize();
+  updateReadout();
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+generateSumRestPair('suma');
+generateMult();
+updateTabUI();
+syncOpButtons();
+syncKindButtons();
+resize();
+updateReadout();
+</script>
+</body>
+</html>

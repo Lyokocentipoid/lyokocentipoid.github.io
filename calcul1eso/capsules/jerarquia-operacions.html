@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jerarquia d'operacions · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--amber); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--amber); color: var(--amber); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 44px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 26px; text-align: center; }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    .canvas-hint.warn {
+      color: color-mix(in srgb, var(--terracotta) 35%, white); border-color: color-mix(in srgb, var(--terracotta) 50%, transparent); background: color-mix(in srgb, var(--terracotta) 28%, transparent);
+    }
+
+    .step-log {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: .9rem 1.2rem; display: flex; flex-direction: column; gap: .55rem;
+    }
+    .step-log-title {
+      font-family: var(--font-display); font-weight: 700; font-size: .78rem;
+      letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+    }
+    .step-log-lines { display: flex; flex-direction: column; gap: .35rem; max-height: 168px; overflow-y: auto; }
+    .step-log-empty { font-size: .82rem; color: var(--muted); font-style: italic; }
+    .step-log-line {
+      font-family: var(--font-mono); font-size: .87rem; color: var(--ink);
+      display: flex; align-items: baseline; gap: .55rem; padding: .32rem .6rem;
+      border-radius: 8px; background: color-mix(in srgb, var(--m-color) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--m-color) 18%, transparent);
+      animation: stepLogIn .3s ease;
+    }
+    .step-log-line.approx { background: color-mix(in srgb, var(--plum) 10%, transparent); border-color: color-mix(in srgb, var(--plum) 22%, transparent); }
+    .step-log-line .sl-idx { color: var(--muted); font-size: .74rem; min-width: 1.1em; }
+    @keyframes stepLogIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+    .repte-answer {
+      display: none; flex-wrap: wrap; gap: .7rem; align-items: center;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: .8rem 1rem;
+    }
+    .repte-answer .ra-label { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+    .repte-answer .answer-input {
+      width: 92px; padding: .5rem .6rem; border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; color: var(--ink); text-align: center;
+      -moz-appearance: textfield;
+    }
+    .repte-answer .answer-input::-webkit-inner-spin-button, .repte-answer .answer-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .repte-answer .answer-input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 30%, transparent); }
+    .repte-answer .answer-feedback { font-size: .85rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--amber)">Bloc 02 · Jerarquia d'operacions</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Jerarquia d'operacions</h1>
+      <p>Clica l'operació que creus que toca resoldre primer en cada expressió. Si l'endevines, es fon en el seu resultat; si t'equivoques, torna-ho a intentar. Al mode Repte, encadena tantes expressions correctes com puguis contra rellotge.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--amber)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <button class="btn btn-primary" id="btnNewExpr">🔄 Nova expressió</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--amber)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <div class="rp-item"><span class="rp-label">Expressions</span><span class="rp-value" id="rpExpr">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--amber)">
+      <canvas id="jerCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Clica l'operació que toca resoldre primer</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--amber)">
+      <div class="readout-num" id="readoutNum">0/0</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Comença!</div>
+        <div class="readout-def" id="readoutDef">Clica l'operació que creus que s'ha de resoldre primer.</div>
+      </div>
+    </div>
+
+    <div class="repte-answer" id="jerAnswerPanel">
+      <span class="ra-label" id="jerAnswerLabel">3 × 4 = ?</span>
+      <input type="number" class="answer-input" id="jerAnswerInput" inputmode="numeric">
+      <button class="btn btn-primary" id="jerAnswerCheck">Comprova ✔</button>
+      <span class="answer-feedback" id="jerAnswerFeedback"></span>
+    </div>
+
+    <div class="step-log" id="stepLog">
+      <div class="step-log-title">📝 Full de càlcul</div>
+      <div class="step-log-lines" id="stepLogLines">
+        <div class="step-log-empty" id="stepLogEmpty">Els passos que resolguis aniran apareixent aquí, com si els escrivissis al full.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Ordre de prioritat</div>
+
+    <div class="type-card" id="card-paren" style="--t-color:#0b93a0">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1 · Parèntesis</div>
+        <div class="type-range">( )</div>
+        <div class="type-desc">Es resol sempre primer el que hi ha dins d'un parèntesi, per dins cap enfora.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-powroot" style="--t-color:#e2860a">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">2 · Potències i arrels</div>
+        <div class="type-range">xⁿ · √x</div>
+        <div class="type-desc">Exponents i arrels, abans de multiplicar, dividir, sumar o restar.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-muldiv" style="--t-color:#1fa971">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">3 · Multiplicació i divisió</div>
+        <div class="type-range">× ÷</div>
+        <div class="type-desc">Es resolen abans que les sumes i restes.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-addsub" style="--t-color:#e6483a">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">4 · Suma i resta</div>
+        <div class="type-range">+ −</div>
+        <div class="type-desc">Les últimes a resoldre, d'esquerra a dreta.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> primer el que hi ha dins d'un parèntesi; després, potències i arrels; després, multiplicacions i divisions; i les sumes i restes, les últimes. Dins de cada parèntesi es torna a aplicar el mateix ordre.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 02 · Potències, Arrels i Nombres Enters</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  DOM
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('jerCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const stepLogLines = document.getElementById('stepLogLines');
+let   stepLogEmpty = document.getElementById('stepLogEmpty');
+
+const jerAnswerPanel   = document.getElementById('jerAnswerPanel');
+const jerAnswerLabel   = document.getElementById('jerAnswerLabel');
+const jerAnswerInput   = document.getElementById('jerAnswerInput');
+const jerAnswerFeedback = document.getElementById('jerAnswerFeedback');
+let pendingAnswerNode = null;
+
+const DEFAULT_HINT = "Clica l'operació que toca resoldre primer";
+
+// ─────────────────────────────────────────────
+//  PALETA (llegida dels tokens compartits, no hardcoded)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+// ─────────────────────────────────────────────
+//  CATEGORIES DE PRIORITAT
+// ─────────────────────────────────────────────
+const CAT_COLOR = { paren:'#0b93a0', powroot:'#e2860a', muldiv:'#1fa971', addsub:'#e6483a' };
+const CAT_LABEL = { paren:'Parèntesis', powroot:'Potències i arrels', muldiv:'Multiplicació i divisió', addsub:'Suma i resta' };
+const OPSYM     = { add:'+', sub:'−', mul:'×', div:'÷' };
+const HINT_BLOCK = {
+  paren:   `Primer cal resoldre el que hi ha dins del parèntesi.`,
+  powroot: `Primer cal resoldre la potència o l'arrel pendent.`,
+  muldiv:  `Primer cal fer les multiplicacions i divisions.`,
+  addsub:  `Primer cal resoldre la suma o resta pendent.`
+};
+
+const SUP = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹' };
+function sup(n) { return String(n).split('').map(d => SUP[d] || d).join(''); }
+function fmtNum(n) { return Number.isInteger(n) ? n.toLocaleString('ca-ES') : n.toFixed(2); }
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function numNode(v) { return { t:'num', v }; }
+
+// ─────────────────────────────────────────────
+//  MOTOR DE L'ARBRE D'EXPRESSIÓ
+//
+//  El nivell superior de suma/resta d'una expressió NO es representa com un
+//  arbre binari niat d'esquerra a dreta (un `add(add(add(a,b),c),d)` obliga
+//  estructuralment a resoldre a,b,c,d en aquest ordre exacte, cosa que és
+//  falsa matemàticament: la suma de termes amb signe és commutativa i
+//  associativa, així que "−4 + 6" es pot combinar independentment de si
+//  "5×9" encara està pendent en un altre punt de la mateixa expressió).
+//  En lloc d'això, es representa com un node `chain` amb una llista plana
+//  `terms` (cadascun amb el seu signe). Qualsevol parella de termes ADJACENTS
+//  que ja siguin tots dos números es pot combinar en qualsevol moment,
+//  independentment de què quedi pendent a la resta de la cadena — l'única
+//  cosa que continua sent obligatòria és que un terme (una multiplicació,
+//  una arrel, un parèntesi...) s'ha de resoldre per dins abans de comptar
+//  com a "número" per a la seva pròpia parella.
+// ─────────────────────────────────────────────
+function chainPairFor(chain, i) {
+  if (!chain._pairs) chain._pairs = [];
+  if (!chain._pairs[i]) chain._pairs[i] = { __isChainPair: true, chain, i };
+  return chain._pairs[i];
+}
+function catOf(node) {
+  if (node.__isChainPair || node.t === 'chain') return 'addsub';
+  if (node.paren) return 'paren';
+  if (node.t === 'pow' || node.t === 'sqrt') return 'powroot';
+  if (node.t === 'mul' || node.t === 'div') return 'muldiv';
+  return 'addsub';
+}
+function isReady(node) {
+  if (node.__isChainPair) {
+    const t1 = node.chain.terms[node.i], t2 = node.chain.terms[node.i + 1];
+    return !!t1 && !!t2 && t1.node.t === 'num' && t2.node.t === 'num';
+  }
+  if (node.t === 'num' || node.t === 'chain') return false;
+  if (node.t === 'sqrt' || node.t === 'pow') return node.a.t === 'num';
+  return node.a.t === 'num' && node.b.t === 'num';
+}
+function collectReady(node, acc) {
+  if (!node) return acc;
+  if (node.t === 'chain') {
+    node.terms.forEach(term => collectReady(term.node, acc));
+    for (let i = 0; i < node.terms.length - 1; i++) {
+      const pair = chainPairFor(node, i);
+      if (isReady(pair)) acc.push(pair);
+    }
+    return acc;
+  }
+  if (node.t === 'num') return acc;
+  if (isReady(node)) { acc.push(node); return acc; }
+  if (node.a) collectReady(node.a, acc);
+  if (node.b) collectReady(node.b, acc);
+  return acc;
+}
+function resolveValue(node) {
+  if (node.__isChainPair) {
+    const t1 = node.chain.terms[node.i], t2 = node.chain.terms[node.i + 1];
+    return t1.sign * t1.node.v + t2.sign * t2.node.v;
+  }
+  switch (node.t) {
+    case 'add': return node.a.v + node.b.v;
+    case 'sub': return node.a.v - node.b.v;
+    case 'mul': return node.a.v * node.b.v;
+    case 'div': return node.a.v / node.b.v;
+    case 'pow': return Math.pow(node.a.v, node.e);
+    case 'sqrt': return Math.sqrt(node.a.v);
+  }
+}
+function countOps(node) {
+  if (!node || node.t === 'num') return 0;
+  if (node.t === 'chain') return (node.terms.length - 1) + node.terms.reduce((s, t) => s + countOps(t.node), 0);
+  return 1 + countOps(node.a) + (node.b ? countOps(node.b) : 0);
+}
+function fmtSignedTerm(sign, v, isFirst) {
+  const mag = fmtNum(v);
+  return isFirst ? (sign < 0 ? `−${mag}` : mag) : `${sign < 0 ? '−' : '+'} ${mag}`;
+}
+function describeNode(node) {
+  if (node.__isChainPair) {
+    const t1 = node.chain.terms[node.i], t2 = node.chain.terms[node.i + 1];
+    return `${fmtSignedTerm(t1.sign, t1.node.v, true)} ${fmtSignedTerm(t2.sign, t2.node.v, false)}`;
+  }
+  if (node.t === 'sqrt') return `√${node.a.v}`;
+  if (node.t === 'pow') return `${node.a.v}${sup(node.e)}`;
+  return `${node.a.v} ${OPSYM[node.t]} ${node.b.v}`;
+}
+// L'expressió sencera és un únic node `chain` a l'arrel; queda "resolta" quan
+// només li queda un terme (ja convertit en número).
+function isFullySolved(node) {
+  if (node.t === 'num') return true;
+  return node.t === 'chain' && node.terms.length === 1 && node.terms[0].node.t === 'num';
+}
+function finalValue(node) {
+  if (node.t === 'num') return node.v;
+  const t = node.terms[0];
+  return t.sign * t.node.v;
+}
+
+// ─────────────────────────────────────────────
+//  GENERADOR D'EXPRESSIONS (plantilles amb resultats sempre positius)
+//  Totes les plantilles tenen entre 6 i 12 números: les expressions curtes
+//  (3-5 números) es van treure perquè eren massa fàcils de resoldre d'un
+//  cop d'ull sense necessitat real de raonar sobre la prioritat.
+// ─────────────────────────────────────────────
+
+// ── Tres subexpressions independents del mateix nivell alhora (6 números) ──
+function T_tripleMulDivTie() {
+  const a = randInt(3,12), b = randInt(3,12), c = randInt(3,12), d = randInt(3,12), e = randInt(3,12), f = randInt(3,12);
+  return { t:'chain', terms: [
+    { sign:1, node:{ t:'mul', a:numNode(a), b:numNode(b) } },
+    { sign:1, node:{ t:'mul', a:numNode(c), b:numNode(d) } },
+    { sign:1, node:{ t:'mul', a:numNode(e), b:numNode(f) } }
+  ] };
+}
+
+// ── Expressió llarga que combina tots els nivells alhora (7 números) ──
+// a + b×c + √d + (e−f)×g : quatre termes sumats, cadascun d'un nivell
+// diferent (número sol, multiplicació, arrel, i un parèntesi multiplicat),
+// perquè calgui identificar l'operació correcta diverses vegades seguides
+// dins d'una mateixa expressió llarga.
+function T_grandCombo() {
+  const a = randInt(5, 30);
+  const b = randInt(3, 12), c = randInt(3, 12);
+  const r = randInt(3, 9);
+  const approxRoot = Math.random() < 0.35;
+  const d = approxRoot ? r * r + randInt(1, 2 * r) : r * r;
+  const e = randInt(6, 16), f = randInt(1, e - 1), g = randInt(2, 8);
+  return { t:'chain', terms: [
+    { sign:1, node: numNode(a) },
+    { sign:1, node: { t:'mul', a:numNode(b), b:numNode(c) } },
+    { sign:1, node: { t:'sqrt', a:numNode(d) } },
+    { sign:1, node: { t:'mul', a:{ t:'sub', a:numNode(e), b:numNode(f), paren:true }, b:numNode(g) } }
+  ] };
+}
+
+// ── Cadena de 6 números amb potència, divisió i un parèntesi ──
+// base^e × b − c÷d + (e2+f2) : primers dos nivells de prioritat, sumats a un
+// parèntesi.
+function T_megaChain() {
+  const cube = Math.random() < 0.3;
+  const e2 = cube ? 3 : 2;
+  const base = cube ? randInt(2, 5) : randInt(2, 8);
+  const b = randInt(3, 10);
+  const dq = randInt(2, 9), d = randInt(3, 12), c = dq * d;
+  const e = randInt(3, 14), f = randInt(3, 14);
+  return { t:'chain', terms: [
+    { sign:1, node: { t:'mul', a:{ t:'pow', a:numNode(base), e:e2 }, b:numNode(b) } },
+    { sign:-1, node: { t:'div', a:numNode(c), b:numNode(d) } },
+    { sign:1, node: { t:'add', a:numNode(e), b:numNode(f), paren:true } }
+  ] };
+}
+
+// ── Un producte, una divisió i un parèntesi entre números solts (8 números) ──
+// a − b×c + d÷e − (f−g) + h : cinc termes; qualsevol parella adjacent ja
+// resolta es pot combinar en qualsevol ordre, independentment de què quedi
+// pendent a la resta de la cadena.
+function T_epicChain1() {
+  const b = randInt(2,9), c = randInt(2,9), bc = b*c;
+  const a = randInt(bc+1, bc+30);
+  const eVal = randInt(2,9), dq = randInt(1,4), d = dq*eVal;
+  const g = randInt(2,9), f = randInt(g+1, g+9);
+  const h = randInt(3,20);
+  return { t:'chain', terms: [
+    { sign:1, node: numNode(a) },
+    { sign:-1, node: { t:'mul', a:numNode(b), b:numNode(c) } },
+    { sign:1, node: { t:'div', a:numNode(d), b:numNode(eVal) } },
+    { sign:-1, node: { t:'sub', a:numNode(f), b:numNode(g), paren:true } },
+    { sign:1, node: numNode(h) }
+  ] };
+}
+
+// ── Parèntesis DOBLEMENT niats + resta de la cadena (10 números) ──
+// a − (b × (c − d)) + e×f − g÷h + (i−j) : el primer terme té tres nivells
+// de parèntesi seguits (el clàssic "doble parèntesi"); la resta de termes
+// (producte, divisió, parèntesi) es poden combinar entre si en qualsevol
+// ordre un cop cadascun estigui resolt.
+function T_epicChain2() {
+  const d = randInt(1,9), c = randInt(d+1, d+9);
+  const b = randInt(2,7);
+  const midMulVal = b*(c-d);
+  const a = randInt(midMulVal+1, midMulVal+25);
+  const e = randInt(2,9), f = randInt(2,9);
+  const h = randInt(2,6), gq = randInt(1,4), g = gq*h;
+  const j = randInt(1,9), i = randInt(j+1, j+9);
+  const innerSub = { t:'sub', a:numNode(c), b:numNode(d), paren:true };
+  const midMul = { t:'mul', a:numNode(b), b:innerSub, paren:true };
+  return { t:'chain', terms: [
+    { sign:1, node: numNode(a) },
+    { sign:-1, node: midMul },
+    { sign:1, node: { t:'mul', a:numNode(e), b:numNode(f) } },
+    { sign:-1, node: { t:'div', a:numNode(g), b:numNode(h) } },
+    { sign:1, node: { t:'sub', a:numNode(i), b:numNode(j), paren:true } }
+  ] };
+}
+
+// ── Potència, producte, divisió, parèntesi i un número solt (9 números) ──
+// a×b + c² − d÷e + (f−g)×h − i
+function T_epicChain3() {
+  const a = randInt(3,9), b = randInt(3,9);
+  const c = randInt(2,7);
+  const sum1 = a*b + c*c;
+  const eVal = randInt(2,9), dq = randInt(1,4), d = dq*eVal;
+  const sum2 = sum1 - dq;
+  const g = randInt(2,9), f = randInt(g+1, g+9), h = randInt(2,6);
+  const sum3 = sum2 + (f-g)*h;
+  const i = randInt(3, Math.min(30, sum3-1));
+  return { t:'chain', terms: [
+    { sign:1, node: { t:'mul', a:numNode(a), b:numNode(b) } },
+    { sign:1, node: { t:'pow', a:numNode(c), e:2 } },
+    { sign:-1, node: { t:'div', a:numNode(d), b:numNode(eVal) } },
+    { sign:1, node: { t:'mul', a:{ t:'sub', a:numNode(f), b:numNode(g), paren:true }, b:numNode(h) } },
+    { sign:-1, node: numNode(i) }
+  ] };
+}
+
+// ── La cadena més llarga: 12 números en una sola expressió (7 termes) ──
+// a − b + c×d − e÷f + (g−h)×i − (j−k) + l : cada terme es genera a partir
+// del total acumulat fins aleshores, així que la suma final mai baixa de
+// zero — però com que els termes ara es poden combinar en qualsevol ordre
+// (no només d'esquerra a dreta), això només acota el resultat FINAL, no
+// l'ordre en què es poden anar combinant.
+function T_epicChain4() {
+  let a = randInt(30, 60);
+  let cur = a;
+  const b = randInt(2, 9); cur -= b;
+  const c = randInt(2, 9), d = randInt(2, 9); cur += c * d;
+  const fVal = randInt(2, 9), eq = randInt(1, 4), e = eq * fVal; cur -= eq;
+  const h = randInt(2, 9), g = randInt(h + 1, h + 9), i = randInt(2, 6); cur += (g - h) * i;
+  const k = randInt(2, 9), j = randInt(k + 1, k + 9); cur -= (j - k);
+  const l = randInt(3, 20);
+  return { t:'chain', terms: [
+    { sign:1, node: numNode(a) },
+    { sign:-1, node: numNode(b) },
+    { sign:1, node: { t:'mul', a:numNode(c), b:numNode(d) } },
+    { sign:-1, node: { t:'div', a:numNode(e), b:numNode(fVal) } },
+    { sign:1, node: { t:'mul', a:{ t:'sub', a:numNode(g), b:numNode(h), paren:true }, b:numNode(i) } },
+    { sign:-1, node: { t:'sub', a:numNode(j), b:numNode(k), paren:true } },
+    { sign:1, node: numNode(l) }
+  ] };
+}
+
+const TEMPLATES = [
+  T_tripleMulDivTie, T_grandCombo, T_megaChain,
+  T_epicChain1, T_epicChain2, T_epicChain3, T_epicChain4
+];
+
+function pickTemplateIdx(prevIdx) {
+  if (TEMPLATES.length <= 1) return 0;
+  let idx;
+  do { idx = randInt(0, TEMPLATES.length-1); } while (idx === prevIdx);
+  return idx;
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+let W, H, hasInteracted = false;
+let lastTemplateIdx = -1;
+let root, stepsDone, stepsTotal;
+let anim = null;              // { type:'success'|'fail', node, start, dur, value }
+let categoryHighlight = null; // { cat, start, dur }
+let hintTimer = null;
+let rafRunning = false;
+
+let repteMode = false, timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0, expressionsSolved = 0;
+
+function newExpression() {
+  const idx = pickTemplateIdx(lastTemplateIdx);
+  lastTemplateIdx = idx;
+  root = TEMPLATES[idx]();
+  stepsDone = 0;
+  stepsTotal = countOps(root);
+  anim = null;
+  categoryHighlight = null;
+  resetStepLog();
+}
+newExpression();
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+// ─────────────────────────────────────────────
+//  TOKENITZACIÓ (arbre → fitxes visuals)
+// ─────────────────────────────────────────────
+function tokenize(node) {
+  if (node.t === 'num') return [{ text: fmtNum(node.v), nearestOp: null }];
+  if (node.t === 'chain') return tokenizeChain(node);
+
+  function claim(toks) { toks.forEach(t => { if (t.nearestOp == null) t.nearestOp = node; }); return toks; }
+
+  if (node.t === 'sqrt') {
+    const inner = tokenize(node.a);
+    return claim([
+      { text:'√', isSqrtSym:true, nearestOp:null },
+      { text:'(', isParen:true, nearestOp:null },
+      ...inner,
+      { text:')', isParen:true, nearestOp:null }
+    ]);
+  }
+  if (node.t === 'pow') {
+    const base = tokenize(node.a);
+    return claim([...base, { text: sup(node.e), isExp:true, nearestOp:null }]);
+  }
+  const aT = tokenize(node.a);
+  const bT = tokenize(node.b);
+  const opTok = { text: OPSYM[node.t], isOp:true, nearestOp:null };
+  let toks = [...aT, opTok, ...bT];
+  if (node.paren) {
+    toks = [{ text:'(', isParen:true, nearestOp:null }, ...toks, { text:')', isParen:true, nearestOp:null }];
+  }
+  return claim(toks);
+}
+
+// Un `chain` es tokenitza terme a terme, sense forçar cap agrupació
+// d'esquerra a dreta: cada operador '+'/'−' ENTRE dos termes queda associat
+// a la seva pròpia "chain-pair" (vàlida només quan els dos termes veïns ja
+// són números), independentment dels altres termes de la cadena.
+function tokenizeChain(chain) {
+  const toks = [];
+  chain.terms.forEach((term, i) => {
+    if (i > 0) {
+      const pair = chainPairFor(chain, i - 1);
+      toks.push({ text: term.sign < 0 ? '−' : '+', isOp:true, nearestOp: pair });
+    }
+    const termToks = tokenize(term.node);
+    if (term.node.t === 'num') {
+      // Un terme ja resolt no té node propi que el reclami (tokenize el
+      // retorna amb nearestOp:null): l'assignem a una chain-pair veïna
+      // perquè participi en el hit-test/atenuació igual que la resta.
+      const owner = i > 0 ? chainPairFor(chain, i - 1) : (chain.terms.length > 1 ? chainPairFor(chain, i) : null);
+      if (owner) termToks.forEach(t => { if (t.nearestOp == null) t.nearestOp = owner; });
+    }
+    toks.push(...termToks);
+  });
+  return toks;
+}
+
+function computeLayout() {
+  const toks = tokenize(root);
+  if (toks.length === 1 && toks[0].nearestOp === null) {
+    return { toks, groups: [], solved: true };
+  }
+  function measureAll(fs) {
+    ctx.font = `800 ${fs}px 'JetBrains Mono', monospace`;
+    let total = 0;
+    toks.forEach((tk, i) => {
+      tk._w = ctx.measureText(tk.text).width;
+      let gap = fs * 0.34;
+      if (tk.isExp) gap = fs * 0.02;
+      else if (tk.isParen && tk.text === ')') gap = fs * 0.05;
+      else if (i > 0 && toks[i-1].isParen && toks[i-1].text === '(') gap = fs * 0.05;
+      else if (tk.isSqrtSym) gap = fs * 0.34;
+      else if (i > 0 && toks[i-1].isSqrtSym) gap = fs * 0.03;
+      tk._gap = i === 0 ? 0 : gap;
+      total += tk._gap + tk._w;
+    });
+    return total;
+  }
+  let fontSize = clamp(Math.min(W, H*0.55) * 0.075, 18, 40);
+  let total = measureAll(fontSize);
+  const maxW = W * 0.9;
+  if (total > maxW) {
+    fontSize = Math.max(10, fontSize * (maxW / total));
+    total = measureAll(fontSize);
+  }
+  let x = (W - total) / 2;
+  const cy = H / 2;
+  toks.forEach(tk => {
+    x += tk._gap;
+    tk.x = x; tk.w = tk._w; tk.cx = x + tk._w/2; tk.cy = cy;
+    x += tk._w;
+  });
+  const order = [];
+  const map = new Map();
+  toks.forEach(tk => {
+    if (!tk.nearestOp) return;
+    if (!map.has(tk.nearestOp)) { map.set(tk.nearestOp, { minX: tk.x, maxX: tk.x + tk.w }); order.push(tk.nearestOp); }
+    else { const g = map.get(tk.nearestOp); g.minX = Math.min(g.minX, tk.x); g.maxX = Math.max(g.maxX, tk.x + tk.w); }
+  });
+  const groups = order.map(n => { const g = map.get(n); return { node:n, ready:isReady(n), cat:catOf(n), x0:g.minX, x1:g.maxX, cy }; });
+  return { toks, groups, solved:false, fontSize };
+}
+
+function hitGroup(layout, px, py) {
+  const hits = layout.groups.filter(g =>
+    px >= g.x0 - layout.fontSize*0.3 && px <= g.x1 + layout.fontSize*0.3 &&
+    py >= g.cy - layout.fontSize*0.9 && py <= g.cy + layout.fontSize*0.9
+  );
+  if (hits.length === 0) return null;
+  // Amb parèntesis niats, la caixa del node exterior (encara no llest) pot
+  // contenir per complet la caixa del node interior (ja llest). Preferim el
+  // node llest perquè el clic sobre l'operació interna sempre sigui possible.
+  return hits.find(g => g.ready) || hits[0];
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function roundRectPath(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+function hexA(hex, a) {
+  const v = hex.replace('#','');
+  const r = parseInt(v.substring(0,2),16), g = parseInt(v.substring(2,4),16), b = parseInt(v.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const layout = computeLayout();
+  if (layout.solved) { drawSolved(layout.toks[0].text, !Number.isInteger(finalValue(root))); return; }
+
+  const padY = layout.fontSize * 0.42, padX = layout.fontSize * 0.32;
+
+  layout.groups.forEach(g => {
+    if (!g.ready) return;
+    const isAnimTarget = anim && anim.node === g.node;
+    const hi = categoryHighlight && categoryHighlight.cat === g.cat;
+    // Cap requadre persistent per als nodes "llestos": marcar-los tots amb una
+    // caixa donava directament la resposta (calia només clicar l'única caixa
+    // ressaltada). El requadre ara només apareix durant la pròpia animació de
+    // clic (isAnimTarget) o quan l'alumne clica una targeta de referència (hi).
+    if (!isAnimTarget && !hi) return;
+    let shakeX = 0, scale = 1;
+    if (isAnimTarget) {
+      const t = Math.min(1, (performance.now() - anim.start) / anim.dur);
+      if (anim.type === 'fail') shakeX = Math.sin(t * Math.PI * 7) * (1 - t) * layout.fontSize * 0.4;
+      if (anim.type === 'success') scale = 1 + 0.18 * Math.sin(Math.min(1, t/0.55) * Math.PI);
+    }
+    const baseColor = CAT_COLOR[g.cat];
+    ctx.save();
+    ctx.translate((g.x0 + g.x1) / 2 + shakeX, g.cy);
+    ctx.scale(scale, scale);
+    roundRectPath(-(g.x1 - g.x0)/2 - padX, -padY, (g.x1 - g.x0) + padX*2, padY*2, 10);
+    if (isAnimTarget && anim.type === 'fail') {
+      ctx.fillStyle = 'rgba(230,72,58,0.30)';
+      ctx.strokeStyle = '#e6483a';
+    } else {
+      ctx.fillStyle = hexA(baseColor, hi ? 0.32 : 0.16);
+      ctx.strokeStyle = hexA(baseColor, hi ? 1 : 0.6);
+    }
+    ctx.lineWidth = hi ? 2.4 : 1.6;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  layout.toks.forEach(tk => {
+    let dx = 0, alpha = 1;
+    if (anim && tk.nearestOp === anim.node) {
+      const t = Math.min(1, (performance.now() - anim.start) / anim.dur);
+      if (anim.type === 'fail') dx = Math.sin(t * Math.PI * 7) * (1 - t) * layout.fontSize * 0.4;
+      if (anim.type === 'success' && t > 0.5) alpha = Math.max(0, 1 - (t - 0.5) / 0.5);
+    }
+    ctx.globalAlpha = alpha;
+    ctx.font = `${(tk.isOp || tk.isExp) ? 800 : 600} ${layout.fontSize}px 'JetBrains Mono', monospace`;
+    let color = TEXT_DARK;
+    if (tk.isOp || tk.isParen || tk.isSqrtSym || tk.isExp) {
+      const cat = tk.nearestOp ? catOf(tk.nearestOp) : null;
+      const ready = tk.nearestOp ? isReady(tk.nearestOp) : false;
+      const hi = categoryHighlight && cat && categoryHighlight.cat === cat;
+      color = cat ? hexA(CAT_COLOR[cat], (ready || hi) ? 1 : 0.5) : TEXT_MUTED;
+    }
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(tk.text, tk.x + dx, tk.cy);
+    ctx.globalAlpha = 1;
+  });
+
+  if (anim && anim.type === 'success') {
+    const t = Math.min(1, (performance.now() - anim.start) / anim.dur);
+    if (t > 0.5) {
+      const g = layout.groups.find(g => g.node === anim.node) ||
+                { x0: 0, x1: 0, cy: H/2 }; // fallback, shouldn't happen
+      const a2 = Math.min(1, (t - 0.5) / 0.5);
+      ctx.globalAlpha = a2;
+      ctx.font = `800 ${layout.fontSize}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = CAT_COLOR[catOf(anim.node)] || '#1fa971';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText((anim.approx ? '≈' : '') + fmtNum(anim.value), (g.x0 + g.x1) / 2, g.cy);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  ctx.font = `600 ${Math.max(12, W*0.018)}px 'Inter', sans-serif`;
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(`Pas ${stepsDone}/${stepsTotal}`, W*0.035, H*0.045);
+}
+
+function drawSolved(text, approx) {
+  const fs = clamp(W * 0.09, 26, 64);
+  ctx.font = `800 ${fs}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = '#1fa971';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${approx ? '≈' : '='} ${text}`, W/2, H*0.46);
+  ctx.font = `600 ${Math.max(12, W*0.024)}px 'Inter', sans-serif`;
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.fillText(approx ? 'Expressió resolta (valor aproximat) 🎉' : 'Expressió resolta 🎉', W/2, H*0.46 + fs*0.85);
+}
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.changedTouches ? e.changedTouches[0] : e;
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+
+function onCanvasClick(e) {
+  if (anim) return;
+  if (pendingAnswerNode) return; // cal respondre l'operació pendent abans de clicar-ne una altra
+  const layout = computeLayout();
+  if (layout.solved) return;
+  const { x, y } = pointerXY(e);
+  const g = hitGroup(layout, x, y);
+  if (!g) return;
+  if (!hasInteracted) { hasInteracted = true; }
+  handleNodeClick(g.node);
+}
+canvas.addEventListener('click', onCanvasClick);
+canvas.addEventListener('touchend', e => { e.preventDefault(); onCanvasClick(e); }, { passive:false });
+window.addEventListener('resize', resize);
+
+// Una parella de la cadena que es combina "fora d'ordre" segueix sent
+// correcta — només avisem amb un missatge informatiu, no la bloquegem.
+// Es considera "fora d'ordre" si hi havia una altra parella disponible més a
+// l'esquerra, o si encara queda pendent alguna altra operació (parèntesi,
+// potència, multiplicació...) en un altre punt de la mateixa cadena.
+function chainPairIsOutOfOrder(node) {
+  const { chain, i } = node;
+  for (let j = 0; j < i; j++) {
+    if (isReady(chainPairFor(chain, j))) return true;
+  }
+  return chain.terms.some((t, idx) => idx !== i && idx !== i + 1 && t.node.t !== 'num');
+}
+
+function handleNodeClick(node) {
+  if (node.__isChainPair) {
+    if (!isReady(node)) {
+      const t1 = node.chain.terms[node.i], t2 = node.chain.terms[node.i + 1];
+      const blocker = t1.node.t !== 'num' ? t1.node : t2.node;
+      doReject(node, HINT_BLOCK[catOf(blocker)]);
+      return;
+    }
+    if (repteMode) promptRepteAnswer(node); else doSuccess(node);
+    return;
+  }
+  if (!isReady(node)) {
+    const blocker = node.a.t !== 'num' ? node.a : node.b;
+    doReject(node, HINT_BLOCK[catOf(blocker)]);
+    return;
+  }
+  // Un node només és "llest" quan els seus propis operands ja són números —
+  // aquesta condició estructural ja garanteix per si sola totes les
+  // dependències reals (no es pot multiplicar abans que un parèntesi intern
+  // es resolgui, etc.). Un cop un node és "llest", ja no depèn de què quedi
+  // pendent a la resta de l'expressió: es pot resoldre en qualsevol moment.
+  if (repteMode) promptRepteAnswer(node); else doSuccess(node);
+}
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+function showHint(text, warn) {
+  clearTimeout(hintTimer);
+  hint.textContent = text;
+  hint.classList.toggle('warn', !!warn);
+  hintTimer = setTimeout(() => { hint.textContent = DEFAULT_HINT; hint.classList.remove('warn'); }, 2600);
+}
+
+function doSuccess(node) {
+  const value = resolveValue(node);
+  const approx = !Number.isInteger(value); // arrel d'un no-quadrat-perfecte -> resultat aproximat
+  const stepText = `${describeNode(node)} ${approx ? '≈' : '='} ${fmtNum(value)}${approx ? ' (aprox.)' : ''}`;
+  const a = { type:'success', node, start: performance.now(), dur: 520, value, approx, stepText };
+  anim = a;
+  flash(wrap, CAT_COLOR[catOf(node)]);
+  showHint(DEFAULT_HINT, false);
+  readoutBadge.classList.add('active');
+  readoutName.textContent = 'Correcte! ✅';
+  const advisory = node.__isChainPair && chainPairIsOutOfOrder(node)
+    ? " 💡 No cal seguir sempre d'esquerra a dreta: com que aquesta suma/resta és independent de la resta, combinar-la ara també és correcte."
+    : '';
+  readoutDef.textContent = `${stepText} — ${CAT_LABEL[catOf(node)]}.${advisory}`;
+  if (repteMode) {
+    score++; streak++;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 2);
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+  }
+  ensureRAF();
+  // setTimeout is the authoritative completion trigger: requestAnimationFrame
+  // is throttled/paused by browsers on hidden or backgrounded tabs, and the
+  // game state must still advance even if the visual tick loop stalls.
+  setTimeout(() => { if (anim === a) finishAnim(a); }, a.dur + 30);
+}
+
+function doReject(node, reason) {
+  const a = { type:'fail', node, start: performance.now(), dur: 420 };
+  anim = a;
+  flash(wrap, '#e6483a');
+  showHint(reason, true);
+  readoutBadge.classList.remove('active');
+  readoutName.textContent = 'Encara no! ✕';
+  readoutDef.textContent = reason;
+  if (repteMode) {
+    streak = 0;
+    score = Math.max(0, score - 1);
+    timeLeft = Math.max(0, timeLeft - 2);
+    document.getElementById('rpStreak').textContent = streak;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+  }
+  ensureRAF();
+  setTimeout(() => { if (anim === a) finishAnim(a); }, a.dur + 30);
+}
+
+// ─────────────────────────────────────────────
+//  MODE REPTE: cal ESCRIURE el resultat, no es revela sol
+// ─────────────────────────────────────────────
+function promptRepteAnswer(node) {
+  pendingAnswerNode = node;
+  jerAnswerLabel.textContent = `${describeNode(node)} = ?`;
+  jerAnswerInput.value = '';
+  jerAnswerFeedback.textContent = '';
+  jerAnswerPanel.style.display = 'flex';
+  jerAnswerInput.focus();
+  readoutBadge.classList.add('active');
+  readoutName.textContent = 'Escriu el resultat';
+  readoutDef.textContent = `Calcula ${describeNode(node)} i escriu la resposta al quadre de sota.`;
+  showHint(DEFAULT_HINT, false);
+}
+function hideRepteAnswer() {
+  jerAnswerPanel.style.display = 'none';
+  pendingAnswerNode = null;
+}
+function submitRepteAnswer() {
+  if (!pendingAnswerNode || !repteMode || !timer) return;
+  const node = pendingAnswerNode;
+  const value = resolveValue(node);
+  const approx = !Number.isInteger(value);
+  const typed = parseFloat(jerAnswerInput.value);
+  if (!Number.isFinite(typed)) return;
+  const correct = approx ? Math.abs(typed - value) < 0.05 : typed === value;
+  if (correct) {
+    hideRepteAnswer();
+    doSuccess(node);
+  } else {
+    jerAnswerFeedback.textContent = '✕ Encara no és correcte, torna-ho a provar';
+    jerAnswerFeedback.style.color = '#e6483a';
+    streak = 0; document.getElementById('rpStreak').textContent = streak;
+    score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+    timeLeft = Math.max(0, timeLeft - 2);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    if (timeLeft <= 0) {
+      hideRepteAnswer();
+      stopTimer();
+      document.getElementById('rpTime').classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació: ${score} punts · ${expressionsSolved} expressions resoltes.`;
+      return;
+    }
+    jerAnswerInput.select();
+  }
+}
+jerAnswerInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitRepteAnswer(); });
+document.getElementById('jerAnswerCheck').addEventListener('click', submitRepteAnswer);
+
+function ensureRAF() {
+  if (rafRunning) return;
+  rafRunning = true;
+  requestAnimationFrame(tick);
+}
+function tick(now) {
+  let busy = false;
+  if (anim) busy = true;
+  if (categoryHighlight) {
+    const t = (now - categoryHighlight.start) / categoryHighlight.dur;
+    if (t >= 1) categoryHighlight = null; else busy = true;
+  }
+  draw();
+  if (busy) requestAnimationFrame(tick); else rafRunning = false;
+}
+
+function finishAnim(a) {
+  if (anim !== a) return; // stale timeout guard
+  anim = null;
+  if (a.type === 'success') {
+    const node = a.node;
+    if (node.__isChainPair) {
+      const { chain, i } = node;
+      const t1 = chain.terms[i], t2 = chain.terms[i + 1];
+      const combined = t1.sign * t1.node.v + t2.sign * t2.node.v;
+      chain.terms.splice(i, 2, { sign: combined < 0 ? -1 : 1, node: { t:'num', v: Math.abs(combined) } });
+      chain._pairs = []; // els índexs es desplacen després d'una fusió — es regenera a la propera tokenització
+    } else {
+      node.t = 'num'; node.v = a.value;
+      delete node.a; delete node.b; delete node.e; delete node.paren;
+    }
+    stepsDone++;
+    refreshReadoutNum();
+    logStep(a.stepText, a.approx);
+    onStepResolved();
+  }
+  draw();
+}
+
+function onStepResolved() {
+  if (isFullySolved(root)) {
+    const val = finalValue(root);
+    const approxFinal = !Number.isInteger(val);
+    readoutName.textContent = 'Expressió resolta! 🎉';
+    readoutDef.textContent = approxFinal
+      ? `Resultat final: ≈ ${fmtNum(val)} (valor aproximat).`
+      : `Resultat final: ${fmtNum(val)}.`;
+    if (repteMode) {
+      expressionsSolved++;
+      document.getElementById('rpExpr').textContent = expressionsSolved;
+      timeLeft = Math.min(repteMaxTime, timeLeft + 4);
+      document.getElementById('rpTime').textContent = timeLeft + 's';
+      setTimeout(() => { if (repteMode && timeLeft > 0) newRepteExpr(); }, 750);
+    }
+  }
+}
+
+function refreshReadoutNum() {
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = isFullySolved(root) ? fmtNum(finalValue(root)) : `${stepsDone}/${stepsTotal}`;
+}
+
+// ─────────────────────────────────────────────
+//  FULL DE CÀLCUL (historial de passos)
+// ─────────────────────────────────────────────
+function resetStepLog() {
+  stepLogLines.innerHTML = '';
+  stepLogEmpty = document.createElement('div');
+  stepLogEmpty.className = 'step-log-empty';
+  stepLogEmpty.id = 'stepLogEmpty';
+  stepLogEmpty.textContent = 'Els passos que resolguis aniran apareixent aquí, com si els escrivissis al full.';
+  stepLogLines.appendChild(stepLogEmpty);
+}
+function logStep(text, approx) {
+  if (stepLogEmpty) { stepLogEmpty.remove(); stepLogEmpty = null; }
+  const line = document.createElement('div');
+  line.className = 'step-log-line' + (approx ? ' approx' : '');
+  const idx = document.createElement('span');
+  idx.className = 'sl-idx';
+  idx.textContent = (stepLogLines.children.length + 1) + '.';
+  const txt = document.createElement('span');
+  txt.textContent = text;
+  line.appendChild(idx);
+  line.appendChild(txt);
+  stepLogLines.appendChild(line);
+  stepLogLines.scrollTop = stepLogLines.scrollHeight;
+}
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+function triggerCatHighlight(cat) {
+  const h = { cat, start: performance.now(), dur: 1100 };
+  categoryHighlight = h;
+  flash(wrap, CAT_COLOR[cat]);
+  ensureRAF();
+  setTimeout(() => { if (categoryHighlight === h) { categoryHighlight = null; draw(); } }, h.dur + 30);
+}
+document.getElementById('card-paren').addEventListener('click', () => triggerCatHighlight('paren'));
+document.getElementById('card-powroot').addEventListener('click', () => triggerCatHighlight('powroot'));
+document.getElementById('card-muldiv').addEventListener('click', () => triggerCatHighlight('muldiv'));
+document.getElementById('card-addsub').addEventListener('click', () => triggerCatHighlight('addsub'));
+
+// ─────────────────────────────────────────────
+//  MODE EXPLORA
+// ─────────────────────────────────────────────
+document.getElementById('btnNewExpr').addEventListener('click', () => {
+  newExpression();
+  draw(); refreshReadoutNum();
+  readoutName.textContent = 'Nova expressió';
+  readoutDef.textContent = `Clica l'operació que creus que s'ha de resoldre primer.`;
+  showHint(DEFAULT_HINT, false);
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const rpTime = document.getElementById('rpTime'), rpScore = document.getElementById('rpScore'),
+      rpStreak = document.getElementById('rpStreak'), rpExpr = document.getElementById('rpExpr');
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function newRepteExpr() {
+  hideRepteAnswer();
+  wrap.classList.remove('time-up');
+  newExpression();
+  draw(); refreshReadoutNum();
+  readoutName.textContent = 'Nova expressió';
+  readoutDef.textContent = 'Clica l’operació que toca ara.';
+  showHint(DEFAULT_HINT, false);
+}
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; expressionsSolved = 0;
+  wrap.classList.remove('time-up');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's'; rpExpr.textContent = expressionsSolved;
+  rpTime.classList.remove('time-low');
+  newRepteExpr();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      hideRepteAnswer();
+      stopTimer();
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació: ${score} punts · ${expressionsSolved} expressions resoltes.`;
+    }
+  }, 1000);
+}
+
+document.getElementById('rpNewRound').addEventListener('click', () => { hideRepteAnswer(); newRepteExpr(); });
+
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  hideRepteAnswer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  newExpression();
+  draw(); refreshReadoutNum();
+  readoutName.textContent = 'Comença!';
+  readoutDef.textContent = `Clica l'operació que creus que s'ha de resoldre primer.`;
+  showHint(DEFAULT_HINT, false);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resize();
+refreshReadoutNum();
+</script>
+</body>
+</html>

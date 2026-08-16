@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Percentatges · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--terracotta); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--terracotta); color: var(--terracotta); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 80px; text-align: center; }
+    .stepper .stepper-val {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; width: 48px; text-align: center;
+      border: none; background: transparent; color: var(--ink); padding: 0; -moz-appearance: textfield;
+    }
+    .stepper .stepper-val::-webkit-outer-spin-button, .stepper .stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .stepper .stepper-val:focus { outline: none; color: var(--terracotta); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+    .view-controls { display: none; }
+    .view-controls.active { display: flex; }
+
+    /* ── SUB-TABS (Rebaixes / Dipòsit) ── */
+    .subtab-bar { display: flex; gap: .3rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .3rem; width: fit-content; flex-wrap: wrap; }
+    .subtab-bar button {
+      border: none; background: transparent; font-family: var(--font-body); font-weight: 600; font-size: .85rem;
+      padding: .55rem 1.1rem; border-radius: 100px; cursor: pointer; color: var(--muted); transition: all var(--tr);
+    }
+    .subtab-bar button:hover { color: var(--ink); }
+    .subtab-bar button.active { background: var(--sub-color, var(--terracotta)); color: #fff; }
+
+    #pctCanvas { cursor: pointer; touch-action: none; }
+    .canvas-wrap.dragging #pctCanvas { cursor: grabbing; }
+
+    /* ── PANELL DE RESPOSTA (quiz Explora + repte-answer del Repte) ── */
+    .answer-panel {
+      display: flex; flex-direction: column; gap: .6rem; background: var(--card); border: 1px solid var(--terracotta);
+      border-radius: 12px; padding: 1rem 1.3rem;
+    }
+    .answer-panel .rs-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .answer-panel .answer-label { font-size: .85rem; font-weight: 600; color: var(--muted); }
+    .answer-feedback { font-size: .85rem; font-weight: 600; min-height: 1.1em; }
+
+    /* ── BANNER A LES FITXES EXTERNES ── */
+    .fitxes-banner {
+      display: flex; align-items: center; gap: .9rem; text-decoration: none;
+      background: color-mix(in srgb, var(--terracotta) 10%, var(--surface));
+      border: 1.5px solid color-mix(in srgb, var(--terracotta) 45%, transparent);
+      border-radius: 14px; padding: .9rem 1.3rem; transition: all var(--tr);
+    }
+    .fitxes-banner:hover {
+      border-color: var(--terracotta); transform: translateY(-2px);
+      box-shadow: 0 10px 26px color-mix(in srgb, var(--terracotta) 22%, transparent);
+      background: color-mix(in srgb, var(--terracotta) 15%, var(--surface));
+    }
+    .fitxes-banner-icon {
+      flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; background: color-mix(in srgb, var(--terracotta) 20%, transparent); color: var(--terracotta);
+    }
+    .fitxes-banner-text { flex: 1; font-size: .9rem; color: var(--ink); line-height: 1.4; }
+    .fitxes-banner-text strong { color: var(--terracotta); font-family: var(--font-display); }
+    .fitxes-banner-arrow { flex: 0 0 auto; font-size: 1.3rem; font-weight: 700; color: var(--terracotta); transition: transform var(--tr); }
+    .fitxes-banner:hover .fitxes-banner-arrow { transform: translate(3px, -3px); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--terracotta)">Bloc 03 · Percentatges</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Percentatges</h1>
+      <p>Arrossega el dial circular de «Rebaixes» per aplicar un descompte a un producte i mira com canvia el preu en directe, o arrossega la barra del «Dipòsit» amunt i avall fins que el teu percentatge coincideixi amb el nivell ombrejat. Al mode Repte, fes-ho contra rellotge.</p>
+    </div>
+
+    <a class="fitxes-banner" href="../proporcionalitat1eso/index.html" target="_blank" rel="noopener">
+      <span class="fitxes-banner-icon">📘</span>
+      <span class="fitxes-banner-text"><strong>Fitxes de Proporcionalitat i Percentatges:</strong> Clica aquí</span>
+      <span class="fitxes-banner-arrow">↗</span>
+    </a>
+
+    <div class="mode-toggle" style="--m-color: var(--terracotta)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="subtab-bar explora-only" id="subtabBar">
+      <button class="active" data-view="rebaixes" style="--sub-color:var(--terracotta)">💸 Rebaixes</button>
+      <button data-view="diposit" style="--sub-color:var(--plum)">🛢️ Dipòsit</button>
+    </div>
+
+    <!-- Sub-tab A: Rebaixes (dial circular de percentatge) -->
+    <div class="controls-row view-controls active explora-only" id="rebaixesControls">
+      <div class="stepper">
+        <button id="nMinus">−</button>
+        <span class="stepper-label">Preu N</span>
+        <input type="number" class="stepper-val" id="nVal" value="80" min="5" max="999" inputmode="numeric" maxlength="3">
+        <button id="nPlus">+</button>
+      </div>
+      <button class="btn btn-ghost" id="rebaixesRandomBtn">🎲 Nou producte</button>
+      <div class="mode-toggle" id="percentModeToggle" style="--m-color: var(--plum)">
+        <button data-pm="live" class="active">👁 En directe</button>
+        <button data-pm="quiz">🧠 Endevina</button>
+      </div>
+    </div>
+
+    <!-- Sub-tab B: Dipòsit (tanc omplert + barra de percentatge arrossegable) -->
+    <div class="controls-row view-controls explora-only" id="depositControls">
+      <div class="stepper">
+        <button id="partMinus">−</button>
+        <span class="stepper-label">Part</span>
+        <input type="number" class="stepper-val" id="partVal" value="45" min="0" max="998" inputmode="numeric" maxlength="3">
+        <button id="partPlus">+</button>
+      </div>
+      <div class="stepper">
+        <button id="totalMinus">−</button>
+        <span class="stepper-label">Total</span>
+        <input type="number" class="stepper-val" id="totalVal" value="60" min="1" max="999" inputmode="numeric" maxlength="3">
+        <button id="totalPlus">+</button>
+      </div>
+      <button class="btn btn-ghost" id="depositRandomBtn">🎲 Nombres aleatoris</button>
+      <button class="btn btn-ghost" id="depositContextBtn">🔄 Canvia de context</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--terracotta)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <!-- Panell compartit Explora (quiz) + Repte per a les rondes de Rebaixes -->
+    <div class="answer-panel" id="rebaixesAnswerPanel" style="display:none">
+      <span class="rs-label" id="rebaixesQuizQuestion">Arrossega el dial fins aconseguir un descompte del 25%.</span>
+      <div class="rs-row">
+        <button class="btn btn-primary" id="rebaixesQuizSubmitBtn">Comprova ✔</button>
+        <button class="btn btn-ghost explora-only" id="rebaixesQuizNewBtn">🎲 Nou objectiu</button>
+      </div>
+      <span class="answer-feedback" id="rebaixesQuizFeedback"></span>
+    </div>
+
+    <!-- Panell compartit Explora + Repte per a les rondes de Dipòsit -->
+    <div class="answer-panel" id="depositAnswerPanel" style="display:none">
+      <span class="rs-label">Arrossega la barra amunt o avall fins que el teu percentatge coincideixi amb el nivell del dipòsit:</span>
+      <div class="rs-row">
+        <button class="btn btn-primary" id="depositCheckBtn">Comprova ✔</button>
+        <button class="btn btn-ghost" id="depositResetBtn">reinicia la barra ↺</button>
+      </div>
+      <span class="answer-feedback" id="depositFeedback"></span>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--terracotta)">
+      <canvas id="pctCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega el dial per triar el percentatge de descompte i mira el preu final en directe.</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--terracotta)">
+      <div class="readout-num" id="readoutNum">60 €</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">25% de descompte sobre 80 €</div>
+        <div class="readout-def" id="readoutDef">Preu final = N × (1 − X/100) = 80 × 0,75 = 60 €</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Percentatges: conceptes clau</div>
+
+    <div class="type-card active" id="card-rebaixa" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Descompte d'un preu</div>
+        <div class="type-range">Preu final = N × (1 − X/100)</div>
+        <div class="type-desc">Un descompte del X% es resta del preu original. Prova-ho arrossegant el dial de «Rebaixes».</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-diposit" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">De part i total a percentatge</div>
+        <div class="type-range">% = part/total × 100</div>
+        <div class="type-desc">Divideix la part pel total i multiplica per 100. Prova-ho arrossegant la barra al «Dipòsit».</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-total100" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">100% = el total</div>
+        <div class="type-range">100 de cada 100</div>
+        <div class="type-desc">Quan la part i el total coincideixen, el dipòsit està completament ple: és el 100%.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-augdesc" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Augments i descomptes</div>
+        <div class="type-range">+20% = ×1,20 · −20% = ×0,80</div>
+        <div class="type-desc">Un augment del 20% multiplica per 1,20; un descompte del 20% (com al dial de Rebaixes) multiplica per 0,80.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> un percentatge és una fracció de denominador 100. «25%» vol dir «25 de cada 100», és a dir, 25/100 = 0,25. Al dial de Rebaixes, girar-lo un 25% resta aquesta fracció del preu; al Dipòsit, arrossegar la barra fins al nivell et permet llegir directament quin percentatge representa.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 03 · Decimals, Proporcionalitat i Percentatges</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  PALETA
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+function hexToRgb(hex) {
+  const m = hex.replace('#', '').match(/.{1,2}/g);
+  return m.map(h => parseInt(h, 16)).join(',');
+}
+const PALETTE = {
+  petrol:     cssVar('--petrol', '#0b93a0'),
+  amber:      cssVar('--amber', '#e2860a'),
+  terracotta: cssVar('--terracotta', '#e6483a'),
+  sage:       cssVar('--sage', '#177e54'),
+  plum:       cssVar('--plum', '#8452d6')
+};
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('pctCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+let W, H;
+let view = 'rebaixes';       // 'rebaixes' | 'diposit'  (només rellevant a Explora)
+let repteMode = false;
+
+// ── Rebaixes: producte + preu + dial de descompte ──
+const PRODUCTS = [
+  { icon: '🎧', name: 'Auriculars' },
+  { icon: '👟', name: 'Sabatilles' },
+  { icon: '🎮', name: 'Videojoc' }
+];
+let product = PRODUCTS[0];
+let N = 80;                  // preu original
+let dialX = 25;               // percentatge de descompte (0..100), fixat arrossegant el dial
+let percentMode = 'live';    // 'live' | 'quiz'
+let quizTargetType = 'discount'; // 'discount' | 'finalPrice'
+let quizTargetX = null;
+let quizRevealed = false;
+
+// ── Dipòsit: context + part/total + barra de percentatge arrossegable ──
+const TANKS = [
+  { icon: '💧', label: "dipòsit d'aigua", unit: 'L',    color: 'petrol' },
+  { icon: '🔋', label: 'bateria',          unit: 'mAh',  color: 'sage'   },
+  { icon: '🍬', label: 'pot de caramels',  unit: 'peces', color: 'plum'  }
+];
+let tank = TANKS[0];
+let part = 45, total = 60;
+let depositMyPercent = 0;    // percentatge triat arrossegant la barra
+let depositRevealed = false;
+
+// rectes/cercles per al hit-test (recalculats a cada draw())
+let dialRect = null;   // { cx, cy, r }
+let tankRect = null;   // { x, y, w, h }
+let depositGeom = null; // { tankX, tankY, tankH, tankW, markerX, minPercent, maxPercent }
+let draggingDial = false;
+const DEPOSIT_MIN_PCT = -10, DEPOSIT_MAX_PCT = 120;
+
+// Repte
+let repteRoundType = 'rebaixes'; // 'rebaixes' | 'diposit'
+let rProduct = PRODUCTS[0], rN = 80, rDialX = 0, rQuizTargetType = 'discount', rQuizTargetX = 25;
+let rTank = TANKS[0], rPart = 45, rTotal = 60, rDepositMyPercent = 0;
+let repteRevealed = false, repteTimedOut = false, repteRoundActive = false;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+
+let draggingDeposit = false;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+// format en català: enter sense decimals, decimal amb coma, sense zeros sobrants
+function fmtNum(n) {
+  const r = Math.round(n * 100) / 100;
+  if (Number.isInteger(r)) return String(r);
+  let s = r.toFixed(2);
+  if (s.endsWith('0')) s = s.slice(0, -1);
+  if (s.endsWith('.')) s = s.slice(0, -1);
+  return s.replace('.', ',');
+}
+function toCaDecimal(n) { return String(n).replace('.', ','); }
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX — helpers
+// ─────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke, lw) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1.4; ctx.stroke(); }
+}
+function txt(str, x, y, size, color, align, weight, font, baseline) {
+  ctx.font = `${weight || 600} ${size}px '${font || 'Inter'}', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = baseline || 'middle';
+  ctx.fillText(str, x, y);
+}
+
+// ─────────────────────────────────────────────
+//  REBAIXES: dial circular de percentatge (0% dalt, sentit horari)
+// ─────────────────────────────────────────────
+function finalPrice(n, x) { return n * (1 - x / 100); }
+function angleForPercent(p) { return -Math.PI / 2 + (p / 100) * Math.PI * 2; }
+function percentForPointer(x, y, cx, cy) {
+  const dx = x - cx, dy = y - cy;
+  const angle = Math.atan2(dy, dx);
+  let frac = (angle + Math.PI / 2) / (Math.PI * 2);
+  frac = ((frac % 1) + 1) % 1;
+  return frac * 100;
+}
+
+function drawRebaixesDial(prod, n, x) {
+  const final = finalPrice(n, x);
+
+  txt(`${prod.icon} ${prod.name}`, W / 2, H * 0.095, Math.max(15, W * 0.032), TEXT_DARK, 'center', 700, 'Space Grotesk');
+
+  // fila de preus: original ratllat + preu final
+  const priceY = H * 0.19;
+  const origStr = `${fmtNum(n)} €`;
+  const finalStr = `${fmtNum(final)} €`;
+  ctx.font = `600 ${Math.max(12, W * 0.024)}px 'JetBrains Mono', monospace`;
+  const origW = ctx.measureText(origStr).width;
+  ctx.font = `700 ${Math.max(17, W * 0.038)}px 'JetBrains Mono', monospace`;
+  const finalW = ctx.measureText(finalStr).width;
+  const gap = W * 0.03;
+  const startX = W / 2 - (origW + finalW + gap) / 2;
+
+  ctx.font = `600 ${Math.max(12, W * 0.024)}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = TEXT_MUTED; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(origStr, startX, priceY);
+  ctx.strokeStyle = TEXT_MUTED; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(startX - 2, priceY); ctx.lineTo(startX + origW + 2, priceY); ctx.stroke();
+
+  ctx.font = `700 ${Math.max(17, W * 0.038)}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = x > 0 ? PALETTE.sage : TEXT_DARK;
+  ctx.fillText(finalStr, startX + origW + gap, priceY);
+
+  // dial
+  const dialCx = W / 2, dialCy = H * 0.62;
+  const dialR = Math.min(W, H) * 0.24;
+  dialRect = { cx: dialCx, cy: dialCy, r: dialR };
+
+  ctx.beginPath(); ctx.arc(dialCx, dialCy, dialR, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(26,31,54,0.12)'; ctx.lineWidth = Math.max(8, dialR * 0.16); ctx.stroke();
+
+  const startAngle = -Math.PI / 2;
+  const endAngle = startAngle + (x / 100) * Math.PI * 2;
+  if (x > 0) {
+    ctx.beginPath();
+    ctx.arc(dialCx, dialCy, dialR, startAngle, endAngle, false);
+    ctx.strokeStyle = PALETTE.terracotta;
+    ctx.lineWidth = Math.max(8, dialR * 0.16);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+  }
+
+  [0, 25, 50, 75].forEach(v => {
+    const a = angleForPercent(v);
+    const lx = dialCx + Math.cos(a) * (dialR + dialR * 0.22);
+    const ly = dialCy + Math.sin(a) * (dialR + dialR * 0.22);
+    txt(v + '%', lx, ly, Math.max(9, W * 0.014), TEXT_MUTED, 'center', 600);
+  });
+
+  const hAngle = angleForPercent(x);
+  const hx = dialCx + Math.cos(hAngle) * dialR;
+  const hy = dialCy + Math.sin(hAngle) * dialR;
+  ctx.beginPath(); ctx.arc(hx, hy, Math.max(8, dialR * 0.13), 0, Math.PI * 2);
+  ctx.fillStyle = PALETTE.terracotta;
+  ctx.shadowColor = PALETTE.terracotta; ctx.shadowBlur = 10;
+  ctx.fill(); ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+  // indica clarament, al costat de la bola, quants € representa el descompte actual
+  if (x > 0) {
+    const discount = n - final;
+    const labelR = dialR + dialR * 0.36;
+    const lx2 = dialCx + Math.cos(hAngle) * labelR;
+    const ly2 = dialCy + Math.sin(hAngle) * labelR;
+    txt(`−${fmtNum(discount)} €`, lx2, ly2, Math.max(11, W * 0.02), PALETTE.terracotta, 'center', 700, 'JetBrains Mono');
+  }
+
+  txt(`${Math.round(x)}%`, dialCx, dialCy - dialR * 0.08, Math.max(20, dialR * 0.42), PALETTE.terracotta, 'center', 700, 'JetBrains Mono');
+  txt('descompte', dialCx, dialCy + dialR * 0.32, Math.max(10, dialR * 0.14), TEXT_MUTED, 'center', 600);
+}
+
+// ─────────────────────────────────────────────
+//  DIPÒSIT: tanc omplert (part/total) + barra arrossegable amb el % de l'alumne
+// ─────────────────────────────────────────────
+function truePercentDeposit(p, t) { return t > 0 ? p / t * 100 : 0; }
+
+function drawDepositTank(tk, p, t, opts) {
+  opts = opts || {};
+  const myPercent = opts.myPercent;
+  const revealed = !!opts.revealed;
+  const totalSafe = Math.max(1, t);
+  const ratio = clamp(p / totalSafe, 0, 1);
+
+  txt(`${tk.icon} ${tk.label}`, W / 2, H * 0.085, Math.max(15, W * 0.03), TEXT_DARK, 'center', 700, 'Space Grotesk');
+  txt(`${p} ${tk.unit} de ${t} ${tk.unit}`, W / 2, H * 0.15, Math.max(12, W * 0.021), TEXT_MUTED, 'center', 600);
+
+  const tankW = Math.min(W * 0.26, H * 0.42);
+  const tankH = H * 0.56;
+  const tankX = W * 0.32 - tankW / 2;
+  const tankY = H * 0.21;
+  tankRect = { x: tankX, y: tankY, w: tankW, h: tankH };
+
+  roundRect(tankX, tankY, tankW, tankH, 12, 'rgba(26,31,54,0.04)', 'rgba(26,31,54,0.25)', 2);
+  const fillH = tankH * ratio;
+  const colRgb = hexToRgb(PALETTE[tk.color] || PALETTE.petrol);
+  if (fillH > 2) {
+    ctx.save();
+    roundRect(tankX, tankY, tankW, tankH, 12, null, null, 0);
+    ctx.clip();
+    roundRect(tankX, tankY + tankH - fillH, tankW, fillH + 12, 0, `rgba(${colRgb},0.62)`, PALETTE[tk.color] || PALETTE.petrol, 2);
+    ctx.restore();
+  }
+
+  [0, 25, 50, 75, 100].forEach(v => {
+    const gy = tankY + tankH - (tankH * v / 100);
+    ctx.strokeStyle = 'rgba(26,31,54,0.28)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(tankX + tankW + 4, gy); ctx.lineTo(tankX + tankW + 12, gy); ctx.stroke();
+  });
+
+  // barra arrossegable: una línia+nansa a la dreta del dipòsit, i el percentatge en GRAN fora del dipòsit
+  const markerX = tankX + tankW + Math.max(50, W * 0.06);
+  const markerColor = revealed ? PALETTE.sage : PALETTE.amber;
+  const pctClamped = clamp(myPercent, DEPOSIT_MIN_PCT, DEPOSIT_MAX_PCT);
+  const my = tankY + tankH - (tankH * clamp(pctClamped, 0, 100) / 100);
+  depositGeom = { tankX, tankY, tankH, tankW, markerX, minPercent: DEPOSIT_MIN_PCT, maxPercent: DEPOSIT_MAX_PCT };
+
+  ctx.save();
+  ctx.strokeStyle = markerColor; ctx.setLineDash([5, 4]); ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(tankX + tankW + 4, my); ctx.lineTo(markerX + 16, my); ctx.stroke();
+  ctx.restore();
+
+  ctx.beginPath(); ctx.arc(markerX, my, Math.max(9, W * 0.016), 0, Math.PI * 2);
+  ctx.fillStyle = markerColor; ctx.shadowColor = markerColor; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.stroke();
+
+  txt(`${fmtNum(myPercent)}%`, markerX + Math.max(48, W * 0.075), my, Math.max(28, W * 0.07), markerColor, 'left', 800, 'JetBrains Mono');
+
+  const belowY = tankY + tankH + H * 0.09;
+  if (revealed) {
+    const result = truePercentDeposit(p, t);
+    txt(`% = part/total × 100 = ${p}/${t} × 100 = ${fmtNum(result)}%`, W / 2, belowY, Math.max(11, W * 0.019), PALETTE.plum, 'center', 700, 'JetBrains Mono');
+  } else {
+    txt('Arrossega la barra fins que el teu percentatge coincideixi amb el nivell', W / 2, belowY, Math.max(10, W * 0.015), TEXT_MUTED, 'center', 500);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  DRAW — dispatcher
+// ─────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  if (repteMode) {
+    if (repteRoundType === 'rebaixes') drawRebaixesDial(rProduct, rN, rDialX);
+    else drawDepositTank(rTank, rPart, rTotal, { myPercent: rDepositMyPercent, revealed: repteRevealed });
+    return;
+  }
+  if (view === 'rebaixes') drawRebaixesDial(product, N, dialX);
+  else drawDepositTank(tank, part, total, { myPercent: depositMyPercent, revealed: depositRevealed });
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU
+// ─────────────────────────────────────────────
+function updateRebaixesReadout() {
+  readoutBadge.classList.add('active');
+  const final = finalPrice(N, dialX);
+  readoutNum.textContent = fmtNum(final) + ' €';
+  readoutName.textContent = `${dialX}% de descompte sobre ${fmtNum(N)} €`;
+  readoutDef.textContent = `Preu final = N × (1 − X/100) = ${fmtNum(N)} × (1 − ${toCaDecimal(dialX / 100)}) = ${fmtNum(final)} €`;
+}
+function updateRebaixesHint() {
+  if (percentMode === 'quiz') hint.textContent = "Arrossega el dial fins fer coincidir l'objectiu i confirma-ho amb «Comprova».";
+  else hint.textContent = 'Arrossega el dial per triar el percentatge de descompte i mira el preu final en directe.';
+}
+
+function updateDepositReadout() {
+  readoutBadge.classList.add('active');
+  if (depositRevealed) {
+    const result = truePercentDeposit(part, total);
+    readoutNum.textContent = fmtNum(result) + '%';
+    readoutName.textContent = `${part} ${tank.unit} de ${total} ${tank.unit}`;
+    readoutDef.textContent = `% = part/total × 100 = ${part}/${total} × 100 = ${fmtNum(result)}%`;
+  } else {
+    readoutNum.textContent = '?';
+    readoutName.textContent = `${tank.icon} ${part} ${tank.unit} de ${total} ${tank.unit} → quin percentatge és?`;
+    readoutDef.textContent = 'Arrossega la barra fins que creguis que coincideix amb el nivell, i confirma-ho.';
+  }
+}
+function updateDepositHint() {
+  if (depositRevealed) { hint.textContent = 'Resposta confirmada! Canvia la part o el total per a un nou repte.'; return; }
+  hint.textContent = 'Arrossega la barra amunt o avall (a la dreta del dipòsit) fins que el percentatge gran coincideixi amb el nivell.';
+}
+
+// ─────────────────────────────────────────────
+//  UTILITATS DE GENERACIÓ "NICE"
+// ─────────────────────────────────────────────
+const NICE_PERCENTS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
+function pickNicePercent() { return NICE_PERCENTS[Math.floor(Math.random() * NICE_PERCENTS.length)]; }
+// retorna un múltiple tal que p% d'aquest múltiple és sempre un enter exacte
+function niceMultipleFor(p, minV, maxV) {
+  const step = 100 / gcd(p, 100);
+  const minMult = Math.max(1, Math.ceil(minV / step));
+  const maxMult = Math.max(minMult, Math.floor(maxV / step));
+  const mult = minMult + Math.floor(Math.random() * (maxMult - minMult + 1));
+  return step * mult;
+}
+function genDepositRound() {
+  const pct = 5 + Math.floor(Math.random() * 91); // 5..95
+  const t = niceMultipleFor(pct, 15, 250);
+  const p = Math.round(t * pct / 100);
+  return { part: p, total: t };
+}
+
+// ─────────────────────────────────────────────
+//  REBAIXES: steppers, mode "endevina", canvi de producte
+// ─────────────────────────────────────────────
+const nVal = document.getElementById('nVal');
+const rebaixesAnswerPanel    = document.getElementById('rebaixesAnswerPanel');
+const rebaixesQuizQuestion   = document.getElementById('rebaixesQuizQuestion');
+const rebaixesQuizFeedback   = document.getElementById('rebaixesQuizFeedback');
+const rebaixesQuizNewBtn     = document.getElementById('rebaixesQuizNewBtn');
+
+function refreshRebaixesQuizText() {
+  if (quizTargetType === 'discount') {
+    rebaixesQuizQuestion.textContent = `Arrossega el dial fins aconseguir un descompte del ${quizTargetX}% en el/la ${product.name.toLowerCase()}.`;
+  } else {
+    const price = finalPrice(N, quizTargetX);
+    rebaixesQuizQuestion.textContent = `Arrossega el dial fins que el preu final del/de la ${product.name.toLowerCase()} sigui ${fmtNum(price)} €.`;
+  }
+}
+function generateRebaixesQuizTarget() {
+  quizTargetType = Math.random() < 0.5 ? 'discount' : 'finalPrice';
+  quizTargetX = pickNicePercent();
+  quizRevealed = false;
+  rebaixesQuizFeedback.textContent = '';
+  refreshRebaixesQuizText();
+}
+
+function onRebaixesParamsChanged() {
+  // Sempre que canviïn N o el producte cal refrescar el text de l'objectiu (si estem en mode
+  // "endevina") i la visibilitat del panell de resposta — si no, el text pot quedar desincronitzat
+  // (referint-se a un preu/producte que ja no és l'actual).
+  if (percentMode === 'quiz') generateRebaixesQuizTarget();
+  resize();
+  updateRebaixesReadout();
+  updateRebaixesHint();
+  refreshAnswerPanels();
+}
+
+function setN(v) { N = clamp(v, 5, 999); nVal.value = N; onRebaixesParamsChanged(); }
+
+document.getElementById('nMinus').addEventListener('click', () => setN(N - 5));
+document.getElementById('nPlus').addEventListener('click',  () => setN(N + 5));
+function commitNVal() { let v = parseInt(nVal.value, 10); if (!Number.isFinite(v)) v = N; setN(v); }
+nVal.addEventListener('blur', commitNVal);
+nVal.addEventListener('keydown', e => { if (e.key === 'Enter') nVal.blur(); });
+nVal.addEventListener('focus', () => nVal.select());
+
+document.getElementById('rebaixesRandomBtn').addEventListener('click', () => {
+  let nextProd;
+  do { nextProd = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]; } while (nextProd === product && PRODUCTS.length > 1);
+  product = nextProd;
+  N = Math.round((20 + Math.random() * 280) / 5) * 5;
+  nVal.value = N;
+  dialX = 0;
+  onRebaixesParamsChanged();
+});
+
+document.querySelectorAll('#percentModeToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    percentMode = btn.dataset.pm;
+    document.querySelectorAll('#percentModeToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    if (percentMode === 'quiz') generateRebaixesQuizTarget();
+    refreshAnswerPanels();
+    draw();
+    updateRebaixesReadout();
+    updateRebaixesHint();
+  });
+});
+
+rebaixesQuizNewBtn.addEventListener('click', () => {
+  generateRebaixesQuizTarget();
+  dialX = 0;
+  draw();
+  updateRebaixesReadout();
+});
+
+function checkRebaixes() {
+  const isRepte = repteMode && repteRoundType === 'rebaixes';
+  if (isRepte) {
+    if (!timer) return;
+    const ok = Math.abs(rDialX - rQuizTargetX) <= 2;
+    if (ok) {
+      score++; streak++;
+      rpScore.textContent = score; rpStreak.textContent = streak;
+      timeLeft = Math.min(repteMaxTime, timeLeft + 4);
+      rpTime.textContent = timeLeft + 's';
+      repteRevealed = true;
+      draw();
+      rebaixesQuizFeedback.textContent = '✔ Correcte!';
+      rebaixesQuizFeedback.style.color = 'var(--sage)';
+      flash(wrap, PALETTE.sage);
+      setTimeout(() => { if (repteMode && timer) startRepteRound(); }, 900);
+    } else {
+      streak = 0; rpStreak.textContent = streak;
+      score = Math.max(0, score - 1); rpScore.textContent = score;
+      timeLeft = Math.max(0, timeLeft - 3);
+      rpTime.textContent = Math.max(0, timeLeft) + 's';
+      rebaixesQuizFeedback.textContent = '✕ Encara no coincideix. Ajusta el dial i torna-ho a provar.';
+      rebaixesQuizFeedback.style.color = 'var(--terracotta)';
+      flash(wrap, PALETTE.terracotta);
+      if (timeLeft <= 0) triggerTimeUp();
+    }
+  } else {
+    const ok = Math.abs(dialX - quizTargetX) <= 1;
+    if (ok) {
+      quizRevealed = true;
+      rebaixesQuizFeedback.textContent = '✔ Correcte!';
+      rebaixesQuizFeedback.style.color = 'var(--sage)';
+      flash(wrap, PALETTE.sage);
+      flash(readoutBadge, PALETTE.sage);
+    } else {
+      rebaixesQuizFeedback.textContent = '✕ Encara no coincideix. Ajusta el dial i torna-ho a provar.';
+      rebaixesQuizFeedback.style.color = 'var(--terracotta)';
+      flash(wrap, PALETTE.terracotta);
+    }
+  }
+}
+document.getElementById('rebaixesQuizSubmitBtn').addEventListener('click', checkRebaixes);
+
+// ─────────────────────────────────────────────
+//  DIPÒSIT: steppers, context, barra arrossegable
+// ─────────────────────────────────────────────
+const partVal = document.getElementById('partVal');
+const totalVal = document.getElementById('totalVal');
+const depositAnswerPanel = document.getElementById('depositAnswerPanel');
+const depositFeedback = document.getElementById('depositFeedback');
+
+function onDepositParamsChanged() {
+  depositMyPercent = 0;
+  depositRevealed = false;
+  depositFeedback.textContent = '';
+  resize();
+  updateDepositReadout();
+  updateDepositHint();
+}
+
+function setPart(v) { part = clamp(v, 0, total); partVal.value = part; onDepositParamsChanged(); }
+function setTotal(v) {
+  total = clamp(v, 1, 999);
+  totalVal.value = total;
+  if (part > total) { part = total; partVal.value = part; }
+  onDepositParamsChanged();
+}
+
+document.getElementById('partMinus').addEventListener('click', () => setPart(part - 1));
+document.getElementById('partPlus').addEventListener('click',  () => setPart(part + 1));
+document.getElementById('totalMinus').addEventListener('click', () => setTotal(total - 1));
+document.getElementById('totalPlus').addEventListener('click',  () => setTotal(total + 1));
+
+function commitPartVal() { let v = parseInt(partVal.value, 10); if (!Number.isFinite(v)) v = part; setPart(v); }
+function commitTotalVal() { let v = parseInt(totalVal.value, 10); if (!Number.isFinite(v)) v = total; setTotal(v); }
+partVal.addEventListener('blur', commitPartVal);
+partVal.addEventListener('keydown', e => { if (e.key === 'Enter') partVal.blur(); });
+partVal.addEventListener('focus', () => partVal.select());
+totalVal.addEventListener('blur', commitTotalVal);
+totalVal.addEventListener('keydown', e => { if (e.key === 'Enter') totalVal.blur(); });
+totalVal.addEventListener('focus', () => totalVal.select());
+
+document.getElementById('depositRandomBtn').addEventListener('click', () => {
+  const r = genDepositRound();
+  part = r.part; total = r.total;
+  partVal.value = part; totalVal.value = total;
+  onDepositParamsChanged();
+});
+document.getElementById('depositContextBtn').addEventListener('click', () => {
+  let next;
+  do { next = TANKS[Math.floor(Math.random() * TANKS.length)]; } while (next === tank && TANKS.length > 1);
+  tank = next;
+  onDepositParamsChanged();
+});
+
+function setDepositMyPercent(v) {
+  if (repteMode) {
+    rDepositMyPercent = v;
+    draw();
+  } else {
+    depositMyPercent = v;
+    if (depositRevealed) { depositRevealed = false; depositFeedback.textContent = ''; }
+    draw();
+    updateDepositReadout();
+    updateDepositHint();
+  }
+}
+function resetDepositMyPercent() { setDepositMyPercent(0); }
+document.getElementById('depositResetBtn').addEventListener('click', resetDepositMyPercent);
+
+function checkDeposit() {
+  const isRepte = repteMode && repteRoundType === 'diposit';
+  const p = isRepte ? rPart : part;
+  const t = isRepte ? rTotal : total;
+  const guess = isRepte ? rDepositMyPercent : depositMyPercent;
+  const correct = truePercentDeposit(p, t);
+  const tol = isRepte ? 2 : 1;
+  const ok = Math.abs(guess - correct) <= tol;
+  if (isRepte) {
+    if (!timer) return;
+    if (ok) {
+      score++; streak++;
+      rpScore.textContent = score; rpStreak.textContent = streak;
+      timeLeft = Math.min(repteMaxTime, timeLeft + 4);
+      rpTime.textContent = timeLeft + 's';
+      repteRevealed = true;
+      draw();
+      depositFeedback.textContent = '✔ Correcte!';
+      depositFeedback.style.color = 'var(--sage)';
+      flash(wrap, PALETTE.sage);
+      setTimeout(() => { if (repteMode && timer) startRepteRound(); }, 900);
+    } else {
+      streak = 0; rpStreak.textContent = streak;
+      score = Math.max(0, score - 1); rpScore.textContent = score;
+      timeLeft = Math.max(0, timeLeft - 3);
+      rpTime.textContent = Math.max(0, timeLeft) + 's';
+      depositFeedback.textContent = '✕ Encara no és correcte. Ajusta la barra i torna-ho a provar.';
+      depositFeedback.style.color = 'var(--terracotta)';
+      flash(wrap, PALETTE.terracotta);
+      if (timeLeft <= 0) triggerTimeUp();
+    }
+  } else {
+    if (ok) {
+      depositRevealed = true;
+      draw(); updateDepositReadout(); updateDepositHint();
+      depositFeedback.textContent = '✔ Correcte!';
+      depositFeedback.style.color = 'var(--sage)';
+      flash(wrap, PALETTE.sage);
+      flash(readoutBadge, PALETTE.sage);
+    } else {
+      depositFeedback.textContent = '✕ Encara no és correcte. Ajusta la barra i torna-ho a provar.';
+      depositFeedback.style.color = 'var(--terracotta)';
+      flash(wrap, PALETTE.terracotta);
+    }
+  }
+}
+document.getElementById('depositCheckBtn').addEventListener('click', checkDeposit);
+
+// ─────────────────────────────────────────────
+//  SUB-TABS: canvi de vista
+// ─────────────────────────────────────────────
+const rebaixesControls = document.getElementById('rebaixesControls');
+const depositControls = document.getElementById('depositControls');
+
+function refreshAnswerPanels() {
+  const active = repteMode && repteRoundActive && !repteTimedOut;
+  const showRebaixesPanel = (!repteMode && view === 'rebaixes' && percentMode === 'quiz') || (active && repteRoundType === 'rebaixes');
+  rebaixesAnswerPanel.style.display = showRebaixesPanel ? 'flex' : 'none';
+
+  const showDepositPanel = (!repteMode && view === 'diposit') || (active && repteRoundType === 'diposit');
+  depositAnswerPanel.style.display = showDepositPanel ? 'flex' : 'none';
+}
+
+function refreshViewUI() {
+  document.querySelectorAll('#subtabBar button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  rebaixesControls.classList.toggle('active', view === 'rebaixes');
+  depositControls.classList.toggle('active', view === 'diposit');
+  draggingDial = false;
+  resize();
+  refreshAnswerPanels();
+  if (view === 'rebaixes') { updateRebaixesReadout(); updateRebaixesHint(); }
+  else { updateDepositReadout(); updateDepositHint(); }
+}
+function switchView(newView) {
+  view = newView;
+  refreshViewUI();
+}
+document.querySelectorAll('#subtabBar button').forEach(b => {
+  b.addEventListener('click', () => switchView(b.dataset.view));
+});
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ AMB EL CANVAS (dial de Rebaixes)
+// ─────────────────────────────────────────────
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  const t = e.changedTouches ? e.changedTouches[0] : (e.touches ? e.touches[0] : e);
+  return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
+}
+function dialActive() {
+  return (!repteMode && view === 'rebaixes') || (repteMode && repteRoundType === 'rebaixes' && !!timer);
+}
+function setDialValue(val) {
+  if (repteMode) {
+    if (rDialX === val) return;
+    rDialX = val;
+    draw();
+  } else {
+    if (dialX === val) return;
+    dialX = val;
+    if (percentMode === 'quiz' && quizRevealed) { quizRevealed = false; rebaixesQuizFeedback.textContent = ''; }
+    draw();
+    updateRebaixesReadout();
+  }
+}
+function applyDialXY(x, y) {
+  if (!dialRect) return;
+  const p = percentForPointer(x, y, dialRect.cx, dialRect.cy);
+  setDialValue(clamp(Math.round(p), 0, 100));
+}
+function depositActive() {
+  return (!repteMode && view === 'diposit') || (repteMode && repteRoundType === 'diposit' && !!timer);
+}
+function applyDepositY(y) {
+  if (!depositGeom) return;
+  const g = depositGeom;
+  const t = clamp((g.tankY + g.tankH - y) / g.tankH, g.minPercent / 100, g.maxPercent / 100);
+  setDepositMyPercent(Math.round(t * 100));
+}
+function onCanvasDown(e) {
+  const { x, y } = pointerXY(e);
+  if (dialActive() && dialRect) {
+    const dist = Math.hypot(x - dialRect.cx, y - dialRect.cy);
+    if (dist <= dialRect.r * 1.7) {
+      e.preventDefault();
+      draggingDial = true;
+      wrap.classList.add('dragging');
+      applyDialXY(x, y);
+      return;
+    }
+  }
+  if (depositActive() && depositGeom) {
+    const g = depositGeom;
+    const hitW = Math.max(36, W * 0.06);
+    if (x >= g.markerX - hitW && x <= g.markerX + hitW && y >= g.tankY - 30 && y <= g.tankY + g.tankH + 30) {
+      e.preventDefault();
+      draggingDeposit = true;
+      wrap.classList.add('dragging');
+      applyDepositY(y);
+    }
+  }
+}
+function onCanvasMove(e) {
+  if (!draggingDial && !draggingDeposit) return;
+  e.preventDefault();
+  const { x, y } = pointerXY(e);
+  if (draggingDial) applyDialXY(x, y);
+  else applyDepositY(y);
+}
+function onCanvasUp() { draggingDial = false; draggingDeposit = false; wrap.classList.remove('dragging'); }
+
+canvas.addEventListener('mousedown', onCanvasDown);
+canvas.addEventListener('mousemove', onCanvasMove);
+window.addEventListener('mouseup', onCanvasUp);
+canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
+canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
+canvas.addEventListener('touchend', onCanvasUp);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+let conceptTimer = null;
+document.getElementById('card-rebaixa').addEventListener('click', () => {
+  if (repteMode) return;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card-rebaixa').classList.add('active');
+  switchView('rebaixes');
+  percentMode = 'live';
+  document.querySelectorAll('#percentModeToggle button').forEach(b => b.classList.toggle('active', b.dataset.pm === 'live'));
+  N = 80; nVal.value = N; dialX = 25;
+  onRebaixesParamsChanged();
+  flash(wrap, PALETTE.terracotta);
+});
+document.getElementById('card-diposit').addEventListener('click', () => {
+  if (repteMode) return;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card-diposit').classList.add('active');
+  switchView('diposit');
+  total = 60; part = 15;
+  totalVal.value = total; partVal.value = part;
+  onDepositParamsChanged();
+  flash(wrap, PALETTE.plum);
+});
+document.getElementById('card-total100').addEventListener('click', () => {
+  if (repteMode) return;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card-total100').classList.add('active');
+  flash(wrap, PALETTE.petrol);
+  flash(readoutBadge, PALETTE.petrol);
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = '100%';
+  readoutName.textContent = 'El 100% és el total sencer';
+  readoutDef.textContent = 'Quan el dipòsit està completament ple (part = total), tenim el 100%: no hi falta res.';
+  ctx.clearRect(0, 0, W, H);
+  drawDepositTank(tank, total, total, { revealed: true, myPercent: 100 });
+  clearTimeout(conceptTimer);
+  conceptTimer = setTimeout(() => { draw(); if (view === 'rebaixes') updateRebaixesReadout(); else updateDepositReadout(); }, 1800);
+});
+document.getElementById('card-augdesc').addEventListener('click', () => {
+  if (repteMode) return;
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card-augdesc').classList.add('active');
+  flash(wrap, PALETTE.amber);
+  flash(readoutBadge, PALETTE.amber);
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = '×0,80';
+  readoutName.textContent = 'Descompte del 20%: 100 → 80';
+  readoutDef.textContent = 'Descomptar un 20% (com al dial de Rebaixes) és multiplicar per 0,80 (100% − 20% = 80% = 0,80).';
+  ctx.clearRect(0, 0, W, H);
+  drawRebaixesDial(product, 100, 20);
+  clearTimeout(conceptTimer);
+  conceptTimer = setTimeout(() => {
+    readoutNum.textContent = '×1,20';
+    readoutName.textContent = 'Augment del 20%: 100 → 120';
+    readoutDef.textContent = 'Augmentar un 20% és multiplicar per 1,20 (100% + 20% = 120% = 1,20).';
+    conceptTimer = setTimeout(() => { draw(); if (view === 'rebaixes') updateRebaixesReadout(); else updateDepositReadout(); }, 1800);
+  }, 1600);
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+const rpTime = document.getElementById('rpTime');
+const rpScore = document.getElementById('rpScore');
+const rpStreak = document.getElementById('rpStreak');
+
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepteRound() {
+  wrap.classList.remove('time-up');
+  repteTimedOut = false;
+  repteRevealed = false;
+  repteRoundType = Math.random() < 0.5 ? 'rebaixes' : 'diposit';
+  draggingDial = false;
+
+  if (repteRoundType === 'rebaixes') {
+    rProduct = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)];
+    rQuizTargetType = Math.random() < 0.5 ? 'discount' : 'finalPrice';
+    rQuizTargetX = pickNicePercent();
+    rN = niceMultipleFor(rQuizTargetX, 20, 300);
+    rDialX = 0;
+    rebaixesQuizFeedback.textContent = '';
+    if (rQuizTargetType === 'discount') {
+      rebaixesQuizQuestion.textContent = `Arrossega el dial fins aconseguir un descompte del ${rQuizTargetX}% en el/la ${rProduct.name.toLowerCase()}.`;
+    } else {
+      const price = finalPrice(rN, rQuizTargetX);
+      rebaixesQuizQuestion.textContent = `Arrossega el dial fins que el preu final del/de la ${rProduct.name.toLowerCase()} sigui ${fmtNum(price)} €.`;
+    }
+    hint.textContent = 'Arrossega el dial circular per canviar el percentatge de descompte.';
+  } else {
+    rTank = TANKS[Math.floor(Math.random() * TANKS.length)];
+    const r = genDepositRound();
+    rPart = r.part; rTotal = r.total;
+    rDepositMyPercent = 0;
+    depositFeedback.textContent = '';
+    hint.textContent = 'Arrossega la barra amunt o avall fins que el percentatge coincideixi amb el nivell del dipòsit.';
+  }
+  draw();
+  refreshAnswerPanels();
+}
+
+function triggerTimeUp() {
+  stopTimer();
+  rpTime.classList.remove('time-low');
+  wrap.classList.add('time-up');
+  repteTimedOut = true;
+  repteRoundActive = false;
+  refreshAnswerPanels();
+  readoutName.textContent = 'Temps esgotat!';
+  readoutDef.textContent = `Puntuació final: ${score} punts.`;
+  readoutNum.textContent = score;
+  hint.textContent = 'Temps esgotat!';
+}
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimedOut = false; repteRoundActive = true;
+  wrap.classList.remove('time-up');
+  rpTime.classList.remove('time-low');
+  rpScore.textContent = score; rpStreak.textContent = streak; rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) triggerTimeUp();
+  }, 1000);
+}
+
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+document.getElementById('rpNewRound').addEventListener('click', () => { if (timer) startRepteRound(); });
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; repteRoundActive = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  // Neteja els estils inline del selector de temps / barra de repte perquè no quedin
+  // visibles per sobre de les regles CSS en tornar a Explora.
+  repteSetupEl.style.display = '';
+  repteBarEl.style.display = '';
+  draggingDial = false;
+  readoutBadge.classList.add('active');
+  switchView(view);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  stopTimer();
+  repteRoundActive = false;
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+  refreshAnswerPanels();
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resize();
+updateRebaixesReadout();
+updateRebaixesHint();
+</script>
+</body>
+</html>

@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Múltiples, divisors i criteris de divisibilitat · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--petrol); }
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--petrol); color: var(--petrol); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 82px; text-align: center; }
+    .stepper .stepper-val {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; width: 54px; text-align: center;
+      border: none; background: transparent; color: var(--ink); padding: 0; -moz-appearance: textfield;
+    }
+    .stepper .stepper-val::-webkit-outer-spin-button, .stepper .stepper-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .stepper .stepper-val:focus { outline: none; color: var(--petrol); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+    /* fila de candidats del Repte (ronda "troba els divisors"): només visible en aquesta ronda concreta */
+    .repte-find-row { display: none; }
+    body.mode-repte .repte-find-row.active { display: flex; }
+    .chip-label { font-size: .82rem; color: var(--muted); font-weight: 600; }
+    .chip-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .chip {
+      padding: .45rem 1rem; border-radius: 100px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .95rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .chip:hover { border-color: var(--petrol); color: var(--petrol); }
+    .chip.active { background: var(--petrol); color: #fff; border-color: var(--petrol); }
+    .chip.chip-hunt { border-style: dashed; color: var(--muted); }
+    .chip.chip-hunt:hover { border-color: var(--muted); color: var(--ink); }
+    .chip.chip-hunt.active { background: var(--muted); color: #fff; border-color: var(--muted); border-style: solid; }
+    .chip.found { background: color-mix(in srgb, var(--sage) 18%, var(--surface)); border-color: var(--sage); color: var(--sage); }
+    .chip.rejected { background: color-mix(in srgb, var(--terracotta) 12%, var(--surface)); border-color: var(--terracotta); color: var(--terracotta); opacity: .8; text-decoration: line-through; }
+    .chip:disabled { cursor: default; pointer-events: none; }
+    #gridCanvas { cursor: pointer; }
+
+    /* ── SUBTABS (Comprova múltiples / Troba els divisors) ── */
+    .subtab-bar { display: flex; gap: .3rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .3rem; width: fit-content; flex-wrap: wrap; }
+    .subtab-bar button {
+      border: none; background: transparent; font-family: var(--font-body); font-weight: 600; font-size: .85rem;
+      padding: .55rem 1.1rem; border-radius: 100px; cursor: pointer; color: var(--muted); transition: all var(--tr);
+    }
+    .subtab-bar button:hover { color: var(--ink); }
+    .subtab-bar button.active { background: var(--sub-color, var(--petrol)); color: #fff; }
+
+    /* views inside Explora share one canvas; only their controls-row toggles */
+    .view-controls { display: none; }
+    .view-controls.active { display: flex; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--petrol)">Bloc 01 · Divisibilitat</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Múltiples, divisors i criteris de divisibilitat</h1>
+      <p>Tria un divisor i clica els números de la graella per descobrir-ne el criteri, xifra a xifra — activa «Fes-ho ràpid» quan ja el dominis. A «Troba els divisors», esbrina totes les parelles de factors d'un número. Al mode Repte, caça els múltiples abans que s'acabi el temps.</p>
+    </div>
+
+    <div class="mode-toggle" style="--m-color: var(--petrol)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="subtab-bar explora-only" id="subtabBar">
+      <button class="active" data-view="check" style="--sub-color:var(--petrol)">🔢 Comprova múltiples</button>
+      <button data-view="find" style="--sub-color:var(--plum)">🧩 Troba els divisors</button>
+    </div>
+
+    <div class="controls-row view-controls active explora-only" id="checkControls">
+      <span class="chip-label">Divisor (amb criteri):</span>
+      <div class="chip-row" id="divisorPicker">
+        <button class="chip" data-d="2">2</button>
+        <button class="chip" data-d="3">3</button>
+        <button class="chip" data-d="4">4</button>
+        <button class="chip" data-d="5">5</button>
+        <button class="chip" data-d="6">6</button>
+        <button class="chip" data-d="9">9</button>
+        <button class="chip" data-d="10">10</button>
+        <button class="chip" data-d="11">11</button>
+      </div>
+      <span class="chip-label">Sense criteri:</span>
+      <div class="chip-row" id="huntPicker">
+        <button class="chip chip-hunt" data-d="7">7</button>
+        <button class="chip chip-hunt" data-d="8">8</button>
+        <button class="chip chip-hunt" data-d="12">12</button>
+        <button class="chip chip-hunt" data-d="15">15</button>
+      </div>
+      <button class="chip" id="fastToggle">⚡ Fes-ho ràpid</button>
+    </div>
+
+    <div class="controls-row view-controls explora-only" id="findControls">
+      <div class="stepper">
+        <button id="fnMinus">−</button>
+        <span class="stepper-label">Número N</span>
+        <input type="number" class="stepper-val" id="fnVal" value="24" min="1" max="999" step="1" inputmode="numeric">
+        <button id="fnPlus">+</button>
+      </div>
+      <button class="btn btn-ghost" id="fnRandom">🎲 Nombre aleatori</button>
+      <span class="chip-label">Candidats (fins a √N):</span>
+      <div class="chip-row" id="candidatesRow"></div>
+      <button class="btn btn-ghost" id="findReset">↻ Reinicia la cerca</button>
+      <button class="btn btn-primary" id="findCompleteRest">🏁 Completa la resta</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="20" max="300" step="5" value="45">
+          <span class="rs-val" id="repteTimeVal">45s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--petrol)">
+      <div class="rp-item"><span class="rp-label" id="rpDivisorLabel">Divisor</span><span class="rp-value" id="rpDivisor">—</span></div>
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">45s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="controls-row repte-find-row" id="rpFindRow">
+      <span class="chip-label">Candidats (fins a √N):</span>
+      <div class="chip-row" id="rpCandidatesRow"></div>
+      <button class="btn btn-ghost" id="rpFindCompleteRest">🏁 Completa la resta</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--petrol)">
+      <canvas id="gridCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Clica un número de la graella per comprovar-hi el criteri de divisibilitat, xifra a xifra.</div>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--petrol)">
+      <div class="readout-num" id="readoutNum">—</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Divisor actiu: 2</div>
+        <div class="readout-def" id="readoutDef">Un número és múltiple de 2 si acaba en xifra parella.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Amb criteri (regla senzilla)</div>
+
+    <div class="type-card" id="card-2" data-d="2" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 2</div>
+        <div class="type-range">Xifra parella al final</div>
+        <div class="type-desc">Acaba en 0, 2, 4, 6 o 8.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-3" data-d="3" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 3</div>
+        <div class="type-range">Suma de xifres ÷ 3</div>
+        <div class="type-desc">La suma de totes les xifres és múltiple de 3.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-4" data-d="4" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 4</div>
+        <div class="type-range">2 últimes xifres ÷ 4</div>
+        <div class="type-desc">El número format per les dues últimes xifres és múltiple de 4.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-5" data-d="5" style="--t-color:var(--terracotta)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 5</div>
+        <div class="type-range">Acaba en 0 o 5</div>
+        <div class="type-desc">L'última xifra ha de ser 0 o 5.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-6" data-d="6" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 6</div>
+        <div class="type-range">Parell i ÷ 3 alhora</div>
+        <div class="type-desc">Ha de complir el criteri del 2 (parell) i el del 3 (suma de xifres) a la vegada.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-9" data-d="9" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 9</div>
+        <div class="type-range">Suma de xifres ÷ 9</div>
+        <div class="type-desc">La suma de totes les xifres és múltiple de 9.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-10" data-d="10" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 10</div>
+        <div class="type-range">Acaba en 0</div>
+        <div class="type-desc">L'última xifra ha de ser exactament 0.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-11" data-d="11" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple d'11</div>
+        <div class="type-range">Suma alternada ÷ 11</div>
+        <div class="type-desc">Sumant les xifres alternant + i − des de la dreta, el resultat és múltiple d'11.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="info-title">Sense criteri (per divisió directa)</div>
+
+    <div class="type-card" id="card-7" data-d="7" style="--t-color:var(--muted)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 7</div>
+        <div class="type-range">Sense drecera senzilla</div>
+        <div class="type-desc">Es comprova dividint directament: no hi ha cap truc prou senzill per al 7.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-8" data-d="8" style="--t-color:var(--muted)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 8</div>
+        <div class="type-range">Sense drecera senzilla</div>
+        <div class="type-desc">Es comprova dividint directament: el criteri de les 3 últimes xifres és massa complex per ara.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-12" data-d="12" style="--t-color:var(--muted)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 12</div>
+        <div class="type-range">Sense drecera senzilla</div>
+        <div class="type-desc">Es comprova dividint directament (encara que combina els criteris del 4 i el 3).</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-15" data-d="15" style="--t-color:var(--muted)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Múltiple de 15</div>
+        <div class="type-range">Sense drecera senzilla</div>
+        <div class="type-desc">Es comprova dividint directament (encara que combina els criteris del 3 i el 5).</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> Si un número és múltiple de 9, també ho és de 3; si ho és de 4, també ho és de 2. Un cop comprovat, un número es tenyeix de verd (múltiple) o vermell (no múltiple) a la graella. Per al 7, 8, 12 i 15 no hi ha drecera — es comprova dividint. I si vols saber TOTS els divisors d'un número, prova la pestanya «🧩 Troba els divisors».
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 01 · Nombres i Divisibilitat</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  TOKENS DE TEXT (llegits dels tokens compartits, com a potencies.html)
+// ─────────────────────────────────────────────
+const rootStyle = getComputedStyle(document.documentElement);
+function cssVar(name, fallback) {
+  const v = rootStyle.getPropertyValue(name).trim();
+  return v || fallback;
+}
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+// ─────────────────────────────────────────────
+//  PALETA (derivada de --petrol/--amber/--sage/--terracotta/--plum/--muted actuals)
+// ─────────────────────────────────────────────
+const PAL = {
+  ink:  '#1a1f36',
+  text: '#cfd3e0',
+  petrol: '#0b93a0', petrolRGB: '11,147,160', petrolTint: '#5fd0d8',
+  amber:  '#e2860a', amberRGB: '226,134,10',  amberTint: '#ffcf7a',
+  terracotta: '#e6483a', terracottaRGB: '230,72,58', terracottaTint: '#ff9a86',
+  sage:   '#1fa971', sageRGB: '31,169,113',   sageTint: '#8fe3a8',
+  plum:   '#8452d6', plumRGB: '132,82,214',   plumTint: '#d3c3ee',
+  muted:  '#5b6584', mutedRGB: '91,101,132',  mutedTint: '#c7cce0'
+};
+
+// ─────────────────────────────────────────────
+//  DADES DELS CRITERIS
+// ─────────────────────────────────────────────
+const CRITERION_DIVISORS = [2, 3, 4, 5, 6, 9, 10, 11];   // tenen un criteri explicat, xifra a xifra
+const HUNT_DIVISORS      = [7, 8, 12, 15];                // sense drecera senzilla: només divisió directa
+const DIVISORS = [...CRITERION_DIVISORS, ...HUNT_DIVISORS];
+
+// com es descompon cada criteri, xifra a xifra:
+//  lastDigit        → només l'última xifra decideix (2, 5, 10)
+//  lastTwoDigits     → les dues últimes xifres formen el número que cal comprovar (4)
+//  digitSum          → suma TOTES les xifres (3, 9)
+//  evenAndDigitSum   → cal que sigui parell I que la suma de xifres sigui múltiple de 3 (6)
+//  altSum            → suma alternada +/− de les xifres, de dreta a esquerra (11)
+//  (sense entrada)   → 7, 8, 12, 15: no hi ha drecera, es comprova per divisió directa
+const CRITERION_KIND = {
+  2: 'lastDigit', 5: 'lastDigit', 10: 'lastDigit',
+  4: 'lastTwoDigits',
+  3: 'digitSum', 9: 'digitSum',
+  6: 'evenAndDigitSum',
+  11: 'altSum'
+};
+
+const CRITERI = {
+  2:  { rule: 'Un número és múltiple de 2 si acaba en xifra parella (0,2,4,6,8).' },
+  3:  { rule: 'Un número és múltiple de 3 si la suma de les seves xifres és múltiple de 3.' },
+  4:  { rule: 'Un número és múltiple de 4 si el número format per les seves DUES últimes xifres és múltiple de 4.' },
+  5:  { rule: 'Un número és múltiple de 5 si acaba en 0 o 5.' },
+  6:  { rule: 'Un número és múltiple de 6 si ho és alhora de 2 (parell) i de 3 (suma de xifres ÷ 3).' },
+  9:  { rule: 'Un número és múltiple de 9 si la suma de les seves xifres és múltiple de 9.' },
+  10: { rule: 'Un número és múltiple de 10 si acaba en 0.' },
+  11: { rule: "Un número és múltiple d'11 si la suma alternada de les xifres (des de la dreta: +,−,+,−...) és múltiple d'11." },
+  7:  { rule: 'No hi ha un criteri senzill per al 7 a 1r ESO: es comprova dividint directament.' },
+  8:  { rule: 'No hi ha un criteri senzill per al 8 a 1r ESO: es comprova dividint directament.' },
+  12: { rule: 'No hi ha un criteri senzill per al 12 a 1r ESO: es comprova dividint directament.' },
+  15: { rule: 'No hi ha un criteri senzill per al 15 a 1r ESO: es comprova dividint directament.' }
+};
+
+const DIVISOR_STYLE = {
+  2:  { hex: PAL.petrol,     rgb: PAL.petrolRGB,     tint: PAL.petrolTint },
+  3:  { hex: PAL.amber,      rgb: PAL.amberRGB,      tint: PAL.amberTint },
+  4:  { hex: PAL.sage,       rgb: PAL.sageRGB,       tint: PAL.sageTint },
+  5:  { hex: PAL.terracotta, rgb: PAL.terracottaRGB, tint: PAL.terracottaTint },
+  6:  { hex: PAL.plum,       rgb: PAL.plumRGB,       tint: PAL.plumTint },
+  9:  { hex: PAL.sage,       rgb: PAL.sageRGB,       tint: PAL.sageTint },
+  10: { hex: PAL.plum,       rgb: PAL.plumRGB,       tint: PAL.plumTint },
+  11: { hex: PAL.amber,      rgb: PAL.amberRGB,      tint: PAL.amberTint },
+  7:  { hex: PAL.muted,      rgb: PAL.mutedRGB,      tint: PAL.mutedTint },
+  8:  { hex: PAL.muted,      rgb: PAL.mutedRGB,      tint: PAL.mutedTint },
+  12: { hex: PAL.muted,      rgb: PAL.mutedRGB,      tint: PAL.mutedTint },
+  15: { hex: PAL.muted,      rgb: PAL.mutedRGB,      tint: PAL.mutedTint }
+};
+const COLORS = Object.fromEntries(Object.entries(DIVISOR_STYLE).map(([d, s]) => [d, s.hex]));
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('gridCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const subtabBar     = document.getElementById('subtabBar');
+const checkControls = document.getElementById('checkControls');
+const findControls  = document.getElementById('findControls');
+const fastToggle    = document.getElementById('fastToggle');
+const candidatesRow = document.getElementById('candidatesRow');
+const fnVal         = document.getElementById('fnVal');
+const fnRandom      = document.getElementById('fnRandom');
+
+const rpFindRow      = document.getElementById('rpFindRow');
+const rpCandidatesRow = document.getElementById('rpCandidatesRow');
+const rpDivisorLabel = document.getElementById('rpDivisorLabel');
+
+let W, H;
+let view = 'check';          // 'check' | 'find'  (només rellevant dins Explora; Repte sempre usa la graella)
+let currentDivisor = 2;
+let selectedNumber = null;   // número obert en vista de detall (Comprova múltiples)
+let digitState = null;       // estat de la descomposició en curs
+let exploraChecked = {};     // clau "divisor:num" -> { isMultiple }
+
+let fastMode = false;             // toggle manual "Fes-ho ràpid"
+let demoedDivisors = new Set();   // divisors amb el recorregut complet ja fet un cop, aquesta sessió
+
+let repteMode = false;
+let repteRoundType = 'multiples';   // 'multiples' | 'divisors' — cada ronda de Repte en tria un a l'atzar
+let repteDivisor = 3;
+let repteFound = new Set();
+let wrongFlashNum = null;
+let timer = null, timeLeft = 45, repteMaxTime = 45, score = 0, streak = 0;
+
+// Repte — ronda de tipus "divisors": estat propi, separat del de l'Explora
+// (rang més petit i "jugable" que l'exploració lliure, perquè una ronda es completi còmodament dins del temps)
+const REPTE_FIND_MIN = 12, REPTE_FIND_MAX = 70;
+let repteFindN = 24;
+let repteFindMaxK = 0;
+let repteFindTried = new Set();
+let repteFindPairs = [];
+
+// "Troba els divisors" (Explora)
+let findN = 24;
+let findMaxK = 0;
+let findTried = new Set();
+let findPairs = [];
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  return { x: (e.clientX - rect.left) * dpr, y: (e.clientY - rect.top) * dpr };
+}
+
+// ─────────────────────────────────────────────
+//  GRAELLA (10 × 10, números 1–100)
+// ─────────────────────────────────────────────
+function gridZone() {
+  const pad = W * 0.035;
+  const gridX = pad, gridY = pad;
+  const gridW = W - pad * 2, gridH = H - pad * 2;
+  const cols = 10, rows = 10;
+  return { gridX, gridY, gridW, gridH, cols, rows, cw: gridW / cols, ch: gridH / rows };
+}
+
+function hitGridCell(x, y) {
+  const z = gridZone();
+  if (x < z.gridX || x > z.gridX + z.gridW || y < z.gridY || y > z.gridY + z.gridH) return null;
+  const col = Math.floor((x - z.gridX) / z.cw);
+  const row = Math.floor((y - z.gridY) / z.ch);
+  if (col < 0 || col >= z.cols || row < 0 || row >= z.rows) return null;
+  return row * z.cols + col + 1;
+}
+
+function inRect(x, y, r) { return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.4; ctx.stroke(); }
+}
+
+function drawGridView() {
+  const z = gridZone();
+  const fontSize = Math.max(9, z.cw * 0.3);
+  for (let row = 0; row < z.rows; row++) {
+    for (let col = 0; col < z.cols; col++) {
+      const num = row * z.cols + col + 1;
+      const x = z.gridX + col * z.cw, y = z.gridY + row * z.ch;
+      const padCell = Math.min(z.cw, z.ch) * 0.06;
+      let fill = 'rgba(26,31,54,0.045)';
+      let stroke = 'rgba(26,31,54,0.1)';
+      let textColor = TEXT_DARK;
+
+      if (repteMode) {
+        if (repteFound.has(num)) {
+          fill = `rgba(${PAL.sageRGB},0.55)`; stroke = PAL.sage; textColor = '#eafff2';
+        } else if (wrongFlashNum === num) {
+          fill = `rgba(${PAL.terracottaRGB},0.55)`; stroke = PAL.terracotta; textColor = '#ffecec';
+        }
+      } else {
+        const rec = exploraChecked[currentDivisor + ':' + num];
+        if (rec) {
+          if (rec.isMultiple) { fill = `rgba(${PAL.sageRGB},0.35)`; stroke = PAL.sage; textColor = '#eafff2'; }
+          else { fill = `rgba(${PAL.terracottaRGB},0.3)`; stroke = PAL.terracotta; textColor = '#ffe3de'; }
+        }
+      }
+
+      roundRect(x + padCell, y + padCell, z.cw - padCell * 2, z.ch - padCell * 2, 6, fill, stroke);
+      ctx.font = `600 ${fontSize}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(num), x + z.cw / 2, y + z.ch / 2);
+    }
+  }
+}
+
+function detailLayout(number) {
+  const digits = String(number).split('');
+  const n = digits.length;
+  const panelW = W * 0.86, panelH = H * 0.82;
+  const panelX = (W - panelW) / 2, panelY = (H - panelH) / 2;
+  const tileSize = Math.min(W * 0.13, (panelW * 0.7) / n);
+  const gap = tileSize * 0.3;
+  const totalW = tileSize * n + gap * (n - 1);
+  const tilesX0 = panelX + (panelW - totalW) / 2;
+  const tilesY = panelY + panelH * 0.3;
+  const tiles = digits.map((d, i) => ({
+    x: tilesX0 + i * (tileSize + gap), y: tilesY, w: tileSize, h: tileSize, digit: d, idx: i
+  }));
+  const closeBtn = { x: panelX + panelW - tileSize * 0.7 - 14, y: panelY + 14, w: tileSize * 0.7, h: tileSize * 0.7 };
+  return {
+    digits, panelX, panelY, panelW, panelH, tiles, closeBtn,
+    sumY: tilesY + tileSize + panelH * 0.13,
+    verdictY: panelY + panelH - panelH * 0.18
+  };
+}
+
+// ─────────────────────────────────────────────
+//  LÒGICA DEL CRITERI (compartida entre el recorregut pas a pas i el mode ràpid)
+// ─────────────────────────────────────────────
+function relevantIndices(kind, len) {
+  if (kind === 'lastDigit') return [len - 1];
+  if (kind === 'lastTwoDigits') return len >= 2 ? [len - 2, len - 1] : [len - 1];
+  return Array.from({ length: len }, (_, i) => i); // digitSum, evenAndDigitSum, altSum
+}
+
+function computeVerdict(num, d) {
+  const kind = CRITERION_KIND[d] || null;
+  const digits = String(num).split('');
+  const len = digits.length;
+  let ok, sum = 0, evenOk, sumOk;
+
+  if (kind === 'lastDigit') {
+    ok = num % d === 0;
+  } else if (kind === 'lastTwoDigits') {
+    const last2 = num % 100;
+    ok = last2 % 4 === 0;
+  } else if (kind === 'digitSum') {
+    sum = digits.reduce((a, c) => a + Number(c), 0);
+    ok = sum % d === 0;
+  } else if (kind === 'altSum') {
+    sum = digits.reduce((a, c, i) => a + (((len - 1 - i) % 2 === 0) ? Number(c) : -Number(c)), 0);
+    ok = sum % 11 === 0;
+  } else if (kind === 'evenAndDigitSum') {
+    sum = digits.reduce((a, c) => a + Number(c), 0);
+    evenOk = num % 2 === 0;
+    sumOk = sum % 3 === 0;
+    ok = evenOk && sumOk;
+  } else {
+    ok = num % d === 0; // sense criteri: divisió directa
+  }
+  return { kind, ok, sum, evenOk, sumOk, digits, len };
+}
+
+function hintForKind(kind) {
+  if (kind === 'lastDigit') return "Clica l'última xifra per aplicar el criteri.";
+  if (kind === 'lastTwoDigits') return 'Clica les dues últimes xifres per formar el número.';
+  if (kind === 'altSum') return "Clica cada xifra, d'una en una (sumem alternant + i −).";
+  if (kind === 'evenAndDigitSum') return 'Clica cada xifra per sumar-la (cal parell I suma ÷ 3).';
+  return "Clica cada xifra, d'una en una, per sumar-les.";
+}
+
+function verdictDetailText(num, d, v) {
+  switch (v.kind) {
+    case 'lastDigit':
+      return `Última xifra: ${String(num).slice(-1)}. ${CRITERI[d].rule}`;
+    case 'lastTwoDigits':
+      return `Últimes 2 xifres: ${String(num % 100).padStart(2, '0')}. ${CRITERI[d].rule}`;
+    case 'digitSum':
+      return `Suma de xifres = ${v.sum}. ${CRITERI[d].rule}`;
+    case 'altSum':
+      return `Suma alternada (dreta→esquerra) = ${v.sum}. ${CRITERI[d].rule}`;
+    case 'evenAndDigitSum':
+      return `Parell: ${v.evenOk ? 'sí' : 'no'}. Suma de xifres = ${v.sum} (÷3: ${v.sumOk ? 'sí' : 'no'}). ${CRITERI[d].rule}`;
+    default: {
+      const q = Math.floor(num / d), r = num % d;
+      return (r === 0 ? `${num} ÷ ${d} = ${q} exacte. ` : `${num} ÷ ${d} = ${q} i sobren ${r}. `) + CRITERI[d].rule;
+    }
+  }
+}
+
+function drawDetailOverlay() {
+  const L = detailLayout(selectedNumber);
+  const kind = digitState.kind;
+  const accent = DIVISOR_STYLE[currentDivisor] || DIVISOR_STYLE[7];
+  const len = L.digits.length;
+
+  roundRect(0, 0, W, H, 0, 'rgba(0,0,0,0.55)');
+  roundRect(L.panelX, L.panelY, L.panelW, L.panelH, 14, PAL.ink, 'rgba(255,255,255,0.14)');
+
+  // títol
+  ctx.font = `700 ${Math.max(14, W * 0.028)}px 'Space Grotesk', sans-serif`;
+  ctx.fillStyle = '#f6f3ec';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`Número ${selectedNumber} · múltiple de ${currentDivisor}?`, L.panelX + 20, L.panelY + 18);
+
+  // botó tancar
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 2;
+  roundRect(L.closeBtn.x, L.closeBtn.y, L.closeBtn.w, L.closeBtn.h, 8, 'rgba(255,255,255,0.06)', 'rgba(255,255,255,0.3)');
+  ctx.fillStyle = '#f6f3ec';
+  ctx.font = `700 ${L.closeBtn.h * 0.55}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('✕', L.closeBtn.x + L.closeBtn.w / 2, L.closeBtn.y + L.closeBtn.h / 2 + 1);
+
+  L.tiles.forEach(t => {
+    const revealed = digitState.revealed[t.idx];
+    const relevant = digitState.relevant.includes(t.idx);
+    let fill = 'rgba(255,255,255,0.05)', stroke = 'rgba(255,255,255,0.18)', txt = 'rgba(255,255,255,0.35)';
+    if (!relevant) { fill = 'rgba(255,255,255,0.02)'; stroke = 'rgba(255,255,255,0.08)'; txt = 'rgba(255,255,255,0.18)'; }
+    if (revealed) { fill = `rgba(${accent.rgb},0.35)`; stroke = accent.hex; txt = accent.tint; }
+    if (digitState.rejectIdx === t.idx) { fill = `rgba(${PAL.terracottaRGB},0.4)`; stroke = PAL.terracotta; txt = '#ffdcd4'; }
+
+    roundRect(t.x, t.y, t.w, t.h, 8, fill, stroke);
+    ctx.font = `700 ${t.h * 0.5}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = txt;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(t.digit, t.x + t.w / 2, t.y + t.h / 2);
+
+    if (!relevant) {
+      ctx.font = `500 ${Math.max(8, t.h * 0.16)}px 'Inter', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText('no cal', t.x + t.w / 2, t.y + t.h + 4);
+    } else if (kind === 'altSum') {
+      const posFromRight = (len - 1) - t.idx;
+      const sign = posFromRight % 2 === 0 ? '+' : '−';
+      ctx.font = `700 ${Math.max(11, t.h * 0.24)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = sign === '+' ? PAL.sageTint : PAL.terracottaTint;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(sign, t.x + t.w / 2, t.y - 4);
+    }
+  });
+
+  // text de suma / regla en construcció
+  ctx.font = `500 ${Math.max(11, W * 0.02)}px 'JetBrains Mono', monospace`;
+  ctx.fillStyle = PAL.text;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  let midText = '';
+  if (kind === 'lastDigit') {
+    midText = digitState.revealed[len - 1]
+      ? `Última xifra: ${L.digits[len - 1]}`
+      : "Clica l'última xifra per aplicar el criteri.";
+  } else if (kind === 'lastTwoDigits') {
+    const revealedRel = digitState.relevant.filter(i => digitState.revealed[i]);
+    midText = revealedRel.length === digitState.relevant.length
+      ? `Últimes xifres: ${digitState.relevant.map(i => L.digits[i]).join('')}`
+      : 'Clica les dues últimes xifres per formar el número.';
+  } else if (kind === 'altSum') {
+    const revealedRel = digitState.relevant.filter(i => digitState.revealed[i]);
+    if (revealedRel.length) {
+      const parts = revealedRel.map(i => {
+        const posFromRight = (len - 1) - i;
+        const sign = posFromRight % 2 === 0 ? '+' : '−';
+        return `${sign}${L.digits[i]}`;
+      });
+      midText = `${parts.join(' ')} = ${digitState.sum}`;
+    } else {
+      midText = "Clica cada xifra, d'una en una.";
+    }
+  } else {
+    const revealedDigits = L.digits.filter((d, i) => digitState.revealed[i]);
+    midText = revealedDigits.length
+      ? `${revealedDigits.join(' + ')} = ${digitState.sum}`
+      : 'Clica cada xifra per sumar-la.';
+  }
+  ctx.fillText(midText, L.panelX + L.panelW / 2, L.sumY);
+
+  // veredicte
+  if (digitState.verdictShown) {
+    const gapY = Math.max(20, H * 0.045);
+    if (kind === 'evenAndDigitSum') {
+      ctx.font = `600 ${Math.max(11, W * 0.017)}px 'Inter', sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillStyle = digitState.evenOk ? PAL.sageTint : PAL.terracottaTint;
+      ctx.fillText((digitState.evenOk ? '✔ ' : '✕ ') + 'Parell (÷2)', L.panelX + L.panelW / 2, L.verdictY - gapY * 2.2);
+      ctx.fillStyle = digitState.sumOk ? PAL.sageTint : PAL.terracottaTint;
+      ctx.fillText((digitState.sumOk ? '✔ ' : '✕ ') + `Suma ${digitState.sum} ÷ 3`, L.panelX + L.panelW / 2, L.verdictY - gapY * 1.1);
+    }
+    const ok = digitState.isMultiple;
+    ctx.font = `700 ${Math.max(15, W * 0.03)}px 'Space Grotesk', sans-serif`;
+    ctx.fillStyle = ok ? PAL.sageTint : PAL.terracottaTint;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(
+      (ok ? '✔ ' : '✕ ') + selectedNumber + (ok ? ' és múltiple de ' : ' NO és múltiple de ') + currentDivisor,
+      L.panelX + L.panelW / 2, L.verdictY
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  "TROBA ELS DIVISORS" — parelles de factors
+// ─────────────────────────────────────────────
+function findRecompute() { findMaxK = Math.floor(Math.sqrt(findN)); }
+
+function flatDivisors() {
+  const divs = [];
+  findPairs.forEach(([a, b]) => { divs.push(a); if (b !== a) divs.push(b); });
+  divs.sort((a, b) => a - b);
+  return divs;
+}
+
+function renderCandidateButtons(rowEl, maxK, onClick) {
+  rowEl.innerHTML = '';
+  for (let k = 1; k <= maxK; k++) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.dataset.k = String(k);
+    b.textContent = String(k);
+    b.addEventListener('click', () => onClick(k, b));
+    rowEl.appendChild(b);
+  }
+}
+
+function renderCandidates() { renderCandidateButtons(candidatesRow, findMaxK, tryCandidate); }
+
+function resetFind() {
+  findTried = new Set();
+  findPairs = [];
+  findRecompute();
+  renderCandidates();
+  updateFindReadout();
+  hint.textContent = `Prova candidats de l'1 fins a ${findMaxK} per trobar les parelles de divisors de ${findN}.`;
+  draw();
+}
+
+function tryCandidate(k, btn) {
+  if (findTried.has(k)) return;
+  findTried.add(k);
+  btn.disabled = true;
+  if (findN % k === 0) {
+    const partner = findN / k;
+    findPairs.push([k, partner]);
+    findPairs.sort((a, b) => a[0] - b[0]);
+    btn.classList.add('found');
+    flash(wrap, PAL.sage);
+  } else {
+    btn.classList.add('rejected');
+    flash(wrap, PAL.terracotta);
+  }
+  updateFindReadout();
+  draw();
+}
+
+function updateFindReadout() {
+  readoutBadge.classList.add('active');
+  const divisors = flatDivisors();
+  const done = findTried.size >= findMaxK;
+  readoutNum.textContent = divisors.length || '—';
+  if (!divisors.length) {
+    readoutName.textContent = `Divisors de ${findN}`;
+    readoutDef.textContent = `Prova candidats de l'1 fins a ${findMaxK} (√${findN} ≈ ${Math.sqrt(findN).toFixed(1)}).`;
+  } else if (!done) {
+    readoutName.textContent = `${divisors.length} divisors trobats fins ara`;
+    readoutDef.textContent = divisors.join(', ');
+  } else {
+    const isPrime = divisors.length === 2;
+    readoutName.textContent = isPrime ? `${findN} és un número PRIMER 🎉` : `Cerca completa: ${divisors.length} divisors`;
+    readoutDef.textContent = isPrime
+      ? `Només té dos divisors: 1 i ${findN}.`
+      : `Divisors de ${findN}: ${divisors.join(', ')}.`;
+  }
+}
+
+function drawFindViewGeneric(N, maxK, tried, pairs) {
+  const padTop = H * 0.11;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `700 ${Math.max(15, W * 0.032)}px 'Space Grotesk', sans-serif`;
+  ctx.fillStyle = TEXT_DARK;
+  ctx.fillText(`Divisors de ${N}`, W / 2, padTop);
+
+  if (!pairs.length) {
+    ctx.font = `500 ${Math.max(11, W * 0.02)}px 'Inter', sans-serif`;
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.fillText(`Prova els candidats de sota (de l'1 fins a ${maxK})`, W / 2, padTop + H * 0.09);
+    ctx.fillText('per anar trobant les parelles de factors.', W / 2, padTop + H * 0.14);
+    return;
+  }
+
+  const availH = H - padTop - H * 0.14;
+  const rowH = Math.min(H * 0.13, availH / (pairs.length + 1));
+  const fontSize = Math.max(13, rowH * 0.42);
+
+  pairs.forEach((pair, i) => {
+    const y = padTop + H * 0.13 + i * rowH;
+    const [a, b] = pair;
+    const label = a === b ? `${a} × ${a}` : `${a} × ${b}`;
+    ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+    ctx.fillStyle = PAL.petrolTint;
+    ctx.textAlign = 'right';
+    ctx.fillText(label, W / 2 + W * 0.06, y);
+    ctx.fillStyle = TEXT_DARK;
+    ctx.textAlign = 'left';
+    ctx.fillText(` = ${N}`, W / 2 + W * 0.06, y);
+  });
+
+  if (tried.size >= maxK) {
+    const divisors = [];
+    pairs.forEach(([a, b]) => { divisors.push(a); if (b !== a) divisors.push(b); });
+    divisors.sort((a, b) => a - b);
+    const y = padTop + H * 0.13 + pairs.length * rowH + H * 0.03;
+    ctx.font = `700 ${Math.max(12, W * 0.019)}px 'Inter', sans-serif`;
+    ctx.fillStyle = PAL.sageTint;
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      divisors.length === 2 ? `✔ Cerca completa — ${N} és PRIMER` : `✔ Cerca completa — ${divisors.length} divisors`,
+      W / 2, y
+    );
+  }
+}
+function drawFindView() { drawFindViewGeneric(findN, findMaxK, findTried, findPairs); }
+
+const FIND_N_MAX = 999;
+
+document.getElementById('fnMinus').addEventListener('click', () => {
+  findN = Math.max(1, findN - 1);
+  fnVal.value = findN;
+  resetFind();
+});
+document.getElementById('fnPlus').addEventListener('click', () => {
+  findN = Math.min(FIND_N_MAX, findN + 1);
+  fnVal.value = findN;
+  resetFind();
+});
+function commitFnVal() {
+  let v = parseInt(fnVal.value, 10);
+  if (!Number.isFinite(v)) v = findN;
+  v = Math.max(1, Math.min(FIND_N_MAX, v));
+  findN = v;
+  fnVal.value = findN;
+  resetFind();
+}
+fnVal.addEventListener('blur', commitFnVal);
+fnVal.addEventListener('keydown', (e) => { if (e.key === 'Enter') fnVal.blur(); });
+fnRandom.addEventListener('click', () => {
+  findN = 1 + Math.floor(Math.random() * FIND_N_MAX);
+  fnVal.value = findN;
+  resetFind();
+});
+document.getElementById('findReset').addEventListener('click', resetFind);
+
+// "Completa la resta": la certesa de tenir TOTS els divisors només s'assoleix
+// provant cada candidat de l'1 fins a √N — no hi ha cap drecera matemàtica
+// vàlida per saltar-se'n cap. Aquest botó estalvia haver de clicar un a un
+// els candidats que ja se sap que probablement no ho són, provant-los tots
+// de cop (la lògica de tryCandidate/tryRepteCandidate no canvia).
+function completeRestOfSearch(tried, maxK, rowEl, tryFn) {
+  for (let k = 1; k <= maxK; k++) {
+    if (tried.has(k)) continue;
+    const btn = rowEl.querySelector(`button[data-k="${k}"]`);
+    if (btn) tryFn(k, btn);
+  }
+}
+document.getElementById('findCompleteRest').addEventListener('click', () => {
+  completeRestOfSearch(findTried, findMaxK, candidatesRow, tryCandidate);
+});
+
+// ─────────────────────────────────────────────
+//  DIBUIX — dispatcher
+// ─────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  if (repteMode) {
+    if (repteRoundType === 'divisors') { drawFindViewGeneric(repteFindN, repteFindMaxK, repteFindTried, repteFindPairs); return; }
+    drawGridView();
+    return;
+  }
+  if (view === 'find') { drawFindView(); return; }
+  drawGridView();
+  if (selectedNumber !== null) drawDetailOverlay();
+}
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ DE DETALL (Comprova múltiples)
+// ─────────────────────────────────────────────
+function openDetail(number) {
+  selectedNumber = number;
+  const kind = CRITERION_KIND[currentDivisor];
+  const digits = String(number).split('');
+  digitState = {
+    kind,
+    relevant: relevantIndices(kind, digits.length),
+    revealed: digits.map(() => false),
+    sum: 0,
+    rejectIdx: null,
+    verdictShown: false,
+    isMultiple: false,
+    evenOk: undefined,
+    sumOk: undefined
+  };
+  hint.textContent = hintForKind(kind);
+  draw();
+}
+
+function closeDetail() {
+  selectedNumber = null;
+  digitState = null;
+  updateHintForCheckView();
+  draw();
+  resetReadoutIdle();
+}
+
+function finalizeVerdict() {
+  const num = selectedNumber, d = currentDivisor;
+  const v = computeVerdict(num, d);
+  digitState.verdictShown = true;
+  digitState.isMultiple = v.ok;
+  digitState.evenOk = v.evenOk;
+  digitState.sumOk = v.sumOk;
+  exploraChecked[d + ':' + num] = { isMultiple: v.ok };
+  demoedDivisors.add(d);
+
+  applyReadoutVerdict(num, d, v);
+  hint.textContent = 'Veredicte llest — clica a qualsevol lloc per tancar.';
+}
+
+function handleDetailClick(x, y) {
+  const L = detailLayout(selectedNumber);
+  if (digitState.verdictShown) { closeDetail(); return; }   // qualsevol clic tanca un cop hi ha veredicte
+  if (inRect(x, y, L.closeBtn)) { closeDetail(); return; }
+
+  const tile = L.tiles.find(t => inRect(x, y, t));
+  if (!tile) return;
+  if (!digitState.relevant.includes(tile.idx)) { rejectTile(tile.idx); return; }
+  if (digitState.revealed[tile.idx]) return;
+
+  digitState.revealed[tile.idx] = true;
+  const dVal = parseInt(tile.digit, 10);
+  const len = digitState.revealed.length;
+  if (digitState.kind === 'altSum') {
+    const posFromRight = (len - 1) - tile.idx;
+    digitState.sum += (posFromRight % 2 === 0) ? dVal : -dVal;
+  } else if (digitState.kind === 'digitSum' || digitState.kind === 'evenAndDigitSum') {
+    digitState.sum += dVal;
+  }
+
+  if (digitState.relevant.every(i => digitState.revealed[i])) finalizeVerdict();
+  draw();
+}
+
+function rejectTile(idx) {
+  digitState.rejectIdx = idx;
+  draw();
+  setTimeout(() => { if (digitState) { digitState.rejectIdx = null; draw(); } }, 300);
+}
+
+function applyReadoutVerdict(num, d, v) {
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = v.ok ? '✔' : '✕';
+  readoutName.textContent = v.ok ? `${num} és múltiple de ${d}` : `${num} NO és múltiple de ${d}`;
+  readoutDef.textContent = verdictDetailText(num, d, v);
+}
+
+// mode ràpid: cap recorregut, veredicte a l'instant (sempre per als divisors "sense criteri")
+function quickCheck(num) {
+  const d = currentDivisor;
+  const v = computeVerdict(num, d);
+  exploraChecked[d + ':' + num] = { isMultiple: v.ok };
+  demoedDivisors.add(d);
+  applyReadoutVerdict(num, d, v);
+  flash(readoutBadge, v.ok ? PAL.sage : PAL.terracotta);
+  updateHintForCheckView();
+  draw();
+}
+
+function updateHintForCheckView() {
+  if (repteMode || view !== 'check') return;
+  if (!CRITERION_KIND[currentDivisor]) {
+    hint.textContent = `El ${currentDivisor} no té criteri: clica un número per comprovar-ho per divisió directa.`;
+  } else if (fastMode || demoedDivisors.has(currentDivisor)) {
+    hint.textContent = "Mode ràpid: clica un número per veure el resultat a l'instant.";
+  } else {
+    hint.textContent = 'Clica un número de la graella per comprovar-hi el criteri, xifra a xifra.';
+  }
+}
+
+// ─────────────────────────────────────────────
+//  MODE REPTE — cada ronda alterna a l'atzar entre "Caça els múltiples"
+//  (graella) i "Troba els divisors" (candidats), compartint puntuació/ratxa/temps
+// ─────────────────────────────────────────────
+function pickRandomDivisor(exclude) {
+  const opts = DIVISORS.filter(d => d !== exclude);
+  return opts[Math.floor(Math.random() * opts.length)];
+}
+
+function startRepteRound() {
+  wrap.classList.remove('time-up');
+  repteRoundType = Math.random() < 0.5 ? 'multiples' : 'divisors';
+  if (repteRoundType === 'divisors') startDivisorsRound();
+  else startMultiplesRound();
+}
+
+// ── ronda "multiples": caça a la graella (mecànica original, sense canvis) ──
+function startMultiplesRound() {
+  rpFindRow.classList.remove('active');
+  repteDivisor = pickRandomDivisor(repteDivisor);
+  repteFound = new Set();
+  wrongFlashNum = null;
+  rpDivisorLabel.textContent = 'Divisor';
+  document.getElementById('rpDivisor').textContent = repteDivisor;
+  hint.textContent = `Caça tots els múltiples de ${repteDivisor} abans que s'acabi el temps!`;
+  readoutBadge.classList.add('active');
+  readoutName.textContent = `Múltiples de ${repteDivisor}`;
+  readoutDef.textContent = `Trobats: 0 / ${Math.floor(100 / repteDivisor)}`;
+  readoutNum.textContent = '0';
+  draw();
+}
+
+function handleRepteClick(x, y) {
+  const num = hitGridCell(x, y);
+  if (!num || repteFound.has(num)) return;
+  const rpTime = document.getElementById('rpTime');
+  const rpScore = document.getElementById('rpScore');
+  const rpStreak = document.getElementById('rpStreak');
+
+  if (num % repteDivisor === 0) {
+    repteFound.add(num);
+    score++; streak++;
+    rpScore.textContent = score; rpStreak.textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 1);
+    const total = Math.floor(100 / repteDivisor);
+    readoutNum.textContent = repteFound.size;
+    readoutDef.textContent = `Trobats: ${repteFound.size} / ${total}`;
+    if (repteFound.size === total) {
+      score += 5; rpScore.textContent = score;
+      timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+      readoutName.textContent = 'Ronda completa! 🎉';
+      readoutDef.textContent = `Has trobat tots els múltiples de ${repteDivisor}.`;
+      setTimeout(startRepteRound, 700);
+    }
+  } else {
+    streak = 0; rpStreak.textContent = streak;
+    score = Math.max(0, score - 1); rpScore.textContent = score;
+    timeLeft = Math.max(0, timeLeft - 3);
+    wrongFlashNum = num;
+    setTimeout(() => { wrongFlashNum = null; draw(); }, 350);
+  }
+  rpTime.textContent = Math.max(0, timeLeft) + 's';
+  draw();
+}
+
+// ── ronda "divisors": troba tots els divisors de N clicant candidats (com "Troba els
+//    divisors" de l'Explora, però amb estat propi i un rang més petit i cronometrable) ──
+function startDivisorsRound() {
+  let n;
+  do { n = REPTE_FIND_MIN + Math.floor(Math.random() * (REPTE_FIND_MAX - REPTE_FIND_MIN + 1)); } while (n === repteFindN);
+  repteFindN = n;
+  repteFindMaxK = Math.floor(Math.sqrt(repteFindN));
+  repteFindTried = new Set();
+  repteFindPairs = [];
+  renderRepteCandidates();
+  rpFindRow.classList.add('active');
+  rpDivisorLabel.textContent = 'Número';
+  document.getElementById('rpDivisor').textContent = repteFindN;
+  hint.textContent = `Troba tots els divisors de ${repteFindN} abans que s'acabi el temps!`;
+  readoutBadge.classList.add('active');
+  readoutName.textContent = `Divisors de ${repteFindN}`;
+  readoutDef.textContent = `Prova candidats de l'1 fins a ${repteFindMaxK}.`;
+  readoutNum.textContent = '0';
+  draw();
+}
+
+function renderRepteCandidates() { renderCandidateButtons(rpCandidatesRow, repteFindMaxK, tryRepteCandidate); }
+document.getElementById('rpFindCompleteRest').addEventListener('click', () => {
+  if (!repteMode || repteRoundType !== 'divisors') return;
+  completeRestOfSearch(repteFindTried, repteFindMaxK, rpCandidatesRow, tryRepteCandidate);
+});
+
+function updateRepteFindReadout() {
+  readoutBadge.classList.add('active');
+  const divisors = [];
+  repteFindPairs.forEach(([a, b]) => { divisors.push(a); if (b !== a) divisors.push(b); });
+  divisors.sort((a, b) => a - b);
+  readoutNum.textContent = divisors.length || '0';
+  if (!divisors.length) {
+    readoutName.textContent = `Divisors de ${repteFindN}`;
+    readoutDef.textContent = `Prova candidats de l'1 fins a ${repteFindMaxK}.`;
+  } else {
+    readoutName.textContent = `${divisors.length} divisors trobats fins ara`;
+    readoutDef.textContent = divisors.join(', ');
+  }
+}
+
+function tryRepteCandidate(k, btn) {
+  if (repteFindTried.has(k)) return;
+  repteFindTried.add(k);
+  btn.disabled = true;
+  const rpTime = document.getElementById('rpTime');
+  const rpScore = document.getElementById('rpScore');
+  const rpStreak = document.getElementById('rpStreak');
+
+  if (repteFindN % k === 0) {
+    const partner = repteFindN / k;
+    repteFindPairs.push([k, partner]);
+    repteFindPairs.sort((a, b) => a[0] - b[0]);
+    btn.classList.add('found');
+    score++; streak++;
+    rpScore.textContent = score; rpStreak.textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 1);
+    flash(wrap, PAL.sage);
+  } else {
+    btn.classList.add('rejected');
+    streak = 0; rpStreak.textContent = streak;
+    score = Math.max(0, score - 1); rpScore.textContent = score;
+    timeLeft = Math.max(0, timeLeft - 3);
+    flash(wrap, PAL.terracotta);
+  }
+  rpTime.textContent = Math.max(0, timeLeft) + 's';
+  updateRepteFindReadout();
+  draw();
+
+  if (repteFindTried.size >= repteFindMaxK && repteRoundType === 'divisors') {
+    score += 5; rpScore.textContent = score;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 5);
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    readoutName.textContent = 'Ronda completa! 🎉';
+    readoutDef.textContent = `Has trobat tots els divisors de ${repteFindN}.`;
+    setTimeout(startRepteRound, 700);
+  }
+}
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds;
+  wrap.classList.remove('time-up');
+  const rpTimeEl = document.getElementById('rpTime');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTimeEl.textContent = timeLeft + 's';
+  rpTimeEl.classList.remove('time-low');
+  selectedNumber = null; digitState = null;
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTimeEl.textContent = Math.max(0, timeLeft) + 's';
+    rpTimeEl.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      rpTimeEl.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+    }
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────
+//  CLIC AL CANVAS (dispatcher)
+// ─────────────────────────────────────────────
+function onCanvasClick(e) {
+  const { x, y } = pointerXY(e);
+  if (repteMode) {
+    if (repteRoundType === 'multiples') handleRepteClick(x, y);
+    return; // la ronda "divisors" es juga amb els botons de candidats, no amb el llenç
+  }
+  if (view === 'find') return; // "Troba els divisors" es controla amb botons DOM, no amb el canvas
+  if (selectedNumber !== null) { handleDetailClick(x, y); return; }
+  const num = hitGridCell(x, y);
+  if (!num) return;
+  const kind = CRITERION_KIND[currentDivisor];
+  if (!kind || fastMode || demoedDivisors.has(currentDivisor)) {
+    quickCheck(num);
+  } else {
+    openDetail(num);
+  }
+}
+canvas.addEventListener('click', onCanvasClick);
+window.addEventListener('resize', resize);
+
+// ─────────────────────────────────────────────
+//  LECTURA EN VIU (Comprova múltiples, sense número obert)
+// ─────────────────────────────────────────────
+function resetReadoutIdle() {
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = currentDivisor;
+  readoutName.textContent = `Divisor actiu: ${currentDivisor}`;
+  readoutDef.textContent = CRITERI[currentDivisor].rule;
+}
+
+// ─────────────────────────────────────────────
+//  SELECTOR DE DIVISOR i TARGETES
+// ─────────────────────────────────────────────
+function updateActiveStates() {
+  document.querySelectorAll('#divisorPicker .chip, #huntPicker .chip').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.d, 10) === currentDivisor);
+  });
+  document.querySelectorAll('.type-card[data-d]').forEach(card => {
+    card.classList.toggle('active', parseInt(card.dataset.d, 10) === currentDivisor);
+  });
+}
+
+function setDivisor(d) {
+  currentDivisor = d;
+  selectedNumber = null;
+  digitState = null;
+  updateActiveStates();
+  resetReadoutIdle();
+  updateHintForCheckView();
+  draw();
+}
+
+document.querySelectorAll('#divisorPicker .chip, #huntPicker .chip').forEach(btn => {
+  btn.addEventListener('click', () => { if (!repteMode) { switchView('check'); setDivisor(parseInt(btn.dataset.d, 10)); } });
+});
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+document.querySelectorAll('.type-card[data-d]').forEach(card => {
+  card.addEventListener('click', () => {
+    const d = parseInt(card.dataset.d, 10);
+    flash(wrap, COLORS[d]);
+    if (!repteMode) { switchView('check'); setDivisor(d); }
+  });
+});
+
+// ─────────────────────────────────────────────
+//  FES-HO RÀPID (toggle manual)
+// ─────────────────────────────────────────────
+fastToggle.addEventListener('click', () => {
+  fastMode = !fastMode;
+  fastToggle.classList.toggle('active', fastMode);
+  updateHintForCheckView();
+});
+
+// ─────────────────────────────────────────────
+//  SUBTABS (Comprova múltiples / Troba els divisors)
+// ─────────────────────────────────────────────
+function switchView(newView) {
+  if (view === newView) return;
+  view = newView;
+  document.querySelectorAll('.subtab-bar button').forEach(x => x.classList.toggle('active', x.dataset.view === view));
+  checkControls.classList.toggle('active', view === 'check');
+  findControls.classList.toggle('active', view === 'find');
+  selectedNumber = null; digitState = null;
+  if (view === 'find') {
+    resetFind();
+  } else {
+    updateHintForCheckView();
+    resetReadoutIdle();
+    draw();
+  }
+}
+document.querySelectorAll('.subtab-bar button').forEach(b => {
+  b.addEventListener('click', () => switchView(b.dataset.view));
+});
+
+// ─────────────────────────────────────────────
+//  ALTERNANÇA EXPLORA / REPTE
+// ─────────────────────────────────────────────
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  rpFindRow.classList.remove('active');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  selectedNumber = null; digitState = null;
+  if (view === 'find') { resetFind(); } else { setDivisor(currentDivisor); }
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  stopTimer();
+  wrap.classList.remove('time-up');
+  rpFindRow.classList.remove('active');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', () => { if (timer) startRepteRound(); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+updateActiveStates();
+resetReadoutIdle();
+findRecompute();
+renderCandidates();
+updateFindReadout();
+resize();
+</script>
+</body>
+</html>

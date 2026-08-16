@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCM i MCD · CalcMat 1r ESO</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--petrol); }
+    .controls-row { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .explora-only, .repte-only { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+    .repte-only { display: none; }
+    body.mode-repte .explora-only { display: none; }
+    body.mode-repte .repte-only { display: flex; }
+
+    .stepper { display: flex; align-items: center; gap: .6rem; background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: .35rem .5rem; }
+    .stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .stepper button:hover { border-color: var(--petrol); color: var(--petrol); }
+    .stepper .stepper-label { font-size: .78rem; color: var(--muted); min-width: 60px; text-align: center; }
+    .stepper .stepper-val { font-family: var(--font-mono); font-weight: 700; font-size: 1.05rem; min-width: 26px; text-align: center; }
+    .stepper input.stepper-val {
+      border: none; background: transparent; color: var(--ink); border-radius: 6px; padding: 1px 2px; width: 42px;
+      -moz-appearance: textfield;
+    }
+    .stepper input.stepper-val:focus { outline: none; background: var(--surface); box-shadow: 0 0 0 2px var(--petrol); }
+    .stepper input.stepper-val::-webkit-inner-spin-button, .stepper input.stepper-val::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .chip-row { display: flex; gap: .5rem; flex-wrap: wrap; transition: opacity var(--tr); }
+    .chip-row.disabled { opacity: .4; pointer-events: none; }
+    .chip {
+      padding: .45rem .85rem; border-radius: 100px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .92rem; cursor: pointer; color: var(--ink); transition: all var(--tr);
+    }
+    .chip:hover { border-color: var(--petrol); color: var(--petrol); }
+
+    .chip-label { font-size: .82rem; color: var(--muted); font-weight: 600; }
+    .method-hint { font-size: .82rem; color: var(--petrol); font-style: italic; line-height: 1.5; }
+
+    /* ── REPTE: entrada manual del MCD/MCM un cop l'escala és completa ── */
+    .repte-answer {
+      display: flex; flex-direction: column; gap: .6rem; background: var(--card); border: 1px solid var(--petrol);
+      border-radius: 12px; padding: 1rem 1.3rem;
+    }
+    .repte-answer .rs-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .repte-answer .answer-label { font-size: .85rem; font-weight: 600; color: var(--muted); }
+    .answer-input {
+      font-family: var(--font-mono); font-weight: 700; font-size: 1rem; text-align: center; width: 76px;
+      padding: .4rem .3rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink);
+    }
+    .answer-input:focus { outline: none; border-color: var(--petrol); box-shadow: 0 0 0 2px color-mix(in srgb, var(--petrol) 25%, transparent); }
+    .answer-input::-webkit-inner-spin-button, .answer-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .answer-feedback { font-size: .85rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    CalcMat 1r ESO
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--petrol)">Bloc 01 · MCM i MCD</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>MCM i MCD</h1>
+      <p>Fes l'escala de divisions: tria un primer que divideixi A, B o tots dos, i baixa'l fins que els dos arribin a 1. Al final veuràs el MCD i el MCM — i per què funcionen, al diagrama de Venn.</p>
+    </div>
+    <div class="mode-toggle" style="--m-color: var(--petrol)">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="viewToggle" style="--m-color: var(--plum)">
+        <button data-view="escala" class="active">Escala</button>
+        <button data-view="venn">Diagrama de Venn</button>
+      </div>
+      <div class="stepper">
+        <button id="aMinus">−</button>
+        <span class="stepper-label">Número A</span>
+        <input type="number" class="stepper-val" id="aVal" value="36" min="4" max="300" inputmode="numeric" maxlength="3">
+        <button id="aPlus">+</button>
+      </div>
+      <div class="stepper">
+        <button id="bMinus">−</button>
+        <span class="stepper-label">Número B</span>
+        <input type="number" class="stepper-val" id="bVal" value="24" min="4" max="300" inputmode="numeric" maxlength="3">
+        <button id="bPlus">+</button>
+      </div>
+      <button class="btn btn-ghost" id="randomBtn">🎲 Nombres aleatoris</button>
+      <button class="btn btn-ghost" id="resetBtn">Reinicia ↻</button>
+    </div>
+
+    <div class="controls-row" id="primeControlsRow">
+      <span class="chip-label">Primer:</span>
+      <div class="chip-row" id="primeRow">
+        <button class="chip flash-target" data-p="2"  style="--flash-color:var(--petrol)">2</button>
+        <button class="chip flash-target" data-p="3"  style="--flash-color:var(--petrol)">3</button>
+        <button class="chip flash-target" data-p="5"  style="--flash-color:var(--petrol)">5</button>
+        <button class="chip flash-target" data-p="7"  style="--flash-color:var(--petrol)">7</button>
+        <button class="chip flash-target" data-p="11" style="--flash-color:var(--petrol)">11</button>
+        <button class="chip flash-target" data-p="13" style="--flash-color:var(--petrol)">13</button>
+      </div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="60">
+          <span class="rs-val" id="repteTimeVal">60s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar" style="--m-color:var(--petrol)">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">60s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="repte-answer" id="repteAnswerPanel" style="display:none">
+      <span class="rs-label">Escala completa! Calcula i escriu:</span>
+      <div class="rs-row">
+        <span class="answer-label">MCD =</span>
+        <input type="number" class="answer-input" id="mcdInput" inputmode="numeric">
+        <span class="answer-label">MCM =</span>
+        <input type="number" class="answer-input" id="mcmInput" inputmode="numeric">
+        <button class="btn btn-primary" id="mcmMcdSubmitBtn">Comprova ✔</button>
+      </div>
+      <span class="answer-feedback" id="mcmMcdFeedback"></span>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap" style="--flash-color:var(--petrol)">
+      <canvas id="mcmCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Tria un primer que divideixi A o B.</div>
+
+    <p class="method-hint" id="methodPanel">L'escala: a cada fila, tria un primer que divideixi A, B o tots dos. El que no es pugui dividir baixa igual a la fila de sota.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge" style="--flash-color:var(--petrol)">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">A = 36 · B = 24</div>
+        <div class="readout-def" id="readoutDef">Tria un primer que divideixi A o B.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">L'escala i el diagrama de Venn</div>
+
+    <div class="type-card active" id="card-escala" data-method="escala" style="--t-color:var(--petrol)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">L'escala</div>
+        <div class="type-range">Divisió simultània</div>
+        <div class="type-desc">Divideix A i B pel mateix primer a cada fila fins que tots dos arribin a 1.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-comu" data-method="comu" style="--t-color:var(--sage)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Factor comú</div>
+        <div class="type-range">Divideix A i B alhora</div>
+        <div class="type-desc">Compta pel MCD i també pel MCM.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-nocomu" data-method="nocomu" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Factor no comú</div>
+        <div class="type-range">Divideix només un dels dos</div>
+        <div class="type-desc">Compta només pel MCM; l'altre número baixa igual a la fila de sota.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-venn" data-method="venn" style="--t-color:var(--plum)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Diagrama de Venn</div>
+        <div class="type-range">Mateixos factors, en cercles</div>
+        <div class="type-desc">La intersecció és el MCD; tot el diagrama és el MCM.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> MCD(A,B) × MCM(A,B) = A × B. Comprova-ho quan acabis l'escala!
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>CalcMat · Bloc 01 · Nombres i Divisibilitat</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const PRIMES = [2, 3, 5, 7, 11, 13];
+
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+function hexToRgba(hex, a) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+const COLOR_PETROL     = cssVar('--petrol');
+const COLOR_AMBER      = cssVar('--amber');
+const COLOR_TERRACOTTA = cssVar('--terracotta');
+const COLOR_SAGE       = cssVar('--sage');
+const COLOR_PLUM       = cssVar('--plum');
+const TEXT_DARK  = cssVar('--ink', '#1a1f36');
+const TEXT_MUTED = cssVar('--muted', '#5b6584');
+
+const METHOD_TEXT = {
+  escala: "L'escala: a cada fila, tria un primer que divideixi A, B o tots dos. El que no es pugui dividir baixa igual a la fila de sota.",
+  comu:   "Factor comú: quan un primer divideix A i B a la mateixa fila, forma part del MCD (i també del MCM).",
+  nocomu: "Factor no comú: quan un primer només divideix un dels dos números, només compta pel MCM.",
+  venn:   "Diagrama de Venn: els factors comuns van al centre (MCD); la resta, a cada cercle per separat. Tots junts formen el MCM."
+};
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap   = document.getElementById('canvasWrap');
+const canvas = document.getElementById('mcmCanvas');
+const ctx    = canvas.getContext('2d');
+const hint   = document.getElementById('hint');
+const primeControlsRow = document.getElementById('primeControlsRow');
+const primeRowEl = document.getElementById('primeRow');
+
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum   = document.getElementById('readoutNum');
+const readoutName  = document.getElementById('readoutName');
+const readoutDef   = document.getElementById('readoutDef');
+
+const aVal = document.getElementById('aVal'), bVal = document.getElementById('bVal');
+
+let W, H;
+let A = 36, B = 24;
+// rows[i] = { a, b, prime, divA, divB, common }
+// a/b = valors d'aquesta fila; prime = primer usat per generar la fila següent (null = fila actual, pendent)
+let rows = [];
+let done = false;
+let view = 'escala'; // 'escala' | 'venn'  (Repte sempre mostra 'escala')
+
+let repteMode = false;
+let repteTimeUp = false;
+let timer = null, timeLeft = 60, repteMaxTime = 60, score = 0, streak = 0;
+
+function resize() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = devicePixelRatio || 1;
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function product(arr) { return arr.length ? arr.reduce((a, b) => a * b, 1) : 1; }
+
+// ─────────────────────────────────────────────
+//  DIBUIX — helpers
+// ─────────────────────────────────────────────
+function roundRect(x, y, w, h, r, fill, stroke, lw) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1.4; ctx.stroke(); }
+}
+function txt(str, x, y, size, color, align, weight, font) {
+  ctx.font = `${weight || 600} ${size}px '${font || 'Inter'}', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(str, x, y);
+}
+
+// ─────────────────────────────────────────────
+//  ESCALA — LÒGICA
+// ─────────────────────────────────────────────
+function deriveGroups() {
+  // separa els primers usats en: comuns (MCD), exclusius de A, exclusius de B. mcm = tots.
+  const mcd = [], mcm = [], exclusiveA = [], exclusiveB = [];
+  rows.forEach(r => {
+    if (r.prime == null) return;
+    mcm.push(r.prime);
+    if (r.common) mcd.push(r.prime);
+    else if (r.divA) exclusiveA.push(r.prime);
+    else exclusiveB.push(r.prime);
+  });
+  return { mcd, mcm, exclusiveA, exclusiveB };
+}
+
+function onPrimeClick(p, btn) {
+  if (done) return;
+  if (repteMode && repteTimeUp) return;
+  const cur = rows[rows.length - 1];
+  const divA = cur.a % p === 0;
+  const divB = cur.b % p === 0;
+
+  if (!divA && !divB) {
+    rejectPrime(p, btn, cur);
+    return;
+  }
+
+  cur.prime = p; cur.divA = divA; cur.divB = divB; cur.common = divA && divB;
+  const newA = divA ? cur.a / p : cur.a;
+  const newB = divB ? cur.b / p : cur.b;
+  flash(btn, cur.common ? 'var(--sage)' : 'var(--amber)');
+  rows.push({ a: newA, b: newB, prime: null, divA: null, divB: null, common: null });
+
+  if (newA === 1 && newB === 1) { done = true; }
+
+  draw();
+  updateReadout();
+  if (done) onLadderDone();
+}
+
+function rejectPrime(p, btn, cur) {
+  flash(btn, 'var(--terracotta)');
+  flash(wrap, 'var(--terracotta)');
+  hint.textContent = `${p} no divideix ni ${cur.a} ni ${cur.b}. Prova un altre primer.`;
+  setTimeout(() => { if (!done) updateHintText(); }, 1200);
+  if (repteMode) applyPenalty();
+}
+
+function applyPenalty() {
+  streak = 0;
+  document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1);
+  document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+
+// ─────────────────────────────────────────────
+//  ESCALA — DIBUIX
+// ─────────────────────────────────────────────
+function ladderLayout() {
+  const padX = W * 0.055;
+  const pColW = (W - padX * 2) * 0.24;
+  const numsW = (W - padX * 2) - pColW;
+  const colA = { x0: padX, w: numsW / 2 };
+  const colB = { x0: padX + numsW / 2, w: numsW / 2 };
+  const colP = { x0: padX + numsW, w: pColW };
+  const headerY = H * 0.085;
+  const tableTop = H * 0.16;
+  const tableBot = H * 0.94;
+  const rowH = (tableBot - tableTop) / Math.max(1, rows.length);
+  return { padX, colA, colB, colP, headerY, tableTop, tableBot, rowH };
+}
+
+function drawEscala() {
+  const L = ladderLayout();
+
+  txt('A', L.colA.x0 + L.colA.w / 2, L.headerY, Math.max(12, W * 0.024), COLOR_PETROL, 'center', 700, 'Space Grotesk');
+  txt('B', L.colB.x0 + L.colB.w / 2, L.headerY, Math.max(12, W * 0.024), COLOR_PLUM, 'center', 700, 'Space Grotesk');
+  txt('primer', L.colP.x0 + L.colP.w / 2, L.headerY, Math.max(9, W * 0.013), TEXT_MUTED, 'center', 600);
+
+  ctx.strokeStyle = 'rgba(26,31,54,0.18)'; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(L.colP.x0 - 6, L.tableTop - 8);
+  ctx.lineTo(L.colP.x0 - 6, L.tableBot + 2);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(26,31,54,0.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(L.padX, L.tableTop - 10); ctx.lineTo(W - L.padX, L.tableTop - 10); ctx.stroke();
+
+  const valSize = Math.max(11, Math.min(22, L.rowH * 0.42));
+  const primeSize = Math.max(10, Math.min(18, L.rowH * 0.36));
+
+  rows.forEach((r, i) => {
+    const y = L.tableTop + i * L.rowH + L.rowH / 2;
+    const isCurrent = (i === rows.length - 1);
+    const isFirst = (i === 0);
+    const cellX = L.padX - 4, cellW = (L.colP.x0 - 6) - cellX - 4, cellH = L.rowH * 0.82;
+
+    if (!isCurrent) {
+      const tint = r.common ? hexToRgba(COLOR_SAGE, 0.14) : hexToRgba(COLOR_AMBER, 0.12);
+      roundRect(cellX, y - cellH / 2, cellW, cellH, 7, tint, null);
+    } else if (!done) {
+      roundRect(cellX, y - cellH / 2, cellW, cellH, 7, hexToRgba(COLOR_PETROL, 0.14), COLOR_PETROL, 1.4);
+    } else {
+      roundRect(cellX, y - cellH / 2, cellW, cellH, 7, hexToRgba(COLOR_SAGE, 0.18), COLOR_SAGE, 1.4);
+    }
+
+    const aMuted = (!isCurrent && !r.common && !r.divA);
+    const bMuted = (!isCurrent && !r.common && !r.divB);
+    txt(String(r.a), L.colA.x0 + L.colA.w / 2, y, isFirst ? valSize * 1.08 : valSize,
+        aMuted ? TEXT_MUTED : TEXT_DARK, 'center', isFirst ? 700 : 600, 'JetBrains Mono');
+    txt(String(r.b), L.colB.x0 + L.colB.w / 2, y, isFirst ? valSize * 1.08 : valSize,
+        bMuted ? TEXT_MUTED : TEXT_DARK, 'center', isFirst ? 700 : 600, 'JetBrains Mono');
+
+    if (r.prime != null) {
+      const pColor = r.common ? COLOR_SAGE : COLOR_AMBER;
+      txt(String(r.prime), L.colP.x0 + L.colP.w / 2, y, primeSize, pColor, 'center', 700, 'JetBrains Mono');
+    } else if (isCurrent && !done) {
+      txt('?', L.colP.x0 + L.colP.w / 2, y, primeSize, COLOR_PETROL, 'center', 700, 'JetBrains Mono');
+    } else if (isCurrent && done) {
+      txt('✓', L.colP.x0 + L.colP.w / 2, y, primeSize * 1.15, COLOR_SAGE, 'center', 700);
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+//  VENN — DIBUIX (reutilitza les files ja resoltes, sense re-factoritzar)
+// ─────────────────────────────────────────────
+function packChips(list, box, color) {
+  if (!list.length) {
+    txt('—', box.x + box.w / 2, box.y + box.h / 2, Math.max(10, W * 0.016), TEXT_MUTED, 'center', 600);
+    return;
+  }
+  const n = list.length;
+  const cols = Math.max(1, Math.min(n, Math.floor(box.w / (W * 0.05))));
+  const rowsN = Math.ceil(n / cols);
+  const cellW = box.w / cols, cellH = box.h / rowsN;
+  const chip = Math.max(15, Math.min(cellW, cellH) * 0.74);
+  list.forEach((p, i) => {
+    const col = i % cols, rowI = Math.floor(i / cols);
+    const cx0 = box.x + col * cellW + cellW / 2;
+    const cy0 = box.y + rowI * cellH + cellH / 2;
+    roundRect(cx0 - chip / 2, cy0 - chip / 2, chip, chip, 6, color, '#ffffff', 1);
+    txt(String(p), cx0, cy0, Math.max(9, chip * 0.46), '#0d1520', 'center', 700, 'JetBrains Mono');
+  });
+}
+
+function drawVenn() {
+  const g = deriveGroups();
+  const mcd = product(g.mcd), mcm = product(g.mcm);
+
+  const cx = W / 2, cy = H * 0.42;
+  const R = Math.min(W, H) * 0.27;
+  const d = R * 1.15;
+  const cxA = cx - d / 2, cxB = cx + d / 2;
+
+  ctx.lineWidth = 2.2;
+  ctx.fillStyle = hexToRgba(COLOR_PETROL, 0.14);
+  ctx.beginPath(); ctx.arc(cxA, cy, R, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = COLOR_PETROL; ctx.stroke();
+
+  ctx.fillStyle = hexToRgba(COLOR_PLUM, 0.14);
+  ctx.beginPath(); ctx.arc(cxB, cy, R, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = COLOR_PLUM; ctx.stroke();
+
+  txt(`A = ${A}`, cxA - R * 0.32, cy - R - Math.max(12, H * 0.045), Math.max(11, W * 0.02), COLOR_PETROL, 'center', 700, 'Space Grotesk');
+  txt(`B = ${B}`, cxB + R * 0.32, cy - R - Math.max(12, H * 0.045), Math.max(11, W * 0.02), COLOR_PLUM, 'center', 700, 'Space Grotesk');
+
+  const bandH = R * 1.1;
+  const leftBox  = { x: cxA - R * 0.72, y: cy - bandH / 2, w: (cxB - R - R * 0.12) - (cxA - R * 0.72), h: bandH };
+  const midW0 = cxB - R + R * 0.16, midW1 = cxA + R - R * 0.16;
+  const midBox   = { x: midW0, y: cy - (bandH * 0.8) / 2, w: Math.max(20, midW1 - midW0), h: bandH * 0.8 };
+  const rightBox = { x: cxA + R + R * 0.12, y: cy - bandH / 2, w: (cxB + R * 0.72) - (cxA + R + R * 0.12), h: bandH };
+
+  packChips(g.exclusiveA, leftBox, COLOR_AMBER);
+  packChips(g.mcd, midBox, COLOR_SAGE);
+  packChips(g.exclusiveB, rightBox, COLOR_AMBER);
+
+  const capLabelY = cy + bandH / 2 + Math.max(14, H * 0.035);
+  txt('només A', leftBox.x + leftBox.w / 2, capLabelY, Math.max(9, W * 0.013), TEXT_MUTED, 'center', 600);
+  txt('comuns', midBox.x + midBox.w / 2, capLabelY, Math.max(9, W * 0.013), COLOR_SAGE, 'center', 700);
+  txt('només B', rightBox.x + rightBox.w / 2, capLabelY, Math.max(9, W * 0.013), TEXT_MUTED, 'center', 600);
+
+  const capY = H * 0.90;
+  const qualifier = done ? '' : ' (fins ara)';
+  txt(`Intersecció → MCD${qualifier} = ${mcd}`, W * 0.28, capY, Math.max(11, W * 0.017), COLOR_SAGE, 'center', 700, 'JetBrains Mono');
+  txt(`Tot el diagrama → MCM${qualifier} = ${mcm}`, W * 0.74, capY, Math.max(11, W * 0.017), COLOR_PLUM, 'center', 700, 'JetBrains Mono');
+}
+
+// ─────────────────────────────────────────────
+//  DRAW
+// ─────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const effectiveView = repteMode ? 'escala' : view;
+  if (effectiveView === 'escala') drawEscala();
+  else drawVenn();
+}
+
+function flash(el, color) {
+  el.style.setProperty('--flash-color', color);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ─────────────────────────────────────────────
+//  READOUT / HINT
+// ─────────────────────────────────────────────
+function composedEq(list, result, label) {
+  if (!list.length) return `${label} = ${result} (sense factors comuns)`;
+  return `${label} = ${list.join('×')} = ${result}`;
+}
+
+function updateHintText() {
+  if (done) {
+    hint.textContent = "Fet! Escala completa — canvia els números o comença un altre repte.";
+    return;
+  }
+  if (repteMode && repteTimeUp) { hint.textContent = "Temps esgotat!"; return; }
+  if (view === 'venn' && !repteMode) {
+    hint.textContent = "Diagrama de Venn amb els mateixos factors trobats a l'escala.";
+    return;
+  }
+  const cur = rows[rows.length - 1];
+  hint.textContent = rows.length === 1
+    ? `Tria un primer que divideixi ${cur.a} o ${cur.b}.`
+    : `Queden ${cur.a} i ${cur.b}. Tria el primer següent.`;
+}
+
+function updateReadout() {
+  readoutBadge.classList.add('active');
+  const g = deriveGroups();
+  const mcd = product(g.mcd), mcm = product(g.mcm);
+
+  if (done) {
+    if (repteMode) {
+      readoutNum.textContent = '?';
+      readoutName.textContent = 'Escala completa!';
+      readoutDef.textContent = 'Calcula el MCD i el MCM a partir dels primers que has trobat, i escriu-los a sota.';
+    } else {
+      readoutNum.textContent = mcm;
+      readoutName.textContent = `MCD(${A},${B}) = ${mcd} · MCM(${A},${B}) = ${mcm}`;
+      readoutDef.innerHTML = `${composedEq(g.mcd, mcd, 'MCD')} &nbsp;·&nbsp; ${composedEq(g.mcm, mcm, 'MCM')}`;
+    }
+    return;
+  }
+
+  const cur = rows[rows.length - 1];
+  readoutNum.textContent = '…';
+  readoutName.textContent = rows.length > 1
+    ? `MCD parcial ${mcd} · MCM parcial ${mcm}`
+    : 'Comença l\'escala';
+  readoutDef.textContent = `Queden A = ${cur.a} i B = ${cur.b} per arribar a 1. Tria un primer que en divideixi com a mínim un.`;
+}
+
+function onLadderDone() {
+  updateHintText();
+  primeRowEl.classList.add('disabled');
+  if (repteMode) showAnswerPanel();
+}
+
+// ─────────────────────────────────────────────
+//  VISTA (ESCALA / VENN)
+// ─────────────────────────────────────────────
+function applyViewVisibility() {
+  // Els botons de primers han d'estar sempre visibles (Escala i Venn): permeten
+  // seguir construint l'escala mentre es mira el diagrama de Venn en directe.
+  primeControlsRow.style.display = 'flex';
+}
+
+function setView(v) {
+  view = v;
+  document.querySelectorAll('#viewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  applyViewVisibility();
+  updateHintText();
+  draw();
+}
+document.querySelectorAll('#viewToggle button').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+
+document.querySelectorAll('#primeRow .chip').forEach(btn => {
+  btn.addEventListener('click', () => onPrimeClick(parseInt(btn.dataset.p, 10), btn));
+});
+
+// ─────────────────────────────────────────────
+//  REINICI / STEPPERS
+// ─────────────────────────────────────────────
+const MIN_AB = 4, MAX_AB = 300;
+
+function resetAll(a, b) {
+  A = a; B = b;
+  rows = [{ a: A, b: B, prime: null, divA: null, divB: null, common: null }];
+  done = false;
+  repteTimeUp = false;
+  primeRowEl.classList.remove('disabled');
+  aVal.value = A; bVal.value = B;
+  applyViewVisibility();
+  draw();
+  updateReadout();
+  updateHintText();
+}
+
+document.getElementById('aMinus').addEventListener('click', () => resetAll(Math.max(MIN_AB, A - 1), B));
+document.getElementById('aPlus').addEventListener('click',  () => resetAll(Math.min(MAX_AB, A + 1), B));
+document.getElementById('bMinus').addEventListener('click', () => resetAll(A, Math.max(MIN_AB, B - 1)));
+document.getElementById('bPlus').addEventListener('click',  () => resetAll(A, Math.min(MAX_AB, B + 1)));
+document.getElementById('resetBtn').addEventListener('click', () => resetAll(A, B));
+
+// Entrada manual de qualsevol número de fins a 3 xifres (dins el mateix rang que els steppers)
+function commitAInput() {
+  let v = parseInt(aVal.value, 10);
+  if (!Number.isFinite(v)) v = A;
+  v = Math.max(MIN_AB, Math.min(MAX_AB, v));
+  resetAll(v, B);
+}
+function commitBInput() {
+  let v = parseInt(bVal.value, 10);
+  if (!Number.isFinite(v)) v = B;
+  v = Math.max(MIN_AB, Math.min(MAX_AB, v));
+  resetAll(A, v);
+}
+aVal.addEventListener('blur', commitAInput);
+aVal.addEventListener('keydown', e => { if (e.key === 'Enter') aVal.blur(); });
+aVal.addEventListener('focus', () => aVal.select());
+bVal.addEventListener('blur', commitBInput);
+bVal.addEventListener('keydown', e => { if (e.key === 'Enter') bVal.blur(); });
+bVal.addEventListener('focus', () => bVal.select());
+
+document.getElementById('randomBtn').addEventListener('click', () => {
+  let na = randSmooth(MIN_AB, MAX_AB), nb = randSmooth(MIN_AB, MAX_AB);
+  while (nb === na) nb = randSmooth(MIN_AB, MAX_AB);
+  resetAll(na, nb);
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-escala').addEventListener('click', () => {
+  flash(wrap, 'var(--petrol)'); setMethod('escala'); if (!repteMode) setView('escala');
+});
+document.getElementById('card-comu').addEventListener('click', () => {
+  flash(wrap, 'var(--sage)'); setMethod('comu'); if (!repteMode) setView('escala');
+});
+document.getElementById('card-nocomu').addEventListener('click', () => {
+  flash(wrap, 'var(--amber)'); setMethod('nocomu'); if (!repteMode) setView('escala');
+});
+document.getElementById('card-venn').addEventListener('click', () => {
+  flash(wrap, 'var(--plum)'); setMethod('venn'); if (!repteMode) setView('venn');
+});
+
+// ─────────────────────────────────────────────
+//  MODE REPTE
+// ─────────────────────────────────────────────
+function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+function isSmooth(n) {
+  let r = n;
+  for (const p of PRIMES) { while (r % p === 0) r /= p; }
+  return r === 1;
+}
+function randSmooth(min, max) {
+  let n = randInt(min, max), guard = 0;
+  while (!isSmooth(n) && guard < 300) { n = randInt(min, max); guard++; }
+  return isSmooth(n) ? n : 4;
+}
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepteRound() {
+  let na = randSmooth(4, 60), nb = randSmooth(4, 60);
+  while (nb === na) nb = randSmooth(4, 60);
+  wrap.classList.remove('time-up');
+  hideAnswerPanel();
+  resetAll(na, nb);
+  hint.textContent = `Fes l'escala de ${na} i ${nb} abans que s'acabi el temps!`;
+}
+
+const repteAnswerPanel = document.getElementById('repteAnswerPanel');
+const mcdInput = document.getElementById('mcdInput');
+const mcmInput = document.getElementById('mcmInput');
+const mcmMcdFeedback = document.getElementById('mcmMcdFeedback');
+
+function showAnswerPanel() {
+  repteAnswerPanel.style.display = 'flex';
+  mcdInput.value = ''; mcmInput.value = '';
+  mcmMcdFeedback.textContent = '';
+  mcdInput.focus();
+}
+function hideAnswerPanel() {
+  repteAnswerPanel.style.display = 'none';
+}
+
+function submitMcmMcdAnswer() {
+  if (!repteMode || !done || repteTimeUp) return;
+  const g = deriveGroups();
+  const mcdReal = product(g.mcd), mcmReal = product(g.mcm);
+  const mcdGuess = parseInt(mcdInput.value, 10);
+  const mcmGuess = parseInt(mcmInput.value, 10);
+  const mcdOk = mcdGuess === mcdReal, mcmOk = mcmGuess === mcmReal;
+
+  if (mcdOk && mcmOk) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    mcmMcdFeedback.textContent = '✔ Correcte!';
+    mcmMcdFeedback.style.color = 'var(--sage)';
+    readoutNum.textContent = mcmReal;
+    readoutName.textContent = `MCD(${A},${B}) = ${mcdReal} · MCM(${A},${B}) = ${mcmReal}`;
+    readoutDef.innerHTML = `${composedEq(g.mcd, mcdReal, 'MCD')} &nbsp;·&nbsp; ${composedEq(g.mcm, mcmReal, 'MCM')}`;
+    flash(wrap, 'var(--sage)');
+    setTimeout(() => { hideAnswerPanel(); startRepteRound(); }, 900);
+  } else {
+    streak = 0;
+    score = Math.max(0, score - 1);
+    document.getElementById('rpStreak').textContent = streak;
+    document.getElementById('rpScore').textContent = score;
+    timeLeft = Math.max(0, timeLeft - 3);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    const wrong = [];
+    if (!mcdOk) wrong.push('el MCD');
+    if (!mcmOk) wrong.push('el MCM');
+    mcmMcdFeedback.textContent = `✕ ${wrong.join(' i ')} no és correcte. Torna-ho a provar.`;
+    mcmMcdFeedback.style.color = 'var(--terracotta)';
+    flash(wrap, 'var(--terracotta)');
+    if (timeLeft <= 0) {
+      stopTimer();
+      repteTimeUp = true;
+      document.getElementById('rpTime').classList.remove('time-low');
+      wrap.classList.add('time-up');
+      hideAnswerPanel();
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+    }
+  }
+}
+document.getElementById('mcmMcdSubmitBtn').addEventListener('click', submitMcmMcdAnswer);
+mcdInput.addEventListener('keydown', e => { if (e.key === 'Enter') mcmInput.focus(); });
+mcmInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMcmMcdAnswer(); });
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      repteTimeUp = true;
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      hideAnswerPanel();
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte    = document.getElementById('btnRepte');
+const repteSetupEl    = document.getElementById('repteSetup');
+const repteBarEl      = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal    = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  // Neteja els estils inline del selector de temps / barra de repte perquè no quedin
+  // visibles per sobre de les regles CSS en tornar a Explora.
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'none';
+  hideAnswerPanel();
+  resetAll(36, 24);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+resetAll(36, 24);
+resize();
+</script>
+</body>
+</html>
