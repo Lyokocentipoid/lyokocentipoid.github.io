@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Potències i Arrels Quadrades · 1r ESO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1923; --card: #1a2635;
+      --accent: #00e5a0; --accent2: #ff6b6b; --accent3: #ffd166;
+      --accent4: #74b9ff;
+      --text: #e8f4f8; --muted: #7a9bb5; --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); font-family: 'Nunito', sans-serif;
+      color: var(--text); min-height: 100vh; padding: 2rem 1rem 5rem; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; top: -200px; left: -200px; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,229,160,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed; bottom: -150px; right: -150px; width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(116,185,255,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* ── BACK LINK ── */
+    .back-link {
+      position: fixed; top: 14px; left: 14px; z-index: 50;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-family: 'Baloo 2', cursive; font-size: 0.8rem; font-weight: 700;
+      color: var(--accent); text-decoration: none;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(0,229,160,0.3);
+      border-radius: 50px; padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .back-link:hover { background: rgba(0,229,160,0.12); border-color: var(--accent); transform: translateX(-2px); }
+    @media (max-width: 480px) {
+      .back-link { position: static; display: inline-flex; margin: 0 0 1rem; }
+    }
+
+    /* ── NAME SCREEN ── */
+    #nameScreen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 60vh; padding: 3rem 1rem;
+      animation: fadeIn 0.5s ease;
+    }
+    .name-card {
+      background: var(--card); border: 1px solid rgba(0,229,160,0.25);
+      border-radius: var(--radius); padding: 2.5rem 2.5rem 2rem;
+      max-width: 440px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(0,229,160,0.08);
+      text-align: center;
+    }
+    .name-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .name-title {
+      font-family: 'Baloo 2', cursive; font-size: 1.7rem; font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    .name-subtitle { color: var(--muted); font-size: 0.9rem; font-weight: 600; margin-bottom: 1.8rem; line-height: 1.5; }
+    .name-label {
+      display: block; font-size: 0.82rem; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent); text-align: left; margin-bottom: 0.5rem;
+    }
+    #playerNameInput {
+      width: 100%; background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12); border-radius: 12px;
+      color: var(--text); font-family: 'Baloo 2', cursive;
+      font-size: 1.2rem; font-weight: 700; text-align: center;
+      padding: 0.5rem 1rem; outline: none; margin-bottom: 1.8rem;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    #playerNameInput::placeholder { color: var(--muted); font-size: 1rem; font-weight: 400; }
+    #playerNameInput:focus { border-color: var(--accent); background: rgba(0,229,160,0.07); }
+    #startBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700;
+      background: var(--accent); color: #0f1923; border: none;
+      border-radius: 50px; padding: 0.8rem 2.5rem; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(0,229,160,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #startBtn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,229,160,0.4); }
+
+    /* ── MAIN CONTENT ── */
+    #mainContent { display: none; }
+    #mainContent.show { display: block; animation: fadeIn 0.4s ease; }
+
+    /* HEADER */
+    header { position: relative; text-align: center; margin-bottom: 1.8rem; animation: fadeDown 0.6s ease both; }
+    .badge {
+      display: inline-block; background: rgba(0,229,160,0.15); border: 1px solid rgba(0,229,160,0.35);
+      color: var(--accent); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 0.35rem 1rem; border-radius: 50px; margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: 'Baloo 2', cursive; font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 800; line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.6rem;
+    }
+    .subtitle { color: var(--muted); font-size: 1rem; font-weight: 600; }
+    .header-student {
+      margin-top: 0.4rem; font-size: 0.92rem; font-weight: 700;
+      color: var(--muted);
+    }
+    .header-student em { color: var(--accent); font-style: normal; }
+
+    /* SCORE STAMP */
+    .score-stamp {
+      display: inline-flex; flex-direction: column; align-items: center;
+      justify-content: center;
+      width: 84px; height: 84px; border-radius: 50%;
+      border: 3px solid rgba(0,229,160,0.5);
+      color: var(--accent); font-family: 'Baloo 2', cursive;
+      position: absolute; top: 0; right: 0;
+      transition: all 0.3s ease;
+    }
+    .score-stamp .stamp-label { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+    .score-stamp .stamp-score { display: flex; align-items: baseline; gap: 1px; }
+    .score-stamp .stamp-num { font-size: 2rem; font-weight: 800; line-height: 1; transition: all 0.3s ease; }
+    .score-stamp .stamp-denom { font-size: 0.85rem; font-weight: 700; opacity: 0.6; }
+    @keyframes stampBump { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .score-stamp.bump { animation: stampBump 0.4s ease; }
+
+    /* PROGRESS DOTS */
+    #progressSection {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      animation: fadeDown 0.6s 0.05s ease both;
+    }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; }
+    .progress-label { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    #progressCount { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; color: var(--accent); }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .dot-ball {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+      transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+      position: relative;
+    }
+    .dot-ball.done {
+      background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(0,229,160,0.5);
+    }
+    .dot-ball.done::after {
+      content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #0f1923; font-weight: 900;
+    }
+    .dot-ball.wrong {
+      background: var(--accent2); border-color: var(--accent2); box-shadow: 0 0 8px rgba(255,107,107,0.5);
+    }
+    .dot-ball.wrong::after {
+      content: '✗'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #2a0f0f; font-weight: 900;
+    }
+    .dot-ball.pop { animation: popDot 0.4s ease; }
+
+    /* INSTRUCTIONS */
+    .instructions {
+      background: var(--card); border: 1px solid rgba(255,209,102,0.25);
+      border-left: 4px solid var(--accent3); border-radius: var(--radius);
+      padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      animation: fadeDown 0.6s 0.1s ease both;
+    }
+    .instructions .icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .instructions p { color: #c8dde8; font-size: 0.97rem; line-height: 1.6; }
+
+    /* ROUND LABEL */
+    #roundLabel {
+      text-align: center; margin-bottom: 1rem;
+      font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.04em;
+    }
+
+    /* CARDS */
+    .exercises { display: flex; flex-direction: column; gap: 1.4rem; }
+    .card {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.6rem 1.8rem;
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s, background 0.3s;
+    }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+    .card.correct { border-color: rgba(0,229,160,0.5); background: linear-gradient(135deg, #1a2635, #1a2e2a); }
+    .card.wrong   { border-color: rgba(255,107,107,0.5); background: linear-gradient(135deg, #1a2635, #2e1a1a); }
+
+    .card-num {
+      position: absolute; top: 1.2rem; right: 1.5rem;
+      font-family: 'Baloo 2', cursive; font-size: 2.5rem; font-weight: 800;
+      color: rgba(255,255,255,0.04); line-height: 1; user-select: none;
+    }
+
+    .card-tag-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+    .card-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.2rem 0.7rem; border-radius: 50px;
+    }
+    .card-difficulty { font-size: 0.8rem; color: var(--accent3); letter-spacing: 0.05em; }
+
+    /* tag colours cycle */
+    .card:nth-child(3n+1) .card-tag { background: rgba(0,229,160,0.15);   color: var(--accent);  }
+    .card:nth-child(3n+2) .card-tag { background: rgba(255,209,102,0.15); color: var(--accent3); }
+    .card:nth-child(3n+3) .card-tag { background: rgba(116,185,255,0.15); color: var(--accent4); }
+    .card.wrong   .card-tag { background: rgba(255,107,107,0.15); color: var(--accent2); }
+    .card.correct .card-tag { background: rgba(0,229,160,0.15);   color: var(--accent);  }
+
+    .sentence {
+      font-size: 1.05rem; font-weight: 600; color: var(--text);
+      line-height: 2.2; margin-bottom: 0.8rem;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    }
+
+    input[type="text"] {
+      width: 90px; background: rgba(255,255,255,0.07);
+      border: 2px solid rgba(255,255,255,0.15); border-radius: 10px;
+      color: var(--text); font-family: 'Baloo 2', cursive;
+      font-size: 1rem; font-weight: 700; text-align: center;
+      padding: 0.35rem 0.5rem; outline: none;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent); background: rgba(0,229,160,0.08);
+      box-shadow: 0 0 0 3px rgba(0,229,160,0.12);
+    }
+    input.correct-input { border-color: var(--accent);  background: rgba(0,229,160,0.12); color: var(--accent); }
+    input.wrong-input   { border-color: var(--accent2); background: rgba(255,107,107,0.12); color: var(--accent2); }
+    input:disabled { opacity: 0.85; cursor: default; }
+
+    /* HINT */
+    .hint {
+      font-size: 0.82rem; color: var(--accent3); font-weight: 700;
+      margin-top: 0.6rem; padding: 0;
+      background: rgba(255,209,102,0.08); border-left: 3px solid var(--accent3);
+      border-radius: 6px;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+    }
+    .hint.visible { max-height: 120px; opacity: 1; padding: 0.45rem 0.8rem; }
+
+    .feedback {
+      margin-top: 0.7rem; font-size: 0.9rem; font-weight: 700;
+      min-height: 1.4rem; opacity: 0; transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok   { color: var(--accent); }
+    .feedback.err  { color: var(--accent2); }
+
+    /* BUTTONS */
+    .btn-row { margin-top: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+    #checkBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700;
+      background: var(--accent); color: #0f1923; border: none;
+      border-radius: 50px; padding: 0.85rem 2.8rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 24px rgba(0,229,160,0.3);
+    }
+    #checkBtn:hover  { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,229,160,0.4); }
+    #checkBtn:active { transform: scale(0.97); }
+    #checkBtn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    #scoreBox {
+      text-align: center; font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 800;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 2.2rem; color: var(--accent); display: block; }
+    #scoreBox .score-msg { color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
+
+    #retryBtn {
+      display: none;
+      font-family: 'Baloo 2', cursive; font-size: 0.95rem; font-weight: 700;
+      background: transparent; color: var(--muted);
+      border: 2px solid rgba(255,255,255,0.1); border-radius: 50px;
+      padding: 0.6rem 2rem; cursor: pointer; transition: color 0.2s, border-color 0.2s;
+    }
+    #retryBtn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+    /* CELEBRATION */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(10,20,30,0.88);
+      justify-content: center; align-items: center; flex-direction: column; text-align: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.4s ease; }
+    .celeb-inner {
+      background: var(--card); border: 2px solid rgba(0,229,160,0.4);
+      border-radius: 28px; padding: 3rem 2.5rem; max-width: 440px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,160,0.15);
+    }
+    .celeb-emoji { font-size: 4rem; margin-bottom: 1rem; display: block; animation: bounce 0.7s ease infinite alternate; }
+    .celeb-name-txt { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 0.2rem; }
+    .celeb-title { font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .celeb-score-note { font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 0.3rem; }
+    .celeb-sub   { color: var(--muted); font-size: 0.97rem; font-weight: 600; margin-bottom: 2rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700;
+      background: var(--accent); color: #0f1923; border: none;
+      border-radius: 50px; padding: 0.8rem 2.2rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 18px rgba(0,229,160,0.35);
+    }
+    #celebCloseBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,229,160,0.5); }
+
+    /* CONFETTI */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* FINAL */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeUp 0.6s ease; }
+    .final-inner {
+      display: inline-block; background: var(--card);
+      border: 2px solid rgba(0,229,160,0.3); border-radius: 28px;
+      padding: 3rem 3rem 2.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 60px rgba(0,229,160,0.08);
+    }
+    .final-emoji { font-size: 5rem; display: block; margin-bottom: 1rem; }
+    .final-name-txt { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem; }
+    .final-grade {
+      width: 120px; height: 120px; border-radius: 50%;
+      border: 4px solid var(--accent);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      box-shadow: 0 0 30px rgba(0,229,160,0.25);
+    }
+    .final-grade .grade-num { font-family: 'Baloo 2', cursive; font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .final-grade .grade-denom { font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700; color: var(--muted); }
+    .final-title { font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; color: #fff; }
+    .final-sub { color: var(--muted); font-size: 0.97rem; font-weight: 600; margin: 0.5rem 0 0.8rem; line-height: 1.6; }
+    .final-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; font-style: italic; }
+    #reloadBtn {
+      font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 700;
+      background: transparent; color: var(--accent);
+      border: 2px solid var(--accent); border-radius: 50px;
+      padding: 0.75rem 2rem; cursor: pointer; transition: background 0.2s, color 0.2s;
+    }
+    #reloadBtn:hover { background: var(--accent); color: #0f1923; }
+
+    /* KEYFRAMES */
+    @keyframes fadeDown  { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp    { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+    @keyframes popDot    { 0%{transform:scale(1)} 50%{transform:scale(1.6)} 100%{transform:scale(1)} }
+    @keyframes bounce    { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .score-stamp {
+        position: static;
+        width: 64px; height: 64px;
+        margin: 0.8rem auto 0;
+      }
+      .score-stamp .stamp-num { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="../fitxes.html" class="back-link" aria-label="Tornar a la llista de fitxes">← Fitxes</a>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Celebration overlay -->
+<div id="celebration">
+  <div class="celeb-inner">
+    <span class="celeb-emoji">🏆</span>
+    <div class="celeb-name-txt" id="celebName"></div>
+    <div class="celeb-title">Perfecte! 3/3!</div>
+    <div class="celeb-score-note" id="celebScoreNote"></div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Següent repte →</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── NAME SCREEN ── -->
+  <div id="nameScreen">
+    <div class="name-card">
+      <span class="name-icon">⚡</span>
+      <div class="name-title">Potències i Arrels Quadrades</div>
+      <div class="name-subtitle">Matemàtiques · 1r ESO<br>Potències, quadrats perfectes i propietats bàsiques</div>
+      <label class="name-label" for="playerNameInput">✏️ Escriu el teu nom:</label>
+      <input type="text" id="playerNameInput" placeholder="El teu nom aquí…" maxlength="30" autocomplete="off">
+      <button id="startBtn" onclick="startGame()">Comencem! →</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="mainContent">
+
+    <header>
+      <div class="badge">⚡ Potències · 1r ESO</div>
+      <h1>Potències i Arrels Quadrades</h1>
+      <p class="subtitle">Demostra el que saps! Omple els buits amb la resposta correcta.</p>
+      <p class="header-student">Alumne/a: <em id="headerName"></em></p>
+      <div class="score-stamp" id="scoreStamp">
+        <div class="stamp-label">Nota</div>
+        <div class="stamp-score">
+          <div class="stamp-num" id="stampNum">0</div>
+          <div class="stamp-denom">/30</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="progressSection">
+      <div class="progress-header">
+        <span class="progress-label">⬤ Progrés total</span>
+        <span id="progressCount">0 / 30</span>
+      </div>
+      <div id="dotsGrid"></div>
+    </div>
+
+    <div class="instructions">
+      <span class="icon">💡</span>
+      <p>Omple els buits i fes clic a <strong>"Comprova respostes"</strong>. Si t'equivoques apareixerà una pista, però <strong>no se't donarà la resposta</strong>. Cada pregunta encertada a la primera suma <strong>1 punt</strong>. Pots reintentar les que has fallat sense perdre els encerts!</p>
+    </div>
+
+    <div id="roundLabel"></div>
+    <div class="exercises" id="exercises"></div>
+
+    <div class="btn-row">
+      <button id="checkBtn" onclick="checkAnswers()">✅ Comprova respostes</button>
+      <div id="scoreBox">
+        <span class="score-num" id="scoreNum"></span>
+        <span class="score-msg" id="scoreMsg"></span>
+      </div>
+      <button id="retryBtn" onclick="retryRound()">🔄 Torna-ho a intentar</button>
+    </div>
+
+    <!-- Final screen -->
+    <div id="finalScreen">
+      <div class="final-inner">
+        <span class="final-emoji">🌟</span>
+        <div class="final-name-txt" id="finalName"></div>
+        <div class="final-grade">
+          <div class="grade-num" id="finalGradeNum">—</div>
+          <div class="grade-denom">/ 30</div>
+        </div>
+        <div class="final-title" id="finalTitle">Excel·lent!</div>
+        <div class="final-sub" id="finalSub"></div>
+        <div class="final-note">* Cada pregunta encertada a la primera suma 1 punt. Màxim: 30 punts.</div>
+        <button id="reloadBtn" onclick="location.reload()">Tornar a començar 🔄</button>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /container -->
+
+<script>
+
+// ═══════════════════════════════════════════════════════════════
+// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = 'Calc_F3';
+
+const _startTime = Date.now();
+const _primeres_respostes = {};
+
+function _registrarPrimeraResposta(idxGlobal, valor, correcta) {
+  if (!(idxGlobal in _primeres_respostes)) {
+    _primeres_respostes[idxGlobal] = { valor, correcta };
+  }
+}
+
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({ length: total }, (_, i) => {
+    const r = _primeres_respostes[i];
+    if (!r) return '';
+    return (r.correcta ? '✓ ' : '✗ ') + r.valor;
+  });
+  const payload = {
+    fitxa:              FITXA_NOM,
+    timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
+    nom:                nom,
+    puntuacio:          puntuacio,
+    total:              total,
+    minuts:             Math.round((Date.now() - _startTime) / 60000),
+    primeres_respostes: respostes,
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis de Potències i Arrels Quadrades · 1r ESO
+//   s[]  → parts de la frase:
+//          string   = text pla
+//          ['x']    = negreta
+//          '_'      = camp d'entrada
+//   stars: 1=★ fàcil, 2=★★ mitjà, 3=★★★ complex
+//   answer: número (comparació numèrica) o text (comparació de text)
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ── Potències simples — ★ / ★★ / ★★★ ────────────────────────
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['5²'],' = ','_','.'],
+    answer:25,
+    hint:"5² = 5 × 5."
+  },
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['3³'],' = ','_','.'],
+    answer:27,
+    hint:"3³ = 3 × 3 × 3."
+  },
+  {
+    tag:"Potències", stars:2,
+    s:['Calcula: ',['2⁴'],' = ','_','.'],
+    answer:16,
+    hint:"2⁴ = 2 × 2 × 2 × 2."
+  },
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['10²'],' = ','_','.'],
+    answer:100,
+    hint:"10² = 10 × 10."
+  },
+  {
+    tag:"Potències", stars:2,
+    s:['Calcula: ',['4³'],' = ','_','.'],
+    answer:64,
+    hint:"4³ = 4 × 4 × 4."
+  },
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['6²'],' = ','_','.'],
+    answer:36,
+    hint:"6² = 6 × 6."
+  },
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['1⁵'],' = ','_','.'],
+    answer:1,
+    hint:"Qualsevol potència de base 1 val sempre 1."
+  },
+  {
+    tag:"Potències", stars:2,
+    s:['Calcula: ',['2⁵'],' = ','_','.'],
+    answer:32,
+    hint:"2⁵ = 2 × 2 × 2 × 2 × 2."
+  },
+  {
+    tag:"Potències", stars:1,
+    s:['Calcula: ',['7²'],' = ','_','.'],
+    answer:49,
+    hint:"7² = 7 × 7."
+  },
+  {
+    tag:"Potències", stars:3,
+    s:['Calcula: ',['3⁴'],' = ','_','.'],
+    answer:81,
+    hint:"3⁴ = 3 × 3 × 3 × 3."
+  },
+
+  // ── Quadrats perfectes i arrels quadrades — ★ / ★★ / ★★★ ────
+  {
+    tag:"Arrels quadrades", stars:1,
+    s:['L\'arrel quadrada de ',['16'],' és ','_','.'],
+    answer:4,
+    hint:"Busca quin nombre multiplicat per ell mateix dona 16."
+  },
+  {
+    tag:"Arrels quadrades", stars:1,
+    s:['L\'arrel quadrada de ',['81'],' és ','_','.'],
+    answer:9,
+    hint:"9 × 9 = 81."
+  },
+  {
+    tag:"Arrels quadrades", stars:1,
+    s:['L\'arrel quadrada de ',['100'],' és ','_','.'],
+    answer:10,
+    hint:"10 × 10 = 100."
+  },
+  {
+    tag:"Arrels quadrades", stars:1,
+    s:['El quadrat de ',['9'],' és ','_','.'],
+    answer:81,
+    hint:"9² = 9 × 9."
+  },
+  {
+    tag:"Arrels quadrades", stars:2,
+    s:['El nombre ',['49'],' és un quadrat perfecte. La seva arrel quadrada és ','_','.'],
+    answer:7,
+    hint:"7 × 7 = 49."
+  },
+  {
+    tag:"Arrels quadrades", stars:2,
+    s:['L\'arrel quadrada de ',['144'],' és ','_','.'],
+    answer:12,
+    hint:"12 × 12 = 144."
+  },
+  {
+    tag:"Arrels quadrades", stars:1,
+    s:['L\'arrel quadrada de ',['1'],' és ','_','.'],
+    answer:1,
+    hint:"1 × 1 = 1."
+  },
+  {
+    tag:"Arrels quadrades", stars:2,
+    s:['Quin nombre elevat al quadrat dona ',['64'],'? ','_','.'],
+    answer:8,
+    hint:"8 × 8 = 64."
+  },
+  {
+    tag:"Arrels quadrades", stars:3,
+    s:['L\'arrel quadrada de ',['225'],' és ','_','.'],
+    answer:15,
+    hint:"15 × 15 = 225."
+  },
+  {
+    tag:"Arrels quadrades", stars:3,
+    s:['El nombre ',['50'],' es troba entre dos quadrats perfectes consecutius: 7² = 49 i 8² = 64. Escriu el més petit d\'aquests dos quadrats perfectes: ','_','.'],
+    answer:49,
+    hint:"És el quadrat de 7."
+  },
+
+  // ── Propietats de les potències — ★ / ★★ / ★★★ ──────────────
+  {
+    tag:"Propietats potències", stars:2,
+    s:['Propietat del producte de potències: ',['a^m · a^n = a^(m+n)'],'. Per tant, ',['2³ · 2²'],' = 2^','_','.'],
+    answer:5,
+    hint:"Suma els exponents: 3 + 2."
+  },
+  {
+    tag:"Propietats potències", stars:2,
+    s:['Aplicant la propietat anterior, ',['2³ · 2²'],' = 2⁵ = ','_','.'],
+    answer:32,
+    hint:"Calcula 2⁵ = 2×2×2×2×2."
+  },
+  {
+    tag:"Propietats potències", stars:2,
+    s:['Propietat de la potència d\'una potència: ',['(a^m)^n = a^(m·n)'],'. Per tant, ',['(3²)³'],' = 3^','_','.'],
+    answer:6,
+    hint:"Multiplica els exponents: 2 × 3."
+  },
+  {
+    tag:"Propietats potències", stars:3,
+    s:['Calcula el valor de ',['(3²)³'],' = 3⁶ = ','_','.'],
+    answer:729,
+    hint:"3⁶ = 3×3×3×3×3×3."
+  },
+  {
+    tag:"Propietats potències", stars:1,
+    s:['Qualsevol nombre (diferent de 0) elevat a l\'exponent ',['0'],' val ','_','.'],
+    answer:1,
+    hint:"És la propietat de l'exponent zero: a⁰ = 1."
+  },
+  {
+    tag:"Propietats potències", stars:1,
+    s:['Calcula: ',['5¹'],' = ','_','.'],
+    answer:5,
+    hint:"Elevat a l'exponent 1, un nombre queda igual."
+  },
+  {
+    tag:"Propietats potències", stars:2,
+    s:['Propietat del producte de potències: ',['5² · 5³'],' = 5^','_','.'],
+    answer:5,
+    hint:"Suma els exponents: 2 + 3."
+  },
+  {
+    tag:"Propietats potències", stars:3,
+    s:['Calcula el valor de ',['5² · 5³'],' = 5⁵ = ','_','.'],
+    answer:3125,
+    hint:"5⁵ = 5×5×5×5×5."
+  },
+  {
+    tag:"Propietats potències", stars:1,
+    s:['Calcula: ',['10⁰'],' = ','_','.'],
+    answer:1,
+    hint:"Tot nombre elevat a l'exponent 0 val 1."
+  },
+  {
+    tag:"Propietats potències", stars:2,
+    s:['Propietat de la potència d\'una potència: ',['(a^m)^n = a^(m·n)'],'. Per tant, ',['(2⁴)²'],' = 2^','_','.'],
+    answer:8,
+    hint:"Multiplica els exponents: 4 × 2."
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ESTAT
+// ═══════════════════════════════════════════════════════════════
+const TOTAL = 30, PER = 3;
+let order = [], solved = 0, score = 0, roundIdx = 0;
+let currentEx = [], checked = false;
+let canScore = [true, true, true];
+let locked   = [false, false, false];
+let playerName = '';
+
+const STARS = ['', '★', '★★', '★★★'];
+
+// ═══════════════════════════════════════════════════════════════
+// NOM I INICI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('playerNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+
+function startGame() {
+  const raw = document.getElementById('playerNameInput').value.trim();
+  playerName = raw || 'Alumne/a';
+  document.getElementById('nameScreen').style.display  = 'none';
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('headerName').textContent = playerName;
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i = TOTAL - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  buildDots();
+  loadRound(0, false);
+}
+
+function buildDots() {
+  const g = document.getElementById('dotsGrid');
+  g.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-ball'; d.id = 'dot' + i;
+    g.appendChild(d);
+  }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved + ' / ' + TOTAL;
+  document.getElementById('stampNum').textContent = score;
+}
+
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el = document.getElementById('dot' + gi);
+      if (!el) return;
+      // Vermell si la primera resposta d'aquesta pregunta va ser incorrecta
+      // (encara que després s'hagi corregit reintentant); verd si es va
+      // encertar a la primera.
+      const r = _primeres_respostes[gi];
+      el.classList.add(r && !r.correcta ? 'wrong' : 'done', 'pop');
+      el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+    }, delay * 180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+function loadRound(ri, animate) {
+  checked  = false;
+  canScore = [true, true, true];
+  locked   = [false, false, false];
+  roundIdx = ri;
+
+  const start = ri * PER;
+  currentEx = order.slice(start, start + PER).map(i => BANK[i]);
+
+  document.getElementById('roundLabel').textContent =
+    'Repte ' + (ri + 1) + ' de ' + (TOTAL / PER);
+
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent = '';
+  document.getElementById('scoreMsg').textContent = '';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  document.getElementById('checkBtn').style.display = '';
+
+  const container = document.getElementById('exercises');
+
+  function renderCards() {
+    container.innerHTML = '';
+    currentEx.forEach((ex, i) => {
+      const card = document.createElement('div');
+      card.className = 'card'; card.id = 'card' + i;
+
+      let sentHTML = '';
+      ex.s.forEach(part => {
+        if (part === '_') {
+          sentHTML += '<input type="text" id="ans' + i +
+            '" placeholder="?" aria-label="Resposta" autocomplete="off" maxlength="12">';
+        } else if (Array.isArray(part)) {
+          sentHTML += '<strong>' + part[0] + '</strong>';
+        } else {
+          sentHTML += part;
+        }
+      });
+
+      card.innerHTML =
+        '<div class="card-num">' + (i + 1) + '</div>' +
+        '<div class="card-tag-row">' +
+          '<div class="card-tag">' + ex.tag + '</div>' +
+          '<div class="card-difficulty">' + (STARS[ex.stars || 1]) + '</div>' +
+        '</div>' +
+        '<div class="sentence">' + sentHTML + '</div>' +
+        '<div class="hint" id="hint' + i + '">📝 ' + ex.hint + '</div>' +
+        '<div class="feedback" id="fb' + i + '"></div>';
+
+      container.appendChild(card);
+
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(50px)';
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+      }, 60 + i * 90);
+    });
+
+    currentEx.forEach((_, i) => {
+      document.getElementById('ans' + i).addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          let next = i + 1;
+          while (next < PER && locked[next]) next++;
+          const nxt = next < PER ? document.getElementById('ans' + next) : null;
+          if (nxt) nxt.focus(); else checkAnswers();
+        }
+      });
+    });
+
+    setTimeout(() => {
+      const f = document.getElementById('ans0');
+      if (f && !locked[0]) f.focus();
+    }, 350);
+  }
+
+  if (animate && container.children.length > 0) {
+    Array.from(container.children).forEach((card, i) => {
+      card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+      card.style.transitionDelay = (i * 50) + 'ms';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(-55px)';
+    });
+    setTimeout(renderCards, 340);
+  } else {
+    renderCards();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVA — puntuació per exercici individual
+//   Suporta respostes numèriques (amb tolerància) i respostes de
+//   text, segons el tipus de ex.answer.
+// ═══════════════════════════════════════════════════════════════
+function esValorCorrecte(valorInput, resposta) {
+  if (typeof resposta === 'string') {
+    const norm = s => s.trim().toUpperCase();
+    return norm(valorInput) === norm(resposta);
+  }
+  const TOL = 0.5; // tolerància per a respostes numèriques enteres
+  const val = parseFloat(String(valorInput).replace(',', '.').replace(/\s/g, ''));
+  return !isNaN(val) && Math.abs(val - resposta) <= TOL;
+}
+
+function checkAnswers() {
+  if (checked) return;
+  let okThisAttempt = 0;
+  let scoreGained   = 0;
+  let allDone       = true;
+
+  currentEx.forEach((ex, i) => {
+    if (locked[i]) { okThisAttempt++; return; }
+
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const hint = document.getElementById('hint' + i);
+    const idxGlobal = roundIdx * PER + i;
+    const isText = typeof ex.answer === 'string';
+    const rawVal = inp.value.trim();
+    const esCorrecta = esValorCorrecte(rawVal, ex.answer);
+    _registrarPrimeraResposta(idxGlobal, rawVal, esCorrecta);
+
+    if (!isText) {
+      const val = parseFloat(rawVal.replace(',', '.').replace(/\s/g, ''));
+      if (isNaN(val)) {
+        inp.classList.remove('correct-input', 'wrong-input');
+        card.classList.remove('correct', 'wrong');
+        fb.className = 'feedback err show';
+        fb.textContent = '✗ Escriu un número.';
+        hint.classList.add('visible');
+        allDone = false;
+        canScore[i] = false;
+        return;
+      }
+    } else if (rawVal === '') {
+      inp.classList.remove('correct-input', 'wrong-input');
+      card.classList.remove('correct', 'wrong');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ Escriu una resposta.';
+      hint.classList.add('visible');
+      allDone = false;
+      canScore[i] = false;
+      return;
+    }
+
+    if (esCorrecta) {
+      okThisAttempt++;
+      locked[i] = true;
+      inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+      inp.disabled = true;
+      card.classList.add('correct'); card.classList.remove('wrong');
+      fb.className = 'feedback ok show';
+      const bonus = canScore[i] ? ' (+1 punt)' : '';
+      fb.textContent = '✓ Correcte!' + bonus;
+      hint.classList.remove('visible');
+      if (canScore[i]) scoreGained++;
+    } else {
+      allDone = false;
+      canScore[i] = false;
+      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      card.classList.add('wrong'); card.classList.remove('correct');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ No és correcte. Revisa la pista!';
+      hint.classList.add('visible');
+    }
+  });
+
+  if (scoreGained > 0) {
+    score += scoreGained;
+    updateCount();
+    const stamp = document.getElementById('scoreStamp');
+    stamp.classList.remove('bump');
+    void stamp.offsetWidth;
+    stamp.classList.add('bump');
+    stamp.addEventListener('animationend', () => stamp.classList.remove('bump'), { once: true });
+  }
+
+  const pendents = PER - okThisAttempt;
+  let msg = '';
+  if (allDone) {
+    msg = 'Perfecte! Totes encertades! 🏆';
+  } else if (pendents === 1) {
+    msg = 'Queda 1 per corregir. Torna-ho a provar! 💪';
+  } else {
+    msg = 'Queden ' + pendents + ' per corregir. Revisa les pistes! 💪';
+  }
+  document.getElementById('scoreNum').textContent = okThisAttempt + ' / ' + PER;
+  document.getElementById('scoreMsg').textContent = msg;
+  document.getElementById('scoreBox').classList.add('show');
+
+  if (allDone) {
+    checked = true;
+    document.getElementById('checkBtn').disabled = true;
+    for (let i = 0; i < PER; i++) {
+      const h = document.getElementById('hint' + i);
+      if (h) h.classList.remove('visible');
+    }
+    const dotStart = roundIdx * PER;
+    // Els punts (i _primeres_respostes) es numeren per POSICIÓ dins la
+    // partida (0..TOTAL-1), no per l'índex barrejat del banc — order[] només
+    // decideix QUIN exercici toca a cada posició, no com s'etiqueten els punts.
+    markDots(Array.from({ length: PER }, (_, k) => dotStart + k));
+    solved += PER;
+    updateCount();
+
+    const isLast = (roundIdx + 1) * PER >= TOTAL;
+    if (isLast) setTimeout(showFinal, 800);
+    else         setTimeout(showCelebration, 500);
+  } else {
+    document.getElementById('retryBtn').style.display = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RETRY — manté camps encertats blocats
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for (let i = 0; i < PER; i++) {
+    if (locked[i]) continue;
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    if (inp)  { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    if (card) card.classList.remove('correct', 'wrong');
+    if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  checked = false;
+  for (let i = 0; i < PER; i++) {
+    if (!locked[i]) { document.getElementById('ans' + i).focus(); break; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebName').textContent = playerName + ',';
+  document.getElementById('celebSub').textContent =
+    'Repte ' + (roundIdx + 1) + ' superat! Prepara\'t per al repte ' + (roundIdx + 2) + '.';
+  document.getElementById('celebScoreNote').textContent =
+    'Nota acumulada: ' + score + ' / 30';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti();
+  loadRound(roundIdx + 1, true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FINAL
+// ═══════════════════════════════════════════════════════════════
+function showFinal() {
+  document.getElementById('exercises').style.display  = 'none';
+  document.getElementById('roundLabel').style.display = 'none';
+  document.querySelector('.btn-row').style.display    = 'none';
+
+  document.getElementById('finalName').textContent    = playerName;
+  document.getElementById('finalGradeNum').textContent = score;
+
+  const titles = [
+    [0,  9,  'Segueix practicant! 💪', 'No t\'amoïnis, la pràctica fa la perfecció. Torna a intentar-ho!'],
+    [10, 18, 'Bé, però pots millorar!', 'Has superat molts reptes. Amb una mica més d\'esforç arribaràs al màxim!'],
+    [19, 26, 'Notable! 🎉', 'Molt bon treball, ' + playerName + '! Quasi ho tens tot dominat.'],
+    [27, 30, 'Excel·lent! 🏅', 'Increïble, ' + playerName + '! Domines les potències i les arrels quadrades!'],
+  ];
+  const [,, title, sub] = titles.find(([min, max]) => score >= min && score <= max) || titles[3];
+  document.getElementById('finalTitle').textContent = title;
+  document.getElementById('finalSub').textContent   = sub;
+
+  document.getElementById('finalScreen').classList.add('show');
+  _enviarRegistre(playerName, score, TOTAL);
+  launchConfetti();
+  setTimeout(stopConfetti, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('confettiCanvas');
+const ctx    = canvas.getContext('2d');
+let particles = [], confettiAF = null;
+
+function launchConfetti() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  particles = Array.from({ length: 90 }, makeP);
+  if (confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop() { drawConfetti(); confettiAF = requestAnimationFrame(loop); })();
+}
+function stopConfetti() {
+  if (confettiAF) { cancelAnimationFrame(confettiAF); confettiAF = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('show');
+}
+function makeP() {
+  const cols = ['#00e5a0','#ffd166','#ff6b6b','#74b9ff','#a29bfe','#fdcb6e'];
+  return {
+    x: Math.random() * window.innerWidth, y: Math.random() * -200,
+    w: 8 + Math.random() * 8, h: 4 + Math.random() * 5,
+    color: cols[Math.floor(Math.random() * cols.length)],
+    speed: 2 + Math.random() * 4, angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2, drift: (Math.random() - 0.5) * 1.5,
+  };
+}
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+    if (p.y > canvas.height) Object.assign(p, makeP(), { y: -20 });
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+}
+</script>
+</body>
+</html>
