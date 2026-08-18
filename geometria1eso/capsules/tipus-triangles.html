@@ -18,7 +18,7 @@
       --green:   #3dffa0;
       --purple:  #b47fff;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -197,7 +197,7 @@
   <!-- ESQUERRA -->
   <div class="canvas-col">
     <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="mainCanvas"></canvas>
+      <canvas id="mainCanvas" role="img" aria-label="Triangle interactiu: arrossega els vèrtexs per canviar-ne la forma"></canvas>
       <div class="canvas-hint" id="hint">Arrossega un vèrtex per deformar el triangle</div>
     </div>
 
@@ -228,21 +228,21 @@
       </div>
       <div class="type-list" id="sideList">
         <button class="type-btn" id="btn-equilater" style="--t-color:var(--yellow)" onclick="snapTo('equilater')">
-          <canvas class="type-mini-canvas" id="mini-equilater" width="52" height="44"></canvas>
+          <canvas class="type-mini-canvas" id="mini-equilater" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Equilàter</div>
             <div class="type-desc">Els tres costats iguals. Els tres angles de 60°.</div>
           </div>
         </button>
         <button class="type-btn" id="btn-isosceles" style="--t-color:var(--blue)" onclick="snapTo('isosceles')">
-          <canvas class="type-mini-canvas" id="mini-isosceles" width="52" height="44"></canvas>
+          <canvas class="type-mini-canvas" id="mini-isosceles" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Isòsceles</div>
             <div class="type-desc">Dos costats iguals. Angles de la base iguals.</div>
           </div>
         </button>
         <button class="type-btn" id="btn-escalene" style="--t-color:var(--purple)" onclick="snapTo('escalene')">
-          <canvas class="type-mini-canvas" id="mini-escalene" width="52" height="44"></canvas>
+          <canvas class="type-mini-canvas" id="mini-escalene" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Escalè</div>
             <div class="type-desc">Els tres costats de diferent longitud.</div>
@@ -260,21 +260,21 @@
       </div>
       <div class="type-list" id="angleList">
         <button class="type-btn" id="btn-acutangle" style="--t-color:var(--green)" onclick="snapTo('acutangle')">
-          <canvas class="type-mini-canvas" id="mini-acutangle" width="52" height="44"></canvas>
+          <canvas class="type-mini-canvas" id="mini-acutangle" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Acutangle</div>
             <div class="type-desc">Els tres angles menors de 90°.</div>
           </div>
         </button>
         <button class="type-btn" id="btn-rectangle" style="--t-color:var(--coral)" onclick="snapTo('rectangle')">
-          <canvas class="type-mini-canvas" id="mini-rectangle" width="52" height="44"></canvas>
+          <canvas class="type-mini-canvas" id="mini-rectangle" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Rectangle</div>
             <div class="type-desc">Un angle de 90°. Teorema de Pitàgores.</div>
           </div>
         </button>
-        <button class="type-btn" id="btn-obtusangle" style="--t-color:var(--orange, #ff9f43)" onclick="snapTo('obtusangle')" style="--t-color:#ff9f43">
-          <canvas class="type-mini-canvas" id="mini-obtusangle" width="52" height="44"></canvas>
+        <button class="type-btn" id="btn-obtusangle" style="--t-color:#ff9f43" onclick="snapTo('obtusangle')">
+          <canvas class="type-mini-canvas" id="mini-obtusangle" width="52" height="44" aria-hidden="true"></canvas>
           <div class="type-info">
             <div class="type-name">Obtusangle</div>
             <div class="type-desc">Un angle major de 90°.</div>

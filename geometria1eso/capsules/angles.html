@@ -18,7 +18,7 @@
       --green:  #3dffa0;
       --purple: #b47fff;
       --text:   #e8eaf6;
-      --muted:  #7a7fa8;
+      --muted:  #868bb5;
       --tr:     .2s cubic-bezier(.4,0,.2,1);
 
       /* angle type color — updated by JS */
@@ -271,7 +271,7 @@
     </div>
 
     <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="angleCanvas"></canvas>
+      <canvas id="angleCanvas" role="img" aria-label="Diagrama interactiu: arrossega el raig per canviar el tipus d'angle"></canvas>
       <div class="canvas-hint" id="hint">Fes clic i arrossega per moure el raig</div>
     </div>
 
@@ -289,7 +289,7 @@
     <div class="info-title">Tipus d'angles</div>
 
     <div class="type-card" id="card-null" style="--t-color:#7a7fa8" data-min="0" data-max="0">
-      <canvas class="type-mini-canvas" id="mini-null"></canvas>
+      <canvas class="type-mini-canvas" id="mini-null" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name" style="color:var(--muted)">Angle nul</div>
         <div class="type-range">= 0°</div>
@@ -298,7 +298,7 @@
     </div>
 
     <div class="type-card" id="card-agut" style="--t-color:#3dffa0" data-min="1" data-max="89">
-      <canvas class="type-mini-canvas" id="mini-agut"></canvas>
+      <canvas class="type-mini-canvas" id="mini-agut" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle agut</div>
         <div class="type-range">0° &lt; α &lt; 90°</div>
@@ -307,7 +307,7 @@
     </div>
 
     <div class="type-card" id="card-recte" style="--t-color:#3d8bff" data-min="90" data-max="90">
-      <canvas class="type-mini-canvas" id="mini-recte"></canvas>
+      <canvas class="type-mini-canvas" id="mini-recte" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle recte</div>
         <div class="type-range">= 90°</div>
@@ -316,7 +316,7 @@
     </div>
 
     <div class="type-card" id="card-obtus" style="--t-color:#f5c842" data-min="91" data-max="179">
-      <canvas class="type-mini-canvas" id="mini-obtus"></canvas>
+      <canvas class="type-mini-canvas" id="mini-obtus" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle obtús</div>
         <div class="type-range">90° &lt; α &lt; 180°</div>
@@ -325,7 +325,7 @@
     </div>
 
     <div class="type-card" id="card-pla" style="--t-color:#ff5f6d" data-min="180" data-max="180">
-      <canvas class="type-mini-canvas" id="mini-pla"></canvas>
+      <canvas class="type-mini-canvas" id="mini-pla" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle pla</div>
         <div class="type-range">= 180°</div>
@@ -334,7 +334,7 @@
     </div>
 
     <div class="type-card" id="card-convex" style="--t-color:#b47fff" data-min="181" data-max="359">
-      <canvas class="type-mini-canvas" id="mini-convex"></canvas>
+      <canvas class="type-mini-canvas" id="mini-convex" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle còncau</div>
         <div class="type-range">180° &lt; α &lt; 360°</div>
@@ -343,7 +343,7 @@
     </div>
 
     <div class="type-card" id="card-complet" style="--t-color:#e8eaf6" data-min="360" data-max="360">
-      <canvas class="type-mini-canvas" id="mini-complet"></canvas>
+      <canvas class="type-mini-canvas" id="mini-complet" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle complet</div>
         <div class="type-range">= 360°</div>

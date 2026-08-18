@@ -18,7 +18,7 @@
       --green:   #3dffa0;
       --purple:  #b47fff;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -144,6 +144,26 @@
     .side-panel {
       display: flex; flex-direction: column; gap: 1.25rem;
     }
+
+    .geogebra-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .65rem .9rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .8rem;
+      transition: all var(--tr);
+    }
+    .geogebra-link .gg-icon { flex-shrink: 0; font-size: .95rem; }
+    .geogebra-link strong { color: var(--text); font-weight: 600; }
+    .geogebra-link .gg-arrow { margin-left: auto; flex-shrink: 0; opacity: .6; transition: transform var(--tr); }
+    .geogebra-link:hover {
+      border-color: var(--green);
+      color: var(--text);
+      background: color-mix(in srgb, var(--green) 7%, transparent);
+    }
+    .geogebra-link:hover .gg-arrow { transform: translate(2px,-2px); opacity: 1; }
 
     .info-box {
       background: var(--card);
@@ -336,7 +356,7 @@
 
   <!-- CANVAS -->
   <div class="canvas-wrap" id="canvasWrap">
-    <canvas id="mainCanvas"></canvas>
+    <canvas id="mainCanvas" role="img" aria-label="Diagrama interactiu: tria el mode i observa els angles formats per les rectes"></canvas>
     <div class="canvas-hint" id="hint">Arrossega per canviar l'angle de tall</div>
   </div>
 
@@ -434,6 +454,11 @@
       <div class="big">⊥ Rectes perpendiculars</div>
       <p>Les rectes perpendiculars es tallen formant <strong>quatre angles rectes de 90°</strong>. És un cas especial de rectes secants.<br><br>El símbol ⊥ indica perpendicularitat.</p>
     </div>
+
+    <a class="geogebra-link" href="https://www.geogebra.org/m/TUY7xkKH" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Angles entre dues paral·leles i una secant</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
 
   </div>
 </div>

@@ -19,7 +19,7 @@
       --purple:  #b47fff;
       --teal:    #48dbfb;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -228,7 +228,7 @@
   <!-- POLYGON CANVAS -->
   <div class="canvas-col">
     <div class="canvas-wrap">
-      <canvas id="polyCanvas"></canvas>
+      <canvas id="polyCanvas" role="img" aria-label="Polígon regular interactiu: tria el nombre de costats amb els botons superiors"></canvas>
       <span class="canvas-label" id="polyLabel">Polígon</span>
     </div>
     <div class="metrics-row">
@@ -248,7 +248,7 @@
   <!-- CIRCLE CANVAS -->
   <div class="canvas-col">
     <div class="canvas-wrap">
-      <canvas id="circCanvas"></canvas>
+      <canvas id="circCanvas" role="img" aria-label="Cercle de comparació amb el mateix radi que el polígon"></canvas>
       <span class="canvas-label">Cercle (radi r)</span>
     </div>
     <div class="metrics-row">
@@ -371,7 +371,7 @@
 // ─────────────────────────────────────────
 const POLY_NAMES = {
   3:'Triangle equilàter', 4:'Quadrat', 5:'Pentàgon', 6:'Hexàgon',
-  7:'Heptàgon', 8:'Octàgon', 9:'Ennàgon', 10:'Decàgon',
+  7:'Heptàgon', 8:'Octàgon', 9:'Eneàgon', 10:'Decàgon',
   12:'Dodecàgon', 16:'Hexadecàgon', 32:'32 costats', 64:'64 costats', 96:'96 costats',
 };
 const SIDES_LIST = [3,4,5,6,7,8,9,10,12,16,32,64,96];

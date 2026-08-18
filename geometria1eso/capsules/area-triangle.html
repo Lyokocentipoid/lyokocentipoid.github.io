@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Àrea del triangle · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --text:    #e8eaf6;
+      --muted:   #868bb5;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--coral); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--coral); background: rgba(255,95,109,.1); border: 1px solid rgba(255,95,109,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--coral); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--coral); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 640px; }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+    .canvas-col { display: flex; flex-direction: column; gap: 1rem; }
+    .canvas-wrap {
+      position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; aspect-ratio: 4/3; cursor: default;
+    }
+    .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+    .canvas-hint {
+      position: absolute; bottom: .8rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted); background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px; padding: .32rem 1rem;
+      pointer-events: none; white-space: nowrap; transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* ── PROGRESS ROW ── */
+    .progress-row { display: flex; align-items: center; gap: .9rem; }
+    input[type=range] {
+      flex: 1; appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--coral); box-shadow: 0 0 8px var(--coral); cursor: grab; transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+    .progress-pct { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--muted); min-width: 34px; text-align: right; }
+
+    /* ── PRESETS ── */
+    .preset-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .preset-btn {
+      flex: 1; padding: .55rem .5rem; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .78rem;
+      cursor: pointer; transition: all var(--tr); text-align: center; min-width: 90px;
+    }
+    .preset-btn:hover { border-color: var(--coral); color: var(--text); }
+    .preset-btn.active { border-color: var(--coral); color: var(--coral); background: rgba(255,95,109,.08); }
+
+    /* ── STEP BOX ── */
+    .step-box {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: .9rem 1.1rem; font-size: .82rem; color: var(--muted); line-height: 1.55; min-height: 3.4em;
+      transition: color .2s;
+    }
+    .step-box strong { color: var(--coral); }
+
+    /* ── SIDE PANEL ── */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .info-head { padding: .85rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .65rem; }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .65rem; }
+
+    .bh-row { display: flex; gap: .75rem; }
+    .bh-chip { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .55rem .7rem; text-align: center; }
+    .bh-chip-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .bh-chip-val { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 500; color: var(--coral); }
+
+    .formula { font-family: 'DM Mono', monospace; font-size: .88rem; color: var(--coral); text-align: center;
+      background: rgba(255,95,109,.08); border: 1px solid rgba(255,95,109,.22); border-radius: 8px; padding: .55rem .7rem; }
+    .formula .eqval { color: var(--text); }
+
+    .rect-row {
+      font-family: 'DM Mono', monospace; font-size: .82rem; color: var(--green); text-align: center;
+      background: rgba(61,255,160,.08); border: 1px solid rgba(61,255,160,.22); border-radius: 8px; padding: .55rem .7rem;
+      transition: opacity .3s; opacity: 0;
+    }
+    .rect-row.show { opacity: 1; }
+
+    .panel-note {
+      padding: .9rem 1.1rem; border-radius: 12px;
+      background: color-mix(in srgb, var(--coral) 6%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--coral) 20%, transparent);
+      font-size: .8rem; color: var(--muted); line-height: 1.55;
+    }
+    .panel-note strong { color: var(--coral); }
+
+    .geogebra-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .65rem .9rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .8rem;
+      transition: all var(--tr);
+    }
+    .geogebra-link .gg-icon { flex-shrink: 0; font-size: .95rem; }
+    .geogebra-link strong { color: var(--text); font-weight: 600; }
+    .geogebra-link .gg-arrow { margin-left: auto; flex-shrink: 0; opacity: .6; transition: transform var(--tr); }
+    .geogebra-link:hover {
+      border-color: var(--coral);
+      color: var(--text);
+      background: color-mix(in srgb, var(--coral) 7%, transparent);
+    }
+    .geogebra-link:hover .gg-arrow { transform: translate(2px,-2px); opacity: 1; }
+
+    /* ── INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 03 · Àrees</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Àrea del triangle</span>
+  </div>
+  <h1>Àrea del <em>triangle</em></h1>
+  <p>Arrossega els vèrtexs per canviar la base i l'altura. Després mou el control per veure com el triangle es transforma, pas a pas, en un rectangle de la mateixa àrea.</p>
+</div>
+
+<div class="main-layout">
+
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="mainCanvas" role="img" aria-label="Triangle interactiu: arrossega els vèrtexs per canviar la base i l'altura; el control inferior anima la transformació en rectangle"></canvas>
+      <span class="canvas-hint" id="canvasHint">Arrossega qualsevol vèrtex</span>
+    </div>
+    <div class="progress-row">
+      <input type="range" id="progressSlider" min="0" max="100" value="0" oninput="onProgressInput(this.value)" aria-label="Pas de la demostració">
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+    <div class="preset-row">
+      <button class="preset-btn active" id="btn-acutangle" onclick="applyPreset('acutangle')">Acutangle</button>
+      <button class="preset-btn" id="btn-rectangle" onclick="applyPreset('rectangle')">Rectangle</button>
+      <button class="preset-btn" id="btn-obtusangle" onclick="applyPreset('obtusangle')">Obtusangle</button>
+    </div>
+    <div class="step-box" id="stepBox">Aquest és el triangle original, amb base <strong>b</strong> i altura <strong>h</strong>.</div>
+  </div>
+
+  <div class="side-panel">
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Base i altura</span></div>
+      <div class="info-body">
+        <div class="bh-row">
+          <div class="bh-chip"><div class="bh-chip-label">Base (b)</div><div class="bh-chip-val" id="valB">6.0</div></div>
+          <div class="bh-chip"><div class="bh-chip-label">Altura (h)</div><div class="bh-chip-val" id="valH">4.0</div></div>
+        </div>
+        <div class="formula">Àrea = (b × h) ÷ 2 = <span class="eqval" id="valArea">12.0</span></div>
+        <div class="rect-row" id="rectRow">Rectangle: b × (h÷2) = <span id="valRectArea">12.0</span> ✓</div>
+      </div>
+    </div>
+
+    <div class="panel-note">
+      <strong>💡 Fixa't:</strong> si el triangle és obtusangle, l'altura cau fora del triangle — cal allargar la base (línia discontínua) per mesurar-la.
+    </div>
+
+    <a class="geogebra-link" href="https://www.geogebra.org/m/sKshDCDN" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Superfície del triangle</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+
+  </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">🔄</span>
+    <div class="insight-text">
+      <h4>Qualsevol base, qualsevol altura</h4>
+      <p>Si mantens b i h iguals, l'àrea no canvia encara que moguis l'àpex lateralment: un triangle molt inclinat té la mateixa àrea que un de simètric.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">📐</span>
+    <div class="insight-text">
+      <h4>L'altura no sempre cau dins</h4>
+      <p>En un triangle obtusangle, l'altura pot caure fora de la figura. Cal allargar la base amb una línia discontínua per poder-la mesurar.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔗</span>
+    <div class="insight-text">
+      <h4>Mig rectangle, sempre</h4>
+      <p>Un triangle rectangle és exactament la meitat d'un rectangle amb els mateixos catets: és el cas més fàcil de veure per què es divideix entre 2.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 03 · Mesures, Àrees i Perímetres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+const COL_TRI  = '#ff5f6d';
+const COL_RECT = '#3dffa0';
+const COL_LINE = '#e8eaf6';
+
+let W, H, dpr;
+let A, B, C;           // {x,y} in device-pixel canvas coords
+let PXPERUNIT = 1;
+let animT = 0, animPlaying = false, animRAF = null, lastTime = null;
+const ANIM_MS = 5200;
+let dragging = null;   // 'A' | 'B' | 'C' | null
+let inited = false;
+
+function resize() {
+  dpr = devicePixelRatio;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+  PXPERUNIT = H / 6;
+
+  if (!inited) {
+    const By = H * 0.74;
+    B = { x: W * 0.16, y: By };
+    C = { x: W * 0.76, y: By };
+    A = { x: B.x + 0.45 * (C.x - B.x), y: By - 0.42 * H };
+    inited = true;
+  } else {
+    B.y = C.y = H * 0.74;
+    clampBase();
+    clampApex();
+  }
+  draw(animT);
+}
+
+function clampBase() {
+  const minGap = W * 0.22;
+  B.x = Math.max(W * 0.06, Math.min(B.x, W * 0.5 - minGap / 2));
+  C.x = Math.min(W * 0.94, Math.max(C.x, W * 0.5 + minGap / 2));
+  if (C.x - B.x < minGap) { C.x = B.x + minGap; }
+}
+function clampApex() {
+  const b = C.x - B.x;
+  A.x = Math.max(B.x, Math.min(A.x, C.x + 0.95 * b));
+  const By = B.y;
+  const minH = H * 0.16, maxH = H * 0.58;
+  A.y = Math.max(By - maxH, Math.min(A.y, By - minH));
+}
+
+function lerpPt(p0, p1, t) { return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t }; }
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W / 10) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H / 8)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+}
+
+function fillPoly(pts, color, alphaHex) {
+  ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.fillStyle = color + alphaHex; ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = color; ctx.shadowBlur = 8;
+  ctx.stroke(); ctx.shadowBlur = 0;
+}
+
+function drawVertexDot(p, color) {
+  ctx.beginPath(); ctx.arc(p.x, p.y, 6 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 10;
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+
+  const By = B.y;
+  const b  = C.x - B.x;
+  const h  = By - A.y;
+  const M1 = { x: (A.x + B.x) / 2, y: (A.y + By) / 2 };
+  const M2 = { x: (A.x + C.x) / 2, y: (A.y + By) / 2 };
+  const M1p = { x: M1.x + b, y: M1.y }; // M1 translated by base vector (A' = C under 180° rotation about M2)
+
+  // ── height guide (fades out as the animation starts) ──
+  const guideAlpha = Math.max(0, 1 - t * 3);
+  if (guideAlpha > 0.02) {
+    ctx.save(); ctx.globalAlpha = guideAlpha;
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.4 * dpr; ctx.setLineDash([5 * dpr, 4 * dpr]);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(A.x, By); ctx.stroke();
+    // extend the base line (dashed) if the altitude foot falls outside [B,C]
+    if (A.x > C.x) { ctx.beginPath(); ctx.moveTo(C.x, By); ctx.lineTo(A.x, By); ctx.stroke(); }
+    if (A.x < B.x) { ctx.beginPath(); ctx.moveTo(A.x, By); ctx.lineTo(B.x, By); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.font = `${11 * dpr}px 'DM Mono', monospace`;
+    ctx.fillStyle = 'rgba(232,234,246,.6)'; ctx.textAlign = 'center';
+    ctx.fillText('h', A.x + 12 * dpr, (A.y + By) / 2);
+    ctx.restore();
+  }
+  // base line + label (always visible, solid)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2 * dpr;
+  ctx.beginPath(); ctx.moveTo(B.x, By); ctx.lineTo(C.x, By); ctx.stroke();
+  ctx.font = `${11 * dpr}px 'DM Mono', monospace`;
+  ctx.fillStyle = 'rgba(232,234,246,.6)'; ctx.textAlign = 'center';
+  ctx.fillText('b', (B.x + C.x) / 2, By + 18 * dpr);
+  ctx.restore();
+
+  if (t <= 0.5) {
+    // ── PHASE 1: triangle -> parallelogram ──
+    const t1 = t / 0.5;
+    const staticTrap = [B, M1, M2, C];
+    const movingTri  = [lerpPt(A, C, t1), lerpPt(M1, M1p, t1), M2];
+
+    fillPoly(staticTrap, COL_TRI, '14');
+    fillPoly(movingTri,  COL_TRI, '22');
+    [A, B, C].forEach(p => drawVertexDot(p, COL_LINE));
+    ['A','B','C'].forEach((lbl,i) => {
+      const p = [A,B,C][i];
+      ctx.save(); ctx.font = `bold ${12*dpr}px 'DM Mono',monospace`;
+      ctx.fillStyle = COL_TRI; ctx.textAlign='center'; ctx.shadowColor=COL_TRI; ctx.shadowBlur=5;
+      ctx.fillText(lbl, p.x, p.y - 12*dpr); ctx.shadowBlur=0; ctx.restore();
+    });
+  } else {
+    // ── PHASE 2: parallelogram -> rectangle ──
+    const t2 = (t - 0.5) / 0.5;
+    const F1 = { x: M1.x,  y: By };
+    const F2 = { x: M1p.x, y: By };
+    const staticQuad = [F1, M1, M1p, C];
+    const movingTri  = [lerpPt(B, C, t2), lerpPt(M1, M1p, t2), lerpPt(F1, F2, t2)];
+
+    fillPoly(staticQuad, t2 > 0.98 ? COL_RECT : COL_TRI, '18');
+    fillPoly(movingTri,  t2 > 0.98 ? COL_RECT : COL_TRI, '26');
+  }
+
+  updateLiveData(t, b, h);
+}
+
+function updateLiveData(t, bPx, hPx) {
+  const bU = bPx / PXPERUNIT, hU = hPx / PXPERUNIT;
+  const area = (bU * hU) / 2;
+  document.getElementById('valB').textContent = bU.toFixed(1);
+  document.getElementById('valH').textContent = hU.toFixed(1);
+  document.getElementById('valArea').textContent = area.toFixed(1);
+
+  const rectRow = document.getElementById('rectRow');
+  if (t > 0.96) {
+    rectRow.classList.add('show');
+    document.getElementById('valRectArea').textContent = (bU * (hU / 2)).toFixed(1);
+  } else {
+    rectRow.classList.remove('show');
+  }
+
+  document.getElementById('progressSlider').value = Math.round(t * 100);
+  document.getElementById('progressPct').textContent = Math.round(t * 100) + '%';
+  updateStepText(t);
+}
+
+function updateStepText(t) {
+  const box = document.getElementById('stepBox');
+  let html;
+  if (t < 0.02) html = "Aquest és el triangle original, amb base <strong>b</strong> i altura <strong>h</strong>.";
+  else if (t <= 0.5) html = "Tallem pel segment mitjà (a altura h/2) i girem el triangle petit: es forma un <strong>paral·lelogram</strong> amb la mateixa base b.";
+  else if (t < 0.98) html = "Ara tallem un triangle del paral·lelogram i el lliskem cap a l'altre costat: es forma un <strong>rectangle</strong>.";
+  else html = "Rectangle complet: b × (h÷2). Per això l'àrea del triangle és <strong>(base × altura) ÷ 2</strong>.";
+  box.innerHTML = html;
+}
+
+// ── ANIMATION ──
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function startAnim() { animPlaying = true; lastTime = null; animRAF = requestAnimationFrame(step); }
+function stopAnim() { animPlaying = false; if (animRAF) cancelAnimationFrame(animRAF); }
+function step(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = (ts - lastTime) / ANIM_MS;
+  lastTime = ts;
+  animT = Math.min(1, animT + dt);
+  draw(easeInOut(animT));
+  if (animT < 1) animRAF = requestAnimationFrame(step); else stopAnim();
+}
+function onProgressInput(val) {
+  hideHint(); stopAnim();
+  animT = val / 100;
+  draw(animT);
+}
+function hideHint() { document.getElementById('canvasHint').classList.add('hidden'); }
+
+function onVertexChanged() {
+  hideHint(); stopAnim();
+  if (animT > 0) animT = 1;
+  draw(animT);
+}
+
+// ── PRESETS ──
+const PRESETS = {
+  acutangle:  (b) => ({ dx: 0.50 * b, dh: 0.75 * b }),
+  rectangle:  (b) => ({ dx: 0.0,      dh: 0.65 * b }),
+  obtusangle: (b) => ({ dx: 1.40 * b, dh: 0.35 * b }),
+};
+function applyPreset(name) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + name).classList.add('active');
+  const b = C.x - B.x;
+  const { dx, dh } = PRESETS[name](b);
+  A.x = B.x + dx; A.y = B.y - dh;
+  clampApex();
+  hideHint(); stopAnim(); animT = 0; draw(0); startAnim();
+}
+
+// ── DRAG ──
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * dpr, y: (clientY - rect.top) * dpr };
+}
+function nearestVertex(p) {
+  const cands = [['A', A], ['B', B], ['C', C]];
+  let best = null, bestD = 26 * dpr;
+  cands.forEach(([name, pt]) => {
+    const d = Math.hypot(p.x - pt.x, p.y - pt.y);
+    if (d < bestD) { bestD = d; best = name; }
+  });
+  return best;
+}
+function onDown(e) { dragging = nearestVertex(pointerXY(e)); }
+function onMove(e) {
+  if (!dragging) return;
+  const p = pointerXY(e);
+  if (dragging === 'A') {
+    A.x = p.x; A.y = p.y; clampApex();
+  } else if (dragging === 'B') {
+    B.x = p.x; clampBase(); clampApex();
+  } else if (dragging === 'C') {
+    C.x = p.x; clampBase(); clampApex();
+  }
+  onVertexChanged();
+}
+function onUp() { dragging = null; }
+
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', e => { onDown(e); }, { passive: true });
+canvas.addEventListener('touchmove', e => { if (dragging) { e.preventDefault(); onMove(e); } }, { passive: false });
+canvas.addEventListener('touchend', onUp);
+
+window.addEventListener('resize', resize);
+resize();
+startAnim();
+</script>
+</body>
+</html>

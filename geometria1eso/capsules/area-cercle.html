@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Àrea del cercle · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --teal:    #48dbfb;
+      --text:    #e8eaf6;
+      --muted:   #868bb5;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--teal); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--teal); background: rgba(72,219,251,.1); border: 1px solid rgba(72,219,251,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--teal); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--teal); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 640px; }
+
+    /* ── SECTORS BAR ── */
+    .sides-bar {
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 1.25rem;
+      display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    }
+    .sides-label { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .sides-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .side-btn {
+      padding: .38rem .75rem; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted); font-family: 'DM Mono', monospace; font-size: .8rem;
+      cursor: pointer; transition: all var(--tr);
+    }
+    .side-btn:hover { border-color: var(--teal); color: var(--text); }
+    .side-btn.active { border-color: var(--teal); color: var(--teal); background: rgba(72,219,251,.1); box-shadow: 0 0 12px rgba(72,219,251,.2); }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+    .canvas-col { display: flex; flex-direction: column; gap: 1rem; }
+    .canvas-wrap {
+      position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; aspect-ratio: 16/9;
+    }
+    .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+    .progress-row { display: flex; align-items: center; gap: .9rem; }
+    input[type=range] {
+      flex: 1; appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--teal); box-shadow: 0 0 8px var(--teal); cursor: grab; transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+    .progress-label { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+    .progress-pct { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--muted); min-width: 34px; text-align: right; }
+
+    /* ── SIDE PANEL ── */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .info-head { padding: .85rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .65rem; }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .6rem; }
+
+    .formula-row {
+      display: flex; align-items: flex-start; gap: .75rem; padding: .55rem .8rem; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .formula-icon { font-size: .85rem; margin-top: .1rem; flex-shrink: 0; }
+    .formula-content { flex: 1; min-width: 0; }
+    .formula-label { font-size: .66rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .15rem; }
+    .formula-expr  { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--text); }
+    .formula-val   { font-family: 'DM Mono', monospace; font-size: .86rem; color: var(--teal); margin-top: .1rem; }
+
+    .rect-row {
+      font-family: 'DM Mono', monospace; font-size: .82rem; color: var(--green); text-align: center;
+      background: rgba(61,255,160,.08); border: 1px solid rgba(61,255,160,.22); border-radius: 8px; padding: .55rem .7rem;
+      transition: opacity .3s; opacity: 0;
+    }
+    .rect-row.show { opacity: 1; }
+
+    .precision-wrap { display: flex; flex-direction: column; gap: .5rem; }
+    .precision-bar-wrap { background: var(--surface); border-radius: 6px; height: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .precision-bar-fill { height: 100%; border-radius: 6px; background: var(--teal); transition: width .3s ease; }
+    .precision-val-row { display: flex; justify-content: space-between; font-size: .8rem; }
+    .precision-val { font-family: 'DM Mono', monospace; color: var(--teal); }
+    .precision-sub { color: var(--muted); font-size: .75rem; }
+
+    .panel-note {
+      padding: .9rem 1.1rem; border-radius: 12px;
+      background: color-mix(in srgb, var(--teal) 6%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+      font-size: .8rem; color: var(--muted); line-height: 1.55;
+    }
+    .panel-note strong { color: var(--teal); }
+
+    /* ── INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+      .sides-bar { padding: 0 1.25rem 1.25rem; }
+      .canvas-wrap { aspect-ratio: 4/3; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 03 · Àrees</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">Àrea del cercle</span>
+  </div>
+  <h1>Àrea del <em>cercle</em></h1>
+  <p>Talla el cercle en sectors i reordena'ls alternant amunt i avall. Com més trossos facis servir, més s'assembla el resultat a un rectangle de base π·r i altura r.</p>
+</div>
+
+<div class="sides-bar">
+  <span class="sides-label">Nombre de sectors:</span>
+  <div class="sides-btns" id="sectorsBar"></div>
+</div>
+
+<div class="main-layout">
+
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="mainCanvas" role="img" aria-label="Animació d'un cercle retallat en sectors que es reordenen fins a formar un rectangle"></canvas>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">Reorganització:</span>
+      <input type="range" id="progressSlider" min="0" max="100" value="0" oninput="onProgressInput(this.value)" aria-label="Progrés de la reorganització dels sectors">
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <div class="side-panel">
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">⭕</span><span class="info-head-title">Fórmules (r = 1)</span></div>
+      <div class="info-body">
+        <div class="formula-row">
+          <span class="formula-icon">📏</span>
+          <div class="formula-content">
+            <div class="formula-label">Circumferència</div>
+            <div class="formula-expr">2 · π · r</div>
+            <div class="formula-val" id="fCirc">6.2832</div>
+          </div>
+        </div>
+        <div class="formula-row">
+          <span class="formula-icon">➗</span>
+          <div class="formula-content">
+            <div class="formula-label">Semicircumferència (amplada)</div>
+            <div class="formula-expr">π · r</div>
+            <div class="formula-val" id="fSemi">3.1416</div>
+          </div>
+        </div>
+        <div class="formula-row">
+          <span class="formula-icon">⬛</span>
+          <div class="formula-content">
+            <div class="formula-label">Àrea</div>
+            <div class="formula-expr">π · r²</div>
+            <div class="formula-val" id="fArea">3.1416</div>
+          </div>
+        </div>
+        <div class="rect-row" id="rectRow">Rectangle final ≈ π·r × r = <span id="rectAreaVal">3.1416</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Precisió del rectangle</span></div>
+      <div class="info-body">
+        <div class="precision-wrap">
+          <p style="font-size:.78rem;color:var(--muted);line-height:1.55">Com més sectors facis servir, més rectes semblen els costats ondulats.</p>
+          <div class="precision-bar-wrap"><div class="precision-bar-fill" id="precisionFill" style="width:0%"></div></div>
+          <div class="precision-val-row">
+            <span class="precision-val" id="precisionVal">0%</span>
+            <span class="precision-sub" id="precisionN">4 sectors</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-note">
+      <strong>💡 Recorda:</strong> retallar i recol·locar trossos no canvia l'àrea total — només la forma.
+    </div>
+
+  </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">⬡</span>
+    <div class="insight-text">
+      <h4>Com més trossos, més recte</h4>
+      <p>Amb pocs sectors el contorn és ondulat; amb 64-96 gairebé no es distingeix d'un rectangle — la mateixa idea que quan un polígon s'aproxima al cercle.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">📏</span>
+    <div class="insight-text">
+      <h4>L'amplada amaga la meitat de π</h4>
+      <p>L'amplada del rectangle final és π·r (mitja circumferència), no 2·π·r: els sectors de dalt i de baix es reparteixen entre les dues meitats.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔺</span>
+    <div class="insight-text">
+      <h4>El mateix truc, moltes formes</h4>
+      <p>Retallar i recol·locar trossos sense canviar l'àrea és la mateixa idea que fem servir per trobar l'àrea del triangle.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 03 · Mesures, Àrees i Perímetres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+const COL_A = '#ff5f6d'; // coral
+const COL_B = '#f5c842'; // yellow
+const SECTOR_OPTIONS = [4, 8, 16, 32, 64, 96];
+
+let W, H, dpr;
+let N = 16;
+let r, cx0, cy0;              // circle-state center + radius
+let stripCenterX, yBottom, yTop; // target-state strip reference lines
+let animT = 0, animPlaying = false, animRAF = null, lastTime = null;
+const ANIM_MS = 3200;
+
+function resize() {
+  dpr = devicePixelRatio;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+
+  r   = Math.min(W, H) * 0.34;
+  cx0 = W * 0.30; cy0 = H * 0.5;
+
+  stripCenterX = W * 0.5;
+  yBottom = cy0 + r * 0.5;
+  yTop    = yBottom - r;
+
+  draw(animT);
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W / 12) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H / 8)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+}
+
+function lerpPt(p0, p1, t) { return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t }; }
+
+// control point so a quadratic curve passes through p0, pMid, p2
+function bezierControl(p0, pMid, p2) {
+  return { x: 2 * pMid.x - (p0.x + p2.x) / 2, y: 2 * pMid.y - (p0.y + p2.y) / 2 };
+}
+
+function sectorGeometry(i) {
+  const n     = N / 2;
+  const alpha = (Math.PI * 2) / N;
+  const beta  = alpha / 2;
+
+  // ── circle state (t=0) ──
+  const a0 = i * alpha - Math.PI / 2;
+  const a1 = (i + 1) * alpha - Math.PI / 2;
+  const aM = (a0 + a1) / 2;
+  const apex0     = { x: cx0, y: cy0 };
+  const arcStart0 = { x: cx0 + r * Math.cos(a0), y: cy0 + r * Math.sin(a0) };
+  const arcEnd0   = { x: cx0 + r * Math.cos(a1), y: cy0 + r * Math.sin(a1) };
+  const arcMid0   = { x: cx0 + r * Math.cos(aM), y: cy0 + r * Math.sin(aM) };
+
+  // ── target strip state (t=1) ──
+  const totalWidth = n * 2 * r * Math.sin(beta);
+  const slotWidth   = totalWidth / N;
+  const startX      = stripCenterX - totalWidth / 2;
+  const slotCenterX = startX + (i + 0.5) * slotWidth;
+  const bulge = slotWidth * 0.18;
+  const even  = (i % 2 === 0);
+
+  let apex1, arcStart1, arcEnd1, arcMid1;
+  if (even) {
+    apex1     = { x: slotCenterX, y: yBottom };
+    arcStart1 = { x: slotCenterX - slotWidth / 2, y: yTop };
+    arcEnd1   = { x: slotCenterX + slotWidth / 2, y: yTop };
+    arcMid1   = { x: slotCenterX, y: yTop - bulge };
+  } else {
+    apex1     = { x: slotCenterX, y: yTop };
+    arcStart1 = { x: slotCenterX - slotWidth / 2, y: yBottom };
+    arcEnd1   = { x: slotCenterX + slotWidth / 2, y: yBottom };
+    arcMid1   = { x: slotCenterX, y: yBottom + bulge };
+  }
+
+  return { apex0, arcStart0, arcEnd0, arcMid0, apex1, arcStart1, arcEnd1, arcMid1, color: even ? COL_A : COL_B };
+}
+
+function drawSector(g, t) {
+  const apex     = lerpPt(g.apex0, g.apex1, t);
+  const arcStart = lerpPt(g.arcStart0, g.arcStart1, t);
+  const arcEnd   = lerpPt(g.arcEnd0, g.arcEnd1, t);
+  const arcMid   = lerpPt(g.arcMid0, g.arcMid1, t);
+  const ctrl     = bezierControl(arcStart, arcMid, arcEnd);
+
+  ctx.beginPath();
+  ctx.moveTo(apex.x, apex.y);
+  ctx.lineTo(arcStart.x, arcStart.y);
+  ctx.quadraticCurveTo(ctrl.x, ctrl.y, arcEnd.x, arcEnd.y);
+  ctx.closePath();
+  ctx.fillStyle = g.color + '2e';
+  ctx.fill();
+  ctx.strokeStyle = g.color;
+  ctx.lineWidth = 1.4 * dpr;
+  ctx.stroke();
+}
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+
+  for (let i = 0; i < N; i++) {
+    drawSector(sectorGeometry(i), t);
+  }
+
+  // reference lines for the target rectangle (fade in as t grows)
+  if (t > 0.05) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t * 1.3);
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.setLineDash([5 * dpr, 4 * dpr]); ctx.lineWidth = 1.2 * dpr;
+    ctx.beginPath(); ctx.moveTo(0, yTop); ctx.lineTo(W, yTop); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, yBottom); ctx.lineTo(W, yBottom); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  updateLiveData(t);
+}
+
+function updateLiveData(t) {
+  const circ = 2 * Math.PI;
+  const semi = Math.PI;
+  const area = Math.PI;
+  document.getElementById('fCirc').textContent = circ.toFixed(4);
+  document.getElementById('fSemi').textContent = semi.toFixed(4);
+  document.getElementById('fArea').textContent = area.toFixed(4);
+
+  const rectRow = document.getElementById('rectRow');
+  if (t > 0.96) {
+    rectRow.classList.add('show');
+    document.getElementById('rectAreaVal').textContent = area.toFixed(4);
+  } else {
+    rectRow.classList.remove('show');
+  }
+
+  const beta = Math.PI / N;
+  const precisionPct = Math.cos(beta) * 100;
+  document.getElementById('precisionFill').style.width = precisionPct + '%';
+  document.getElementById('precisionVal').textContent = precisionPct.toFixed(1) + '%';
+  document.getElementById('precisionN').textContent = N + ' sectors';
+
+  document.getElementById('progressSlider').value = Math.round(t * 100);
+  document.getElementById('progressPct').textContent = Math.round(t * 100) + '%';
+}
+
+// ── SECTORS BAR ──
+function buildSectorsBar() {
+  const bar = document.getElementById('sectorsBar');
+  bar.innerHTML = SECTOR_OPTIONS.map(n =>
+    `<button class="side-btn${n === N ? ' active' : ''}" onclick="setN(${n})">${n}</button>`
+  ).join('');
+}
+function setN(n) {
+  N = n;
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.toggle('active', +b.textContent === N));
+  draw(animT);
+}
+
+// ── ANIMATION ──
+function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+function startAnim() { animPlaying = true; lastTime = null; animRAF = requestAnimationFrame(step); }
+function stopAnim() { animPlaying = false; if (animRAF) cancelAnimationFrame(animRAF); }
+function step(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = (ts - lastTime) / ANIM_MS;
+  lastTime = ts;
+  animT = Math.min(1, animT + dt);
+  draw(easeInOut(animT));
+  if (animT < 1) animRAF = requestAnimationFrame(step); else stopAnim();
+}
+function onProgressInput(val) {
+  stopAnim();
+  animT = val / 100;
+  draw(animT);
+}
+
+buildSectorsBar();
+window.addEventListener('resize', resize);
+resize();
+startAnim();
+</script>
+</body>
+</html>

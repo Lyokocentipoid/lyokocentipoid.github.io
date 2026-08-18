@@ -19,7 +19,7 @@
       --purple:  #b47fff;
       --teal:    #48dbfb;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
       --ca: #3dffa0;
       --cb: #3d8bff;
@@ -331,7 +331,7 @@
 <div class="main-layout">
 
   <div class="canvas-wrap" id="canvasWrap">
-    <canvas id="mainCanvas"></canvas>
+    <canvas id="mainCanvas" role="img" aria-label="Diagrama interactiu del teorema de Pitàgores"></canvas>
   </div>
 
   <div>
@@ -682,6 +682,8 @@ function switchTab(name, btn) {
     return;
   }
   if (name === 'demostracio') {
+    document.getElementById('ratioSlider').value = Math.round(ratio * 100);
+    document.getElementById('ratioVal').textContent = (ratio / (1 - ratio)).toFixed(2);
     stopAnim(); animT = 0; startAnim(); return;
   }
   stopAnim();
@@ -830,9 +832,7 @@ function drawBhaskara(t) {
     ctx.font = `bold ${15*dpr}px 'DM Mono', monospace`;
     ctx.fillStyle = CC; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.shadowColor = CC; ctx.shadowBlur = 8;
-    ctx.fillText('c²', icx, icy - 9*dpr);
-    ctx.font = `${11*dpr}px 'DM Mono', monospace`;
-    ctx.fillText('= ' + Math.round(c*c/S*S*100)/100, icx, icy + 10*dpr);
+    ctx.fillText('c²', icx, icy);
     ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.restore();
   }
 

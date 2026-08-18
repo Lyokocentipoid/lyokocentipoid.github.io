@@ -18,7 +18,7 @@
       --green:   #3dffa0;
       --purple:  #b47fff;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -213,11 +213,11 @@
 <!-- SHAPE SELECTOR -->
 <div class="shape-bar">
   <span class="shape-label">Figura:</span>
-  <button class="shape-btn active" onclick="setShape('triangle')">🔺 Triangle</button>
-  <button class="shape-btn" onclick="setShape('quadrat')">🔷 Quadrat</button>
-  <button class="shape-btn" onclick="setShape('pentagon')">⬠ Pentàgon</button>
-  <button class="shape-btn" onclick="setShape('lletra-f')">🔤 Lletra F</button>
-  <button class="shape-btn" onclick="setShape('fletxa')">➤ Fletxa</button>
+  <button class="shape-btn active" onclick="setShape('triangle', event)">🔺 Triangle</button>
+  <button class="shape-btn" onclick="setShape('quadrat', event)">🔷 Quadrat</button>
+  <button class="shape-btn" onclick="setShape('pentagon', event)">⬠ Pentàgon</button>
+  <button class="shape-btn" onclick="setShape('lletra-f', event)">🔤 Lletra F</button>
+  <button class="shape-btn" onclick="setShape('fletxa', event)">➤ Fletxa</button>
 </div>
 
 <div class="main-layout">
@@ -225,7 +225,7 @@
   <!-- CANVAS -->
   <div>
     <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="mainCanvas"></canvas>
+      <canvas id="mainCanvas" role="img" aria-label="Diagrama interactiu: arrossega l'eix de simetria per veure el reflex de la figura"></canvas>
       <div class="canvas-hint" id="hint">Arrossega l'eix de simetria per girar-lo</div>
     </div>
   </div>
@@ -594,10 +594,10 @@ function syncSlider() {
 // ─────────────────────────────────────────
 // SHAPE SWITCHER
 // ─────────────────────────────────────────
-function setShape(name) {
+function setShape(name, evt) {
   shape = name;
   document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
-  event.target.closest('.shape-btn').classList.add('active');
+  evt.target.closest('.shape-btn').classList.add('active');
   draw();
 }
 

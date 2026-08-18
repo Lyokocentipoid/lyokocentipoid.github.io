@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El número π · GeoMat 1r ESO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #0d0f1a;
+      --surface: #151828;
+      --card:    #1c2038;
+      --border:  #2a2f50;
+      --blue:    #3d8bff;
+      --yellow:  #f5c842;
+      --coral:   #ff5f6d;
+      --green:   #3dffa0;
+      --purple:  #b47fff;
+      --teal:    #48dbfb;
+      --text:    #e8eaf6;
+      --muted:   #868bb5;
+      --tr:      .2s cubic-bezier(.4,0,.2,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-weight: 300;
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2.5rem;
+      background: rgba(13,15,26,.9); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem;
+      color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-back { color: var(--muted); text-decoration: none; font-size: .85rem; transition: color var(--tr); }
+    .nav-back:hover { color: var(--yellow); }
+    .capsula-label {
+      font-size: .75rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--yellow); background: rgba(245,200,66,.1); border: 1px solid rgba(245,200,66,.2);
+      border-radius: 100px; padding: .25rem .75rem;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header { max-width: 1200px; margin: 0 auto; width: 100%; padding: 2.5rem 2rem 1.5rem; }
+    .breadcrumb {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .78rem; color: var(--muted); margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color var(--tr); }
+    .breadcrumb a:hover { color: var(--text); }
+    .breadcrumb .cur { color: var(--yellow); }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.4rem); letter-spacing: -.02em; margin-bottom: .5rem;
+    }
+    .page-header h1 em { font-style: normal; color: var(--yellow); }
+    .page-header p { color: var(--muted); font-size: .9rem; line-height: 1.65; max-width: 640px; }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1; display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;
+      max-width: 1200px; margin: 0 auto; width: 100%; padding: 0 2rem 2rem;
+    }
+    .canvas-col { display: flex; flex-direction: column; gap: 1rem; }
+    .canvas-wrap {
+      position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; aspect-ratio: 2/1; cursor: default;
+    }
+    .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+    .canvas-hint {
+      position: absolute; bottom: .8rem; left: 50%; transform: translateX(-50%);
+      font-size: .75rem; color: var(--muted); background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
+      border: 1px solid var(--border); border-radius: 100px; padding: .32rem 1rem;
+      pointer-events: none; white-space: nowrap; transition: opacity .4s;
+    }
+    .canvas-hint.hidden { opacity: 0; }
+
+    /* ── PROGRESS ROW ── */
+    .progress-row { display: flex; align-items: center; gap: .9rem; }
+    .replay-btn {
+      padding: .55rem .9rem; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .82rem;
+      cursor: pointer; transition: all var(--tr); white-space: nowrap; flex-shrink: 0;
+    }
+    .replay-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+    input[type=range] {
+      flex: 1; appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--yellow); box-shadow: 0 0 8px var(--yellow); cursor: grab; transition: transform .15s;
+    }
+    input[type=range]::-webkit-slider-thumb:active { transform: scale(1.25); cursor: grabbing; }
+    .progress-pct { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--muted); min-width: 34px; text-align: right; }
+
+    /* ── SIDE PANEL ── */
+    .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .info-head { padding: .85rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .65rem; }
+    .info-head-icon { font-size: 1rem; }
+    .info-head-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem; }
+    .info-body { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .65rem; }
+
+    .pi-hero { display: flex; align-items: baseline; gap: .6rem; justify-content: center; padding: .4rem 0 .2rem; }
+    .pi-hero-eq { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.3rem; color: var(--muted); }
+    .pi-hero-val {
+      font-family: 'DM Mono', monospace; font-weight: 500; font-size: 2.1rem; color: var(--yellow);
+      letter-spacing: -.01em;
+    }
+
+    .eq-row { display: flex; justify-content: space-between; align-items: baseline; font-size: .82rem; }
+    .eq-label { color: var(--muted); }
+    .eq-val { color: var(--yellow); font-family: 'DM Mono', monospace; font-weight: 500; }
+
+    .pi-bar-wrap { background: var(--surface); border-radius: 6px; height: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .pi-bar-fill { height: 100%; border-radius: 6px; background: var(--teal); transition: width .12s linear; }
+    .pi-val-row { display: flex; justify-content: space-between; align-items: center; }
+    .pi-approx { font-family: 'DM Mono', monospace; font-size: .85rem; color: var(--teal); }
+    .pi-real { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); }
+
+    .panel-note {
+      padding: .9rem 1.1rem; border-radius: 12px;
+      background: color-mix(in srgb, var(--yellow) 6%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--yellow) 20%, transparent);
+      font-size: .8rem; color: var(--muted); line-height: 1.55;
+    }
+    .panel-note strong { color: var(--yellow); }
+
+    .geogebra-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .65rem .9rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .8rem;
+      transition: all var(--tr);
+    }
+    .geogebra-link .gg-icon { flex-shrink: 0; font-size: .95rem; }
+    .geogebra-link strong { color: var(--text); font-weight: 600; }
+    .geogebra-link .gg-arrow { margin-left: auto; flex-shrink: 0; opacity: .6; transition: transform var(--tr); }
+    .geogebra-link:hover {
+      border-color: var(--yellow);
+      color: var(--text);
+      background: color-mix(in srgb, var(--yellow) 7%, transparent);
+    }
+    .geogebra-link:hover .gg-arrow { transform: translate(2px,-2px); opacity: 1; }
+
+    /* ── INSIGHTS ── */
+    .insights {
+      max-width: 1200px; margin: 0 auto; width: 100%;
+      padding: 0 2rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem;
+    }
+    .insight-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.1rem 1.25rem; display: flex; gap: .9rem; align-items: flex-start;
+    }
+    .insight-icon { font-size: 1.3rem; line-height: 1; margin-top: .1rem; }
+    .insight-text h4 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: .88rem; margin-bottom: .3rem; }
+    .insight-text p { font-size: .78rem; color: var(--muted); line-height: 1.55; }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2.5rem;
+      display: flex; justify-content: space-between; color: var(--muted); font-size: .82rem;
+    }
+
+    @media (max-width: 860px) {
+      .main-layout { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+      .insights { grid-template-columns: 1fr; padding: 0 1.25rem 2.5rem; }
+      nav { padding: .9rem 1.25rem; }
+      .page-header { padding: 2rem 1.25rem 1.25rem; }
+      .canvas-wrap { aspect-ratio: 4/3; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo"><span class="dot"></span>GeoMat 1r ESO</a>
+  <div class="nav-right">
+    <span class="capsula-label">Bloc 03 · Perímetres</span>
+    <a href="../teoria.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="../index.html">Inici</a> <span>›</span>
+    <a href="../teoria.html">Teoria</a> <span>›</span>
+    <span class="cur">El número π</span>
+  </div>
+  <h1>El número <em>π</em></h1>
+  <p>Mira com el cercle rodola sobre la recta. Quan completa una volta sencera, marca exactament π diàmetres — ni 3, ni 3,5: sempre 3,14159…</p>
+</div>
+
+<div class="main-layout">
+
+  <div class="canvas-col">
+    <div class="canvas-wrap">
+      <canvas id="mainCanvas" role="img" aria-label="Animació d'un cercle rodant sobre una recta graduada en diàmetres; arrossega el punt blanc per canviar el radi"></canvas>
+      <span class="canvas-hint" id="canvasHint">Arrossega el punt blanc per canviar el radi</span>
+    </div>
+    <div class="progress-row">
+      <button class="replay-btn" onclick="replay()" aria-label="Reprodueix l'animació de nou">↻ Reprodueix</button>
+      <input type="range" id="progressSlider" min="0" max="100" value="0" oninput="onProgressInput(this.value)" aria-label="Progrés de la volta del cercle">
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <div class="side-panel">
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">🔵</span><span class="info-head-title">Valor de π</span></div>
+      <div class="info-body">
+        <div class="pi-hero"><span class="pi-hero-eq">π ≈</span><span class="pi-hero-val" id="piHeroVal">3</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Dades del cercle</span></div>
+      <div class="info-body">
+        <div class="eq-row"><span class="eq-label">Radi (r)</span><span class="eq-val" id="valR">1.00</span></div>
+        <div class="eq-row"><span class="eq-label">Diàmetre (2r)</span><span class="eq-val" id="valDiam">2.00</span></div>
+        <div class="eq-row"><span class="eq-label">Circumferència (2πr)</span><span class="eq-val" id="valCirc">6.2832</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-head"><span class="info-head-icon">📏</span><span class="info-head-title">Diàmetres recorreguts</span></div>
+      <div class="info-body">
+        <div class="pi-bar-wrap"><div class="pi-bar-fill" id="piBarFill" style="width:0%"></div></div>
+        <div class="pi-val-row"><span class="pi-approx" id="diamTraveledVal">0,00000</span><span class="pi-real">π = 3,14159…</span></div>
+      </div>
+    </div>
+
+    <div class="panel-note">
+      <strong>💡 Recorda:</strong> π és sempre el mateix, per a qualsevol cercle, per petit o gran que sigui — és una constant.
+    </div>
+
+    <a class="geogebra-link" href="https://www.geogebra.org/m/HGaYJnMQ" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>El número π i la longitud de la circumferència</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+
+  </div>
+</div>
+
+<div class="insights">
+  <div class="insight-card">
+    <span class="insight-icon">♾️</span>
+    <div class="insight-text">
+      <h4>Un nombre que no s'acaba mai</h4>
+      <p>π té infinits decimals que no es repeteixen mai (és irracional). 3,14159 és només una aproximació, per bona que sigui.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">🔵</span>
+    <div class="insight-text">
+      <h4>Sempre el mateix, sigui quin sigui el cercle</h4>
+      <p>Arrossega el punt blanc per fer el cercle més gran o més petit: sempre calen 3,14159… diàmetres per completar la volta.</p>
+    </div>
+  </div>
+  <div class="insight-card">
+    <span class="insight-icon">⭕</span>
+    <div class="insight-text">
+      <h4>π també amaga l'àrea del cercle</h4>
+      <p>El mateix π que apareix aquí, a la longitud (2πr), torna a aparèixer a la fórmula de l'àrea del cercle (πr²).</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>GeoMat · Bloc 03 · Mesures, Àrees i Perímetres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx    = canvas.getContext('2d');
+const COL_TEAL   = '#48dbfb';
+const COL_YELLOW = '#f5c842';
+
+let W, H, dpr, startX, baselineY, rMin, rMax;
+let r, baseR, rInit = false;
+let draggingR = false;
+let animT = 0, animPlaying = false, animRAF = null, lastTime = null;
+const ANIM_MS = 4200;
+
+function resize() {
+  dpr = devicePixelRatio;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  W = canvas.width; H = canvas.height;
+
+  baselineY = H * 0.66;
+  startX    = W * 0.08;
+  rMax = Math.min((W * 0.90 - startX) / (Math.PI * 2), H * 0.30);
+  rMin = rMax * 0.35;
+
+  if (!rInit) {
+    r = Math.min(rMax * 0.62, H * 0.26);
+    baseR = r;
+    rInit = true;
+  } else {
+    r = Math.max(rMin, Math.min(rMax, r));
+  }
+  draw(animT);
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += W / 10) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += H / 8)  { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.restore();
+}
+
+function handlePos(theta) {
+  const centerX = startX + r * theta;
+  const centerY = baselineY - r;
+  return { x: centerX, y: centerY - r };
+}
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+  drawGrid();
+
+  const theta   = t * Math.PI * 2;
+  const centerX = startX + r * theta;
+  const centerY = baselineY - r;
+
+  // baseline
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 1.5 * dpr;
+  ctx.beginPath(); ctx.moveTo(startX - 14 * dpr, baselineY); ctx.lineTo(W * 0.96, baselineY); ctx.stroke();
+  ctx.restore();
+
+  // ruler ticks 0D..3D
+  for (let k = 0; k <= 3; k++) {
+    const tx = startX + k * 2 * r;
+    if (tx > W * 0.97) continue;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(245,200,66,.4)'; ctx.lineWidth = 1.5 * dpr;
+    ctx.beginPath(); ctx.moveTo(tx, baselineY - 7 * dpr); ctx.lineTo(tx, baselineY + 7 * dpr); ctx.stroke();
+    ctx.font = `${10.5 * dpr}px 'DM Mono', monospace`;
+    ctx.fillStyle = 'rgba(245,200,66,.65)'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(k + 'D', tx, baselineY + 11 * dpr);
+    ctx.restore();
+  }
+
+  // traced segment so far
+  ctx.save();
+  ctx.strokeStyle = COL_TEAL; ctx.lineWidth = 3 * dpr; ctx.lineCap = 'round';
+  ctx.shadowColor = COL_TEAL; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(startX, baselineY); ctx.lineTo(centerX, baselineY); ctx.stroke();
+  ctx.shadowBlur = 0; ctx.restore();
+
+  // circle
+  ctx.save();
+  ctx.beginPath(); ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+  ctx.fillStyle = COL_TEAL + '10'; ctx.fill();
+  ctx.strokeStyle = COL_TEAL; ctx.lineWidth = 2.5 * dpr;
+  ctx.shadowColor = COL_TEAL; ctx.shadowBlur = 10;
+  ctx.stroke(); ctx.shadowBlur = 0; ctx.restore();
+
+  // marker point tracing the cycloid (the "valve" on the wheel)
+  const markerX = centerX - r * Math.sin(theta);
+  const markerY = centerY + r * Math.cos(theta);
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.lineTo(markerX, markerY);
+  ctx.strokeStyle = COL_YELLOW + 'aa'; ctx.lineWidth = 2 * dpr; ctx.stroke();
+  ctx.beginPath(); ctx.arc(markerX, markerY, 5.5 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = COL_YELLOW; ctx.shadowColor = COL_YELLOW; ctx.shadowBlur = 10;
+  ctx.fill(); ctx.shadowBlur = 0; ctx.restore();
+
+  // radius handle (draggable, always drawn at the top of the circle)
+  const h = { x: centerX, y: centerY - r };
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.lineTo(h.x, h.y);
+  ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+  ctx.beginPath(); ctx.arc(h.x, h.y, 7 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 8;
+  ctx.fill(); ctx.shadowBlur = 0; ctx.restore();
+
+  updateLiveData(t, theta);
+}
+
+function updateLiveData(t, theta) {
+  const dispR = r / baseR;
+  const diam  = dispR * 2;
+  const circ  = dispR * 2 * Math.PI;
+  const traveled = theta / 2; // in diameter units, 0..π
+
+  document.getElementById('valR').textContent    = dispR.toFixed(2);
+  document.getElementById('valDiam').textContent = diam.toFixed(2);
+  document.getElementById('valCirc').textContent = circ.toFixed(4);
+
+  const nd = Math.min(8, Math.floor(t * 8));
+  document.getElementById('piHeroVal').textContent = nd === 0 ? '3' : Math.PI.toFixed(nd).replace('.', ',');
+
+  document.getElementById('diamTraveledVal').textContent = traveled.toFixed(5).replace('.', ',');
+  const pct = Math.min(100, (traveled / Math.PI) * 100);
+  document.getElementById('piBarFill').style.width = pct + '%';
+
+  document.getElementById('progressSlider').value = Math.round(t * 100);
+  document.getElementById('progressPct').textContent = Math.round(t * 100) + '%';
+}
+
+// ── ANIMATION (linear — constant rolling speed) ──
+function startAnim() {
+  animPlaying = true; lastTime = null;
+  animRAF = requestAnimationFrame(step);
+}
+function stopAnim() {
+  animPlaying = false;
+  if (animRAF) cancelAnimationFrame(animRAF);
+}
+function step(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = (ts - lastTime) / ANIM_MS;
+  lastTime = ts;
+  animT = Math.min(1, animT + dt);
+  draw(animT);
+  if (animT < 1) animRAF = requestAnimationFrame(step);
+  else stopAnim();
+}
+function onProgressInput(val) {
+  hideHint();
+  stopAnim();
+  animT = val / 100;
+  draw(animT);
+}
+function replay() {
+  hideHint();
+  stopAnim();
+  animT = 0;
+  draw(0);
+  startAnim();
+}
+
+function hideHint() {
+  document.getElementById('canvasHint').classList.add('hidden');
+}
+
+// ── RADIUS DRAG ──
+function pointerXY(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * dpr, y: (clientY - rect.top) * dpr };
+}
+function tryStartDrag(e) {
+  const theta = animT * Math.PI * 2;
+  const h = handlePos(theta);
+  const p = pointerXY(e);
+  if (Math.hypot(p.x - h.x, p.y - h.y) < 24 * dpr) {
+    draggingR = true;
+    hideHint();
+  }
+}
+function dragMove(e) {
+  if (!draggingR) return;
+  const p = pointerXY(e);
+  let newR = (baselineY - p.y) / 2;
+  newR = Math.max(rMin, Math.min(rMax, newR));
+  r = newR;
+  draw(animT);
+}
+function dragEnd() { draggingR = false; }
+
+canvas.addEventListener('mousedown', tryStartDrag);
+canvas.addEventListener('mousemove', dragMove);
+window.addEventListener('mouseup', dragEnd);
+canvas.addEventListener('touchstart', e => { tryStartDrag(e); }, { passive: true });
+canvas.addEventListener('touchmove', e => { if (draggingR) { e.preventDefault(); dragMove(e); } }, { passive: false });
+canvas.addEventListener('touchend', dragEnd);
+
+window.addEventListener('resize', resize);
+resize();
+startAnim();
+</script>
+</body>
+</html>

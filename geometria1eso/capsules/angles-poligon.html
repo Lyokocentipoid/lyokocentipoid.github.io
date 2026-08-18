@@ -18,7 +18,7 @@
       --green:   #3dffa0;
       --purple:  #b47fff;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .2s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -119,6 +119,26 @@
 
     /* ── SIDE PANEL ── */
     .side-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .geogebra-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .65rem .9rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .8rem;
+      transition: all var(--tr);
+    }
+    .geogebra-link .gg-icon { flex-shrink: 0; font-size: .95rem; }
+    .geogebra-link strong { color: var(--text); font-weight: 600; }
+    .geogebra-link .gg-arrow { margin-left: auto; flex-shrink: 0; opacity: .6; transition: transform var(--tr); }
+    .geogebra-link:hover {
+      border-color: var(--green);
+      color: var(--text);
+      background: color-mix(in srgb, var(--green) 7%, transparent);
+    }
+    .geogebra-link:hover .gg-arrow { transform: translate(2px,-2px); opacity: 1; }
 
     /* ── POLYGON SELECTOR ── */
     .poly-selector {
@@ -305,7 +325,7 @@
   <!-- ESQUERRA -->
   <div class="canvas-col">
     <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="mainCanvas"></canvas>
+      <canvas id="mainCanvas" role="img" aria-label="Polígon interactiu: arrossega els vèrtexs i comprova la suma dels angles interiors"></canvas>
       <div class="canvas-hint" id="hint">Arrossega un vèrtex per deformar el polígon</div>
     </div>
 
@@ -357,7 +377,7 @@
         </button>
         <button class="poly-btn" onclick="setPolygon(9)">
           <span class="poly-icon">◯</span>
-          <span>Ennèàgon</span>
+          <span>Eneàgon</span>
           <span class="poly-n">n=9</span>
         </button>
         <button class="poly-btn" onclick="setPolygon(10)">
@@ -387,6 +407,11 @@
         <tbody id="formulaTable"></tbody>
       </table>
     </div>
+
+    <a class="geogebra-link" href="https://www.geogebra.org/m/FXDpTwqH" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Suma dels angles interiors d'un polígon</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
 
   </div>
 </div>
@@ -425,7 +450,7 @@
 // ─────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────
-const POLY_NAMES = ['','','','Triangle','Quadrilàter','Pentàgon','Hexàgon','Heptàgon','Octàgon','Ennèàgon','Decàgon'];
+const POLY_NAMES = ['','','','Triangle','Quadrilàter','Pentàgon','Hexàgon','Heptàgon','Octàgon','Eneàgon','Decàgon'];
 const VERTEX_COLORS = ['#3dffa0','#3d8bff','#ff5f6d','#f5c842','#b47fff','#ff9f43','#48dbfb','#ff6b9d','#a8ff3e','#ff3ea8'];
 
 let nSides    = 5;
