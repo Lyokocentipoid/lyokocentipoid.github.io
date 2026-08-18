@@ -21,7 +21,7 @@
       --purple:   #b47fff;
 
       --text:     #e8eaf6;
-      --muted:    #7a7fa8;
+      --muted:    #868bb5;
 
       --radius:   16px;
       --transition: .25s cubic-bezier(.4,0,.2,1);
@@ -265,10 +265,13 @@
     }
 
     .tema-card {
+      display: block;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 2rem;
+      text-decoration: none;
+      color: inherit;
       transition: all var(--transition);
       position: relative;
       overflow: hidden;
@@ -472,8 +475,8 @@
       .seccions-grid { grid-template-columns: 1fr; }
       .seccio-card.big { flex-direction: column; gap: 1.5rem; }
       .seccio-card.big .seccio-preview { display: none; }
-      nav { padding: 1rem 1.5rem; }
-      .nav-links { gap: 1.2rem; }
+      nav { padding: 1rem 1.5rem; flex-wrap: wrap; row-gap: .6rem; }
+      .nav-links { gap: 1.2rem; flex-basis: 100%; justify-content: center; }
     }
   </style>
 </head>
@@ -609,7 +612,7 @@
       </div>
       <div class="temes-grid">
 
-        <div class="tema-card reveal" data-color="blue" style="transition-delay:.1s">
+        <a href="teoria.html#bloc01" class="tema-card reveal" data-color="blue" style="transition-delay:.1s">
           <div class="tema-icon">📐</div>
           <p class="tema-num">Bloc 01</p>
           <h3>Rectes i Angles</h3>
@@ -620,9 +623,9 @@
             <li>Operacions amb angles</li>
             <li>Angles a les figures 2D</li>
           </ul>
-        </div>
+        </a>
 
-        <div class="tema-card reveal" data-color="yellow" style="transition-delay:.2s">
+        <a href="teoria.html#bloc02" class="tema-card reveal" data-color="yellow" style="transition-delay:.2s">
           <div class="tema-icon">🔷</div>
           <p class="tema-num">Bloc 02</p>
           <h3>Figures i Cossos</h3>
@@ -632,9 +635,9 @@
             <li>Teorema de Pitàgores</li>
             <li>Cossos de revolució</li>
           </ul>
-        </div>
+        </a>
 
-        <div class="tema-card reveal" data-color="coral" style="transition-delay:.3s">
+        <a href="teoria.html#bloc03" class="tema-card reveal" data-color="coral" style="transition-delay:.3s">
           <div class="tema-icon">📏</div>
           <p class="tema-num">Bloc 03</p>
           <h3>Mesures, Àrees i Perímetres</h3>
@@ -644,7 +647,7 @@
             <li>Canvis d'unitat</li>
             <li>Superfícies: triangles, quadrilàters, cercles…</li>
           </ul>
-        </div>
+        </a>
 
       </div>
     </div>

@@ -18,7 +18,7 @@
       --green:   #3dffa0;
       --purple:  #b47fff;
       --text:    #e8eaf6;
-      --muted:   #7a7fa8;
+      --muted:   #868bb5;
       --tr:      .22s cubic-bezier(.4,0,.2,1);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -201,8 +201,8 @@
     }
 
     @media (max-width: 768px) {
-      nav { padding: 1rem 1.5rem; }
-      .nav-links { gap: 1.2rem; }
+      nav { padding: 1rem 1.5rem; flex-wrap: wrap; row-gap: .6rem; }
+      .nav-links { gap: 1.2rem; flex-basis: 100%; justify-content: center; }
       .page-header { padding: 3rem 1.5rem 2rem; }
       .main { padding: 2rem 1.5rem 4rem; }
       .bloc-desc { display: none; }
