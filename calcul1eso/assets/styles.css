@@ -460,6 +460,19 @@ main { position: relative; z-index: 1; }
 }
 .note-box strong { color: var(--petrol); }
 
+/* ── PRACTICA A GEOGEBRA (recurs extern addicional, no és part de la lliçó) ── */
+.geogebra-link {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .78rem; color: var(--muted); text-decoration: none;
+  padding: .55rem .85rem; border: 1px dashed var(--border); border-radius: 10px;
+  transition: all var(--tr);
+}
+.geogebra-link .gg-icon { flex-shrink: 0; font-size: .95rem; }
+.geogebra-link strong { color: var(--ink); font-weight: 600; }
+.geogebra-link .gg-arrow { margin-left: auto; flex-shrink: 0; opacity: .6; transition: transform var(--tr); }
+.geogebra-link:hover { border-color: var(--m-color, var(--petrol)); color: var(--ink); background: color-mix(in srgb, var(--m-color, var(--petrol)) 7%, transparent); }
+.geogebra-link:hover .gg-arrow { transform: translate(2px,-2px); opacity: 1; }
+
 /* ── MINI-QUIZ / POSA'T A PROVA ── */
 .quiz-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .8rem; }
 .quiz-box h4 { font-family: var(--font-display); font-weight: 700; font-size: .9rem; }
@@ -500,7 +513,7 @@ footer {
 @media (max-width: 860px) {
   .main-layout { grid-template-columns: 1fr; padding: 1.5rem; }
   .info-side { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: .75rem; }
-  .info-title, .divider, .note-box, .quiz-box { grid-column: 1 / -1; }
+  .info-title, .divider, .note-box, .quiz-box, .geogebra-link { grid-column: 1 / -1; }
 }
 @media (max-width: 768px) {
   .hero { grid-template-columns: 1fr; padding: 3rem 1.5rem 3rem; }
