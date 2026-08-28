@@ -108,6 +108,22 @@
     #angleCanvas {
       display: block;
       width: 100%; height: 100%;
+      /* Let the canvas own the gesture: the browser must not pan/zoom while
+         dragging. Replaces the old preventDefault + {passive:false} approach. */
+      touch-action: none;
+    }
+    #angleCanvas:focus { outline: none; }
+    #angleCanvas:focus-visible {
+      outline: 3px solid var(--angle-color);
+      outline-offset: -3px;
+    }
+
+    /* Respect users who ask for less motion (WCAG 2.3.3 / vestibular safety). */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
     }
 
     .canvas-hint {
@@ -199,6 +215,12 @@
     }
     .type-card:hover { border-color: var(--t-color); transform: translateX(4px); }
     .type-card:hover::before { transform: scaleY(1); }
+    .type-card:focus { outline: none; }
+    .type-card:focus-visible {
+      outline: 3px solid var(--t-color);
+      outline-offset: 2px;
+      border-color: var(--t-color);
+    }
     .type-card.active {
       border-color: var(--t-color);
       background: color-mix(in srgb, var(--t-color) 8%, var(--card));
@@ -271,8 +293,13 @@
     </div>
 
     <div class="canvas-wrap" id="canvasWrap">
-      <canvas id="angleCanvas" role="img" aria-label="Diagrama interactiu: arrossega el raig per canviar el tipus d'angle"></canvas>
-      <div class="canvas-hint" id="hint">Fes clic i arrossega per moure el raig</div>
+      <canvas id="angleCanvas"
+              tabindex="0"
+              role="slider"
+              aria-label="Obertura de l'angle"
+              aria-valuemin="0" aria-valuemax="360"
+              aria-valuenow="45" aria-valuetext="45 graus, angle agut"></canvas>
+      <div class="canvas-hint" id="hint">Arrossega el raig, o fes servir les fletxes ← →</div>
     </div>
 
     <div class="angle-badge" id="angleBadge">
@@ -333,8 +360,8 @@
       </div>
     </div>
 
-    <div class="type-card" id="card-convex" style="--t-color:#b47fff" data-min="181" data-max="359">
-      <canvas class="type-mini-canvas" id="mini-convex" aria-hidden="true"></canvas>
+    <div class="type-card" id="card-concau" style="--t-color:#b47fff" data-min="181" data-max="359">
+      <canvas class="type-mini-canvas" id="mini-concau" aria-hidden="true"></canvas>
       <div class="type-info">
         <div class="type-name">Angle còncau</div>
         <div class="type-range">180° &lt; α &lt; 360°</div>
@@ -374,7 +401,7 @@ const TYPES = [
   { id: 'recte',  name: 'Angle recte',   def: 'Mesura exactament 90°. Els dos raigs són perpendiculars.', color: '#3d8bff', min: 90,  max: 90  },
   { id: 'obtus',  name: 'Angle obtús',   def: 'Mesura entre 90° i 180°. Més obert que una cantonada.',    color: '#f5c842', min: 91,  max: 179 },
   { id: 'pla',    name: 'Angle pla',     def: 'Mesura exactament 180°. Els raigs formen una recta.',      color: '#ff5f6d', min: 180, max: 180 },
-  { id: 'convex', name: 'Angle còncau',  def: 'Mesura entre 180° i 360°. Major que un angle pla.',        color: '#b47fff', min: 181, max: 359 },
+  { id: 'concau', name: 'Angle còncau',  def: 'Mesura entre 180° i 360°. Major que un angle pla.',        color: '#b47fff', min: 181, max: 359 },
   { id: 'complet',name: 'Angle complet', def: 'Mesura 360°. Una revolució completa.',                      color: '#e8eaf6', min: 360, max: 360 },
 ];
 
@@ -531,92 +558,152 @@ function updateUI(deg) {
   document.documentElement.style.setProperty('--angle-color', type.color);
   badge.classList.add('active');
 
+  // Keep the slider semantics in sync so a screen reader announces both the
+  // measure and its classification on every change.
+  canvas.setAttribute('aria-valuenow', rounded);
+  canvas.setAttribute('aria-valuetext', `${rounded} graus, ${type.name.toLowerCase()}`);
+
   // Highlight matching card
-  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('active'));
-  const activeCard = document.getElementById('card-' + type.id);
-  if (activeCard) activeCard.classList.add('active');
+  document.querySelectorAll('.type-card').forEach(c => {
+    const on = c.id === 'card-' + type.id;
+    c.classList.toggle('active', on);
+    c.setAttribute('aria-current', on ? 'true' : 'false');
+  });
 }
 
+// Map client coords → canvas backing-store coords using the *measured* ratio
+// instead of assuming devicePixelRatio. Stays correct under browser zoom or when
+// the window moves to a screen with a different pixel ratio before resize fires.
 function angleFromPointer(e) {
   const rect = canvas.getBoundingClientRect();
-  const dpr  = devicePixelRatio;
-  let clientX, clientY;
-  if (e.touches) {
-    clientX = e.touches[0].clientX;
-    clientY = e.touches[0].clientY;
-  } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
-  }
-  const x = (clientX - rect.left) * dpr - cx;
-  const y = (clientY - rect.top)  * dpr - cy;
+  if (!rect.width || !rect.height) return angleDeg;   // canvas not laid out yet
+  const x = (e.clientX - rect.left) * (canvas.width  / rect.width)  - cx;
+  const y = (e.clientY - rect.top)  * (canvas.height / rect.height) - cy;
   let deg = -Math.atan2(y, x) * 180 / Math.PI;
   if (deg < 0) deg += 360;
   return deg;
 }
 
-function onStart(e) {
-  e.preventDefault();
+function markInteracted() {
+  if (hasInteracted) return;
+  hasInteracted = true;
+  hint.classList.add('hidden');
+}
+
+// Single entry point for every way the angle can change (drag, keyboard, card
+// click, animation). Keeps canvas + panel + ARIA from drifting apart.
+function setAngle(deg) {
+  angleDeg = deg;
+  updateUI(angleDeg);
+  draw();
+}
+
+// ── POINTER (mouse + touch + pen in one path) ──
+// setPointerCapture routes every later event of this gesture to the canvas even
+// when the pointer leaves it, so a drag is no longer dropped the moment the
+// student's hand strays outside the box.
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;  // ignore right/middle click
+  canvas.setPointerCapture(e.pointerId);
   dragging = true;
-  if (!hasInteracted) {
-    hasInteracted = true;
-    hint.classList.add('hidden');
-  }
-  angleDeg = angleFromPointer(e);
-  updateUI(angleDeg);
-  draw();
-}
+  canvas.focus();
+  markInteracted();
+  stopAnim();                       // a drag always wins over a running animation
+  setAngle(angleFromPointer(e));
+});
 
-function onMove(e) {
+canvas.addEventListener('pointermove', e => {
   if (!dragging) return;
+  setAngle(angleFromPointer(e));
+});
+
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);   // system gesture / call interrupt
+
+// ── KEYBOARD ──
+// Arrows: 1°, with Shift for a coarse 10° sweep. Home/End/PageUp/PageDown jump to
+// the landmark angles, so the whole taxonomy is reachable without a pointer.
+canvas.addEventListener('keydown', e => {
+  const step = e.shiftKey ? 10 : 1;
+  let next = null;
+  switch (e.key) {
+    case 'ArrowRight': case 'ArrowUp':   next = angleDeg + step; break;
+    case 'ArrowLeft':  case 'ArrowDown': next = angleDeg - step; break;
+    case 'Home':     next = 0;   break;
+    case 'End':      next = 360; break;
+    case 'PageUp':   next = Math.min(360, nextLandmark(angleDeg, +1)); break;
+    case 'PageDown': next = Math.max(0,   nextLandmark(angleDeg, -1)); break;
+    default: return;
+  }
   e.preventDefault();
-  angleDeg = angleFromPointer(e);
-  updateUI(angleDeg);
-  draw();
+  markInteracted();
+  stopAnim();
+  // Clamp rather than wrap: the declared range is 0–360 and a slider that
+  // silently jumps from 0° back to 359° would contradict its own ARIA contract.
+  setAngle(Math.max(0, Math.min(360, next)));
+});
+
+const LANDMARKS = [0, 45, 90, 135, 180, 270, 360];
+function nextLandmark(from, dir) {
+  const d = Math.round(from);
+  const list = dir > 0 ? LANDMARKS : [...LANDMARKS].reverse();
+  return list.find(v => dir > 0 ? v > d : v < d) ?? (dir > 0 ? 360 : 0);
 }
 
-function onEnd() { dragging = false; }
-
-canvas.addEventListener('mousedown',  onStart);
-canvas.addEventListener('mousemove',  onMove);
-canvas.addEventListener('mouseup',    onEnd);
-canvas.addEventListener('mouseleave', onEnd);
-canvas.addEventListener('touchstart', onStart, { passive: false });
-canvas.addEventListener('touchmove',  onMove,  { passive: false });
-canvas.addEventListener('touchend',   onEnd);
-
-// Click on type card → jump to representative angle
+// Type cards act as buttons: pointer *and* keyboard, since they are <div>s.
 document.querySelectorAll('.type-card').forEach(card => {
-  card.addEventListener('click', () => {
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  const jump = () => {
     const min = +card.dataset.min;
     const max = +card.dataset.max;
-    const target = min === max ? min : Math.round((min + max) / 2);
-    animateTo(target);
-    if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); }
+    animateTo(min === max ? min : Math.round((min + max) / 2));
+    markInteracted();
+  };
+  card.addEventListener('click', jump);
+  card.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jump(); }
   });
 });
 
+// ── TWEEN ──
+// A single rAF handle, always cancelled before starting a new tween. Previously
+// each call spawned an independent loop with its own start/target closure, so two
+// quick card clicks left two loops writing to angleDeg on the same frame — the
+// angle visibly stuttered and both loops ran to completion.
+let animRAF = null;
+function stopAnim() {
+  if (animRAF !== null) { cancelAnimationFrame(animRAF); animRAF = null; }
+}
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 function animateTo(target) {
+  stopAnim();
+  if (reducedMotion.matches) { setAngle(target); return; }  // jump, don't sweep
   const start = angleDeg;
   const diff  = target - start;
   const dur   = 400;
   const t0    = performance.now();
   function step(now) {
-    const p = Math.min((now - t0) / dur, 1);
+    const p    = Math.min((now - t0) / dur, 1);
     const ease = 1 - Math.pow(1 - p, 3);
-    angleDeg = start + diff * ease;
-    updateUI(angleDeg);
-    draw();
-    if (p < 1) requestAnimationFrame(step);
-    else { angleDeg = target; updateUI(target); draw(); }
+    setAngle(start + diff * ease);
+    if (p < 1) { animRAF = requestAnimationFrame(step); }
+    else       { animRAF = null; setAngle(target); }
   }
-  requestAnimationFrame(step);
+  animRAF = requestAnimationFrame(step);
 }
 
 // ─────────────────────────────────────────────
 //  MINI CANVASES (type cards)
 // ─────────────────────────────────────────────
-const miniAngles = { null: 0, agut: 45, recte: 90, obtus: 135, pla: 180, convex: 270, complet: 359.5 };
+const miniAngles = { null: 0, agut: 45, recte: 90, obtus: 135, pla: 180, concau: 270, complet: 359.5 };
 
 function drawMini(id, color, deg) {
   const c  = document.getElementById('mini-' + id);

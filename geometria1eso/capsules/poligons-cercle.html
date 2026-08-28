@@ -103,6 +103,13 @@
       overflow: hidden; position: relative; aspect-ratio: 1/1;
     }
     canvas { display: block; width: 100%; height: 100%; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
     .canvas-label {
       position: absolute; top: .85rem; left: 50%; transform: translateX(-50%);
       font-size: .72rem; font-weight: 500; text-transform: uppercase; letter-spacing: .09em;
@@ -158,6 +165,23 @@
     .formula-label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .2rem; }
     .formula-expr  { font-family: 'DM Mono', monospace; font-size: .82rem; color: var(--text); line-height: 1.4; }
     .formula-val   { font-family: 'DM Mono', monospace; font-size: .88rem; margin-top: .15rem; }
+    .fl-note {
+      text-transform: none; letter-spacing: 0; opacity: .8;
+      font-style: italic; margin-left: .35rem;
+    }
+
+    /* Derivation note: explains where the side formula comes from */
+    .derivation {
+      margin-top: .85rem; padding: .8rem .9rem;
+      background: color-mix(in srgb, var(--yellow) 6%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--yellow) 20%, transparent);
+      border-radius: 10px;
+      font-size: .78rem; color: var(--muted); line-height: 1.6;
+    }
+    .derivation strong { color: var(--yellow); display: block; margin-bottom: .3rem; }
+    .derivation em { color: var(--text); font-style: italic; }
+    .derivation .mono,
+    .pi-section .mono { font-family: 'DM Mono', monospace; color: var(--text); font-size: .95em; }
 
     /* π comparison bar */
     .pi-section { display: flex; flex-direction: column; gap: .65rem; }
@@ -167,6 +191,7 @@
     .pi-val-row { display: flex; justify-content: space-between; align-items: center; }
     .pi-approx { font-family: 'DM Mono', monospace; font-size: .85rem; }
     .pi-real   { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); }
+    .pi-gap    { font-size: .75rem; color: var(--muted); text-align: right; margin-top: -.2rem; }
 
     /* INSIGHTS */
     .insights {
@@ -283,15 +308,25 @@
             <span class="formula-icon">📐</span>
             <div class="formula-content">
               <div class="formula-label">Angle interior</div>
-              <div class="formula-expr">(n − 2) × 180° / n</div>
+              <div class="formula-expr" role="math"
+                   aria-label="Angle interior igual a, obriu parèntesi, n menys 2, tanqueu parèntesi, per 180 graus, dividit per n">(n − 2) × 180° ÷ n</div>
               <div class="formula-val" id="fAngle" style="color:var(--yellow)">—</div>
             </div>
           </div>
           <div class="formula-row">
             <span class="formula-icon">📏</span>
             <div class="formula-content">
-              <div class="formula-label">Perímetre (costat = r)</div>
-              <div class="formula-expr">n × 2r·sin(π/n)</div>
+              <div class="formula-label">Costat <span class="fl-note">r = radi del cercle</span></div>
+              <div class="formula-expr" role="math"
+                   aria-label="c igual a 2 r per sinus de 180 graus dividit per n">c = 2r · sin(180° ÷ n)</div>
+              <div class="formula-val" id="fSide" style="color:var(--yellow)">—</div>
+            </div>
+          </div>
+          <div class="formula-row">
+            <span class="formula-icon">⭕</span>
+            <div class="formula-content">
+              <div class="formula-label">Perímetre</div>
+              <div class="formula-expr" role="math" aria-label="P igual a n per c">P = n · c</div>
               <div class="formula-val" id="fPerim" style="color:var(--yellow)">—</div>
             </div>
           </div>
@@ -299,10 +334,19 @@
             <span class="formula-icon">⬛</span>
             <div class="formula-content">
               <div class="formula-label">Àrea</div>
-              <div class="formula-expr">½ · n · r² · sin(2π/n)</div>
+              <div class="formula-expr" role="math"
+                   aria-label="A igual a un mig, per n, per r al quadrat, per sinus de 360 graus dividit per n">A = ½ · n · r² · sin(360° ÷ n)</div>
               <div class="formula-val" id="fArea" style="color:var(--yellow)">—</div>
             </div>
           </div>
+        </div>
+
+        <div class="derivation">
+          <strong>D'on surt el costat?</strong> Uneix el centre amb dos vèrtexs veïns: obtens un
+          triangle isòsceles amb dos costats de mida <em>r</em> i un angle central de
+          <span class="mono">360° ÷ n</span>. L'altura d'aquest triangle el parteix en dos triangles
+          rectangles iguals, cadascun amb un angle de <span class="mono">180° ÷ n</span> al centre i
+          un catet que fa <em>mig costat</em>. D'aquí surt <span class="mono">c = 2r · sin(180° ÷ n)</span>.
         </div>
       </div>
     </div>
@@ -315,10 +359,11 @@
       <div class="info-body">
         <div class="pi-section">
           <p style="font-size:.78rem;color:var(--muted);line-height:1.55">
-            El perímetre del polígon inscrit dividit pel diàmetre s'aproxima a π quan n creix.
+            π és el que mesura una circumferència comparada amb el seu diàmetre. Si canviem la
+            circumferència pel perímetre del polígon inscrit, obtenim una <em style="color:var(--text);font-style:normal">aproximació</em> de π.
           </p>
           <div class="pi-label-row">
-            <span>Perim / (2r)</span>
+            <span class="mono">P ÷ 2r</span>
             <span id="piApproxLabel">—</span>
           </div>
           <div class="pi-bar-wrap">
@@ -326,7 +371,21 @@
           </div>
           <div class="pi-val-row">
             <span class="pi-approx" id="piApprox" style="color:var(--yellow)">—</span>
-            <span class="pi-real">π = 3.14159…</span>
+            <span class="pi-real">π = 3,14159…</span>
+          </div>
+          <div class="pi-gap">
+            Encara li falten <span class="mono" id="piGap">—</span> per arribar a π.
+          </div>
+          <div class="derivation" style="margin-top:.2rem">
+            <strong>Sempre es queda curt</strong>
+            El polígon va <em>per dins</em> del cercle, i el camí recte entre dos vèrtexs és més curt
+            que l'arc que els uneix. Per això el perímetre és <em>sempre menor</em> que la
+            circumferència, i aquesta aproximació sempre es queda <em>per sota</em> de π: mai la
+            supera, per moltíssims costats que hi posem.
+            <br><br>
+            Arquimedes ho va resoldre mesurant alhora un polígon <em>per dins</em> i un altre
+            <em>per fora</em>: així π quedava atrapat entre dos valors, i sabia del cert entre quins
+            dos números es trobava.
           </div>
         </div>
       </div>
@@ -615,37 +674,43 @@ function drawCircle() {
 
   // Update circle metrics
   const R = 1; // unit radius
-  document.getElementById('mCirc').textContent    = `≈ ${(2*Math.PI*R).toFixed(4)}`;
-  document.getElementById('mAreaCirc').textContent = `≈ ${(Math.PI*R*R).toFixed(4)}`;
+  document.getElementById('mCirc').textContent     = `= ${ca(2*Math.PI*R, 4)} · r`;
+  document.getElementById('mAreaCirc').textContent = `= ${ca(Math.PI*R*R, 4)} · r²`;
 }
 
 // ─────────────────────────────────────────
 // PANEL UPDATE
 // ─────────────────────────────────────────
+// Catalan decimal separator (comma) — matches what students use at school.
+function ca(x, d) { return x.toFixed(d).replace('.', ','); }
+
 function updatePanel() {
   const n = nSides;
-  const r = 1; // unit radius
+  const r = 1; // unit circumradius — every length below is "in radii"
   const angleInt = (n-2)*180/n;
-  const perim    = n * 2 * r * Math.sin(Math.PI/n);
+  const side     = 2 * r * Math.sin(Math.PI/n);   // c = 2r·sin(180°/n)
+  const perim    = n * side;                      // P = n·c
   const area     = 0.5 * n * r*r * Math.sin(2*Math.PI/n);
-  const piApprox = perim / (2*r);   // = n·sin(π/n)
+  const piApprox = perim / (2*r);                 // = n·sin(180°/n) → π
 
   document.getElementById('polyName').textContent       = POLY_NAMES[n] || `Polígon de ${n} costats`;
   document.getElementById('polySidesBadge').textContent = `${n} costats`;
-  document.getElementById('mAngle').textContent         = angleInt.toFixed(2) + '°';
-  document.getElementById('mPerim').textContent         = perim.toFixed(4);
-  document.getElementById('fAngle').textContent         = angleInt.toFixed(2) + '°';
-  document.getElementById('fPerim').textContent         = perim.toFixed(4) + ' (r=1)';
-  document.getElementById('fArea').textContent          = area.toFixed(4) + ' (r=1)';
+  document.getElementById('mAngle').textContent         = ca(angleInt, 2) + '°';
+  document.getElementById('mPerim').textContent         = ca(perim, 4);
+  document.getElementById('fAngle').textContent         = ca(angleInt, 2) + '°';
+  document.getElementById('fSide').textContent          = ca(side, 4) + ' · r';
+  document.getElementById('fPerim').textContent         = ca(perim, 4) + ' · r';
+  document.getElementById('fArea').textContent          = ca(area, 4) + ' · r²';
 
-  // π approximation
+  // π approximation — always a LOWER bound (inscribed polygon), so the gap is never negative.
   const pct = Math.min(100, (piApprox / Math.PI) * 100);
   document.getElementById('piBarFill').style.width = pct + '%';
   // colour bar: yellow → teal as it gets closer
   const t = Math.min(1, (pct-50)/50);
   document.getElementById('piBarFill').style.background = t > 0.9 ? COL_CIRC : COL_POLY;
-  document.getElementById('piApprox').textContent      = piApprox.toFixed(5);
-  document.getElementById('piApproxLabel').textContent = piApprox.toFixed(5);
+  document.getElementById('piApprox').textContent      = ca(piApprox, 5);
+  document.getElementById('piApproxLabel').textContent = ca(piApprox, 5);
+  document.getElementById('piGap').textContent         = ca(Math.PI - piApprox, 5);
 
   // many-sides colour for badge
   const isMany = n >= 16;

@@ -128,7 +128,14 @@
       transition: border-color var(--tr);
       aspect-ratio: 4/3;
     }
-    #mainCanvas { display: block; width: 100%; height: 100%; }
+    #mainCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
 
     .canvas-hint {
       position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
@@ -819,14 +826,15 @@ function setMode(m) {
 // ─────────────────────────────────────────
 // DRAG INTERACTION (secant mode)
 // ─────────────────────────────────────────
+// Two lines crossing define the same pair of angles at θ and 180−θ, so the
+// reading is folded into 0–180 and then clamped away from the degenerate ends.
+// Measured ratio instead of assuming devicePixelRatio.
 function angleFromPointer(e) {
   const rect = canvas.getBoundingClientRect();
-  const dpr  = devicePixelRatio;
-  const cx   = W * 0.5, cy = H * 0.5;
-  let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  const x = (clientX - rect.left) * dpr - cx;
-  const y = (clientY - rect.top)  * dpr - cy;
+  if (!rect.width || !rect.height) return angleDeg;
+  const cx = W * 0.5, cy = H * 0.5;
+  const x = (e.clientX - rect.left) * (canvas.width  / rect.width)  - cx;
+  const y = (e.clientY - rect.top)  * (canvas.height / rect.height) - cy;
   let deg = -Math.atan2(y, x) * 180 / Math.PI;
   if (deg < 0) deg += 360;
   if (deg > 180) deg = 360 - deg;       // fold to 0–180
@@ -836,30 +844,32 @@ function angleFromPointer(e) {
 let dragStartY = 0;
 let dragStartDist = 0;
 
-function onStart(e) {
-  if (mode !== 'secant' && mode !== 'parallel') return;
+// ── POINTER (mouse + touch + pen) ──
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  if (mode !== 'secant' && mode !== 'parallel') return;   // perp mode is not draggable
+  canvas.setPointerCapture(e.pointerId);
   dragging = true;
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
   if (mode === 'secant') {
     angleDeg = angleFromPointer(e);
     updateSecantUI(angleDeg);
   } else {
-    const rect = canvas.getBoundingClientRect();
-    dragStartY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStartY    = e.clientY;
     dragStartDist = parallelDist;
   }
   draw();
-}
-function onMove(e) {
+});
+
+canvas.addEventListener('pointermove', e => {
   if (!dragging) return;
-  e.preventDefault();
   if (mode === 'secant') {
     angleDeg = angleFromPointer(e);
     updateSecantUI(angleDeg);
   } else if (mode === 'parallel') {
     const rect = canvas.getBoundingClientRect();
-    const curY = e.touches ? e.touches[0].clientY : e.clientY;
-    const dy = curY - dragStartY;
+    if (!rect.height) return;
+    const dy = e.clientY - dragStartY;
     // Moving up increases distance, moving down decreases
     const newDist = Math.max(0, Math.min(100, dragStartDist - Math.round(dy / rect.height * 100)));
     parallelDist = newDist;
@@ -867,16 +877,15 @@ function onMove(e) {
     updateParallelUI(newDist);
   }
   draw();
-}
-function onEnd() { dragging = false; }
+});
 
-canvas.addEventListener('mousedown',  onStart);
-canvas.addEventListener('mousemove',  onMove);
-canvas.addEventListener('mouseup',    onEnd);
-canvas.addEventListener('mouseleave', onEnd);
-canvas.addEventListener('touchstart', onStart, { passive: false });
-canvas.addEventListener('touchmove',  onMove,  { passive: false });
-canvas.addEventListener('touchend',   onEnd);
+function endLineDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endLineDrag);
+canvas.addEventListener('pointercancel', endLineDrag);
 
 // Slider (secant angle)
 document.getElementById('angleSlider').addEventListener('input', function () {

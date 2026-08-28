@@ -114,6 +114,16 @@
     }
     @keyframes cellIn { from { opacity: 0; transform: scale(.35); } to { opacity: 1; transform: scale(1); } }
 
+    /* The 100-cell cascade is the most motion-heavy moment on the site: with the
+       reduced-motion preference set, the cells simply appear. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
+
     .grid-hint {
       position: absolute; bottom: .8rem; left: 50%; transform: translateX(-50%);
       font-size: .72rem; color: var(--muted); background: rgba(13,15,26,.75); backdrop-filter: blur(6px);

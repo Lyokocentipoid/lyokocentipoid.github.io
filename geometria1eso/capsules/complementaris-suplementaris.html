@@ -144,6 +144,14 @@
     .panel-canvas-wrap canvas {
       display: block;
       width: 100%; height: 100%;
+      touch-action: none;   /* the canvas owns the gesture; no pan/zoom while dragging */
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
     }
 
     /* Degrees row */
@@ -582,13 +590,13 @@ function makePanel({ canvasId, wrapId, total,
     ctx.restore();
   }
 
+  // Measured ratio instead of assuming devicePixelRatio: correct under browser
+  // zoom and when the window moves to a screen with a different pixel ratio.
   function angleFromPointer(e) {
     const rect = canvas.getBoundingClientRect();
-    const dpr  = devicePixelRatio;
-    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const x = (clientX - rect.left) * dpr - cx;
-    const y = (clientY - rect.top)  * dpr - cy;
+    if (!rect.width || !rect.height) return alphaDeg;
+    const x = (e.clientX - rect.left) * (canvas.width  / rect.width)  - cx;
+    const y = (e.clientY - rect.top)  * (canvas.height / rect.height) - cy;
     let deg = -Math.atan2(y, x) * 180 / Math.PI;
     if (deg < 0) deg += 360;
     return Math.max(1, Math.min(total - 1, deg > 180 ? total - 1 : deg));
@@ -600,13 +608,26 @@ function makePanel({ canvasId, wrapId, total,
     onAlpha(alphaDeg);
   }
 
-  canvas.addEventListener('mousedown',  e => { dragging = true; setAlpha(angleFromPointer(e)); });
-  canvas.addEventListener('mousemove',  e => { if (dragging) setAlpha(angleFromPointer(e)); });
-  canvas.addEventListener('mouseup',    () => dragging = false);
-  canvas.addEventListener('mouseleave', () => dragging = false);
-  canvas.addEventListener('touchstart', e => { dragging = true; setAlpha(angleFromPointer(e)); }, { passive: false });
-  canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (dragging) setAlpha(angleFromPointer(e)); }, { passive: false });
-  canvas.addEventListener('touchend',   () => dragging = false);
+  // ── POINTER (mouse + touch + pen) ──
+  // Pointer capture keeps the gesture alive outside the canvas. The old code
+  // cancelled the drag on mouseleave, so sliding a finger or cursor slightly out
+  // of the box silently dropped it mid-gesture.
+  canvas.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    canvas.setPointerCapture(e.pointerId);
+    dragging = true;
+    setAlpha(angleFromPointer(e));
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (dragging) setAlpha(angleFromPointer(e));
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
 
   window.addEventListener('resize', resize);
   resize();

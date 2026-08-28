@@ -77,7 +77,14 @@
       position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
       overflow: hidden; aspect-ratio: 4/3; cursor: default;
     }
-    .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+    .canvas-wrap canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
     .canvas-hint {
       position: absolute; bottom: .8rem; left: 50%; transform: translateX(-50%);
       font-size: .75rem; color: var(--muted); background: rgba(13,15,26,.8); backdrop-filter: blur(8px);
@@ -432,17 +439,20 @@ function draw(t) {
   updateLiveData(t, b, h);
 }
 
+// Catalan decimal separator — a comma is what students are taught to write.
+function ca(x, d) { return x.toFixed(d).replace('.', ','); }
+
 function updateLiveData(t, bPx, hPx) {
   const bU = bPx / PXPERUNIT, hU = hPx / PXPERUNIT;
   const area = (bU * hU) / 2;
-  document.getElementById('valB').textContent = bU.toFixed(1);
-  document.getElementById('valH').textContent = hU.toFixed(1);
-  document.getElementById('valArea').textContent = area.toFixed(1);
+  document.getElementById('valB').textContent = ca(bU, 1);
+  document.getElementById('valH').textContent = ca(hU, 1);
+  document.getElementById('valArea').textContent = ca(area, 1);
 
   const rectRow = document.getElementById('rectRow');
   if (t > 0.96) {
     rectRow.classList.add('show');
-    document.getElementById('valRectArea').textContent = (bU * (hU / 2)).toFixed(1);
+    document.getElementById('valRectArea').textContent = ca(bU * (hU / 2), 1);
   } else {
     rectRow.classList.remove('show');
   }
@@ -463,9 +473,19 @@ function updateStepText(t) {
 }
 
 // ── ANIMATION ──
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-function startAnim() { animPlaying = true; lastTime = null; animRAF = requestAnimationFrame(step); }
-function stopAnim() { animPlaying = false; if (animRAF) cancelAnimationFrame(animRAF); }
+function startAnim() {
+  if (reducedMotion.matches) { animT = 1; draw(1); return; }
+  stopAnim();                       // never leave a second loop running
+  animPlaying = true; lastTime = null;
+  animRAF = requestAnimationFrame(step);
+}
+function stopAnim() {
+  animPlaying = false;
+  if (animRAF !== null) { cancelAnimationFrame(animRAF); animRAF = null; }
+}
 function step(ts) {
   if (!lastTime) lastTime = ts;
   const dt = (ts - lastTime) / ANIM_MS;
@@ -504,25 +524,43 @@ function applyPreset(name) {
 }
 
 // ── DRAG ──
+// Measured ratio instead of assuming devicePixelRatio (browser zoom / screen change).
 function pointerXY(e) {
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return { x: (clientX - rect.left) * dpr, y: (clientY - rect.top) * dpr };
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
+  return {
+    x: (e.clientX - rect.left) * (canvas.width  / rect.width),
+    y: (e.clientY - rect.top)  * (canvas.height / rect.height)
+  };
 }
-function nearestVertex(p) {
+function nearestVertex(p, radius) {
   const cands = [['A', A], ['B', B], ['C', C]];
-  let best = null, bestD = 26 * dpr;
+  let best = null, bestD = radius;
   cands.forEach(([name, pt]) => {
     const d = Math.hypot(p.x - pt.x, p.y - pt.y);
     if (d < bestD) { bestD = d; best = name; }
   });
   return best;
 }
-function onDown(e) { dragging = nearestVertex(pointerXY(e)); }
-function onMove(e) {
-  if (!dragging) return;
+
+// ── POINTER (mouse + touch + pen) ──
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  const radius = (e.pointerType === 'mouse' ? 26 : 38) * dpr;  // fingers need a bigger target
+  dragging = nearestVertex(pointerXY(e), radius);
+  if (dragging) {
+    canvas.setPointerCapture(e.pointerId);
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('pointermove', e => {
   const p = pointerXY(e);
+  if (!dragging) {
+    const over = nearestVertex(p, (e.pointerType === 'mouse' ? 26 : 38) * dpr);
+    canvas.style.cursor = over ? 'grab' : 'default';
+    return;
+  }
   if (dragging === 'A') {
     A.x = p.x; A.y = p.y; clampApex();
   } else if (dragging === 'B') {
@@ -531,19 +569,24 @@ function onMove(e) {
     C.x = p.x; clampBase(); clampApex();
   }
   onVertexChanged();
-}
-function onUp() { dragging = null; }
+});
 
-canvas.addEventListener('mousedown', onDown);
-canvas.addEventListener('mousemove', onMove);
-window.addEventListener('mouseup', onUp);
-canvas.addEventListener('touchstart', e => { onDown(e); }, { passive: true });
-canvas.addEventListener('touchmove', e => { if (dragging) { e.preventDefault(); onMove(e); } }, { passive: false });
-canvas.addEventListener('touchend', onUp);
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = null;
+  canvas.style.cursor = 'default';
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
 
 window.addEventListener('resize', resize);
 resize();
-startAnim();
+// A CSS media query cannot stop a rAF-driven canvas animation, so the
+// reduced-motion preference has to be honoured here in JS: show the finished
+// construction immediately instead of sweeping through it.
+if (reducedMotion.matches) { animT = 1; draw(1); }
+else                       { startAnim(); }
 </script>
 </body>
 </html>

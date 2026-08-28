@@ -563,6 +563,15 @@ let animPlaying = false;
 let animRAF     = null;
 let lastTime    = null;
 
+// Declared with the rest of the state, not next to its first use further down:
+// as a `const` it sits in the temporal dead zone until this line runs, so keeping
+// it above every consumer avoids a landmine if the init order is ever changed.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Catalan decimal separator for anything the student reads. Values that get
+// re-parsed as numbers (input fields, loadTriple arguments) must keep the dot.
+function ca(x, d) { return Number(x).toFixed(d).replace('.', ','); }
+
 // ── INTRO CYCLING ──
 const TERNES_INTRO = [
   { a:3,  b:4,  c:5   },
@@ -614,6 +623,9 @@ function setTernaValues(t, a2, b2, c2, idx) {
 
 function startIntroCycle() {
   stopIntroCycle();
+  // Auto-advancing carousel is motion the user did not ask for: with the
+  // reduced-motion preference set, leave the terna the student is looking at.
+  if (reducedMotion.matches) return;
   introTimer = setInterval(() => {
     introIdx = (introIdx + 1) % TERNES_INTRO.length;
     showTerna(introIdx, true);
@@ -683,7 +695,7 @@ function switchTab(name, btn) {
   }
   if (name === 'demostracio') {
     document.getElementById('ratioSlider').value = Math.round(ratio * 100);
-    document.getElementById('ratioVal').textContent = (ratio / (1 - ratio)).toFixed(2);
+    document.getElementById('ratioVal').textContent = ca(ratio / (1 - ratio), 2);
     stopAnim(); animT = 0; startAnim(); return;
   }
   stopAnim();
@@ -930,9 +942,9 @@ function drawSquaresTab() {
   ctx.restore();
 
   // Update chips
-  document.getElementById('valA').textContent=aN.toFixed(1);
-  document.getElementById('valB').textContent=bN.toFixed(1);
-  document.getElementById('valC').textContent=cN.toFixed(1);
+  document.getElementById('valA').textContent=ca(aN,1);
+  document.getElementById('valB').textContent=ca(bN,1);
+  document.getElementById('valC').textContent=ca(cN,1);
   document.getElementById('sqA').textContent='a² = '+a2;
   document.getElementById('sqB').textContent='b² = '+b2;
   document.getElementById('sqC').textContent='c² = '+c2;
@@ -940,7 +952,7 @@ function drawSquaresTab() {
   document.getElementById('eqB2').textContent=b2;
   document.getElementById('eqC2').textContent=c2;
   document.getElementById('eqCheck').textContent='✓';
-  document.getElementById('ratioVal2').textContent=(ratio).toFixed(2);
+  document.getElementById('ratioVal2').textContent=ca(ratio,2);
   const bar=document.getElementById('equalityBar');
   bar.classList.add('valid'); bar.classList.remove('invalid');
 }
@@ -994,13 +1006,17 @@ function easeInOut(t) { return t<0.5 ? 2*t*t : -1+(4-2*t)*t; }
 
 function startAnim() {
   if (animT >= 1) animT = 0;
+  // A CSS media query cannot stop a rAF canvas animation: show the completed
+  // Bhaskara construction straight away instead of sweeping through it.
+  if (reducedMotion.matches) { animT = 1; drawBhaskara(1); return; }
+  stopAnim();                       // never leave a second loop running
   animPlaying = true;
   lastTime = null;
   animRAF = requestAnimationFrame(animStep);
 }
 function stopAnim() {
   animPlaying = false;
-  if (animRAF) cancelAnimationFrame(animRAF);
+  if (animRAF !== null) { cancelAnimationFrame(animRAF); animRAF = null; }
 }
 function resetAnim() {
   stopAnim(); animT = 0; drawBhaskara(0);
@@ -1018,7 +1034,7 @@ function animStep(ts) {
 // ── RATIO SLIDERS ──
 function onRatioChange(val) {
   ratio = val / 100;
-  document.getElementById('ratioVal').textContent = (ratio / (1-ratio)).toFixed(2);
+  document.getElementById('ratioVal').textContent = ca(ratio / (1-ratio), 2);
   if (animT > 0) { stopAnim(); animT = 1; }
   drawBhaskara(animT);
 }
@@ -1056,7 +1072,7 @@ function calcSolve() {
   if (calcUnknown==='c') { const a=g('a'),b=g('b'); if(a>0&&b>0) res=Math.sqrt(a*a+b*b); }
   else if (calcUnknown==='a') { const b=g('b'),c=g('c'); if(c>b&&b>0) res=Math.sqrt(c*c-b*b); }
   else                        { const a=g('a'),c=g('c'); if(c>a&&a>0) res=Math.sqrt(c*c-a*a); }
-  document.getElementById('calcResult').textContent = isNaN(res)||!isFinite(res) ? '—' : res.toFixed(3);
+  document.getElementById('calcResult').textContent = isNaN(res)||!isFinite(res) ? '—' : ca(res,3);
   // update canvas triangle with values if possible
   const a=g('a')||null, b=g('b')||null, c=g('c')||null;
   const ta = calcUnknown==='a' ? (isNaN(res)?null:+res.toFixed(2)) : a;

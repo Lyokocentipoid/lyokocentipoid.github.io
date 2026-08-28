@@ -95,6 +95,13 @@
     }
     .canvas-wrap canvas { display: block; width: 100%; height: 100%; }
 
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
+
     .progress-row { display: flex; align-items: center; gap: .9rem; }
     input[type=range] {
       flex: 1; appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer;
@@ -138,6 +145,19 @@
     .precision-val-row { display: flex; justify-content: space-between; font-size: .8rem; }
     .precision-val { font-family: 'DM Mono', monospace; color: var(--teal); }
     .precision-sub { color: var(--muted); font-size: .75rem; }
+
+    /* Separates "the area is already exact" from "the shape is still rough" —
+       the distinction this capsule most easily blurs. */
+    .area-exact-note {
+      margin-top: .9rem; padding: .8rem .9rem;
+      background: color-mix(in srgb, var(--green) 6%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--green) 22%, transparent);
+      border-radius: 10px;
+      font-size: .78rem; color: var(--muted); line-height: 1.6;
+    }
+    .area-exact-note strong { color: var(--green); display: block; margin-bottom: .3rem; }
+    .area-exact-note em { color: var(--text); font-style: italic; }
+    .area-exact-note .mono { font-family: 'DM Mono', monospace; color: var(--text); font-size: .95em; }
 
     .panel-note {
       padding: .9rem 1.1rem; border-radius: 12px;
@@ -247,15 +267,29 @@
     </div>
 
     <div class="info-box">
-      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Precisió del rectangle</span></div>
+      <div class="info-head"><span class="info-head-icon">📐</span><span class="info-head-title">Què tan recte ha quedat</span></div>
       <div class="info-body">
         <div class="precision-wrap">
-          <p style="font-size:.78rem;color:var(--muted);line-height:1.55">Com més sectors facis servir, més rectes semblen els costats ondulats.</p>
+          <p style="font-size:.78rem;color:var(--muted);line-height:1.55">
+            Aquesta barra <em style="color:var(--text);font-style:normal">no</em> mesura l'àrea: mesura
+            com de rectes han quedat les vores. Com més sectors, menys s'ondulen.
+          </p>
           <div class="precision-bar-wrap"><div class="precision-bar-fill" id="precisionFill" style="width:0%"></div></div>
           <div class="precision-val-row">
             <span class="precision-val" id="precisionVal">0%</span>
             <span class="precision-sub" id="precisionN">4 sectors</span>
           </div>
+        </div>
+        <div class="area-exact-note">
+          <strong>L'àrea ja és exacta des del primer tall</strong>
+          Hem retallat el cercle i hem mogut els trossos de lloc, però no n'hem llençat cap ni
+          n'hem afegit cap: l'àrea de la figura nova és <em>exactament</em> la mateixa que la del
+          cercle, tant si fem 4 sectors com si en fem 96.
+          <br><br>
+          El que canvia amb el nombre de sectors <em>no</em> és l'àrea, sinó la <em>forma</em>: amb
+          pocs sectors la figura té les vores ondulades i encara no sembla un rectangle. Quan ja
+          s'hi assembla prou, podem llegir-ne les mides — base <span class="mono">π·r</span> i
+          altura <span class="mono">r</span> — i d'aquí surt <span class="mono">A = π·r²</span>.
         </div>
       </div>
     </div>
@@ -422,26 +456,31 @@ function draw(t) {
   updateLiveData(t);
 }
 
+// Catalan decimal separator — a comma is what students are taught to write.
+function ca(x, d) { return x.toFixed(d).replace('.', ','); }
+
 function updateLiveData(t) {
   const circ = 2 * Math.PI;
   const semi = Math.PI;
   const area = Math.PI;
-  document.getElementById('fCirc').textContent = circ.toFixed(4);
-  document.getElementById('fSemi').textContent = semi.toFixed(4);
-  document.getElementById('fArea').textContent = area.toFixed(4);
+  document.getElementById('fCirc').textContent = ca(circ, 4);
+  document.getElementById('fSemi').textContent = ca(semi, 4);
+  document.getElementById('fArea').textContent = ca(area, 4);
 
   const rectRow = document.getElementById('rectRow');
   if (t > 0.96) {
     rectRow.classList.add('show');
-    document.getElementById('rectAreaVal').textContent = area.toFixed(4);
+    document.getElementById('rectAreaVal').textContent = ca(area, 4);
   } else {
     rectRow.classList.remove('show');
   }
 
+  // How straight the zig-zag edge has become: the ratio between the apothem
+  // (inner boundary) and the radius (outer boundary) of each sector.
   const beta = Math.PI / N;
   const precisionPct = Math.cos(beta) * 100;
   document.getElementById('precisionFill').style.width = precisionPct + '%';
-  document.getElementById('precisionVal').textContent = precisionPct.toFixed(1) + '%';
+  document.getElementById('precisionVal').textContent = ca(precisionPct, 1) + '%';
   document.getElementById('precisionN').textContent = N + ' sectors';
 
   document.getElementById('progressSlider').value = Math.round(t * 100);
@@ -462,9 +501,19 @@ function setN(n) {
 }
 
 // ── ANIMATION ──
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 function easeInOut(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
-function startAnim() { animPlaying = true; lastTime = null; animRAF = requestAnimationFrame(step); }
-function stopAnim() { animPlaying = false; if (animRAF) cancelAnimationFrame(animRAF); }
+function startAnim() {
+  if (reducedMotion.matches) { animT = 1; draw(1); return; }
+  stopAnim();                       // never leave a second loop running
+  animPlaying = true; lastTime = null;
+  animRAF = requestAnimationFrame(step);
+}
+function stopAnim() {
+  animPlaying = false;
+  if (animRAF !== null) { cancelAnimationFrame(animRAF); animRAF = null; }
+}
 function step(ts) {
   if (!lastTime) lastTime = ts;
   const dt = (ts - lastTime) / ANIM_MS;

@@ -101,7 +101,14 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
       overflow: hidden; position: relative; aspect-ratio: 4/3;
     }
-    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; touch-action: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
     .canvas-hint {
       position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
       font-size: .75rem; color: var(--muted);
@@ -152,6 +159,7 @@
     .prop-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .35rem; }
     .prop-text { font-size: .78rem; color: var(--muted); line-height: 1.5; }
     .prop-text strong { color: var(--text); font-weight: 500; }
+    .prop-text em { color: var(--text); font-style: italic; }
 
     /* Segment counter */
     .seg-counter {
@@ -279,6 +287,13 @@
           <div class="prop-item">
             <div class="prop-dot" style="background:var(--coral)"></div>
             <div class="prop-text"><strong>Figura congruent.</strong> La figura simètrica té la mateixa forma i mida que l'original.</div>
+          </div>
+          <div class="prop-item">
+            <div class="prop-dot" style="background:var(--blue)"></div>
+            <div class="prop-text"><strong>L'orientació s'inverteix.</strong> Tria la
+              <em>lletra F</em>: per molt que giris o desplacis el reflex, mai no el podràs fer
+              coincidir amb l'original — hauries de <em>girar-lo del revés</em>. Això és el que
+              diferencia una simetria d'un gir o d'un desplaçament.</div>
           </div>
           <div class="prop-item" id="propOnAxis" style="display:none">
             <div class="prop-dot" style="background:var(--yellow)"></div>
@@ -523,32 +538,22 @@ function draw() {
 // ─────────────────────────────────────────
 // INTERACTION
 // ─────────────────────────────────────────
+// The axis is a line, not a ray: 0° and 180° describe the same axis, so the
+// angle is folded into [0°, 180°). Measured ratio instead of assuming dpr.
 function angleFromPointer(e) {
   const rect = canvas.getBoundingClientRect();
-  const src  = e.touches ? e.touches[0] : e;
-  const dx   = (src.clientX - rect.left) * dpr - W / 2;
-  const dy   = (src.clientY - rect.top)  * dpr - H / 2;
+  if (!rect.width || !rect.height) return axisAngle;
+  const dx = (e.clientX - rect.left) * (canvas.width  / rect.width)  - W / 2;
+  const dy = (e.clientY - rect.top)  * (canvas.height / rect.height) - H / 2;
   let deg = Math.atan2(dy, dx) * 180 / Math.PI;
-  if (deg < 0) deg += 180;
-  if (deg >= 180) deg -= 180;
+  deg = ((deg % 180) + 180) % 180;   // fold into [0,180) in one step
   return Math.round(deg);
 }
 
-function isNearHandle(e) {
-  const rect = canvas.getBoundingClientRect();
-  const src  = e.touches ? e.touches[0] : e;
-  const px   = (src.clientX - rect.left) * dpr;
-  const py   = (src.clientY - rect.top)  * dpr;
-  const cx = W / 2, cy = H / 2;
-  const a  = axisAngle * Math.PI / 180;
-  const axLen = Math.max(W, H) * 0.75;
-  const hx = cx + Math.cos(a) * axLen * 0.55;
-  const hy = cy + Math.sin(a) * axLen * 0.55;
-  return Math.hypot(px - hx, py - hy) < 24 * dpr;
-}
-
-canvas.addEventListener('mousedown', e => {
-  // Click anywhere on canvas to start rotating axis
+// ── POINTER (mouse + touch + pen) ──
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  canvas.setPointerCapture(e.pointerId);
   draggingAxis = true;
   canvas.style.cursor = 'grabbing';
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
@@ -556,28 +561,22 @@ canvas.addEventListener('mousedown', e => {
   syncSlider();
   draw();
 });
-canvas.addEventListener('mousemove', e => {
-  if (!draggingAxis) {
-    canvas.style.cursor = 'grab';
-    return;
-  }
+
+canvas.addEventListener('pointermove', e => {
+  if (!draggingAxis) { canvas.style.cursor = 'grab'; return; }
   axisAngle = angleFromPointer(e);
   syncSlider();
   draw();
 });
-canvas.addEventListener('mouseup',    () => { draggingAxis = false; canvas.style.cursor = 'grab'; });
-canvas.addEventListener('mouseleave', () => { draggingAxis = false; });
 
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault(); draggingAxis = true;
-  if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
-  axisAngle = angleFromPointer(e); syncSlider(); draw();
-}, { passive: false });
-canvas.addEventListener('touchmove', e => {
-  if (!draggingAxis) return; e.preventDefault();
-  axisAngle = angleFromPointer(e); syncSlider(); draw();
-}, { passive: false });
-canvas.addEventListener('touchend', () => { draggingAxis = false; });
+function endAxisDrag(e) {
+  if (!draggingAxis) return;
+  draggingAxis = false;
+  canvas.style.cursor = 'grab';
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endAxisDrag);
+canvas.addEventListener('pointercancel', endAxisDrag);
 
 // Slider
 document.getElementById('axisSlider').addEventListener('input', function () {

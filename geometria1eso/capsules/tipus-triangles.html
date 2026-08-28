@@ -81,7 +81,14 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
       overflow: hidden; position: relative; aspect-ratio: 4/3; cursor: default;
     }
-    #mainCanvas { display: block; width: 100%; height: 100%; }
+    #mainCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
     .canvas-hint {
       position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
       font-size: .75rem; color: var(--muted);
@@ -664,51 +671,64 @@ function snapTo(name) {
 // ─────────────────────────────────────────
 // DRAG
 // ─────────────────────────────────────────
+// Measured ratio rather than assuming dpr: survives browser zoom and screens
+// with a different pixel ratio before resize() has had a chance to run.
 function pointerPos(e) {
   const rect = canvas.getBoundingClientRect();
-  const src  = e.touches ? e.touches[0] : e;
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
   return {
-    x: (src.clientX - rect.left)  * dpr,
-    y: (src.clientY - rect.top)   * dpr,
+    x: (e.clientX - rect.left) * (canvas.width  / rect.width),
+    y: (e.clientY - rect.top)  * (canvas.height / rect.height)
   };
 }
-function nearestV(px, py) {
-  let best = -1, bestD = 28 * dpr;
+function nearestV(px, py, radius) {
+  let best = -1, bestD = radius;
   vertices.forEach((v, i) => {
     const d = Math.hypot(v.x - px, v.y - py);
     if (d < bestD) { bestD = d; best = i; }
   });
   return best;
 }
+function grabRadius(e) {
+  // A fingertip is coarser than a cursor — keep the larger touch target.
+  return (e.pointerType === 'mouse' ? 28 : 40) * dpr;
+}
+function clampVertex(p) {
+  const m = 12 * dpr;
+  return { x: Math.max(m, Math.min(W - m, p.x)), y: Math.max(m, Math.min(H - m, p.y)) };
+}
 
-canvas.addEventListener('mousedown', e => {
-  const {x,y} = pointerPos(e);
-  dragIdx = nearestV(x, y);
-  if (dragIdx >= 0) { canvas.style.cursor = 'grabbing'; }
-  if (!hinted && dragIdx >= 0) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+// ── POINTER (mouse + touch + pen) ──
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  const p = pointerPos(e);
+  dragIdx = nearestV(p.x, p.y, grabRadius(e));
+  if (dragIdx >= 0) {
+    canvas.setPointerCapture(e.pointerId);
+    canvas.style.cursor = 'grabbing';
+    if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
+  }
 });
-canvas.addEventListener('mousemove', e => {
-  if (dragIdx < 0) { canvas.style.cursor = nearestV(...Object.values(pointerPos(e))) >= 0 ? 'grab' : 'default'; return; }
-  const {x,y} = pointerPos(e);
-  const margin = 12 * dpr;
-  vertices[dragIdx] = { x: Math.max(margin, Math.min(W - margin, x)), y: Math.max(margin, Math.min(H - margin, y)) };
+
+canvas.addEventListener('pointermove', e => {
+  const p = pointerPos(e);
+  if (dragIdx < 0) {
+    // Hover affordance: show a grab cursor only when actually over a vertex.
+    canvas.style.cursor = nearestV(p.x, p.y, grabRadius(e)) >= 0 ? 'grab' : 'default';
+    return;
+  }
+  vertices[dragIdx] = clampVertex(p);
   draw();
 });
-canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = 'default'; });
-canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const {x,y} = pointerPos(e);
-  dragIdx = nearestV(x, y);
-}, { passive: false });
-canvas.addEventListener('touchmove', e => {
-  if (dragIdx < 0) return; e.preventDefault();
-  const {x,y} = pointerPos(e);
-  const margin = 12 * dpr;
-  vertices[dragIdx] = { x: Math.max(margin, Math.min(W - margin, x)), y: Math.max(margin, Math.min(H - margin, y)) };
-  draw();
-}, { passive: false });
-canvas.addEventListener('touchend', () => { dragIdx = -1; });
+
+function endVertexDrag(e) {
+  if (dragIdx < 0) return;
+  dragIdx = -1;
+  canvas.style.cursor = 'default';
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endVertexDrag);
+canvas.addEventListener('pointercancel', endVertexDrag);
 
 // ─────────────────────────────────────────
 // MINI CANVASES (thumbnails)

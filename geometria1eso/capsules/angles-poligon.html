@@ -82,7 +82,14 @@
       overflow: hidden; position: relative; aspect-ratio: 4/3;
       transition: border-color var(--tr);
     }
-    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+    #mainCanvas { display: block; width: 100%; height: 100%; cursor: default; touch-action: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        transition-duration: .001ms !important;
+      }
+    }
     .canvas-hint {
       position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
       font-size: .75rem; color: var(--muted);
@@ -887,13 +894,25 @@ function setPolygon(n) {
 // ─────────────────────────────────────────
 // DRAG (always active)
 // ─────────────────────────────────────────
+// Measured ratio rather than assuming devicePixelRatio (survives browser zoom
+// and moving the window between screens with different pixel ratios).
 function pointerPos(e) {
   const rect = canvas.getBoundingClientRect();
-  const dpr  = devicePixelRatio;
-  const src  = e.touches ? e.touches[0] : e;
+  if (!rect.width || !rect.height) return { x: 0, y: 0 };
   return {
-    x: (src.clientX - rect.left) * dpr,
-    y: (src.clientY - rect.top)  * dpr
+    x: (e.clientX - rect.left) * (canvas.width  / rect.width),
+    y: (e.clientY - rect.top)  * (canvas.height / rect.height)
+  };
+}
+
+// Keep a dragged vertex inside the drawing area. Necessary now that pointer
+// capture lets the gesture continue outside the canvas: without it a vertex
+// could be carried off-screen and become unreachable.
+function clampToCanvas(p) {
+  const m = 12 * devicePixelRatio;   // small inset so the vertex dot stays fully visible
+  return {
+    x: Math.max(m, Math.min(W - m, p.x)),
+    y: Math.max(m, Math.min(H - m, p.y))
   };
 }
 
@@ -906,35 +925,37 @@ function nearestVertex(px, py, threshold) {
   return best;
 }
 
-canvas.addEventListener('mousedown', e => {
+// ── POINTER (mouse + touch + pen) ──
+// A finger is less precise than a cursor, so the grab radius still adapts to the
+// pointer type — that distinction was worth keeping from the old split handlers.
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
   const { x, y } = pointerPos(e);
-  dragIdx = nearestVertex(x, y, 28 * devicePixelRatio);
-  if (dragIdx >= 0) { canvas.style.cursor = 'grabbing'; activeV = dragIdx; }
+  const grabRadius = (e.pointerType === 'mouse' ? 28 : 40) * devicePixelRatio;
+  dragIdx = nearestVertex(x, y, grabRadius);
+  if (dragIdx >= 0) {
+    canvas.setPointerCapture(e.pointerId);
+    canvas.style.cursor = 'grabbing';
+    activeV = dragIdx;
+    draw(); updateUI();
+  }
   if (!hinted) { hinted = true; document.getElementById('hint').classList.add('hidden'); }
 });
-canvas.addEventListener('mousemove', e => {
+
+canvas.addEventListener('pointermove', e => {
   if (dragIdx < 0) return;
-  const { x, y } = pointerPos(e);
-  vertices[dragIdx] = { x, y };
+  vertices[dragIdx] = clampToCanvas(pointerPos(e));
   draw(); updateUI();
 });
-canvas.addEventListener('mouseup',    () => { dragIdx = -1; canvas.style.cursor = 'grab'; });
-canvas.addEventListener('mouseleave', () => { dragIdx = -1; });
 
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const { x, y } = pointerPos(e);
-  dragIdx = nearestVertex(x, y, 40 * devicePixelRatio);
-  if (dragIdx >= 0) activeV = dragIdx;
-}, { passive: false });
-canvas.addEventListener('touchmove', e => {
+function endVertexDrag(e) {
   if (dragIdx < 0) return;
-  e.preventDefault();
-  const { x, y } = pointerPos(e);
-  vertices[dragIdx] = { x, y };
-  draw(); updateUI();
-}, { passive: false });
-canvas.addEventListener('touchend', () => { dragIdx = -1; });
+  dragIdx = -1;
+  canvas.style.cursor = 'grab';
+  if (e && canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+}
+canvas.addEventListener('pointerup', endVertexDrag);
+canvas.addEventListener('pointercancel', endVertexDrag);
 
 // ─────────────────────────────────────────
 // INIT
