@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teoria de Galois · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--algebra); }
+
+    .galois-wrap { aspect-ratio: auto; padding: 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .root-row { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+    .root-card {
+      min-width: 92px; padding: .6rem .5rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+      display: flex; flex-direction: column; align-items: center; gap: .2rem; cursor: pointer; transition: all var(--tr);
+      /* heretats explícitament: aquestes targetes són <button> (per poder-les
+         fer servir amb teclat) i el navegador hi aplicaria la seva tipografia
+         de formulari si no es diu el contrari. */
+      font-family: inherit; color: inherit; text-align: center;
+    }
+    .root-card .rlabel { font-family: var(--font-display); font-weight: 700; font-size: .85rem; color: var(--m-color); }
+    .root-card .rval { font-family: var(--font-mono); font-size: .78rem; color: var(--ink); }
+    .root-card .rnum { font-family: var(--font-mono); font-size: .68rem; color: var(--muted); }
+    .root-card.selected { border-color: var(--m-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--m-color) 30%, transparent); }
+    .root-card.slot { cursor: pointer; }
+    .root-card.slot.selected { outline: 2px solid var(--m-color); }
+    .galois-section-title { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+    .relation-result { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .8rem 1rem; font-family: var(--font-mono); font-size: .82rem; text-align: center; }
+    .relation-result.rational { border-color: var(--good); color: var(--good); }
+    .relations-list { display: flex; flex-direction: column; gap: .3rem; font-family: var(--font-mono); font-size: .78rem; color: var(--muted); max-height: 110px; overflow-y: auto; }
+    .sym-check-result { text-align: center; font-weight: 700; font-family: var(--font-mono); font-size: .88rem; }
+    .predict-row { display: none; gap: .8rem; justify-content: center; }
+    .predict-row.active { display: flex; }
+    .galois-eq { text-align: center; font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; color: var(--m-color); }
+    .galois-eq .poly-intro { display: block; font-family: var(--font-body); font-weight: 400; font-size: .78rem; color: var(--muted); margin-top: .25rem; }
+    .verify-trace { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; font-family: var(--font-mono); font-size: .8rem; line-height: 1.75; color: var(--ink); text-align: center; }
+    .verify-trace .vt-final { font-weight: 700; }
+    .verify-trace .vt-final.ok { color: var(--good); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--algebra)">Bloc 02 · Teoria de Galois</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Teoria de Galois — un primer tast</h1>
+      <p>Descobreix quines relacions racionals amaguen les 4 arrels d'un polinomi de grau 4, i quines de les 24 permutacions possibles les respecten totes alhora. Aquestes són, exactament, les simetries del grup de Galois — comprova-ho amb 3 polinomis diferents.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Aquesta càpsula treballa amb 3 polinomis de grau 4, tots dos amb arrels que combinen dues arrels quadrades (√a i √b). El primer, x⁴−10x²+1, té 4 arrels reals: √2+√3, √2−√3, −√2+√3 i −√2−√3. Encara que cadascuna involucra arrels quadrades, algunes combinacions seves donen <strong>nombres racionals exactes</strong> — per exemple, (√2+√3)·(√2−√3) = 2−3 = −1, sense cap rastre de √2 ni √3. Més avall pots comprovar, pas a pas, que cada arrel realment satisfà la seva equació (substituint-la i veient que dona zero) — no cal donar-ho per fet.</p>
+          <p>Una <strong>simetria de Galois</strong> és una manera de reordenar les 4 arrels que <strong>no trenca cap relació racional</strong> entre elles: si dues arrels sumaven un racional, les seves imatges (un cop reordenades) també l'han de sumar; si en multiplicaven un altre, també. El conjunt de totes aquestes reordenacions vàlides és el <strong>grup de Galois</strong> del polinomi.</p>
+          <p><strong>Per què és exactament aquesta la condició correcta, i no una altra?</strong> Perquè una simetria de veritat no és res més que canviar els noms de les arrels sense alterar cap fet aritmètic que hi hagi per sota. Si r₁+r₄=0 és cert, i apliques una simetria σ a banda i banda d'aquesta igualtat, obtens σ(r₁)+σ(r₄) = σ(0) = 0 —perquè una simetria mai toca els nombres racionals (com el 0), només reordena les arrels. Si les imatges de r₁ i r₄ no sumessin zero, σ estaria afirmant una fórmula falsa, i per tant no pot ser una simetria de veritat. Comprovar relacions no és, doncs, un truc arbitrari d'aquesta aplicació: és l'única manera de saber si un reordenament és consistent amb l'àlgebra real que hi ha al darrere.</p>
+          <p>Amb això a la mà: de les 24 permutacions possibles de 4 arrels, només algunes —4, en els tres polinomis d'aquí— resulten ser simetries vàlides. La resta trenquen alguna relació en algun moment, i per tant no compten.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p><a href="https://ca.wikipedia.org/wiki/%C3%89variste_Galois" target="_blank" rel="noopener">Évariste Galois</a> va morir en un duel el 1832, amb 20 anys, després d'haver escrit la nit abans un esbós de la teoria que avui porta el seu nom. Amb ella es respon una pregunta que havia obsessionat els matemàtics durant segles: <strong>per què hi ha fórmules (com la de segon grau) per resoldre equacions de grau 2, 3 i 4, però no n'existeix cap de general per a grau 5 o superior?</strong></p>
+          <p>La resposta de Galois: la resolubilitat per radicals d'una equació depèn de si el seu grup de Galois és <a href="https://ca.wikipedia.org/wiki/Grup_resoluble" target="_blank" rel="noopener">«resoluble»</a> (es pot desmuntar en peces abelianes, una darrere l'altra). Per a graus 2, 3 i 4 sempre ho és; per a grau 5, en general, no. Aquest fet — el <a href="https://ca.wikipedia.org/wiki/Teorema_d%27Abel-Ruffini" target="_blank" rel="noopener">teorema d'Abel–Ruffini</a>, demostrat abans que Galois però explicat del tot per ell — converteix un problema de «prova-ho tot» en una pregunta d'estructura de grups.</p>
+          <p>Els 3 polinomis d'aquesta càpsula sempre donen el mateix grup, Z/2×Z/2 (4 elements) — i aquest grup ja és, per si sol, <strong>abelià</strong> (l'ordre no importa: fer primer una simetria i després l'altra dona el mateix que a l'inrevés). Un grup abelià és sempre resoluble d'una sola peça, sense haver-lo de desmuntar en trossos: per això les 4 arrels de qualsevol d'aquests polinomis es poden escriure amb una fórmula de radicals imbricats (aquí, tan simple com ±√a±√b). Un polinomi de grau 5 «típic» té, en canvi, un grup de Galois amb 120 elements que no es pot desmuntar en peces abelianes de cap manera —ni una fórmula amb radicals per complicada que sigui l'arregla mai.</p>
+          <p>El segon polinomi (reductible) i el tercer (irreductible, amb primers diferents) no hi són per casualitat: comparant-los amb el primer es veu que ni la irreductibilitat ni els nombres concrets determinen sols la mida del grup —el que importa és, exactament, quines relacions racionals lliguen les arrels entre elles.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria un dels 3 polinomis amb els xips de dalt. Cada un té una relació diferent amb les seves 2 arrels quadrades base (irreductible amb √2,√3; reductible amb √2,√3; irreductible amb √3,√5).</li>
+            <li>A «Verifica que és una arrel de veritat», tria una arrel (r₁..r₄) i mira, pas a pas, com x²  i després x⁴ es calculen i s'anul·len exactament contra els coeficients del polinomi — la prova que de debò és una arrel, no una afirmació gratuïta.</li>
+            <li>A la fila «Arrels», selecciona'n dues (clic) i prem «Prova la relació»: es calcula la suma i el producte simbòlics de les dues arrels triades i es marca si algun dels dos és racional.</li>
+            <li>Les relacions racionals que trobis es van guardant a la llista de sota — són el «material de construcció» amb què comprovaràs permutacions (i el motiu, explicat a «Què és?», pel qual comprovar-les és exactament el test correcte).</li>
+            <li>A la fila «Arranjament candidat», clica dues caselles per intercanviar-les i proposar una permutació de les 4 arrels.</li>
+            <li>Prem «Comprova simetria»: es verifica si l'arranjament actual respecta <strong>totes</strong> les relacions que has trobat fins ara. Com més relacions coneguis, més exigent (i fiable) és la comprovació.</li>
+            <li>Objectiu (Explora): troba les 4 simetries reals de cada polinomi. En Repte, un polinomi i les seves relacions ja et vindran donats (visibles, per raonar-hi) i hauràs de predir si un arranjament concret n'és una simetria, abans de comprovar-ho.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">La teoria de Galois respon una pregunta que va estar oberta tres-cents anys, i ho fa d'una manera que va canviar per sempre com es fan les matemàtiques: en lloc d'atacar el problema directament, el tradueix a un problema sobre <em>simetries</em>, i el resol allà. Aquest text explica què és exactament una simetria de Galois, per què la condició que fa servir la càpsula (respectar les relacions racionals) és la condició correcta i no una tria arbitrària, i com d'aquí se'n dedueix que la fórmula de la quíntica no existeix.</p>
+
+          <h4>1. Tres-cents anys buscant una fórmula</h4>
+          <p>Tothom coneix la fórmula de segon grau. Menys gent sap que també n'hi ha per al tercer grau —Cardano la va publicar el 1545 a l'<em>Ars Magna</em>, després d'una història d'intrigues i duels matemàtics que mereix un llibre— i per al quart, obtinguda pel seu deixeble Ferrari poc després.</p>
+          <p>El que totes tenen en comú és el tipus d'ingredients: parteixen dels coeficients i n'obtenen les arrels fent servir <strong>sumes, restes, productes, divisions i arrels n-èsimes</strong>, i res més. Això és el que vol dir «resoluble per radicals». La fórmula del segon grau, per exemple, només necessita una arrel quadrada.</p>
+          <p>A partir d'aquí, la pregunta natural és òbvia: i el cinquè grau? Durant dos segles i mig, els millors matemàtics d'Europa ho van intentar sense èxit. Euler, Lagrange, Bézout, Tschirnhaus… tots van proposar mètodes que funcionaven per a graus 2, 3 i 4 i es paraven en sec al 5.</p>
+          <p>El gir el va fer Lagrange el 1770, i és el gir conceptual clau de tota la història: es va adonar que els mètodes que funcionaven per als graus baixos tenien tots <strong>la mateixa estructura amagada</strong>, i que aquesta estructura tenia a veure amb com es podien <em>permutar les arrels</em>. Va ser el primer a sospitar que el problema no era de tècnica sinó de simetria.</p>
+
+          <h4>2. Què vol dir «relació racional» entre arrels</h4>
+          <p>Aquí comença la part que fa servir la càpsula, i val la pena anar molt a poc a poc perquè és on tothom s'encalla.</p>
+          <p>Prenem el primer polinomi de la càpsula, x⁴ − 10x² + 1. Les seves quatre arrels són √2+√3, √2−√3, −√2+√3 i −√2−√3. (Pots comprovar-ho tu mateix a la secció «Verifica que és una arrel de veritat»: la càpsula substitueix cada arrel i t'ensenya, pas a pas, com tots els termes amb radicals s'anul·len exactament.)</p>
+          <p>Cadascuna d'aquestes arrels, per separat, és irracional. Però algunes <strong>combinacions</strong> seves donen números racionals nets:</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: relacions entre les arrels</span>
+            <span class="de-step">r₁ + r₄ = (√2+√3) + (−√2−√3) = <strong>0</strong> &nbsp;← racional</span>
+            <span class="de-step">r₁ · r₂ = (√2+√3)(√2−√3) = 2 − 3 = <strong>−1</strong> &nbsp;← racional</span>
+            <span class="de-step">r₁ · r₄ = (√2+√3)(−√2−√3) = −(√2+√3)² = −(5+2√6) = <strong>−5−2√6</strong> &nbsp;← NO racional</span>
+          </div>
+          <p>Una <strong>relació racional</strong> és, doncs, una igualtat entre expressions construïdes amb les arrels (sumes i productes) que dona un resultat racional. Aquestes relacions són fets aritmètics durs sobre les arrels concretes: no depenen de com les anomenem ni de en quin ordre les escrivim.</p>
+
+          <h4>3. Què és una simetria de Galois, i per què aquesta és la condició correcta</h4>
+          <p>Ara la definició. Una <strong>simetria de Galois</strong> és un reordenament de les arrels que <strong>no trenca cap relació racional</strong>: si dues arrels sumaven un racional, les seves imatges també l'han de sumar; si un producte donava −1, el producte de les imatges també ha de donar −1.</p>
+          <p>La pregunta que gairebé mai es respon als textos introductoris és: <em>per què aquesta condició i no una altra?</em> Sembla arbitrària. No ho és, i l'argument és curt.</p>
+          <div class="deep-key">
+            <strong>L'argument.</strong> Una simetria σ és, en el fons, canviar el nom de les arrels sense alterar cap fet aritmètic subjacent. Ara bé, si σ ha de respectar l'aritmètica, ha de complir σ(a+b) = σ(a)+σ(b) i σ(a·b) = σ(a)·σ(b). I hi ha una cosa que σ <strong>no pot tocar</strong>: els nombres racionals. Un racional com el 0, l'1 o el −1 no és cap arrel; és un número que ja hi era abans, i reanomenar arrels no el pot canviar. Per tant σ(q) = q per a tot racional q.<br><br>
+            Posem-ho junt. Sabem que r₁ + r₄ = 0. Apliquem σ als dos costats:<br>
+            <span style="display:block;text-align:center;font-family:var(--font-mono);margin:.4rem 0">σ(r₁) + σ(r₄) = σ(0) = 0</span>
+            És a dir: <strong>la relació s'ha de conservar per força</strong>. No és una condició que imposem nosaltres; és una conseqüència inevitable de voler que σ respecti la suma i deixi quiets els racionals. Si les imatges de r₁ i r₄ no sumessin zero, σ estaria afirmant una fórmula falsa i no podria ser cap simetria.
+          </div>
+          <p>Per això comprovar relacions és <strong>l'única prova possible</strong>, i no un truc de l'aplicació. Aquesta és exactament la feina que fas quan, a l'element interactiu, tries dues arrels, en proves la relació, i després reordenes les caselles i prems «Comprova simetria».</p>
+          <div class="deep-aside">
+            <strong>El nom tècnic.</strong> El que hem descrit informalment és el que en àlgebra s'anomena un <em>automorfisme del cos de descomposició que fixa els racionals</em>. «Cos de descomposició» vol dir el conjunt més petit de números que conté els racionals i totes les arrels (aquí, Q(√2,√3)); «automorfisme» vol dir una biunivocitat que respecta suma i producte; i «que fixa els racionals» és el σ(q) = q d'abans. El conjunt de tots aquests automorfismes, amb la composició, és un grup — el <strong>grup de Galois</strong> del polinomi.
+          </div>
+
+          <h4>4. De 24 candidats a només 4</h4>
+          <p>Amb 4 arrels hi ha 4! = 24 reordenaments possibles. Quants en sobreviuen? La càpsula et deixa provar-los tots, però el raonament es pot fer a mà i és instructiu.</p>
+          <p>El truc és adonar-se que una simetria queda determinada per què fa amb √2 i amb √3 per separat. Com que σ ha de respectar el producte, de (√2)² = 2 se'n dedueix σ(√2)² = 2, i per tant <strong>σ(√2) només pot ser +√2 o −√2</strong>. Igual amb √3. Això dona 2 × 2 = <strong>4</strong> possibilitats, i totes quatre funcionen:</p>
+          <div class="deep-table-wrap"><table class="deep-table">
+            <thead><tr><th>simetria</th><th>√2 ↦</th><th>√3 ↦</th><th>efecte sobre les arrels</th></tr></thead>
+            <tbody>
+              <tr><td>identitat</td><td>+√2</td><td>+√3</td><td>no mou res</td></tr>
+              <tr><td>σ₁</td><td>−√2</td><td>+√3</td><td>intercanvia r₁↔r₃ i r₂↔r₄</td></tr>
+              <tr><td>σ₂</td><td>+√2</td><td>−√3</td><td>intercanvia r₁↔r₂ i r₃↔r₄</td></tr>
+              <tr><td>σ₃</td><td>−√2</td><td>−√3</td><td>intercanvia r₁↔r₄ i r₂↔r₃</td></tr>
+            </tbody>
+          </table></div>
+          <p>Aquest grup de 4 elements, en què tot element repetit dues vegades torna a la identitat, és <strong>Z/2×Z/2</strong> — exactament el mateix grup que pots construir casella a casella a la càpsula de Taules de Cayley. Fixa't també en una cosa que la nota final de la càpsula subratlla: <strong>cap arrel no es queda mai fixa tota sola</strong>. Sempre es mouen en parelles, perquè canviar el signe d'un radical afecta dues arrels alhora.</p>
+
+          <h4>5. Per què el grup decideix si hi ha fórmula</h4>
+          <p>Aquí és on la teoria dona el seu fruit. La idea de Galois és que <strong>afegir una arrel n-èsima a la teva col·lecció de números correspon a fer un pas molt concret dins del grup</strong>: reduir-lo a un subgrup, de manera que el tros que has «resolt» és abelià.</p>
+          <p>Resoldre per radicals vol dir arribar a les arrels amb una successió finita d'aquestes ampliacions. Traduït al grup: vol dir poder desmuntar el grup de Galois en una cadena de subgrups on <strong>cada pas sigui abelià</strong>. Un grup que admet aquesta descomposició s'anomena <strong>resoluble</strong> —el nom no és casual.</p>
+          <p>I ara els fets:</p>
+          <p style="margin-left:1rem">• Grau 2: el grup és, com a molt, Z/2. Abelià → resoluble → hi ha fórmula.<br>
+          • Grau 3: com a molt S₃, que es desmunta com S₃ ▷ A₃ ▷ {e}, amb quocients Z/2 i Z/3, tots dos abelians → resoluble → hi ha fórmula.<br>
+          • Grau 4: com a molt S₄, que també es desmunta del tot → resoluble → hi ha fórmula.<br>
+          • <strong>Grau 5: el grup pot ser S₅. I S₅ NO és resoluble.</strong></p>
+          <p>El motiu concret és que dins de S₅ hi ha A₅, el grup de les permutacions parelles de 5 objectes, i A₅ és <strong>simple</strong>: no té cap subgrup normal propi pel qual es pugui trencar. És un bloc massís. Com que no es pot desmuntar, la cadena d'ampliacions per radicals no pot existir. Aquest és el <strong>teorema d'Abel–Ruffini</strong>, i A₅ n'és la raó última.</p>
+          <div class="deep-aside">
+            <strong>Un matís que sovint es diu malament.</strong> El teorema <em>no</em> diu que les equacions de grau 5 no tinguin solucions: en tenen exactament cinc, com garanteix el teorema fonamental de l'àlgebra, i es poden calcular numèricament amb tanta precisió com es vulgui (per exemple amb el mètode de Newton, que és una altra càpsula d'aquest web). El que diu és que no hi ha cap <em>fórmula general</em> amb radicals que les doni a partir dels coeficients. Equacions concretes de grau 5 sí que poden ser resolubles: x⁵ − 32 = 0 té la solució òbvia x = 2. El que no existeix és la fórmula universal.
+          </div>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p>La càpsula et fa recórrer tota la cadena de raonament amb les mans, en tres passos.</p>
+          <p><strong>Primer, verificar.</strong> La secció «Verifica que és una arrel de veritat» no és decorativa: substitueix l'arrel dins del polinomi i t'ensenya com x² i x⁴ es calculen simbòlicament i s'anul·len exactament contra els coeficients. Sense això, que «les arrels són √2±√3» seria una afirmació que has de creure.</p>
+          <p><strong>Segon, descobrir les relacions.</strong> Tries dues arrels i en proves la suma i el producte. L'aplicació te'n dona el valor exacte en la forma a+b√2+c√3+d√6, i marca si és racional (és a dir, si b=c=d=0). Les que ho són es van guardant a una llista: aquest és el teu material de treball.</p>
+          <p><strong>Tercer, provar reordenaments.</strong> A la fila «Arranjament candidat», cliques dues caselles per intercanviar-les i proposes una permutació. «Comprova simetria» torna a calcular <em>totes</em> les relacions de la teva llista amb les arrels ja intercanviades. Si totes segueixen donant el mateix valor, l'arranjament és una simetria.</p>
+          <div class="deep-key">
+            <strong>Un detall important sobre el mètode.</strong> Com més relacions hagis descobert, més exigent és la comprovació. Amb una sola relació, moltes permutacions falses passarien el filtre. Amb totes les relacions trobades, només en passen les 4 correctes. Aquesta és, en petit, exactament la situació real de la teoria: el grup de Galois és el que queda <em>després</em> d'imposar totes les condicions possibles.
+          </div>
+
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: trobar les 4 simetries</span>
+            <span class="de-step">1. Tria el polinomi <strong>x⁴ − 10x² + 1</strong>. Arrels: r₁=√2+√3, r₂=√2−√3, r₃=−√2+√3, r₄=−√2−√3.</span>
+            <span class="de-step">2. Selecciona r₁ i r₄ → «Prova la relació» → suma = 0 ✓ racional. Guardada.</span>
+            <span class="de-step">3. Selecciona r₁ i r₂ → producte = −1 ✓ racional. Guardada.</span>
+            <span class="de-step">4. Repeteix amb totes les parelles fins a tenir-les totes (en surten 6).</span>
+            <span class="de-step">5. Deixa l'arranjament tal com està → «Comprova simetria» → ✓ (és la identitat).</span>
+            <span class="de-step">6. Intercanvia posicions 1↔3 i després 2↔4 → «Comprova» → ✓ (això és σ₁: canvia el signe de √2).</span>
+            <span class="de-step">7. Prova ara d'intercanviar només r₁↔r₂, deixant r₃ i r₄ quietes → ✗ trenca alguna relació.</span>
+            <span class="de-step">8. Per què falla? Perquè canviar el signe de √3 afecta r₁ i r₂ <em>i també</em> r₃ i r₄: no es pot fer «a mitges».</span>
+          </div>
+
+          <h4>7. Per què tres polinomis i no un</h4>
+          <p>La càpsula en dona tres, i la comparació és el punt.</p>
+          <p><strong>x⁴ − 10x² + 1</strong> és <em>irreductible</em>: no es pot descompondre en factors més petits amb coeficients racionals. Les seves quatre arrels barregen √2 i √3 alhora.</p>
+          <p><strong>x⁴ − 5x² + 6</strong> és <em>reductible</em>: es factoritza com (x²−2)(x²−3). Les seves arrels són ±√2 i ±√3, i cadascuna conté només un radical. El grup de Galois torna a ser Z/2×Z/2 —el mateix!— però les simetries actuen diferent: aquí <strong>sí</strong> que hi ha simetries que fixen dues arrels i mouen només les altres dues, cosa impossible al primer cas. Les arrels d'un factor mai es poden barrejar amb les de l'altre.</p>
+          <p><strong>x⁴ − 16x² + 4</strong> té arrels ±√3±√5: el mateix patró que el primer, amb primers diferents. Serveix per comprovar que el fenomen no depenia dels números 2 i 3.</p>
+          <p>La conclusió que es vol que treguis és aquesta: <strong>ni la irreductibilitat ni els números concrets determinen sols l'estructura</strong>. El que importa és exactament quines relacions racionals lliguen les arrels entre elles.</p>
+
+          <h4>8. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Els tres problemes clàssics grecs.</strong> Duplicar el cub, trisecar un angle qualsevol i quadrar el cercle amb regle i compàs van resistir dos mil anys. La teoria de Galois els liquida: construir amb regle i compàs equival a fer només arrels quadrades, i això només permet arribar a números que viuen en extensions de grau potència de 2. Duplicar el cub demana ∛2, que viu en una extensió de grau 3. Impossible, i punt.</p>
+          <p><strong>Quins polígons regulars es poden construir.</strong> Gauss va demostrar (i Wantzel ho va completar) que el polígon regular de n costats és construïble amb regle i compàs exactament quan n és una potència de 2 multiplicada per primers de Fermat diferents. Per això el de 17 costats sí que es pot (i Gauss ho va descobrir als 18 anys, un dels seus resultats preferits) i el de 7 no.</p>
+          <p><strong>Criptografia i codis.</strong> Els cossos finits, amb els quals treballen els codis correctors Reed–Solomon (CD, DVD, codis QR, comunicacions amb sondes espacials) i bona part de la criptografia moderna, tenen grups de Galois cíclics molt ben entesos. Saber-ne l'estructura és el que permet dissenyar els codis.</p>
+          <p><strong>Equacions diferencials.</strong> Hi ha una teoria de Galois <em>diferencial</em> (Picard–Vessiot) que respon la pregunta anàloga: quines equacions diferencials es poden resoldre amb funcions elementals. La resposta té la mateixa forma: depèn de si un cert grup és resoluble.</p>
+
+          <h4>9. Curiositats</h4>
+          <p><strong>Va escriure-ho la nit abans de morir.</strong> Évariste Galois va morir el 31 de maig de 1832, amb 20 anys, per una ferida rebuda en un duel. La nit anterior va escriure una carta al seu amic Auguste Chevalier resumint les seves idees, amb anotacions al marge que deien «no tinc temps». Aquell document conté l'essencial de la teoria.</p>
+          <p><strong>El seu treball va estar a punt de perdre's dues vegades.</strong> Va presentar memòries a l'Acadèmia de Ciències francesa en dues ocasions. La primera la va rebre Cauchy, que la va extraviar o desestimar. La segona la va rebre Fourier, que va morir poc després i el manuscrit no va aparèixer mai més. Les idees no es van publicar fins al 1846, catorze anys després de la seva mort, gràcies a Joseph Liouville.</p>
+          <p><strong>Abel també va morir jove i sense reconeixement.</strong> Niels Henrik Abel, que havia demostrat la impossibilitat de la quíntica el 1824, va morir de tuberculosi el 1829 als 26 anys. Dos dies després de la seva mort va arribar una carta amb una oferta de plaça a Berlín.</p>
+          <p><strong>Ruffini va publicar-ho primer i ningú el va llegir.</strong> Paolo Ruffini havia publicat un argument el 1799, però tenia un buit i estava escrit en 500 pàgines difícils. Va enviar-lo a diversos matemàtics; només Cauchy hi va respondre, i tard. La demostració completa i llegible és d'Abel, i per això el teorema porta els dos noms.</p>
+          <p><strong>El grup pot ser tan gran com es vulgui.</strong> Per a un polinomi de grau 5 «genèric» —com x⁵ − x − 1— el grup de Galois és tot S₅, amb 120 elements. Trobar exemples explícits amb grup S₅ és fàcil; el problema invers (donat un grup finit, hi ha algun polinomi amb aquest grup de Galois sobre els racionals?) es diu el <strong>problema invers de Galois</strong> i, tot i estar resolt per a moltes famílies, <strong>continua obert en general</strong> més de 150 anys després.</p>
+          <p><strong>La correspondència és perfecta.</strong> El teorema fonamental de la teoria de Galois estableix una correspondència exacta, que inverteix les inclusions, entre els subgrups del grup de Galois i els cossos intermedis. Per al nostre exemple: els 5 subgrups de Z/2×Z/2 corresponen exactament als 5 cossos entre Q i Q(√2,√3) — que són Q, Q(√2), Q(√3), Q(√6) i el total. És un diccionari perfecte entre àlgebra de grups i teoria de cossos.</p>
+
+          <h4>10. Connexió amb altres àrees</h4>
+          <p>Aquesta càpsula és el punt de trobada de tot el bloc d'àlgebra. El grup que hi descobreixes, Z/2×Z/2, és un dels que pots construir des de zero a <strong>Taules de Cayley</strong>, on també hi veuràs per què no és isomorf a Z/4 —una distinció que aquí té conseqüències reals.</p>
+          <p>La connexió amb el <strong>Trencaclosques del 15</strong> és més profunda del que sembla: el grup altern A₅ que fa impossible la fórmula de la quíntica és el germà gran d'A₁₅, el que fa impossible el trencaclosques de Loyd. En tots dos casos, la impossibilitat surt de l'estructura interna d'un grup altern.</p>
+          <p>I cap a l'anàlisi: com que no hi ha fórmula per al grau 5, l'única sortida és calcular les arrels numèricament. Això és exactament el que fa la càpsula del <strong>Mètode de Newton</strong>. La teoria de Galois no diu que el problema sigui irresoluble; diu que cal canviar d'eina.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Polinomi:</span>
+      <div class="chip-row" id="polyRow"></div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="90">
+          <span class="rs-val" id="repteTimeVal">90s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">90s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap galois-wrap flash-target" id="canvasWrap">
+      <div class="galois-eq" id="polyEqDisplay"></div>
+
+      <div class="explora-only" id="verifySection" style="display:flex; flex-direction:column; gap:.5rem; align-items:center;">
+        <div class="galois-section-title">Verifica que és una arrel de veritat</div>
+        <div class="chip-row" id="verifyRootRow"></div>
+        <div class="verify-trace" id="verifyTrace"></div>
+      </div>
+
+      <div class="galois-section-title">Arrels (fixes — per provar relacions)</div>
+      <div class="root-row" id="rootRow"></div>
+      <div class="btn-row explora-only" style="display:flex; justify-content:center;">
+        <button class="btn btn-ghost" id="testRelationBtn" disabled>Prova la relació</button>
+      </div>
+      <div class="relation-result explora-only" id="relationResult" style="display:none;"></div>
+      <div class="relations-list explora-only" id="relationsList"></div>
+      <div class="relations-list repte-only" id="repteRelationsList"></div>
+
+      <div class="galois-section-title">Arranjament candidat (clica dues caselles per intercanviar-les)</div>
+      <div class="root-row" id="slotRow"></div>
+      <div class="btn-row explora-only" style="display:flex; justify-content:center;">
+        <button class="btn btn-primary" id="checkSymBtn">Comprova simetria</button>
+      </div>
+      <div class="sym-check-result" id="symResult"></div>
+
+      <div class="predict-row" id="galoisPredictRow">
+        <button class="btn btn-primary" id="predictYesBtn">✔ És una simetria</button>
+        <button class="btn btn-ghost" id="predictNoBtn">✕ No ho és</button>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Selecciona dues arrels i prova'n la relació.</div>
+
+    <p class="method-hint" id="methodPanel">Una permutació és una simetria de Galois si, aplicada a totes les relacions racionals conegudes, aquestes es mantenen certes.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">0/4</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Simetries trobades</div>
+        <div class="readout-def" id="readoutDef">Descobreix relacions i prova arranjaments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title" id="infoTitle">Grup de Galois de x⁴−10x²+1</div>
+
+    <div class="type-card active" id="card-relacio" data-method="relacio" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Relació racional</div>
+        <div class="type-range" id="cardRelacioRange">a+b√2+c√3+d√6</div>
+        <div class="type-desc" id="cardRelacioDesc">Quan proves una parella d'arrels, l'app calcula el resultat exacte en la forma a+b√2+c√3+d√6. És "racional" (b=c=d=0) exactament quan tots els termes amb arrel s'anul·len entre ells.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-simetria" data-method="simetria" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Simetria de Galois</div>
+        <div class="type-range">σ(relació) = relació</div>
+        <div class="type-desc">Quan reordenes les caselles i prems «Comprova simetria», l'app torna a calcular cada relació de la teva llista amb les arrels ara intercanviades. Si totes segueixen donant el mateix valor, l'arranjament és una simetria de veritat.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-resolubilitat" data-method="resolubilitat" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Resolubilitat</div>
+        <div class="type-range">Abel–Ruffini</div>
+        <div class="type-desc" id="cardResolDesc">El grup que acabes de trobar (4 simetries, Z/2×Z/2) és abelià i, per tant, resoluble: per això x⁴−10x²+1 sí que té una fórmula amb radicals. Per a un grup de Galois de grau 5 típic, aquesta propietat falla.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box" id="noteBox">
+      <strong>💡 Recorda:</strong> el grup de Galois d'aquest polinomi té només 4 elements (Z/2×Z/2): cap arrel es queda mai fixa sola, sempre es mouen en parelles — un reflex directe que √2 i √3 es poden canviar de signe de manera independent.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 02 · Àlgebra i Combinatòria</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ARITMÈTICA SIMBÒLICA SOBRE {1,√a,√b,√(ab)}
+//  Generalitzada per treballar amb qualsevol dels 3 polinomis de POLYS: cada
+//  arrel és sa·√a + sb·√b, amb sa,sb ∈ {-1,0,+1} (0 exclou aquell radical —
+//  necessari per al polinomi reductible, on cada arrel només en té un dels dos).
+// ─────────────────────────────────────────────
+function allPermutations(arr) {
+  if (arr.length <= 1) return [arr];
+  const res = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+    for (const p of allPermutations(rest)) res.push([arr[i], ...p]);
+  }
+  return res;
+}
+const ALL_24 = allPermutations([0, 1, 2, 3]);
+
+const POLYS = [
+  {
+    id: 'p1', a: 2, b: 3, c2: -10, c0: 1, type: 'combined', label: 'x⁴ − 10x² + 1',
+    roots: [{ sa: 1, sb: 1 }, { sa: 1, sb: -1 }, { sa: -1, sb: 1 }, { sa: -1, sb: -1 }],
+    intro: 'Irreductible: les 4 arrels barregen √2 i √3 alhora, cap es queda mai sola.'
+  },
+  {
+    id: 'p2', a: 2, b: 3, c2: -5, c0: 6, type: 'reducible', label: 'x⁴ − 5x² + 6',
+    roots: [{ sa: 1, sb: 0 }, { sa: -1, sb: 0 }, { sa: 0, sb: 1 }, { sa: 0, sb: -1 }],
+    intro: 'Reductible: (x²−2)(x²−3). Les arrels de cada factor mai es barregen amb les de l\'altre.'
+  },
+  {
+    id: 'p3', a: 3, b: 5, c2: -16, c0: 4, type: 'combined', label: 'x⁴ − 16x² + 4',
+    roots: [{ sa: 1, sb: 1 }, { sa: 1, sb: -1 }, { sa: -1, sb: 1 }, { sa: -1, sb: -1 }],
+    intro: 'Irreductible, igual que la primera però amb √3 i √5 — el mateix patró, primers diferents.'
+  },
+];
+let currentPoly = POLYS[0];
+const ROOT_LABELS = ['r₁', 'r₂', 'r₃', 'r₄'];
+
+function rootSymbol(r) {
+  const parts = [];
+  if (r.sa !== 0) parts.push(`${r.sa > 0 ? '' : '−'}√${currentPoly.a}`);
+  if (r.sb !== 0) parts.push(`${r.sb > 0 ? (parts.length ? '+ ' : '') : '− '}√${currentPoly.b}`);
+  return parts.join(' ');
+}
+function rootNumeric(r) { return r.sa * Math.sqrt(currentPoly.a) + r.sb * Math.sqrt(currentPoly.b); }
+
+function sumOf(A, B) {
+  const sa = A.sa + B.sa, sb = A.sb + B.sb;
+  const rational = (sa === 0 && sb === 0);
+  return { rational, value: rational ? 0 : null, sa, sb };
+}
+function prodOf(A, B) {
+  const rat = currentPoly.a * A.sa * B.sa + currentPoly.b * A.sb * B.sb;
+  const irr = A.sa * B.sb + A.sb * B.sa; // coeficient de √(a·b)
+  const rational = irr === 0;
+  return { rational, value: rational ? rat : null, rat, irr };
+}
+function fmtSum(r) {
+  if (r.sa === 0 && r.sb === 0) return '0';
+  const parts = [];
+  if (r.sa !== 0) parts.push(`${r.sa > 0 ? '' : '−'}${Math.abs(r.sa) === 1 ? '' : Math.abs(r.sa)}√${currentPoly.a}`);
+  if (r.sb !== 0) parts.push(`${r.sb > 0 ? (parts.length ? '+ ' : '') : '− '}${Math.abs(r.sb) === 1 ? '' : Math.abs(r.sb)}√${currentPoly.b}`);
+  return parts.join(' ');
+}
+function fmtProd(r) {
+  if (r.irr === 0) return String(r.rat);
+  return `${r.rat} ${r.irr > 0 ? '+' : '−'} ${Math.abs(r.irr) === 1 ? '' : Math.abs(r.irr)}√${currentPoly.a * currentPoly.b}`;
+}
+
+// Grup de Galois real d'un polinomi: es calcula per força bruta (no s'hi
+// confia a ull) — es troben TOTES les relacions racionals suma/producte entre
+// les 4 arrels de referència, i es filtren les 24 permutacions a les que
+// preserven cadascuna. Verificat que coincideix amb el resultat conegut per
+// al primer polinomi abans de confiar-hi per als altres dos (vegeu consola).
+function computeTrueGaloisGroup(poly) {
+  const saved = currentPoly; currentPoly = poly;
+  const roots = poly.roots, relations = [];
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+    const s = sumOf(roots[i], roots[j]); if (s.rational) relations.push({ i, j, type: 'sum', value: 0 });
+    const p = prodOf(roots[i], roots[j]); if (p.rational) relations.push({ i, j, type: 'prod', value: p.rat });
+  }
+  const group = ALL_24.filter(perm => relations.every(rel => {
+    const A = roots[perm[rel.i]], B = roots[perm[rel.j]];
+    const cur = rel.type === 'sum' ? sumOf(A, B) : prodOf(A, B);
+    return cur.rational && cur.value === rel.value;
+  }));
+  currentPoly = saved;
+  return group;
+}
+POLYS.forEach(p => { p.trueGroup = computeTrueGaloisGroup(p); });
+function sameArrangement(a, b) { return a.every((v, i) => v === b[i]); }
+function isTrueSymmetry(arr) { return currentPoly.trueGroup.some(g => sameArrangement(g, arr)); }
+
+// Verificació que una arrel realment satisfà x⁴+c2x²+c0=0, pas a pas amb la
+// mateixa aritmètica simbòlica (x² es calcula amb prodOf; x⁴ és el quadrat
+// d'un nombre R+I√(ab), fet a mà perquè ja no viu a la base {√a,√b}).
+function verifyRootTrace(root, poly) {
+  const saved = currentPoly; currentPoly = poly;
+  const x2 = prodOf(root, root);
+  currentPoly = saved;
+  const R = x2.rat, I = x2.irr, ab = poly.a * poly.b;
+  const x4rat = R * R + I * I * ab, x4irr = 2 * R * I;
+  const finalRat = x4rat + poly.c2 * R + poly.c0, finalIrr = x4irr + poly.c2 * I;
+  return { R, I, ab, x4rat, x4irr, finalRat, finalIrr, isZero: finalRat === 0 && finalIrr === 0 };
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let selectedRoots = [];
+let discoveredRelations = []; // {i,j,type,value}
+let arrangement = [0, 1, 2, 3];
+let selectedSlot = null;
+let foundSymmetries = new Set();
+let verifyRootIdx = 0;
+
+// ─────────────────────────────────────────────
+//  SELECCIÓ DE POLINOMI (Explora)
+// ─────────────────────────────────────────────
+function buildPolyChips() {
+  const row = document.getElementById('polyRow');
+  row.innerHTML = '';
+  POLYS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (p === currentPoly ? ' active' : '');
+    b.textContent = p.label;
+    b.addEventListener('click', () => setPoly(p));
+    row.appendChild(b);
+  });
+}
+function setPoly(p) {
+  currentPoly = p;
+  selectedRoots = []; discoveredRelations = []; arrangement = [0, 1, 2, 3]; selectedSlot = null; foundSymmetries = new Set(); verifyRootIdx = 0;
+  buildPolyChips();
+  renderPolyEquation();
+  renderPolySidebar();
+  renderRootRow(); renderSlotRow(); renderRelationsList(); renderVerifyRootRow();
+  document.getElementById('testRelationBtn').disabled = true;
+  document.getElementById('relationResult').style.display = 'none';
+  document.getElementById('symResult').textContent = '';
+  updateReadout();
+  hint.textContent = 'Selecciona dues arrels i prova\'n la relació.';
+}
+function renderPolyEquation() {
+  document.getElementById('polyEqDisplay').innerHTML = `x⁴ ${currentPoly.c2 >= 0 ? '+' : '−'} ${Math.abs(currentPoly.c2)}x² ${currentPoly.c0 >= 0 ? '+' : '−'} ${Math.abs(currentPoly.c0)} = 0<span class="poly-intro">${currentPoly.intro}</span>`;
+}
+function renderVerifyRootRow() {
+  const row = document.getElementById('verifyRootRow');
+  row.innerHTML = '';
+  currentPoly.roots.forEach((r, i) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (i === verifyRootIdx ? ' active' : '');
+    b.textContent = ROOT_LABELS[i];
+    b.addEventListener('click', () => { verifyRootIdx = i; renderVerifyRootRow(); renderVerifyTrace(); });
+    row.appendChild(b);
+  });
+  renderVerifyTrace();
+}
+function fmtSigned(v) { return v >= 0 ? `+ ${v}` : `− ${Math.abs(v)}`; }
+function renderVerifyTrace() {
+  const r = currentPoly.roots[verifyRootIdx];
+  const x = `(${rootSymbol(r)})`;
+  const t = verifyRootTrace(r, currentPoly);
+  const ab = t.ab;
+  const x2str = t.I === 0 ? `${t.R}` : `${t.R} ${fmtSigned(t.I)}√${ab}`;
+  const x4str = t.x4irr === 0 ? `${t.x4rat}` : `${t.x4rat} ${fmtSigned(t.x4irr)}√${ab}`;
+  document.getElementById('verifyTrace').innerHTML = `
+    x = ${x} &nbsp;→&nbsp; x² = ${x2str}<br>
+    x⁴ = (x²)² = ${x4str}<br>
+    x⁴ ${fmtSigned(currentPoly.c2)}x² ${fmtSigned(currentPoly.c0)} = ${x4str} ${fmtSigned(currentPoly.c2)}(${x2str}) ${fmtSigned(currentPoly.c0)}<br>
+    <span class="vt-final ${t.isZero ? 'ok' : ''}">= ${t.finalIrr === 0 ? t.finalRat : `${t.finalRat} ${fmtSigned(t.finalIrr)}√${ab}`} ${t.isZero ? '✓ és una arrel' : ''}</span>`;
+}
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 90, repteMaxTime = 90, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteAnswer = null;
+
+// ─────────────────────────────────────────────
+//  FILA D'ARRELS (fixa, per provar relacions)
+// ─────────────────────────────────────────────
+// Aquestes files es reconstrueixen senceres a cada interacció. Amb <div> no
+// es notava, però amb elements enfocables això vol dir que el focus del teclat
+// cau a <body> a cada pulsació i l'usuari perd el lloc. Es desa quin índex
+// tenia el focus abans de repintar i es restaura després.
+function withFocusPreserved(row, render) {
+  const active = document.activeElement;
+  const keep = (active && row.contains(active)) ? active.dataset.idx : null;
+  render();
+  if (keep != null) {
+    const again = row.querySelector(`[data-idx="${keep}"]`);
+    if (again) again.focus();
+  }
+}
+
+// Text llegible de l'arrel: el símbol visual («−√2 + √3») fa servir caràcters
+// que els lectors de pantalla no verbalitzen de manera fiable.
+function rootSpoken(r) {
+  const parts = [];
+  if (r.sa !== 0) parts.push(`${r.sa > 0 ? '' : 'menys '}arrel de ${currentPoly.a}`);
+  if (r.sb !== 0) parts.push(`${r.sb > 0 ? 'més ' : 'menys '}arrel de ${currentPoly.b}`);
+  return parts.join(' ');
+}
+
+function renderRootRow() {
+  const row = document.getElementById('rootRow');
+  withFocusPreserved(row, () => {
+    row.innerHTML = '';
+    currentPoly.roots.forEach((r, i) => {
+      const c = document.createElement('button');
+      c.type = 'button';
+      c.dataset.idx = i;
+      c.className = 'root-card' + (selectedRoots.includes(i) ? ' selected' : '');
+      c.setAttribute('aria-pressed', selectedRoots.includes(i) ? 'true' : 'false');
+      c.setAttribute('aria-label', `Arrel ${i + 1}: ${rootSpoken(r)}, aproximadament ${fmtNum(rootNumeric(r), 3)}`);
+      c.innerHTML = `<span class="rlabel" aria-hidden="true">${ROOT_LABELS[i]}</span><span class="rval" aria-hidden="true">${rootSymbol(r)}</span><span class="rnum" aria-hidden="true">≈ ${fmtNum(rootNumeric(r), 3)}</span>`;
+      c.addEventListener('click', () => {
+        if (repteMode) return;
+        if (selectedRoots.includes(i)) selectedRoots = selectedRoots.filter(x => x !== i);
+        else { if (selectedRoots.length >= 2) selectedRoots.shift(); selectedRoots.push(i); }
+        renderRootRow();
+        document.getElementById('testRelationBtn').disabled = selectedRoots.length !== 2;
+        announce(selectedRoots.length === 2
+          ? `Seleccionades arrel ${selectedRoots[0] + 1} i arrel ${selectedRoots[1] + 1}. Ja pots provar-ne la relació.`
+          : `${selectedRoots.length} arrel seleccionada de 2.`);
+      });
+      row.appendChild(c);
+    });
+  });
+}
+document.getElementById('testRelationBtn').addEventListener('click', () => {
+  if (selectedRoots.length !== 2) return;
+  const [i, j] = selectedRoots;
+  const s = sumOf(currentPoly.roots[i], currentPoly.roots[j]);
+  const p = prodOf(currentPoly.roots[i], currentPoly.roots[j]);
+  const box = document.getElementById('relationResult');
+  box.style.display = 'block';
+  box.innerHTML = `${ROOT_LABELS[i]} + ${ROOT_LABELS[j]} = ${fmtSum(s)} ${s.rational ? '✔ racional' : '✕ irracional'}<br>${ROOT_LABELS[i]} · ${ROOT_LABELS[j]} = ${fmtProd(p)} ${p.rational ? '✔ racional' : '✕ irracional'}`;
+  box.classList.toggle('rational', s.rational || p.rational);
+  let added = false;
+  if (s.rational && !discoveredRelations.some(r => r.i === i && r.j === j && r.type === 'sum')) { discoveredRelations.push({ i, j, type: 'sum', value: 0 }); added = true; }
+  if (p.rational && !discoveredRelations.some(r => r.i === i && r.j === j && r.type === 'prod')) { discoveredRelations.push({ i, j, type: 'prod', value: p.rat }); added = true; }
+  renderRelationsList();
+  if (added) flash(wrap, 'var(--good)');
+});
+function renderRelationsList() {
+  const list = document.getElementById('relationsList');
+  list.innerHTML = discoveredRelations.length
+    ? discoveredRelations.map(r => `• ${ROOT_LABELS[r.i]} ${r.type === 'sum' ? '+' : '·'} ${ROOT_LABELS[r.j]} = ${r.value}`).join('<br>')
+    : 'Encara no has trobat cap relació racional.';
+}
+
+// ─────────────────────────────────────────────
+//  FILA D'ARRANJAMENT (candidata, intercanviable)
+// ─────────────────────────────────────────────
+function renderSlotRow() {
+  const row = document.getElementById('slotRow');
+  withFocusPreserved(row, () => {
+    row.innerHTML = '';
+    arrangement.forEach((rootIdx, slot) => {
+      const r = currentPoly.roots[rootIdx];
+      const c = document.createElement('button');
+      c.type = 'button';
+      c.dataset.idx = slot;
+      c.className = 'root-card slot' + (selectedSlot === slot ? ' selected' : '');
+      c.setAttribute('aria-pressed', selectedSlot === slot ? 'true' : 'false');
+      const action = selectedSlot === null
+        ? 'Activa-la per triar-la i després intercanviar-la amb una altra.'
+        : (selectedSlot === slot ? 'Seleccionada.' : `Activa-la per intercanviar-la amb la posició ${selectedSlot + 1}.`);
+      c.setAttribute('aria-label', `Posició ${slot + 1}, ocupada per l'arrel ${rootIdx + 1} (${rootSpoken(r)}). ${action}`);
+      c.innerHTML = `<span class="rlabel" aria-hidden="true">${ROOT_LABELS[rootIdx]}</span><span class="rval" aria-hidden="true">${rootSymbol(r)}</span><span class="rnum" aria-hidden="true">≈ ${fmtNum(rootNumeric(r), 3)}</span>`;
+      c.addEventListener('click', () => onSlotClick(slot));
+      row.appendChild(c);
+    });
+  });
+}
+function onSlotClick(slot) {
+  if (selectedSlot === null) {
+    selectedSlot = slot;
+    announce(`Posició ${slot + 1} seleccionada. Tria'n una altra per intercanviar-les.`);
+  } else if (selectedSlot === slot) {
+    // Reclicar la mateixa casella ha de poder desfer la selecció: abans
+    // s'intercanviava amb ella mateixa (cap efecte visible) i l'usuari es
+    // quedava sense manera de cancel·lar.
+    selectedSlot = null;
+    announce('Selecció cancel·lada.');
+  } else {
+    const from = selectedSlot;
+    const tmp = arrangement[selectedSlot]; arrangement[selectedSlot] = arrangement[slot]; arrangement[slot] = tmp;
+    selectedSlot = null;
+    document.getElementById('symResult').textContent = '';
+    announce(`Intercanviades les posicions ${from + 1} i ${slot + 1}. Ordre actual: ${arrangement.map(r => 'arrel ' + (r + 1)).join(', ')}.`);
+  }
+  renderSlotRow();
+}
+document.getElementById('checkSymBtn').addEventListener('click', () => {
+  const ok = discoveredRelations.length > 0 && discoveredRelations.every(rel => {
+    const A = currentPoly.roots[arrangement[rel.i]], B = currentPoly.roots[arrangement[rel.j]];
+    const cur = rel.type === 'sum' ? sumOf(A, B) : prodOf(A, B);
+    return cur.rational && cur.value === rel.value;
+  });
+  const box = document.getElementById('symResult');
+  if (!discoveredRelations.length) {
+    box.textContent = 'Encara no has trobat cap relació amb què comprovar-ho.';
+    box.style.color = 'var(--muted)';
+    return;
+  }
+  box.textContent = ok ? '✔ Respecta totes les relacions conegudes!' : '✕ Trenca alguna relació coneguda.';
+  box.style.color = ok ? 'var(--good)' : 'var(--bad)';
+  flash(wrap, ok ? 'var(--good)' : 'var(--bad)');
+  if (ok) {
+    foundSymmetries.add(JSON.stringify(arrangement));
+    updateReadout();
+  }
+  // El veredicte només existia com a color i com a text que apareix en
+  // silenci: s'anuncia perquè també arribi a qui no veu la pantalla.
+  announce(ok
+    ? `Correcte: aquest arranjament respecta les ${discoveredRelations.length} relacions conegudes. Simetries trobades: ${foundSymmetries.size} de ${currentPoly.trueGroup.length}.`
+    : 'Aquest arranjament trenca alguna de les relacions conegudes, així que no és una simetria de Galois.');
+});
+function updateReadout() {
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = `${foundSymmetries.size}/4`;
+  readoutName.textContent = 'Simetries trobades';
+  readoutDef.textContent = discoveredRelations.length + ' relació(ns) descoberta(es).';
+}
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  currentPoly = POLYS[Math.floor(Math.random() * POLYS.length)];
+  renderPolyEquation();
+  // Amb totes les relacions ja donades, per anar ràpid — però es MOSTREN
+  // (repteRelationsList), perquè comprovar-hi l'arranjament sigui raonament
+  // real i no una endevinalla.
+  discoveredRelations = [];
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+    const s = sumOf(currentPoly.roots[i], currentPoly.roots[j]); if (s.rational) discoveredRelations.push({ i, j, type: 'sum', value: 0 });
+    const p = prodOf(currentPoly.roots[i], currentPoly.roots[j]); if (p.rational) discoveredRelations.push({ i, j, type: 'prod', value: p.rat });
+  }
+  document.getElementById('repteRelationsList').innerHTML = discoveredRelations
+    .map(r => `• ${ROOT_LABELS[r.i]} ${r.type === 'sum' ? '+' : '·'} ${ROOT_LABELS[r.j]} = ${r.value}`).join('<br>');
+  const useTrue = Math.random() < 0.5;
+  const pool = useTrue ? currentPoly.trueGroup : ALL_24.filter(a => !isTrueSymmetry(a));
+  arrangement = pool[Math.floor(Math.random() * pool.length)].slice();
+  repteAnswer = isTrueSymmetry(arrangement);
+  selectedSlot = null;
+  renderSlotRow();
+  document.getElementById('symResult').textContent = '';
+  document.getElementById('galoisPredictRow').classList.add('active');
+  hint.textContent = 'És aquesta permutació una simetria de Galois? Prediu-ho.';
+  readoutName.textContent = 'Predicció pendent';
+  readoutDef.textContent = '';
+  readoutNum.textContent = '?';
+}
+function submitPrediction(claim) {
+  const correct = claim === repteAnswer;
+  if (correct) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 10);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    hint.textContent = '✔ Correcte!';
+  } else {
+    applyPenalty();
+    flash(wrap, 'var(--bad)');
+    hint.textContent = '✕ Incorrecte.';
+  }
+  readoutName.textContent = repteAnswer ? 'Era una simetria vàlida' : 'NO era una simetria vàlida';
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1400);
+}
+document.getElementById('predictYesBtn').addEventListener('click', () => submitPrediction(true));
+document.getElementById('predictNoBtn').addEventListener('click', () => submitPrediction(false));
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      document.getElementById('galoisPredictRow').classList.remove('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('galoisPredictRow').classList.remove('active');
+  setPoly(POLYS[0]);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  relacio: () => `Una suma o producte de dues arrels és racional quan els coeficients de √${currentPoly.a}, √${currentPoly.b} i √${currentPoly.a * currentPoly.b} s'anul·len. Prova-ho des de la fila d'arrels.`,
+  simetria: () => "Una permutació és una simetria de Galois si, aplicada a totes les relacions racionals conegudes, aquestes segueixen sent certes.",
+  resolubilitat: () => "Si el grup de Galois no és resoluble (com passa típicament en grau 5), no hi ha cap fórmula amb radicals per a les arrels."
+};
+const methodPanel = document.getElementById('methodPanel');
+let activeMethod = 'relacio';
+function setMethod(m) {
+  activeMethod = m;
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m]();
+}
+document.getElementById('card-relacio').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('relacio'); });
+document.getElementById('card-simetria').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('simetria'); });
+document.getElementById('card-resolubilitat').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('resolubilitat'); });
+
+// Contingut del lateral dret que depèn del polinomi actiu — es torna a
+// pintar cada vegada que canvies de polinomi (setPoly la crida).
+function renderPolySidebar() {
+  const p = currentPoly, ab = p.a * p.b;
+  document.getElementById('infoTitle').textContent = `Grup de Galois de ${p.label}`;
+  document.getElementById('cardRelacioRange').textContent = `a+b√${p.a}+c√${p.b}+d√${ab}`;
+  document.getElementById('cardRelacioDesc').textContent = `Quan proves una parella d'arrels, l'app calcula el resultat exacte en la forma a+b√${p.a}+c√${p.b}+d√${ab}. És "racional" (b=c=d=0) exactament quan tots els termes amb arrel s'anul·len entre ells.`;
+  document.getElementById('cardResolDesc').textContent = `El grup que acabes de trobar (${p.trueGroup.length} simetries, Z/2×Z/2) és abelià i, per tant, resoluble: per això ${p.label} sí que té una fórmula amb radicals. Per a un grup de Galois de grau 5 típic, aquesta propietat falla.`;
+  const noteBox = document.getElementById('noteBox');
+  if (p.type === 'combined') {
+    noteBox.innerHTML = `<strong>💡 Recorda:</strong> el grup de Galois d'aquest polinomi té només 4 elements (Z/2×Z/2): cap arrel es queda mai fixa sola, sempre es mouen en parelles — un reflex directe que √${p.a} i √${p.b} es poden canviar de signe de manera independent, i el polinomi és irreductible: no es pot separar en trossos més petits amb coeficients racionals.`;
+  } else {
+    noteBox.innerHTML = `<strong>💡 Recorda:</strong> aquest polinomi és <em>reductible</em>: ${p.label} = (x²−${p.a})(x²−${p.b}). Per això el seu grup de Galois només pot barrejar arrels dins del mateix factor — √${p.a} mai es pot convertir en √${p.b}, encara que totes dues siguin arrels del mateix polinomi original.`;
+  }
+  setMethod(activeMethod);
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+setPoly(POLYS[0]);
+</script>
+</body>
+</html>

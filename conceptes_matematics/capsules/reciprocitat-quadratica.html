@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reciprocitat quadràtica · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--aritmetica); }
+
+    .qr-wrap { aspect-ratio: auto; padding: 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .qr-builders { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .qr-builders { grid-template-columns: 1fr; } }
+    .qr-builder { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .8rem; display: flex; flex-direction: column; gap: .55rem; }
+    .qr-builder-title { font-family: var(--font-mono); font-weight: 700; font-size: .95rem; color: var(--m-color); text-align: center; }
+    .qr-strip { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+    .qr-cell {
+      width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border); background: var(--card);
+      font-family: var(--font-mono); font-size: .7rem; display: flex; align-items: center; justify-content: center; color: var(--muted);
+    }
+    .qr-cell.qr { background: color-mix(in srgb, var(--m-color) 22%, transparent); border-color: var(--m-color); color: var(--m-color); font-weight: 700; }
+    .qr-cell.qr-plus { background: color-mix(in srgb, var(--good) 20%, transparent); border-color: var(--good); color: var(--good); font-weight: 700; }
+    .qr-cell.qr-minus { background: color-mix(in srgb, var(--bad) 12%, transparent); border-color: var(--bad); color: var(--bad); font-weight: 700; }
+    .qr-strip-legend { display: none; gap: 1rem; justify-content: center; font-size: .68rem; color: var(--muted); }
+    .qr-strip-legend.active { display: flex; }
+    .qr-strip-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .qr-strip-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .qr-quick-prompt { display: none; flex-direction: column; align-items: center; gap: .5rem; padding: 1.4rem 1rem; }
+    .qr-quick-prompt.active { display: flex; }
+    .qr-quick-title { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--m-color); }
+    .qr-quick-hint { font-size: .8rem; color: var(--muted); text-align: center; }
+    .qr-test-btn { min-width: 40px; font-size: .78rem; }
+    .qr-test-btn:disabled { opacity: .35; cursor: default; }
+    .qr-builder-caption { font-size: .74rem; color: var(--muted); text-align: center; line-height: 1.4; }
+    .qr-compare { display: none; flex-direction: column; gap: .55rem; background: var(--card); border: 1px solid var(--m-color); border-radius: 10px; padding: 1rem 1.2rem; font-size: .85rem; }
+    .qr-compare.active { display: flex; }
+    .qr-compare-title { font-family: var(--font-display); font-weight: 700; color: var(--m-color); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+    .qr-compare-row { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--font-mono); flex-wrap: wrap; }
+    .qr-compare-row .lbl { color: var(--muted); font-family: var(--font-body); }
+    .qr-compare-verdict { text-align: center; font-weight: 700; font-family: var(--font-display); font-size: .95rem; padding-top: .3rem; border-top: 1px dashed var(--border); }
+    .qr-compare-predict { font-size: .8rem; color: var(--muted); line-height: 1.5; padding-bottom: .2rem; border-bottom: 1px dashed var(--border); }
+    .qr-compare-predict b { color: var(--m-color); }
+    .qr-compare-sub { font-size: .72rem; color: var(--muted); font-family: var(--font-body); }
+    .qr-predict-row { display: none; gap: .8rem; }
+    .qr-predict-row.active { display: flex; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--aritmetica)">Bloc 01 · Reciprocitat quadràtica</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Reciprocitat quadràtica</h1>
+      <p>Construeix les taules de residus quadràtics de dos primers, elevant al quadrat tu mateix. Després, descobreix per què (p/q) i (q/p) gairebé sempre coincideixen — i quan no ho fan.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Agafa un primer p i mira la taula de multiplicar mòdul p: 1², 2², 3²... Els resultats que hi apareixen es diuen <strong>residus quadràtics</strong> de p — són, en certa manera, els «quadrats perfectes» d'aquella aritmètica. Un nombre a és residu quadràtic de p si existeix algun k amb k² ≡ a (mod p).</p>
+          <p>Per construir la llista completa n'hi ha prou elevant al quadrat 1, 2, ..., (p−1)/2: com que k² i (p−k)² donen sempre el mateix residu (per exemple, mod 7: 3²=2 i 4²=2 també), a partir de (p−1)/2 tot es comença a repetir. Aquest és exactament el mètode que faràs servir aquí, casella a casella.</p>
+          <p>Es representa amb el <strong>símbol de Legendre</strong> (a/p): val <strong>+1</strong> si a és residu quadràtic mòdul p, i <strong>−1</strong> si no ho és.</p>
+          <p>La <strong>llei de reciprocitat quadràtica</strong>, que Gauss va demostrar el 1796, connecta (p/q) i (q/p) per a dos primers senars diferents: gairebé sempre <strong>coincideixen</strong>, i només es <strong>giren</strong> quan tots dos, p i q, són ≡ 3 (mod 4) alhora.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p><a href="https://ca.wikipedia.org/wiki/Carl_Friedrich_Gauss" target="_blank" rel="noopener">Gauss</a> en deia el seu <em>theorema aureum</em> (teorema auri) i en va publicar vuit demostracions diferents al llarg de la vida — n'hi ha més de 300 conegudes avui dia, cosa que en fa un dels resultats més revisitats de tota la matemàtica. Permet decidir si x² ≡ a (mod p) té solució <strong>sense haver de provar cap valor de x</strong>, cosa essencial en teoria de nombres computacional.</p>
+          <p>Més enllà de l'ús pràctic, és un exemple perfecte de com un patró que sembla «gairebé sempre cert però amb excepcions estranyes» (per què just quan tots dos són ≡3 mod 4?) amaga una estructura profunda, demostrable amb tot rigor — i que tu mateix podràs verificar, parella rere parella, amb aquesta eina.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria un primer p al bloc A i un primer q al bloc B (poden repetir-se entre exercicis, però han de ser diferents entre ells).</li>
+            <li>A cada bloc, clica els botons k=1, k=2... un per un: cada clic calcula k² mod p en directe i n'il·lumina el resultat a la tira de números de sota — aquesta tira és, un cop completa, la llista de residus quadràtics d'aquell primer.</li>
+            <li>Quan les dues taules estiguin completes, la tira sencera es torna a acolorir: <strong>verd = +1</strong> (residu quadràtic), <strong>vermell = −1</strong> (no ho és) — el símbol de Legendre de cada número, d'un cop d'ull.</li>
+            <li>Aleshores apareix un panell que compara, pas a pas: p mod 4, q mod 4, si p és residu de q, si q és residu de p, i si coincideixen o no.</li>
+            <li>En mode Repte, hauràs de predir si seran <strong>iguals</strong> o <strong>oposats</strong> abans de veure la resposta — a vegades construint les taules tu mateix, a vegades una ronda ràpida sense taules on només val la regla del mod 4.</li>
+          </ol>
+        </div></div></div>
+      </div>
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">La reciprocitat quadràtica és el primer teorema «profund» que troba qui estudia teoria de nombres: l'enunciat es llegeix en trenta segons, però ningú entén d'entrada per què hauria de ser cert. Anem a poc a poc: per què la pregunta és natural, què diu exactament la llei, per què Gauss hi va tornar vuit vegades, i què construeixes quan cliques les caselles de l'element interactiu.</p>
+
+          <h4>1. Quins números tenen arrel quadrada?</h4>
+          <p>En els nombres reals, la pregunta «té arrel quadrada?» és avorrida: sí per als positius, no per als negatius, i s'ha acabat. Però quan treballem <strong>mòdul un primer p</strong> —és a dir, en el món on només compten els residus de dividir per p— la pregunta es torna genuïnament difícil.</p>
+          <p>Fem-ho amb p = 7. Els números amb què treballem són {1, 2, 3, 4, 5, 6}. Quins són quadrats d'algú? Provem-ho tot: 1²=1, 2²=4, 3²=9≡2, 4²=16≡2, 5²=25≡4, 6²=36≡1. Els resultats són {1, 2, 4}. Els altres —{3, 5, 6}— <strong>no són el quadrat de ningú</strong> mòdul 7.</p>
+          <p>Això ja diu una cosa curiosa. Mòdul 7, el número 2 <em>sí</em> que té arrel quadrada (és 3, o també 4), tot i que √2 no és un enter al món normal. I en canvi el 3 tampoc no ho és aquí. No hi ha manera òbvia de saber quin cas és quin sense calcular-ho. Els que sí que ho són s'anomenen <strong>residus quadràtics</strong> de p.</p>
+          <div class="deep-key">
+            <strong>Primera regularitat:</strong> exactament la meitat dels números no nuls són residus quadràtics. Per a p = 7, tres de sis. La raó és neta: k² i (p−k)² donen sempre el mateix resultat, perquè (p−k)² = p² − 2pk + k² ≡ k². Elevar al quadrat empareja els números de dos en dos, i la llista de quadrats només pot tenir (p−1)/2 elements diferents. <strong>Per això, a l'element interactiu, només cal que cliquis fins a k = (p−1)/2: a partir d'allà tot es repeteix.</strong>
+          </div>
+
+          <h4>2. El símbol de Legendre</h4>
+          <p>Escriure «a és residu quadràtic mòdul p» cada vegada és pesat, així que Legendre va introduir una notació que sembla una fracció però no ho és:</p>
+          <p style="text-align:center;margin:.7rem 0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>(</mo><mfrac><mi>a</mi><mi>p</mi></mfrac><mo>)</mo><mo>=</mo><mo>+</mo><mn>1</mn></math> si a és residu quadràtic,&nbsp;&nbsp;
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>(</mo><mfrac><mi>a</mi><mi>p</mi></mfrac><mo>)</mo><mo>=</mo><mo>−</mo><mn>1</mn></math> si no ho és.
+          </p>
+          <p>La gràcia d'escollir +1 i −1 (i no «sí» i «no») és que aquests valors <strong>es multipliquen bé</strong>: resulta que (a/p)·(b/p) = (ab/p). En paraules: el producte de dos residus quadràtics és un residu quadràtic; el producte de dos <em>no</em>-residus també ho és; i el producte d'un de cada dona un no-residu. És exactament l'aritmètica dels signes. Això converteix el símbol de Legendre en una eina de càlcul, no només en una etiqueta.</p>
+          <p>Hi ha una fórmula que ho lliga amb l'exponenciació, el <strong>criteri d'Euler</strong>: (a/p) ≡ a^((p−1)/2) (mod p). Comprovem-ho amb p = 7 i a = 2: 2³ = 8 ≡ 1 (mod 7), i efectivament el 2 era residu quadràtic. Amb a = 3: 3³ = 27 ≡ 6 ≡ −1 (mod 7), i efectivament el 3 no ho era. Aquesta fórmula és la que fa que tot plegat sigui <em>calculable</em> de pressa, cosa que serà important quan parlem de criptografia.</p>
+
+          <h4>3. La llei</h4>
+          <p>Ara ve el salt. Tenim dos primers senars diferents, p i q, i ens fem dues preguntes que <em>semblen no tenir res a veure</em>:</p>
+          <p style="margin-left:1rem"><strong>Pregunta A:</strong> és q un residu quadràtic mòdul p? &nbsp;→&nbsp; (q/p)<br>
+          <strong>Pregunta B:</strong> és p un residu quadràtic mòdul q? &nbsp;→&nbsp; (p/q)</p>
+          <p>Pensa-hi un moment. La pregunta A viu íntegrament dins l'aritmètica mòdul p: hi intervenen els números 1..p−1 i les seves potències. La pregunta B viu dins un món completament diferent, l'aritmètica mòdul q. Són dos universos separats, amb elements diferents i operacions diferents. No hi ha cap raó evident perquè la resposta d'un tingui res a veure amb la de l'altre.</p>
+          <p>I tanmateix:</p>
+          <div class="deep-key">
+            <strong>Llei de reciprocitat quadràtica.</strong> Per a p, q primers senars diferents:
+            <span style="display:block;text-align:center;margin:.6rem 0">
+              <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>(</mo><mfrac><mi>p</mi><mi>q</mi></mfrac><mo>)</mo><mo>(</mo><mfrac><mi>q</mi><mi>p</mi></mfrac><mo>)</mo><mo>=</mo><msup><mrow><mo>(</mo><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mrow><mfrac><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>·</mo><mfrac><mrow><mi>q</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac></mrow></msup></math>
+            </span>
+            En paraules, i molt més simple del que sembla: <strong>les dues respostes coincideixen sempre, excepte si p i q són tots dos ≡ 3 (mod 4), i llavors són oposades.</strong>
+          </div>
+          <p>Per què l'exponent es tradueix en una regla tan simple? Perquè (p−1)/2 és senar exactament quan p ≡ 3 (mod 4). Així que el producte dels dos exponents és senar —i per tant (−1) elevat a això dona −1— només quan tots dos ho són. En qualsevol altre cas l'exponent és parell i el resultat és +1, o sigui que els dos símbols tenen el mateix signe.</p>
+          <p>El que fa que això sigui profund no és la fórmula, és <strong>que existeixi cap relació</strong>. És com descobrir que saber si plou a Barcelona et diu, amb certesa i sense excepcions, si plou a Tòquio. La informació hauria de ser independent, i no ho és.</p>
+
+          <h4>4. Les dues lleis complementàries</h4>
+          <p>La llei principal parla de dos primers senars. Falten dos casos especials, que es demostren a part i que completen l'eina de càlcul:</p>
+          <p><strong>Per a −1:</strong> (−1/p) = +1 exactament quan p ≡ 1 (mod 4). O sigui, <strong>−1 té arrel quadrada mòdul p si i només si p és de la forma 4k+1</strong>. Mòdul 5, per exemple, −1 ≡ 4 = 2². Mòdul 7, en canvi, −1 ≡ 6 no és quadrat de ningú (ja ho hem vist a la llista de dalt).</p>
+          <p><strong>Per a 2:</strong> (2/p) = +1 exactament quan p ≡ ±1 (mod 8). Els primers per als quals 2 té arrel quadrada són 7, 17, 23, 31, 41, 47… i, mirats mòdul 8, són tots ±1.</p>
+          <div class="deep-aside">
+            <strong>Un detall que obre una porta enorme.</strong> Que −1 sigui residu quadràtic quan p ≡ 1 (mod 4) és la clau del teorema de Fermat sobre sumes de dos quadrats: <strong>un primer senar es pot escriure com a suma de dos quadrats si i només si p ≡ 1 (mod 4)</strong>. Així, 5 = 1+4, 13 = 4+9, 17 = 1+16 — però 7, 11 i 19 no s'hi poden escriure de cap manera. Una pregunta sobre arrels quadrades mòdul p acaba responent una pregunta sobre com es descomponen els primers com a sumes. Aquesta mena de traducció entre problemes que semblaven inconnexos és el que fa que la teoria de nombres tingui la reputació que té.
+          </div>
+
+          <h4>5. Gauss i les vuit demostracions</h4>
+          <p>Euler ja havia observat el patró experimentalment, i Legendre en va publicar un enunciat el 1785, però la seva demostració tenia un forat: donava per bo un fet que ell mateix no havia demostrat. Gauss hi va arribar el 1796, amb <strong>19 anys</strong>, i en va donar la primera demostració completa, publicada dins les <em>Disquisitiones Arithmeticae</em> el 1801. En deia el seu <em>theorema aureum</em>, el teorema auri.</p>
+          <p>El fet que hauria de fer-nos pensar és que Gauss no s'hi va aturar. Al llarg de la seva vida en va publicar <strong>vuit demostracions diferents</strong>, cadascuna per un camí distint. Avui se'n coneixen més de dues-centes. Un teorema no rep aquest tracte perquè sigui difícil; el rep perquè els matemàtics intueixen que <em>encara no l'entenen del tot</em> i cada demostració nova n'ensenya una cara diferent. Aquesta intuïció era correcta, com es veurà al punt 9.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p>La càpsula no et demana que apliquis la fórmula: et demana que <strong>construeixis les dades des de zero i comprovis la llei tu mateix</strong>. És l'ordre invers a com s'explica normalment, i és deliberat.</p>
+          <p>Quan cliques els botons k=1, k=2, … del bloc A, cada clic calcula k² mod p en directe i n'il·lumina el resultat a la tira de números de sota. Al principi la tira està apagada; a mesura que cliques, s'hi van encenent posicions. El que estàs fent, literalment, és <strong>omplir la columna de quadrats de la taula de multiplicar mòdul p</strong>. Quan hagis clicat fins a (p−1)/2, la tira ja no canviarà més —i aquí es veu, de manera tangible i no com una afirmació d'un llibre, que només la meitat dels números hi surten.</p>
+          <p>En aquell moment la tira es torna a acolorir sencera: <strong>verd per als que hi són (+1) i vermell per als que no (−1)</strong>. Això és el símbol de Legendre de tots els números alhora, d'un cop d'ull. Fes el mateix al bloc B amb un altre primer q, i el panell de comparació desglossa els quatre ingredients: p mod 4, q mod 4, si p era residu de q, si q era residu de p, i si les dues respostes han coincidit.</p>
+
+          <div class="deep-example">
+            <span class="de-title">Exemple: p = 7 i q = 11</span>
+            <span class="de-step">Bloc A, p = 7 → clica k = 1, 2, 3. Residus: {1, 2, 4}</span>
+            <span class="de-step">Bloc B, q = 11 → clica k = 1…5. Residus: {1, 3, 4, 5, 9}</span>
+            <span class="de-step">És 11 residu quadràtic mòdul 7? 11 ≡ 4 (mod 7), i 4 ∈ {1,2,4} → <strong>(11/7) = +1</strong></span>
+            <span class="de-step">És 7 residu quadràtic mòdul 11? 7 ∉ {1,3,4,5,9} → <strong>(7/11) = −1</strong></span>
+            <span class="de-step">Signes <strong>oposats</strong>. Ho prediu la llei? 7 ≡ 3 (mod 4) i 11 ≡ 3 (mod 4): tots dos ≡ 3 → sí, han de ser oposats ✓</span>
+          </div>
+          <div class="deep-example">
+            <span class="de-title">Contrast: p = 5 i q = 11</span>
+            <span class="de-step">Residus mòdul 5: {1, 4}. Residus mòdul 11: {1, 3, 4, 5, 9}</span>
+            <span class="de-step">11 ≡ 1 (mod 5), i 1 ∈ {1,4} → <strong>(11/5) = +1</strong></span>
+            <span class="de-step">5 ∈ {1,3,4,5,9} → <strong>(5/11) = +1</strong></span>
+            <span class="de-step">Coincideixen. Ho prediu la llei? 5 ≡ 1 (mod 4) → n'hi ha prou que UN dels dos sigui ≡ 1 → sí, han de coincidir ✓</span>
+          </div>
+          <p>El mode Repte inverteix la feina: primer has de <strong>predir</strong> si coincidiran, i només després es comprova. Hi ha dos tipus de ronda: una on construeixes les taules (i pots verificar-ho comptant) i una de ràpida on no hi ha taules i l'única eina disponible és la regla del mod 4. La segona és la que t'obliga a fer servir la llei de veritat en lloc de comptar.</p>
+
+          <h4>7. Aplicacions pràctiques</h4>
+          <p><strong>Càlcul ràpid de símbols de Legendre.</strong> La llei és, sobretot, un <em>algorisme</em>. Per saber si 219 és residu quadràtic mòdul 383 no cal provar 191 números: s'aplica la reciprocitat per anar girant i reduint els símbols, igual que l'algorisme d'Euclides va reduint una fracció, fins a arribar a casos trivials. Es fa en microsegons.</p>
+          <p><strong>Test de primalitat de Solovay–Strassen.</strong> Combina el criteri d'Euler amb la reciprocitat: si p és primer, a^((p−1)/2) ha de coincidir amb el símbol de Jacobi (a/p) per a tot a. Si per a algun a no coincideix, p segur que és compost. Va ser un dels primers tests probabilístics pràctics i va ajudar a fer viable la criptografia de clau pública.</p>
+          <p><strong>Criptografia.</strong> El criptosistema de Goldwasser–Micali, el primer amb seguretat semàntica demostrable, xifra bits amagant-los com a residus quadràtics: un 0 és un residu, un 1 és un no-residu amb símbol de Jacobi +1. La seva seguretat es basa en el fet que distingir-los <em>sense</em> conèixer la factorització del mòdul es creu computacionalment difícil.</p>
+          <p><strong>Arrels quadrades mòdul p.</strong> Saber que una arrel existeix i trobar-la són coses diferents. L'algorisme de Tonelli–Shanks la troba, però abans cal saber que n'hi ha: el símbol de Legendre és el filtre previ. Això s'usa constantment en criptografia de corbes el·líptiques, on cal recuperar la coordenada y d'un punt a partir de la x.</p>
+
+          <h4>8. Curiositats</h4>
+          <p><strong>El teorema més demostrat de la història.</strong> Se'n coneixen més de <strong>240 demostracions</strong> publicades, per camins que van de la combinatòria elemental a la teoria de funcions el·líptiques. Cap altre teorema s'hi acosta. El catàleg que en manté Franz Lemmermeyer és, en si mateix, un mapa de bona part de la teoria de nombres.</p>
+          <p><strong>Gauss va tenir un bon mes.</strong> Al seu diari matemàtic hi va anotar la demostració el 8 d'abril de 1796. Feia menys d'un mes que havia descobert com construir el polígon regular de 17 costats amb regle i compàs, un problema obert des dels grecs. Tenia 19 anys.</p>
+          <p><strong>La demostració de comptar punts.</strong> Una de les més boniques (Eisenstein) consisteix a comptar punts de coordenades enteres dins d'un rectangle dividit per una diagonal. Els dos costats del compte donen els dos símbols de Legendre, i el rectangle sencer dona l'exponent (p−1)/2 · (q−1)/2. Tot el teorema es redueix a comptar els punts d'una graella de dues maneres diferents.</p>
+          <p><strong>Els residus no es reparteixen tan uniformement com sembla.</strong> Encara que hi ha exactament tants residus com no-residus, la seva <em>distribució</em> dins l'interval no és equilibrada: hi ha un biaix mesurable a favor dels residus a la primera meitat, per a primers p ≡ 3 (mod 4). El fenomen es coneix com a biaix de Txebixev i encara té preguntes obertes associades.</p>
+          <p><strong>El nom «reciprocitat» és literal.</strong> La paraula no és decorativa: expressa que la relació entre p i q es pot llegir en <em>totes dues direccions</em>, i que conèixer-ne una banda determina l'altra. És la mateixa idea que després batejarà famílies senceres de teoremes —reciprocitat cúbica, biquadràtica, d'Artin— tots descendents d'aquest.</p>
+
+          <h4>9. Connexió amb altres àrees</h4>
+          <p>Aquí és on la història es fa gran. Gauss intuïa que la reciprocitat quadràtica no era un fet aïllat sinó <strong>el primer cas visible d'un patró molt més ample</strong>, i va dedicar anys a buscar-ne les versions cúbica i biquadràtica. Les va trobar, i per fer-ho va haver d'inventar-se un món nou: els enters de Gauss, números de la forma a+bi — un altre motiu per passar-se per la càpsula del Pla d'Argand.</p>
+          <p>Tenia raó. Al llarg del segle XX es va desenvolupar la <strong>teoria de cossos de classes</strong> i, amb ella, la llei de reciprocitat d'Artin, que engloba la quadràtica com un cas particular gairebé trivial. Encara més enllà hi ha el <strong>programa de Langlands</strong>, una xarxa de conjectures que relaciona teoria de nombres i anàlisi harmònica, i que sovint es descriu, sense gaire exageració, com «una gran generalització de la reciprocitat quadràtica». Bona part de la matemàtica dels últims cent anys —incloent-hi les eines amb què Andrew Wiles va demostrar l'últim teorema de Fermat el 1994— viu en aquesta línia de descendència.</p>
+          <p>Dit d'una altra manera: el que comproves clicant caselles en aquesta càpsula és l'exemple més petit i més accessible d'un dels fils conductors més importants de tota la matemàtica moderna.</p>
+
+        </div></div></div>
+      </div>
+
+    </div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap qr-wrap flash-target" id="canvasWrap">
+      <div class="qr-builders" id="qrBuildersWrap">
+        <div class="qr-builder">
+          <div class="qr-builder-title" id="titleA">Primer A</div>
+          <div class="chip-row explora-only" id="primeRowA"></div>
+          <div class="qr-builder-caption">Clica cada k: calcula k² mod p i n'il·lumina el resultat a la tira.</div>
+          <div class="chip-row" id="testRowA"></div>
+          <div class="qr-strip" id="stripA"></div>
+          <div class="qr-strip-legend" id="legendA">
+            <span><i style="background:var(--good)"></i> +1 (residu quadràtic)</span>
+            <span><i style="background:var(--bad)"></i> −1 (no ho és)</span>
+          </div>
+        </div>
+        <div class="qr-builder">
+          <div class="qr-builder-title" id="titleB">Primer B</div>
+          <div class="chip-row explora-only" id="primeRowB"></div>
+          <div class="qr-builder-caption">Clica cada k: calcula k² mod q i n'il·lumina el resultat a la tira.</div>
+          <div class="chip-row" id="testRowB"></div>
+          <div class="qr-strip" id="stripB"></div>
+          <div class="qr-strip-legend" id="legendB">
+            <span><i style="background:var(--good)"></i> +1 (residu quadràtic)</span>
+            <span><i style="background:var(--bad)"></i> −1 (no ho és)</span>
+          </div>
+        </div>
+      </div>
+      <div class="qr-quick-prompt" id="qrQuickPrompt"></div>
+      <div class="qr-compare" id="qrCompare"></div>
+      <div class="qr-predict-row" id="qrPredictRow">
+        <button class="btn btn-primary" id="predictSameBtn">Seran iguals</button>
+        <button class="btn btn-ghost" id="predictOppBtn">Seran oposats</button>
+      </div>
+    </div>
+    <div class="canvas-hint" role="status" id="hint">Clica els botons k per construir la taula de residus de cada primer.</div>
+
+    <p class="method-hint" id="methodPanel">a és residu quadràtic mòdul p si <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>a</mi><mo>≡</mo><msup><mi>k</mi><mn>2</mn></msup><mspace width="0.35em"/><mo>(</mo><mi>mod</mi><mspace width="0.2em"/><mi>p</mi><mo>)</mo></math> per a algun k. Prova k=1,...,(p−1)/2: per simetria, no cal anar més lluny.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Tria dos primers</div>
+        <div class="readout-def" id="readoutDef">Construeix-ne les taules de residus.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Residus i reciprocitat</div>
+
+    <div class="type-card active" id="card-residu" data-method="residu" style="--t-color:var(--aritmetica)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Residu quadràtic</div>
+        <div class="type-range">a ≡ k² (mod p)</div>
+        <div class="type-desc">Cada clic al bloc A o B calcula k² mod p per un valor de k. Elevant 1,...,(p−1)/2 al quadrat obtens tots els residus: exactament la meitat dels valors possibles ho són.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-legendre" data-method="legendre" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Símbol de Legendre</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo>(</mo><mfrac><mi>a</mi><mi>p</mi></mfrac><mo>)</mo><mo>=</mo><mo>±</mo><mn>1</mn></math></div>
+        <div class="type-desc">És només una manera curta d'escriure «sí» o «no»: (a/p) val +1 si a apareix il·luminat a la tira de residus de p, i −1 si no hi apareix mai per molt que provis valors de k.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-reciprocitat" data-method="reciprocitat" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Llei de reciprocitat</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo>(</mo><mfrac><mi>p</mi><mi>q</mi></mfrac><mo>)</mo><mo>(</mo><mfrac><mi>q</mi><mi>p</mi></mfrac><mo>)</mo><mo>=</mo><msup><mrow><mo>(</mo><mo>−</mo><mn>1</mn><mo>)</mo></mrow><mrow><mfrac><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>·</mo><mfrac><mrow><mi>q</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></mfrac></mrow></msup></math></div>
+        <div class="type-desc">El panell de comparació calcula (p/q) i (q/p) a partir de les teves dues tires i te'ls posa un al costat de l'altre. Coincidiran sempre, tret que p i q siguin tots dos ≡3 (mod 4) — llavors es giren.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> no cal memoritzar la llei — mira-la sortir sola de les taules. Si p≡3 i q≡3 (mod 4) alhora, (p/q) i (q/p) es giren; en qualsevol altre cas, coincideixen.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 01 · Aritmètica i Teoria de Nombres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ARITMÈTICA MODULAR
+// ─────────────────────────────────────────────
+const PRIME_POOL = [3, 5, 7, 11, 13, 17, 19, 23];
+const SMALL_PRIMES = [3, 5, 7, 11];
+const LARGE_PRIMES = [13, 17, 19, 23];
+
+function residueSet(p) {
+  const s = new Set();
+  for (let k = 1; k <= (p - 1) / 2; k++) s.add((k * k) % p);
+  return s;
+}
+function isQR(a, p) { return residueSet(p).has(((a % p) + p) % p); }
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+function newTable(p) { return { prime: p, tested: new Set(), residues: new Set() }; }
+let tableA = newTable(3), tableB = newTable(5);
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRound = null;
+
+// ─────────────────────────────────────────────
+//  RENDER DELS CONSTRUCTORS DE TAULA
+// ─────────────────────────────────────────────
+function renderBuilder(letter, table) {
+  const title = document.getElementById('title' + letter);
+  const primeRow = document.getElementById('primeRow' + letter);
+  const testRow = document.getElementById('testRow' + letter);
+  const strip = document.getElementById('strip' + letter);
+  const p = table.prime;
+
+  title.textContent = `Primer ${letter} = ${p}`;
+
+  primeRow.innerHTML = '';
+  PRIME_POOL.forEach(pr => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = pr;
+    b.classList.toggle('active', pr === p);
+    b.addEventListener('click', () => {
+      if (letter === 'A') tableA = newTable(pr); else tableB = newTable(pr);
+      renderBuilder(letter, letter === 'A' ? tableA : tableB);
+      updateCompare();
+    });
+    primeRow.appendChild(b);
+  });
+
+  testRow.innerHTML = '';
+  for (let k = 1; k <= (p - 1) / 2; k++) {
+    const b = document.createElement('button');
+    b.className = 'chip qr-test-btn';
+    b.textContent = `k=${k}`;
+    if (table.tested.has(k)) b.disabled = true;
+    b.addEventListener('click', () => {
+      const r = (k * k) % p;
+      table.tested.add(k);
+      table.residues.add(r);
+      renderBuilder(letter, table);
+      updateCompare();
+    });
+    testRow.appendChild(b);
+  }
+
+  strip.innerHTML = '';
+  const complete = tableComplete(table);
+  for (let a = 1; a < p; a++) {
+    const c = document.createElement('div');
+    const isRes = table.residues.has(a);
+    if (complete) {
+      // Un cop la taula és completa, ja sabem el símbol de Legendre exacte de
+      // CADA a (no només dels que has clicat directament): verd=+1, vermell=−1.
+      c.className = 'qr-cell ' + (isRes ? 'qr-plus' : 'qr-minus');
+      c.title = `(${a}/${p}) = ${isRes ? '+1' : '−1'}`;
+    } else {
+      c.className = 'qr-cell' + (isRes ? ' qr' : '');
+    }
+    c.textContent = a;
+    strip.appendChild(c);
+  }
+  const legend = document.getElementById('legend' + letter);
+  if (legend) legend.classList.toggle('active', complete);
+}
+
+function tableComplete(t) { return t.tested.size === (t.prime - 1) / 2; }
+
+function compareBoxHTML(p, q) {
+  const pOverQ = isQR(p, q), qOverP = isQR(q, p);
+  const same = pOverQ === qOverP;
+  const bothMod3 = p % 4 === 3 && q % 4 === 3;
+  // Estructura en 3 temps: (1) la llei prediu la resposta només mirant mod 4,
+  // sense taules; (2) verifiquem-ho amb el càlcul directe que ja has fet;
+  // (3) confirmem que totes dues coincideixen — aquest és tot el "truc".
+  const html = `
+    <div class="qr-compare-title">Comparem (${p}/${q}) amb (${q}/${p})</div>
+    <div class="qr-compare-predict">
+      La llei diu que (p/q) i (q/p) es <strong>giren</strong> exactament quan p i q són <strong>tots dos</strong> ≡3 (mod 4); en qualsevol altre cas, <strong>coincideixen</strong>. Mirem-ho abans de calcular res més:
+      <br>${p} mod 4 = <b>${p % 4}</b> &nbsp;i&nbsp; ${q} mod 4 = <b>${q % 4}</b>
+      &nbsp;→&nbsp; ${bothMod3 ? `tots dos ≡3 (mod 4), així que <b>la llei prediu que es giraran</b>` : `no són tots dos ≡3 (mod 4), així que <b>la llei prediu que coincidiran</b>`}.
+    </div>
+    <div class="qr-compare-row"><span class="lbl">És ${p} residu quadràtic de ${q}?<br><span class="qr-compare-sub">Símbol de Legendre (${p}/${q}): val +1 si ${p} surt il·luminat a la tira de residus de ${q}, −1 si no</span></span><span>(${p}/${q}) = ${pOverQ ? '+1' : '−1'}</span></div>
+    <div class="qr-compare-row"><span class="lbl">És ${q} residu quadràtic de ${p}?<br><span class="qr-compare-sub">Símbol de Legendre (${q}/${p})</span></span><span>(${q}/${p}) = ${qOverP ? '+1' : '−1'}</span></div>
+    <div class="qr-compare-verdict" style="color:${same ? 'var(--good)' : 'var(--bad)'}">
+      ${same ? `✔ Coincideixen (${pOverQ ? '+1' : '−1'} = ${qOverP ? '+1' : '−1'})` : `✕ Es giren (${pOverQ ? '+1' : '−1'} ≠ ${qOverP ? '+1' : '−1'})`}
+      — tal com havia predit la llei només amb el mod 4.
+    </div>`;
+  return { html, pOverQ, qOverP, same };
+}
+
+function updateCompare() {
+  const box = document.getElementById('qrCompare');
+  if (!tableComplete(tableA) || !tableComplete(tableB) || tableA.prime === tableB.prime) {
+    box.classList.remove('active');
+    return;
+  }
+  const p = tableA.prime, q = tableB.prime;
+  const { html, pOverQ, qOverP, same } = compareBoxHTML(p, q);
+  box.classList.add('active');
+  box.innerHTML = html;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = same ? '=' : '≠';
+  readoutName.textContent = `(${p}/${q}) i (${q}/${p})`;
+  readoutDef.textContent = same ? 'Coincideixen.' : 'Són oposats.';
+  return { same, pOverQ, qOverP };
+}
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function pickPair(pool) {
+  let p = pool[Math.floor(Math.random() * pool.length)];
+  let q = pool[Math.floor(Math.random() * pool.length)];
+  while (q === p) q = pool[Math.floor(Math.random() * pool.length)];
+  return [p, q];
+}
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  const useBuild = Math.random() < 0.5;
+  repteRound = { mode: useBuild ? 'build' : 'quick', answered: false };
+
+  const buildersWrap = document.getElementById('qrBuildersWrap');
+  const quickPrompt = document.getElementById('qrQuickPrompt');
+  if (useBuild) {
+    const [p, q] = pickPair(SMALL_PRIMES);
+    repteRound.p = p; repteRound.q = q;
+    tableA = newTable(p); tableB = newTable(q);
+    renderBuilder('A', tableA);
+    renderBuilder('B', tableB);
+    buildersWrap.style.display = 'grid';
+    quickPrompt.classList.remove('active');
+    hint.textContent = `Construeix les dues taules i prediu si (${p}/${q}) i (${q}/${p}) seran iguals o oposats.`;
+  } else {
+    // Cap taula ni pista prèvia: aquesta ronda comprova si has interioritzat
+    // la drecera del mod 4, no si saps llegir unes tires ja fetes.
+    const [p, q] = pickPair(PRIME_POOL);
+    repteRound.p = p; repteRound.q = q;
+    buildersWrap.style.display = 'none';
+    quickPrompt.innerHTML = `<div class="qr-quick-title">p = ${p} &nbsp;·&nbsp; q = ${q}</div><div class="qr-quick-hint">Aquest cop no hi ha taules: fes servir només la regla del mod 4.</div>`;
+    quickPrompt.classList.add('active');
+    hint.textContent = `Ràpid, sense taules: p=${p}, q=${q}. Prediu-ho amb la regla del mod 4.`;
+  }
+  document.getElementById('qrCompare').classList.remove('active');
+  document.getElementById('qrPredictRow').classList.add('active');
+  readoutName.textContent = 'Predicció pendent';
+  readoutDef.textContent = `p=${repteRound.p}, q=${repteRound.q}`;
+  readoutNum.textContent = '?';
+}
+function submitPrediction(claimSame) {
+  if (!repteRound || repteRound.answered || repteTimeUp) return;
+  repteRound.answered = true;
+  const { p, q } = repteRound;
+  const { html, same: actualSame } = compareBoxHTML(p, q);
+  const correct = claimSame === actualSame;
+  const box = document.getElementById('qrCompare');
+  box.classList.add('active');
+  box.innerHTML = html;
+  if (correct) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 10);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    hint.textContent = '✔ Predicció correcta!';
+  } else {
+    applyPenalty();
+    flash(wrap, 'var(--bad)');
+    hint.textContent = '✕ Predicció incorrecta.';
+  }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1600);
+}
+document.getElementById('predictSameBtn').addEventListener('click', () => submitPrediction(true));
+document.getElementById('predictOppBtn').addEventListener('click', () => submitPrediction(false));
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      document.getElementById('qrPredictRow').classList.remove('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('qrPredictRow').classList.remove('active');
+  tableA = newTable(3); tableB = newTable(5);
+  renderBuilder('A', tableA); renderBuilder('B', tableB);
+  updateCompare();
+  hint.textContent = 'Clica els botons k per construir la taula de residus de cada primer.';
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  residu: "a és residu quadràtic mòdul p si a ≡ k² (mod p) per a algun k. Prova k=1,...,(p−1)/2: per simetria, no cal anar més lluny.",
+  legendre: "(a/p) val +1 si a és residu quadràtic mòdul p, i −1 si no ho és (per a p que no divideix a).",
+  reciprocitat: "(p/q) i (q/p) coincideixen sempre... tret que p≡3 i q≡3 (mod 4) alhora, cas en què són oposats."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-residu').addEventListener('click', () => { flash(wrap, cssVar('--aritmetica')); setMethod('residu'); });
+document.getElementById('card-legendre').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('legendre'); });
+document.getElementById('card-reciprocitat').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('reciprocitat'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+renderBuilder('A', tableA);
+renderBuilder('B', tableB);
+</script>
+</body>
+</html>

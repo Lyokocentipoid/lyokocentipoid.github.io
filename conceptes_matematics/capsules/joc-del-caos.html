@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El joc del caos · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--geometria); }
+
+    .caos-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .8rem; }
+    .caos-stage { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .caos-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .caos-slider-row { display: flex; align-items: center; gap: .8rem; width: 100%; max-width: 420px; }
+    .caos-slider-row input[type=range] { flex: 1; }
+    .caos-slider-row .rs-val { font-family: var(--font-mono); font-weight: 700; color: var(--m-color); min-width: 46px; text-align: right; }
+
+    .chip.toggle.on { background: var(--m-color); border-color: var(--m-color); color: #fff; }
+    .chip.toggle:disabled { opacity: .35; cursor: not-allowed; }
+
+    .caos-dim-box { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: .65rem .85rem; font-family: var(--font-mono); font-size: .85rem; text-align: center; color: var(--ink); line-height: 1.6; }
+    .caos-dim-box b { color: var(--m-color); }
+    .caos-dim-box .warn-note { display: block; font-family: var(--font-body); font-size: .74rem; color: var(--muted); margin-top: .3rem; }
+
+    .caos-classify-panel { display: none; flex-direction: column; align-items: center; gap: .8rem; width: 100%; }
+    .caos-classify-panel.active { display: flex; }
+    .caos-classify-options { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; width: 100%; max-width: 380px; }
+    .caos-option-btn { border: 1.5px solid var(--border); border-radius: 9px; background: var(--surface); padding: .6rem; font-family: var(--font-mono); font-size: .85rem; cursor: pointer; transition: all var(--tr); }
+    .caos-option-btn:hover { border-color: var(--m-color); }
+    .caos-option-btn.correct { background: color-mix(in srgb, var(--good) 18%, transparent); border-color: var(--good); color: var(--good); font-weight: 700; }
+    .caos-option-btn.wrong { background: color-mix(in srgb, var(--bad) 12%, transparent); border-color: var(--bad); color: var(--bad); }
+
+    .caos-guess-row { display: flex; gap: .6rem; align-items: center; }
+    .caos-guess-row input[type=number] { width: 90px; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; font-family: var(--font-mono); font-size: .95rem; text-align: center; background: var(--surface); color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--geometria)">Bloc 03 · El joc del caos</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>El joc del caos</h1>
+      <p>Salta repetidament una fracció del camí cap a un vèrtex triat a l'atzar. El resultat no hauria de dependre de res fix... i tanmateix, sempre convergeix exactament a la mateixa figura.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Tria N vèrtexs d'un polígon regular i una raó r (entre 0 i 1). Comença en qualsevol punt i repeteix: tria un vèrtex a l'atzar, i salta una fracció r del camí cap a ell. Marca el punt on caus. Repeteix-ho centenars de vegades. Això és el <a href="https://en.wikipedia.org/wiki/Chaos_game" target="_blank" rel="noopener">joc del caos</a>.</p>
+          <p>El resultat sembla que hauria de ser un núvol de punts sense forma —al cap i a la fi, cada pas és pur atzar. Però no ho és: els punts s'acumulen sempre sobre la mateixa figura, anomenada <strong>atractor</strong>, i aquesta figura no depèn ni d'on comences ni de la seqüència concreta de vèrtexs que l'atzar hagi triat —només de N i r. Per N=3 i r=1/2, l'atractor és exactament el <a href="https://ca.wikipedia.org/wiki/Triangle_de_Sierpi%C5%84ski" target="_blank" rel="noopener">triangle de Sierpiński</a>, arribat aquí per un camí completament diferent (atzar pur) del de tallar triangles.</p>
+          <p>La raó de fons: cada vèrtex defineix una petita còpia contreta (a escala r) de tota la figura. La unió d'aquestes N còpies torna a donar la figura sencera —per això se'n diu «atractor»: sigui quin sigui el punt de partida, el procés hi acaba caient sempre.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Aquestes figures no són ni una línia (dimensió 1) ni una superfície plena (dimensió 2): en tenen una d'intermèdia, la <a href="https://ca.wikipedia.org/wiki/Dimensi%C3%B3_fractal" target="_blank" rel="noopener">dimensió fractal</a>. I no cal acceptar-ne la fórmula com un acte de fe: se'n dedueix en dues línies.</p>
+          <p><strong>D'on surt D = log N / log(1/r).</strong> Fixa't en com es comporta la «quantitat de material» quan encongeixes una figura a escala r. Un segment (dimensió 1) a escala 1/2 té <em>la meitat</em> de longitud: (1/2)¹. Un quadrat ple (dimensió 2) a escala 1/2 té <em>una quarta part</em> d'àrea: (1/2)². El patró és general: una figura de dimensió D encongida a escala r conserva una fracció r<sup>D</sup> del material. Ara bé, el nostre atractor és <strong>exactament</strong> la unió de N còpies seves a escala r, i tot plegat ha de tornar a donar la figura sencera:</p>
+          <div class="explain-figure" style="font-family:var(--font-mono);font-size:1rem;text-align:center;line-height:2">
+            N · r<sup>D</sup> = 1 &nbsp;⟹&nbsp; r<sup>D</sup> = 1/N &nbsp;⟹&nbsp; D·log(1/r) = log N &nbsp;⟹&nbsp; <strong>D = log N / log(1/r)</strong>
+          </div>
+          <div class="explain-figure-caption">Per Sierpiński (N=3, r=1/2): D = log3/log2 ≈ 1,585 —«més gran» que una línia, «més petit» que un full de paper, i un número exacte, no aproximat.</div>
+          <p><strong>Però el primer pas amaga una condició.</strong> Escriure «N·r<sup>D</sup> = 1» pressuposa que en sumar el material de les N còpies no en comptes cap tros dues vegades, és a dir, que <strong>les còpies no se superposen</strong> (la <em>condició de conjunt obert</em>, en el teorema de Moran–Hutchinson). Si r és massa gran, les còpies s'encavalquen, el material compartit es compta repetit i la fórmula <strong>sobreestima</strong> la dimensió —fins a escopir valors més grans que 2, que per a una figura dibuixada en un pla són impossibles.</p>
+          <p>Cada N té el seu llindar r<sub>crit</sub>, la raó més gran amb què les còpies encara no se solapen: <strong>N=3 i N=4 → 1/2</strong>, <strong>N=5 → (3−√5)/2 ≈ 0,382</strong>, <strong>N=6 → 1/3</strong>. Passa el lliscador de r per damunt d'aquest llindar i el requadre de sota t'avisarà que la fórmula ha deixat de ser vàlida —no és un detall tècnic menor, és la diferència entre un resultat demostrat i un número sense sentit.</p>
+          <p>Aquest mètode —repetir una regla senzilla i deixar que l'atzar la condueixi cap a un resultat determinat— és la base dels <a href="https://en.wikipedia.org/wiki/Iterated_function_system" target="_blank" rel="noopener"><strong>sistemes de funcions iterades</strong></a>, la mateixa maquinària que genera terrenys, plantes i núvols procedurals per ordinador. Canviant només N, r i quins salts es permeten, obtens tota una família d'atractors diferents a partir d'una regla idèntica.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria N (vèrtexs del polígon) i ajusta r amb el lliscador.</li>
+            <li>«Salta» fa un únic pas: veuràs quin vèrtex ha sortit i la línia del salt, perquè es vegi exactament què vol dir «una fracció r del camí».</li>
+            <li>«Salta 500 cops» acumula punts de cop perquè la figura emergeixi ràpid. «Reinicia des d'un punt diferent» ho torna a fer des d'un altre lloc —mira com hi acaba tornant.</li>
+            <li>Prova les restriccions opcionals («mai el mateix vèrtex», «mai l'oposat») i mira com canvia la figura sencera.</li>
+            <li>El requadre calcula la dimensió en directe per al N i r triats (només quan no hi ha restriccions actives), i t'avisa si has passat el llindar r<sub>crit</sub> on les còpies se superposen i la fórmula deixa de valdre.</li>
+            <li>En Repte: prediu la dimensió abans de veure la figura, o endevina quin (N,r) ha generat un atractor que et mostrem ja fet.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Aquest és, probablement, l'experiment més contraintuïtiu de tot el web: un procés on <em>cada pas</em> es decideix llançant un dau produeix sempre, sense excepció, exactament la mateixa figura. No una de semblant: la mateixa. Anem a veure per què l'atzar no destrueix l'estructura sinó que la revela, què és exactament un atractor, i per què la fórmula de la dimensió fractal té una lletra petita que gairebé ningú explica.</p>
+
+          <h4>1. L'experiment</h4>
+          <p>Les regles caben en tres línies. Dibuixa N punts (els vèrtexs d'un polígon regular). Comença en un lloc qualsevol. Ara repeteix indefinidament: <strong>tria un vèrtex a l'atzar, mou-te una fracció r del camí cap a ell, i marca on has caigut.</strong></p>
+          <p>Amb N=3 i r=1/2, la primera intuïció de tothom és que sortirà un núvol informe de punts. Al cap i a la fi, cada pas és pur atzar; no hi ha cap regla que digui on s'ha d'anar.</p>
+          <p>El que surt de veritat és el <strong>triangle de Sierpiński</strong>: una figura amb infinits forats triangulars, perfectament estructurada, la mateixa cada vegada. I si canvies el punt de partida, surt igual. I si canvies la llavor aleatòria, surt igual. L'única cosa que en canvia la forma són N i r.</p>
+
+          <h4>2. Per què l'atzar no importa</h4>
+          <p>La resolució de la paradoxa està en una observació senzilla sobre <strong>contraccions</strong>.</p>
+          <p>Cada pas del joc és una funció: si tries el vèrtex vₖ, el punt x es transforma en fₖ(x) = x + r·(vₖ − x). Aquesta funció acosta qualsevol parell de punts: si agafes dos punts x i y i els apliques la mateixa fₖ, la distància entre les imatges és exactament <strong>r vegades</strong> la distància original. Com que r &lt; 1, cada aplicació els acosta.</p>
+          <div class="deep-key">
+            <strong>La conseqüència, i és tota la clau.</strong> Imagina dues persones jugant al joc del caos amb <em>punts de partida completament diferents</em> però fent servir <em>exactament la mateixa seqüència aleatòria</em> de vèrtexs. Després d'un pas, la distància entre els seus punts s'ha multiplicat per r. Després de n passos, s'ha multiplicat per rⁿ. Amb r = 0,5, al cap de 20 passos la distància s'ha reduït a menys d'una milionèsima.<br><br>
+            És a dir: <strong>al cap de poques desenes de passos, on vas començar ha deixat de tenir cap efecte mesurable</strong>. La memòria del punt inicial s'esborra exponencialment. Per això la figura no en depèn.
+          </div>
+          <p>Això explica per què el punt inicial és irrellevant, però encara no per què la <em>seqüència</em> aleatòria concreta tampoc no importa. La raó és diferent: la figura que veus no és la trajectòria d'una partida, sinó <strong>el conjunt de tots els llocs on el procés pot arribar</strong>. Una seqüència aleatòria llarga passa, tard o d'hora, per totes les regions accessibles. Dues seqüències diferents recorren els mateixos llocs en ordre diferent, i com que dibuixem punts sense recordar l'ordre, el resultat visual és idèntic.</p>
+          <div class="deep-aside">
+            <strong>Els primers punts són trampa.</strong> Si comences fora de la figura, els primers punts que dibuixes tampoc no hi són —encara s'hi estan acostant. En implementacions acurades se'n descarten els primers 10 o 20. Si mires amb atenció el començament d'una partida a la càpsula, pots arribar a veure algun punt «orfe» fora de l'estructura: és aquesta transitorietat.
+          </div>
+
+          <h4>3. L'atractor: la figura que es conté a si mateixa</h4>
+          <p>Ara la caracterització precisa. Anomenem A la figura final. Què la defineix?</p>
+          <p>Fixa't que si un punt x és a A, aleshores fₖ(x) també hi és per a qualsevol k (perquè és un pas legal del joc). I al revés: tot punt de A ha vingut d'aplicar alguna fₖ a un altre punt de A. Per tant:</p>
+          <p style="text-align:center;margin:.7rem 0;font-family:var(--font-mono)">A = f₁(A) ∪ f₂(A) ∪ … ∪ f<sub>N</sub>(A)</p>
+          <p>En paraules: <strong>la figura és exactament la unió de N còpies encongides de si mateixa</strong>. Aquesta és la propietat d'autosemblança, i aquí no és una observació estètica sinó <em>l'equació que defineix l'objecte</em>.</p>
+          <p>Un conjunt de funcions contractives com aquest s'anomena <strong>sistema de funcions iterades</strong> (IFS), i el teorema fonamental —degut a John Hutchinson (1981), i basat en el teorema del punt fix de Banach— diu que <strong>per a qualsevol IFS existeix exactament un conjunt compacte que compleix aquesta equació</strong>. Existeix, i és únic. Per això la figura és sempre la mateixa: és l'única solució possible.</p>
+          <p>El nom «atractor» ve d'aquí: sigui quin sigui el conjunt de partida, aplicar-hi repetidament l'operació el fa convergir cap a A.</p>
+
+          <h4>4. La dimensió fractal, i la seva lletra petita</h4>
+          <p>La figura de Sierpiński no és una línia (dimensió 1) ni una superfície plena (dimensió 2). Té infinits forats però també infinit detall. Quina dimensió té?</p>
+          <p>La deducció és curta i val la pena fer-la, perquè és on hi ha la idea:</p>
+          <div class="deep-example">
+            <span class="de-title">D'on surt D = log N / log(1/r)</span>
+            <span class="de-step">Un segment (dim. 1) encongit a escala r conserva una fracció r¹ de longitud.</span>
+            <span class="de-step">Un quadrat ple (dim. 2) a escala r conserva r² d'àrea.</span>
+            <span class="de-step">En general, una figura de dimensió D encongida a escala r conserva <strong>r^D</strong> de «material».</span>
+            <span class="de-step">Però la nostra figura és exactament N còpies a escala r, i han de sumar el total:</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;N · r^D = 1</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;r^D = 1/N &nbsp;→&nbsp; D·log(1/r) = log N</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;<strong>D = log N / log(1/r)</strong></span>
+            <span class="de-step">Sierpiński (N=3, r=1/2): D = log3/log2 ≈ <strong>1,585</strong></span>
+          </div>
+          <p>Un número entre 1 i 2, exacte i no aproximat, per a un objecte que la intuïció no sap on col·locar. Fins aquí, el que expliquen tots els llibres.</p>
+          <div class="deep-key">
+            <strong>La condició que gairebé mai s'explica.</strong> El pas «N·r^D = 1» dona per fet que, en sumar el material de les N còpies, no en comptem cap tros dues vegades. És a dir, <strong>que les còpies no se superposin</strong>. Aquesta hipòtesi es diu <em>condició de conjunt obert</em> i forma part del teorema de Moran–Hutchinson. Si r és massa gran, les còpies s'encavalquen, el material compartit es compta repetit, i la fórmula <strong>sobreestima</strong> — fins al punt d'escopir valors més grans que 2, que per a una figura dibuixada en un pla són directament impossibles.
+          </div>
+          <p>Cada N té el seu llindar r<sub>crit</sub>, la raó més gran amb què les còpies encara no se solapen: <strong>N=3 i N=4 → 1/2</strong>; <strong>N=5 → (3−√5)/2 ≈ 0,382</strong>; <strong>N=6 → 1/3</strong>. Per això la càpsula, quan passes el lliscador per damunt d'aquest valor, deixa de donar-te un número i t'avisa que la fórmula ja no s'aplica. I per això, al mode Repte, les preguntes de dimensió només fan servir parelles (N,r) que compleixen la condició: <strong>una pregunta amb resposta falsa no és una pregunta</strong>.</p>
+
+          <h4>5. Els casos límit, i què hi passa</h4>
+          <p><strong>N=4, r=1/2.</strong> D = log4/log2 = <strong>2</strong> exactament. Les quatre còpies del quadrat el tessel·len perfectament, sense forats ni solapaments. L'atractor és el quadrat sencer, ple. Aquest és el límit exacte on una figura deixa de ser «prima»: si en veus el resultat a la càpsula, és una taca uniforme, sense estructura.</p>
+          <p><strong>r molt petita.</strong> Les còpies queden molt separades i l'atractor es converteix en una pols de punts aïllats, amb dimensió propera a 0. Prova N=3 amb r=0,3: D ≈ 0,91, menys que una línia.</p>
+          <p><strong>Les restriccions.</strong> Els dos botons de restricció («mai el mateix dos cops seguits», «mai l'oposat de l'últim») canvien el joc de manera fonamental: el vèrtex ja no es tria amb llibertat total, i per tant <strong>ja no és un IFS estàndard</strong> — la fórmula simple deixa de valdre, i la càpsula t'ho diu explícitament en lloc de donar-te un número. Les figures que surten són genuïnament diferents i sovint més boniques: amb N=4 i la restricció de no repetir, apareix una estructura reticular que no s'assembla gens al quadrat ple del cas lliure.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p><strong>Mode Explora.</strong> Tries N i r, i vas afegint salts. El que val la pena fer, i no és obvi, és aquesta seqüència: posa N=3, r=0,5, i afegeix punts a poc a poc. Al principi sembla soroll. Cap als 200-300 punts comences a intuir-hi forats. Cap als 2000, l'estructura és inconfusible. <strong>Estàs veient l'ordre emergir d'un procés que no en té cap.</strong></p>
+          <p>El requadre de la dimensió es recalcula en directe amb cada canvi de N o r, i et diu si estàs dins o fora del règim on la fórmula val.</p>
+          <p><strong>Mode Repte.</strong> Hi ha dos tipus de ronda: predir la dimensió a partir de (N,r) —cosa que t'obliga a fer el càlcul logarítmic— i identificar quin (N,r) ha generat una figura que se't mostra ja feta, que és l'exercici invers i força més difícil.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: veure el llindar</span>
+            <span class="de-step">1. Posa N = 3 i r = 0,50. Genera uns quants milers de punts → Sierpiński clàssic, D ≈ 1,585.</span>
+            <span class="de-step">2. Baixa r a 0,40. Les còpies se separen: la figura queda més «esparsa». D ≈ 1,20.</span>
+            <span class="de-step">3. Baixa r a 0,30 → D ≈ 0,91, per sota d'1: gairebé una pols de punts.</span>
+            <span class="de-step">4. Torna a r = 0,50 i puja N a 4 → D = 2 exactament: el quadrat s'omple del tot.</span>
+            <span class="de-step">5. Amb N = 4, puja r a 0,60. El requadre <strong>deixa de donar-te un número</strong>: has passat r<sub>crit</sub> = 0,5.</span>
+            <span class="de-step">6. Mira la figura: és una taca sòlida. Les còpies se solapen i tapen tots els forats.</span>
+            <span class="de-step">7. Torna a N=4, r=0,5 i activa <strong>«Mai el mateix 2 cops seguits»</strong>. La figura canvia radicalment.</span>
+          </div>
+
+          <h4>7. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Gràfics per ordinador.</strong> Els sistemes de funcions iterades són la manera estàndard de generar terrenys, núvols, arbres i vegetació procedural. Un arbre realista no s'emmagatzema vèrtex a vèrtex: es descriu amb unes poques transformacions i es genera al vol. El famós <strong>falguera de Barnsley</strong> es defineix amb només 4 transformacions afins i 24 números, i produeix una imatge indistingible d'una falguera real.</p>
+          <p><strong>Compressió d'imatges fractal.</strong> Als anys 90, Michael Barnsley va comercialitzar un mètode que buscava, dins d'una imatge, quines parts s'assemblaven a versions encongides d'altres parts, i n'emmagatzemava només les transformacions. Es va fer servir a l'enciclopèdia Microsoft Encarta. Té la propietat curiosa que es pot descomprimir <em>a qualsevol resolució</em>, perquè el que es guarda no són píxels sinó regles.</p>
+          <p><strong>Modelització de fenòmens naturals.</strong> Línies de costa, xarxes fluvials, ramificacions pulmonars i vasos sanguinis, estructura de galàxies: tots tenen dimensió fractal mesurable, i sovint la mesura té valor diagnòstic. La dimensió fractal de la vasculatura de la retina, per exemple, s'usa com a indicador en diverses patologies.</p>
+          <p><strong>Antenes.</strong> Les antenes fractals (dissenys de Sierpiński o de Koch) tenen resposta en múltiples bandes de freqüència amb una mida física reduïda, precisament per la seva autosemblança. Se'n troben dins de molts telèfons mòbils.</p>
+
+          <h4>8. Curiositats</h4>
+          <p><strong>Sierpiński està amagat al triangle de Pascal.</strong> Escriu el triangle de Pascal i acoloreix els números senars. Surt el triangle de Sierpiński. La raó és el teorema de Kummer/Lucas sobre binomials mòdul 2, i és un dels exemples més nets de com el mateix objecte apareix en contextos totalment desconnectats: aquí per atzar geomètric, allà per aritmètica de coeficients.</p>
+          <p><strong>També el produeix un autòmat cel·lular.</strong> La «regla 90» de Wolfram —una regla local elemental sobre una fila de cel·les— genera exactament el mateix patró. Tres camins independents (atzar, aritmètica, regla local determinista) cap a la mateixa figura.</p>
+          <p><strong>Sierpiński el va publicar el 1915, abans que existís la paraula «fractal».</strong> El terme el va encunyar Benoît Mandelbrot el 1975, seixanta anys després, a partir del llatí <em>fractus</em>, «trencat». Durant dècades aquestes figures es van considerar «monstres» patològics, contraexemples per posar a prova definicions, no objectes dignes d'estudi.</p>
+          <p><strong>El nom «joc del caos» és de Barnsley.</strong> El va popularitzar al seu llibre <em>Fractals Everywhere</em> (1988). El nom és una mica enganyós: el procés és aleatori, però no és caòtic en el sentit tècnic del terme (no hi ha sensibilitat a les condicions inicials — més aviat el contrari, com hem vist al punt 2).</p>
+          <p><strong>Amb els vèrtexs d'un quadrat, el joc «no funciona» en el sentit ingenu.</strong> Amb N=4 i r=1/2 s'omple tot el quadrat sense estructura. Per obtenir un fractal interessant amb 4 vèrtexs cal o bé baixar r, o bé afegir una restricció. Aquesta és una de les millors coses que es poden explorar a la càpsula: <strong>no tot IFS dona una figura bonica</strong>.</p>
+          <p><strong>La dimensió pot ser irracional… i sempre ho és, gairebé.</strong> D = log3/log2 és irracional. De fet, per a valors genèrics de N i r la dimensió és un número irracional qualsevol. Que una figura tingui dimensió 1,585… i que això sigui un fet exacte i demostrable, no una mesura aproximada, és el que va costar més d'acceptar quan es va formalitzar el concepte.</p>
+
+          <h4>9. Connexió amb altres àrees</h4>
+          <p>La connexió més directa és amb el <strong>Mètode de Newton</strong>: allà s'itera una regla completament determinista (sense cap atzar) i també n'apareix un fractal. Els dos casos il·lustren la mateixa lliçó des de direccions oposades: <em>iterar una regla simple genera complexitat</em>, tant si la regla té atzar com si no. En un cas l'atzar no impedeix l'ordre; en l'altre, el determinisme no garanteix la predictibilitat.</p>
+          <p>Amb <strong>Fraccions contínues</strong> comparteix l'estructura d'«iterar una transformació i estudiar-ne el comportament límit»: allà, l'aplicació de Gauss; aquí, les contraccions de l'IFS. Tots dos són sistemes dinàmics disfressats.</p>
+          <p>I amb <strong>Característica d'Euler</strong> hi ha un contrast que val la pena: allà la dimensió és sempre entera i el que es mesura són forats comptables; aquí la dimensió és fraccionària i els forats són infinits. Són dues maneres complementàries de mesurar «com de complicada» és una figura.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vèrtexs (N):</span>
+      <div class="chip-row" id="nRow"></div>
+    </div>
+    <div class="controls-row explora-only">
+      <span class="chip-label">Raó r:</span>
+      <div class="caos-slider-row">
+        <input type="range" id="rSlider" min="0.3" max="0.7" step="0.02" value="0.5">
+        <span class="rs-val" id="rVal">0.50</span>
+      </div>
+    </div>
+    <div class="controls-row explora-only">
+      <span class="chip-label">Restriccions:</span>
+      <div class="chip-row">
+        <button class="chip toggle" id="chipNoRepeat">Mai el mateix 2 cops seguits</button>
+        <button class="chip toggle" id="chipNoOpposite">Mai l'oposat de l'últim</button>
+      </div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap caos-wrap flash-target" id="canvasWrap">
+      <div class="caos-stage explora-only" id="exploraStage" style="display:flex;">
+        <canvas id="caosCanvas"></canvas>
+      </div>
+      <div class="chip-row explora-only">
+        <button class="btn btn-primary" id="jump1Btn">Salta</button>
+        <button class="btn btn-ghost" id="jump50Btn">Salta 50 cops</button>
+        <button class="btn btn-ghost" id="jump500Btn">Salta 500 cops</button>
+        <button class="btn btn-ghost" id="restartDiffBtn">Reinicia des d'un punt diferent ↻</button>
+      </div>
+      <div class="caos-dim-box explora-only" id="dimBox"></div>
+
+      <!-- REPTE: predicció de dimensió -->
+      <div class="repte-only" id="predictPanel" style="flex-direction:column; align-items:center; gap:.7rem; width:100%;">
+        <div class="caos-dim-box" id="predictPrompt"></div>
+        <div class="caos-guess-row">
+          <input type="number" id="dimGuessInput" step="0.01" placeholder="p.ex. 1.58">
+          <button class="btn btn-primary" id="submitGuessBtn">Comprova</button>
+        </div>
+      </div>
+
+      <!-- REPTE: endevina quin (N,r) -->
+      <div class="caos-classify-panel" id="matchPanel">
+        <div class="caos-stage" id="matchStage"><canvas id="matchCanvas"></canvas></div>
+        <span class="chip-label">Quin (N, r) ha generat aquesta figura?</span>
+        <div class="caos-classify-options" id="matchOptions"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" role="status" id="hint">Clica «Salta» per fer el primer pas.</div>
+
+    <p class="method-hint" id="methodPanel">Cada salt et mou una fracció r del camí cap a un vèrtex triat a l'atzar. Repetit moltes vegades, els punts dibuixen sempre el mateix atractor, siguis on siguis quan comences.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Encara no hi ha cap salt</div>
+        <div class="readout-def" id="readoutDef">Clica «Salta» per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">El joc del caos i els atractors fractals</div>
+
+    <div class="type-card active" id="card-salt" data-method="salt" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">El salt</div>
+        <div class="type-range">nou punt = (1−r)·actual + r·vèrtex</div>
+        <div class="type-desc">Cada clic a «Salta» tria un vèrtex a l'atzar i mou el punt actual una fracció r cap a ell — la línia ressaltada mostra exactament aquest recorregut.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-atractor" data-method="atractor" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">L'atractor</div>
+        <div class="type-range">Independent del punt inicial</div>
+        <div class="type-desc">«Reinicia des d'un punt diferent» comença de zero des d'un lloc allunyat: després de prou salts, els punts tornen a dibuixar exactament la mateixa figura.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-dimensio" data-method="dimensio" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Dimensió fractal</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>D</mi><mo>=</mo><mfrac><mrow><mi>log</mi><mi>N</mi></mrow><mrow><mi>log</mi><mo>(</mo><mn>1</mn><mo>/</mo><mi>r</mi><mo>)</mo></mrow></mfrac></math>, si r ≤ r<sub>crit</sub></div>
+        <div class="type-desc">El requadre sota els botons la calcula per als N i r triats. Puja r i mira com D creix cap a 2 —fins que passes r<sub>crit</sub>: allà les còpies se superposen, la fórmula deixa de ser vàlida i el requadre t'ho diu en lloc de donar-te un número fals.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Prova-ho:</strong> amb N=4 (quadrat) i r=0,5 sense restriccions, D=2 exactament — els punts omplen tot el quadrat de manera uniforme, sense cap forat. Deixa de ser un fractal «prim» just en aquest llindar.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/tUD6vpFr" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Fractals: el joc del caos i cinquanta més</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 03 · Geometria i Topologia</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let N = 3, r = 0.5;
+let restrictNoRepeat = false, restrictNoOpposite = false;
+let vertices = [];
+let points = [];
+let current = { x: 0, y: 0 };
+let lastVertexIdx = null, lastFrom = null;
+let jumpCount = 0;
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRoundType = 'predict';
+let predictAnswer = null;
+
+// ─────────────────────────────────────────────
+//  GEOMETRIA
+// ─────────────────────────────────────────────
+function computeVertices(n) {
+  const R = 0.9;
+  return Array.from({ length: n }, (_, i) => { const a = -Math.PI / 2 + i * (2 * Math.PI / n); return { x: R * Math.cos(a), y: R * Math.sin(a) }; });
+}
+// ── Dimensió: la fórmula de semblança i el seu límit de validesa ──────────
+// D = log N / log(1/r) NO és universal: és el teorema de Moran–Hutchinson, i
+// només val si les N còpies contretes no se superposen (condició de conjunt
+// obert, OSC). Amb solapament, part de la figura es compta dues vegades i la
+// fórmula sobreestima la dimensió — fins al punt d'escopir valors >2, que per
+// a un subconjunt del pla són directament impossibles.
+//
+// r_crit(N) = la r més gran amb què les N còpies del polígon regular encara
+// tenen interiors disjunts. Calculat per força bruta amb el teorema dels eixos
+// separadors + cerca binària (200 iteracions) i validat contra els valors
+// clàssics coneguts: N=3,4 → 1/2 · N=5 → (3−√5)/2 = 1/φ² · N=6 → 1/3 ·
+// N=8 → 1−√2/2. Els sis coincideixen fins a 1e-6.
+const R_CRIT = { 3: 0.5, 4: 0.5, 5: (3 - Math.sqrt(5)) / 2, 6: 1 / 3, 7: 0.307979, 8: 1 - Math.SQRT2 / 2 };
+function criticalRatio(n) { return R_CRIT[n] !== undefined ? R_CRIT[n] : 0.5; }
+
+function similarityDimension(n, ratio) { return Math.log(n) / Math.log(1 / ratio); }
+
+// Descriu l'estat dimensional complet per a (n, r).
+//   formula  → el valor que dona log N/log(1/r)
+//   valid    → si l'OSC es compleix i, per tant, formula ÉS la dimensió
+//   actual   → la dimensió real coneguda (= formula si valid; si no, acotada a 2)
+function dimensionInfo(n, ratio) {
+  const rCrit = criticalRatio(n);
+  const formula = similarityDimension(n, ratio);
+  const valid = ratio <= rCrit + 1e-9;
+  return { formula, valid, rCrit, actual: valid ? formula : Math.min(2, formula) };
+}
+
+// Pool del Repte: NOMÉS parells (N,r) que compleixen l'OSC, perquè la pregunta
+// «quina és la dimensió?» tingui sempre una resposta certa. Abans es generava
+// (N,r) lliurement i el 59% de rondes demanaven un valor que la fórmula no
+// dona (fins a D=4,16 per a una figura plana) — vegeu prompt.md §5.3.
+const DIM_ROUND_POOL = (() => {
+  const pool = [];
+  [3, 4, 5, 6].forEach(n => {
+    [0.25, 0.28, 0.30, 0.32, 0.35, 0.38, 0.40, 0.45, 0.50].forEach(r => {
+      if (r <= criticalRatio(n) + 1e-9) pool.push({ n, r });
+    });
+  });
+  return pool;
+})();
+
+function pickVertexIdx() {
+  let idx, attempts = 0;
+  do {
+    idx = Math.floor(Math.random() * N);
+    attempts++;
+  } while (attempts < 60 && (
+    (restrictNoRepeat && idx === lastVertexIdx) ||
+    (restrictNoOpposite && N % 2 === 0 && lastVertexIdx !== null && idx === (lastVertexIdx + N / 2) % N)
+  ));
+  return idx;
+}
+function jumpOnce() {
+  const idx = pickVertexIdx();
+  const v = vertices[idx];
+  const from = { x: current.x, y: current.y };
+  current = { x: current.x + r * (v.x - current.x), y: current.y + r * (v.y - current.y) };
+  points.push({ x: current.x, y: current.y });
+  lastVertexIdx = idx; lastFrom = from;
+  jumpCount++;
+}
+function jumpMany(k) { for (let i = 0; i < k; i++) jumpOnce(); }
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function drawOn(canvas, vertsList, pts, highlightFrom, highlightIdx) {
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = rect.height, cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.94;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.strokeStyle = 'rgba(27,30,45,.28)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  vertsList.forEach((v, i) => { const x = cx + v.x * scale, y = cy + v.y * scale; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+  ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+
+  vertsList.forEach((v, i) => {
+    const x = cx + v.x * scale, y = cy + v.y * scale;
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = (highlightIdx === i) ? cssVar('--geometria') : 'rgba(27,30,45,.55)';
+    ctx.fill();
+  });
+
+  const dotR = pts.length > 4000 ? 0.9 : 1.4;
+  ctx.fillStyle = hexToRgba(cssVar('--geometria'), 0.62);
+  pts.forEach(p => { ctx.beginPath(); ctx.arc(cx + p.x * scale, cy + p.y * scale, dotR, 0, Math.PI * 2); ctx.fill(); });
+
+  if (highlightFrom && pts.length) {
+    const last = pts[pts.length - 1];
+    ctx.strokeStyle = cssVar('--geometria'); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx + highlightFrom.x * scale, cy + highlightFrom.y * scale); ctx.lineTo(cx + last.x * scale, cy + last.y * scale); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx + last.x * scale, cy + last.y * scale, 4, 0, Math.PI * 2); ctx.fillStyle = cssVar('--bad'); ctx.fill();
+  }
+}
+function draw() {
+  drawOn(document.getElementById('caosCanvas'), vertices, points, lastFrom, lastVertexIdx);
+  const info = dimensionInfo(N, r);
+  describeCanvas(document.getElementById('caosCanvas'),
+    `Atractor del joc del caos amb ${N} vèrtexs i raó r = ${r.toFixed(2).replace('.', ',')}. ` +
+    `${points.length} punt${points.length === 1 ? '' : 's'} dibuixat${points.length === 1 ? '' : 's'}. ` +
+    (info.valid
+      ? `Les còpies no se superposen, així que la dimensió és log ${N} dividit per log(1/${r.toFixed(2).replace('.', ',')}), aproximadament ${info.formula.toFixed(3).replace('.', ',')}.`
+      : `Les còpies se superposen (r supera el llindar ${info.rCrit.toFixed(3).replace('.', ',')}), així que la fórmula de semblança no dona la dimensió d'aquesta figura.`));
+}
+window.addEventListener('resize', draw);
+
+// ─────────────────────────────────────────────
+//  LECTURA
+// ─────────────────────────────────────────────
+function updateDimBox() {
+  const box = document.getElementById('dimBox');
+  const anyRestriction = restrictNoRepeat || restrictNoOpposite;
+  if (anyRestriction) {
+    box.innerHTML = `Amb alguna restricció activa, la fórmula senzilla D=log(N)/log(1/r) ja no s'aplica directament (el vèrtex ja no es tria amb llibertat total) — observa igualment com canvia la figura.`;
+    return;
+  }
+  const info = dimensionInfo(N, r);
+  const rc = info.rCrit.toFixed(3).replace('.', ',');
+  const fml = info.formula.toFixed(3).replace('.', ',');
+  if (info.valid) {
+    box.innerHTML = `Les ${N} còpies no se superposen (r ≤ r<sub>crit</sub> = ${rc}), així que la fórmula de semblança <em>sí</em> que dona la dimensió:
+      <br>D = log(${N})/log(1/${r.toFixed(2).replace('.', ',')}) ≈ <b>${fml}</b>`;
+  } else {
+    box.innerHTML = `D = log(${N})/log(1/${r.toFixed(2).replace('.', ',')}) donaria ${fml}, <b>però aquí la fórmula no s'aplica</b>.
+      <span class="warn-note">Amb r &gt; r<sub>crit</sub> = ${rc} les còpies se superposen: la fórmula compta dues vegades el que s'encavalca i sobreestima.
+      ${info.formula >= 2
+        ? `Un subconjunt del pla mai pot tenir dimensió &gt; 2; la figura omple el polígon i la dimensió real és <b>2</b>.`
+        : `La dimensió real és <b>menor</b> que ${fml} (el solapament no es pot mesurar amb aquesta fórmula tan simple).`}</span>`;
+  }
+}
+function updateReadout() {
+  if (!jumpCount) {
+    readoutBadge.classList.remove('active');
+    readoutNum.textContent = '…'; readoutName.textContent = 'Encara no hi ha cap salt'; readoutDef.textContent = 'Clica «Salta» per començar.';
+    return;
+  }
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = jumpCount;
+  readoutName.textContent = `salt${jumpCount === 1 ? '' : 's'} · vèrtex ${lastVertexIdx + 1}`;
+  readoutDef.textContent = `N=${N}, r=${r.toFixed(2)} — la figura és el mateix atractor sigui quin sigui l'ordre dels salts.`;
+}
+function refreshAll() { draw(); updateDimBox(); updateReadout(); }
+
+// ─────────────────────────────────────────────
+//  CONTROLS (Explora)
+// ─────────────────────────────────────────────
+function buildNChips() {
+  const row = document.getElementById('nRow');
+  row.innerHTML = '';
+  [3, 4, 5, 6].forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = n;
+    b.classList.toggle('active', n === N);
+    b.addEventListener('click', () => { setN(n); });
+    row.appendChild(b);
+  });
+}
+function setN(n) {
+  N = n;
+  vertices = computeVertices(N);
+  document.querySelectorAll('#nRow .chip').forEach(c => c.classList.toggle('active', +c.textContent === N));
+  document.getElementById('chipNoOpposite').disabled = (N % 2 !== 0);
+  if (N % 2 !== 0 && restrictNoOpposite) { restrictNoOpposite = false; document.getElementById('chipNoOpposite').classList.remove('on'); }
+  resetPoints();
+}
+function resetPoints(randomFar) {
+  points = []; jumpCount = 0; lastVertexIdx = null; lastFrom = null;
+  current = randomFar
+    ? { x: (Math.random() * 2 - 1) * 1.8, y: (Math.random() * 2 - 1) * 1.8 }
+    : { x: 0, y: 0 };
+  refreshAll();
+}
+document.getElementById('rSlider').addEventListener('input', (e) => {
+  r = parseFloat(e.target.value);
+  document.getElementById('rVal').textContent = r.toFixed(2);
+  updateDimBox();
+});
+document.getElementById('chipNoRepeat').addEventListener('click', function () {
+  restrictNoRepeat = !restrictNoRepeat; this.classList.toggle('on', restrictNoRepeat); updateDimBox();
+});
+document.getElementById('chipNoOpposite').addEventListener('click', function () {
+  if (this.disabled) return;
+  restrictNoOpposite = !restrictNoOpposite; this.classList.toggle('on', restrictNoOpposite); updateDimBox();
+});
+document.getElementById('jump1Btn').addEventListener('click', () => { jumpOnce(); refreshAll(); hint.textContent = `Vèrtex ${lastVertexIdx + 1} triat a l'atzar — el punt s'ha mogut r=${r.toFixed(2)} del camí cap a ell.`; });
+document.getElementById('jump50Btn').addEventListener('click', () => { jumpMany(50); refreshAll(); hint.textContent = '50 salts més acumulats.'; });
+document.getElementById('jump500Btn').addEventListener('click', () => { jumpMany(500); refreshAll(); hint.textContent = '500 salts més acumulats — la figura ja hauria de ser reconeixible.'; });
+document.getElementById('restartDiffBtn').addEventListener('click', () => { resetPoints(true); hint.textContent = 'Reiniciat des d\'un punt ben allunyat — salta i mira si torna a la mateixa figura.'; });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+
+function startPredictRound() {
+  document.getElementById('predictPanel').style.display = 'flex';
+  document.getElementById('matchPanel').classList.remove('active');
+  const pick = DIM_ROUND_POOL[Math.floor(Math.random() * DIM_ROUND_POOL.length)];
+  const n = pick.n, rr = pick.r;
+  predictAnswer = { n, r: rr, D: similarityDimension(n, rr) };
+  document.getElementById('predictPrompt').innerHTML = `N = <b>${n}</b> vèrtexs &nbsp;·&nbsp; r = <b>${rr.toFixed(2).replace('.', ',')}</b><br>Quina serà la dimensió fractal D = log(N)/log(1/r)?`;
+  document.getElementById('dimGuessInput').value = '';
+  hint.textContent = 'Calcula (o estima) la dimensió abans de comprovar-la.';
+}
+document.getElementById('submitGuessBtn').addEventListener('click', () => {
+  if (repteTimeUp || !predictAnswer) return;
+  const guess = parseFloat(document.getElementById('dimGuessInput').value);
+  const correct = !isNaN(guess) && Math.abs(guess - predictAnswer.D) <= 0.12;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); hint.textContent = `✔ Molt bé! D ≈ ${predictAnswer.D.toFixed(3)}.`; }
+  else { applyPenalty(); flash(wrap, 'var(--bad)'); hint.textContent = `✕ Era D = log(${predictAnswer.n})/log(1/${predictAnswer.r.toFixed(2)}) ≈ ${predictAnswer.D.toFixed(3)}.`; }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, correct ? 1300 : 1900);
+});
+
+function startMatchRound() {
+  document.getElementById('predictPanel').style.display = 'none';
+  document.getElementById('matchPanel').classList.add('active');
+  const correctN = [3, 4, 5, 6][Math.floor(Math.random() * 4)];
+  const rPool = [0.35, 0.42, 0.5, 0.58, 0.65];
+  const correctR = rPool[Math.floor(Math.random() * rPool.length)];
+  const correctVerts = computeVertices(correctN);
+  let cur = { x: 0, y: 0 }, pts = [];
+  for (let i = 0; i < 900; i++) {
+    const idx = Math.floor(Math.random() * correctN);
+    const v = correctVerts[idx];
+    cur = { x: cur.x + correctR * (v.x - cur.x), y: cur.y + correctR * (v.y - cur.y) };
+    if (i > 20) pts.push({ x: cur.x, y: cur.y });
+  }
+  drawOn(document.getElementById('matchCanvas'), correctVerts, pts, null, null);
+
+  const options = [{ n: correctN, r: correctR, correct: true }];
+  while (options.length < 4) {
+    const n2 = Math.random() < 0.5 ? [3, 4, 5, 6][Math.floor(Math.random() * 4)] : correctN;
+    const r2 = n2 === correctN ? rPool[Math.floor(Math.random() * rPool.length)] : rPool[Math.floor(Math.random() * rPool.length)];
+    if (n2 === correctN && Math.abs(r2 - correctR) < 0.001) continue;
+    if (options.some(o => o.n === n2 && Math.abs(o.r - r2) < 0.001)) continue;
+    options.push({ n: n2, r: r2, correct: false });
+  }
+  for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[options[i], options[j]] = [options[j], options[i]]; }
+
+  const optRow = document.getElementById('matchOptions');
+  optRow.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'caos-option-btn';
+    b.textContent = `N=${opt.n}, r=${opt.r.toFixed(2)}`;
+    b.addEventListener('click', () => submitMatch(opt, b, correctN, correctR));
+    optRow.appendChild(b);
+  });
+  hint.textContent = 'Mira la figura i tria quin (N,r) creus que l\'ha generada.';
+}
+function submitMatch(opt, btn, correctN, correctR) {
+  if (repteTimeUp) return;
+  document.querySelectorAll('.caos-option-btn').forEach(b => b.disabled = true);
+  if (opt.correct) { btn.classList.add('correct'); award(10); flash(wrap, 'var(--good)'); hint.textContent = '✔ Correcte!'; }
+  else {
+    btn.classList.add('wrong'); applyPenalty(); flash(wrap, 'var(--bad)');
+    document.querySelectorAll('.caos-option-btn').forEach(b => { if (b.textContent === `N=${correctN}, r=${correctR.toFixed(2)}`) b.classList.add('correct'); });
+    hint.textContent = `✕ Era N=${correctN}, r=${correctR.toFixed(2)}.`;
+  }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1600);
+}
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  repteRoundType = Math.random() < 0.5 ? 'predict' : 'match';
+  if (repteRoundType === 'predict') startPredictRound(); else startMatchRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('exploraStage').style.display = 'flex';
+  document.getElementById('matchPanel').classList.remove('active');
+  document.getElementById('predictPanel').style.display = 'none';
+  setN(N);
+  hint.textContent = 'Clica «Salta» per fer el primer pas.';
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  document.getElementById('exploraStage').style.display = 'none';
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  salt: "Cada salt tria un vèrtex a l'atzar i mou el punt actual una fracció r del camí cap a ell.",
+  atractor: "L'atractor no depèn del punt inicial ni de la seqüència d'atzar concreta — només de N i r.",
+  dimensio: "D = log(N)/log(1/r): la mateixa idea de N còpies a escala r que fa servir Sierpinski, generalitzada."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-salt').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('salt'); });
+document.getElementById('card-atractor').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('atractor'); });
+document.getElementById('card-dimensio').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('dimensio'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildNChips();
+setN(N);
+</script>
+</body>
+</html>

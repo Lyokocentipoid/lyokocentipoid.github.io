@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trencaclosques del 15 · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--algebra); }
+
+    .puzzle-wrap { aspect-ratio: auto; padding: 1.2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
+    /* playGrid: les fitxes NO són cel·les de graella — són elements amb posició
+       absoluta que es desplacen amb transform, perquè un moviment es vegi com
+       un lliscament suau i no com un redibuixat instantani. .puzzle-grid manté
+       la mida/aspecte i actua de sistema de coordenades. */
+    .puzzle-grid { position: relative; width: min(320px, 80vw); aspect-ratio: 1; }
+    .puzzle-tile {
+      border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: 1.2rem; color: var(--ink); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color var(--tr), background var(--tr), box-shadow var(--tr);
+    }
+    #playGrid .puzzle-tile { position: absolute; top: 0; left: 0; width: calc(25% - 4.5px); height: calc(25% - 4.5px); transition: transform .22s cubic-bezier(.3,0,.2,1), border-color var(--tr); }
+    .puzzle-tile:hover:not(.blank) { border-color: var(--m-color); }
+    #playGrid .puzzle-tile:hover:not(.blank) { box-shadow: 0 2px 8px rgba(27,30,45,.12); }
+    .puzzle-tile.blank { background: transparent; border: 1px dashed var(--border); cursor: default; visibility: hidden; }
+    .puzzle-tile:disabled { cursor: default; }
+    /* Graella de fons estàtica de 16 caselles buides, sota les fitxes que
+       llisquen — sense ella, es veuria el buit com un simple forat canviant. */
+    .puzzle-grid-bg { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; z-index: 0; }
+    .puzzle-grid-bg div { border-radius: 8px; border: 1px dashed var(--border); }
+    #playGrid { z-index: 1; }
+
+    .parity-readout { display: flex; gap: 1.4rem; flex-wrap: wrap; justify-content: center; font-family: var(--font-mono); font-size: .84rem; }
+    .parity-readout .pi-item { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+    .parity-readout .pi-label { font-family: var(--font-body); font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .parity-readout .pi-value { font-weight: 700; }
+    .parity-readout .pi-value.good { color: var(--good); }
+    .parity-readout .pi-value.bad { color: var(--bad); }
+
+    .drill-panel { display: none; flex-direction: column; align-items: center; gap: .8rem; }
+    .drill-panel.active { display: flex; }
+    .drill-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: min(220px, 60vw); aspect-ratio: 1; }
+    .drill-grid .puzzle-tile { font-size: .95rem; cursor: default; transition: none; }
+    .drill-grid .puzzle-tile:hover { border-color: var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--algebra)">Bloc 02 · Trencaclosques del 15</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Trencaclosques del 15 i paritat</h1>
+      <p>Cada moviment és un intercanvi amb el buit, i cada intercanvi canvia la paritat de la permutació. Juga-hi i mira com el comptador d'inversions mai s'equivoca, moviment rere moviment.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Qualsevol disposició de les 15 fitxes en una graella 4×4 és, matemàticament, una <strong>permutació</strong>: una manera concreta d'ordenar-les. Per llegir-la, recorre la graella com un text (fila per fila, d'esquerra a dreta) i escriu els 15 números, ignorant el buit.</p>
+          <p>Una <strong>inversió</strong> és un parell de fitxes que apareix en l'ordre equivocat en aquesta lectura — per exemple, si el 5 surt abans que el 3, encara que sigui perquè hi ha altres fitxes pel mig. Comptar-les totes et diu si la permutació és <strong>parella</strong> (nombre d'inversions parell) o <strong>senar</strong>.</p>
+          <p>Cada moviment legal és un intercanvi entre el buit i una fitxa veïna — horitzontal o vertical. Un moviment horitzontal no canvia ni les inversions ni la fila del buit; un moviment vertical canvia totes dues alhora. Per això la combinació «inversions + fila del buit» es manté sempre amb la mateixa paritat, moviment rere moviment: és la clau de tot el que ve després.</p>
+          <p><strong>Per què, exactament?</strong> Un moviment horitzontal només mou el buit dins la mateixa fila: com que la seqüència de lectura sempre l'ignora, la resta de fitxes es llegeixen exactament en el mateix ordre relatiu d'abans —el nombre d'inversions no canvia ni una unitat, no només de paritat. Un moviment vertical és diferent: la fitxa que es mou salta per damunt d'<strong>exactament 3</strong> altres fitxes en la seqüència de lectura (les que li quedaven per llegir a la fila antiga, més les que ja s'hi havien llegit a la fila nova — entre totes dues sempre en sumen 3, perquè una fila té 4 columnes). Saltar per damunt de 3 fitxes equival a 3 bescanvis consecutius entre veïns de seqüència, i cada bescanvi d'aquests capgira la paritat de les inversions — tres capgiraments seguits tornen a capgirar-la en total. Com que la fila del buit també canvia de paritat a cada moviment vertical (i mai als horitzontals), els dos capgiraments van sempre junts: per això la seva suma no en fa mai cap, de sol.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>El 1880, <a href="https://ca.wikipedia.org/wiki/Sam_Loyd" target="_blank" rel="noopener">Sam Loyd</a> va oferir 1000$ (una fortuna en aquella època) a qui resolgués el trencaclosques amb el 14 i el 15 intercanviats. Ningú els va cobrar mai: aquesta configuració concreta <strong>no té solució</strong>, i el 1879 Johnson i Story ja ho havien demostrat combinant la paritat de les inversions amb la fila del buit.</p>
+          <p>Més enllà de l'anècdota, aquest és un dels exemples més accessibles d'una <strong>demostració per invariant</strong>: en lloc de provar totes les seqüències de moviments possibles (impossible, n'hi ha bilions), es troba una propietat que mai canvia i que distingeix les configuracions possibles de les impossibles d'un sol cop d'ull. És exactament el mateix tipus de raonament que apareix a la teoria de grups amb el <a href="https://en.wikipedia.org/wiki/Alternating_group" target="_blank" rel="noopener">grup altern Aₙ</a> (el subgrup de permutacions parelles).</p>
+          <p>Aquesta invariant no és una coincidència del trencaclosques: és una manifestació concreta del <strong>signe d'una permutació</strong>, la funció que assigna +1 a les permutacions parelles i −1 a les senars. El signe és un <strong>homomorfisme de grups</strong> de Sₙ cap a {+1,−1} —cada transposició (bescanvi de dos elements) el capgira sempre, sense excepció—, i cada moviment del trencaclosques és, en efecte, una transposició entre el buit i una fitxa. Per això el signe hi canvia a cada pas, mai per accident: és estructura de grup pura, la mateixa que hi ha darrere de qualsevol taula de Cayley.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li><strong>Joc lliure</strong>: mou fitxes adjacents al buit i observa com el comptador d'inversions, la fila del buit i la invariant final canvien (o no) a cada moviment.</li>
+            <li><strong>Compta les inversions</strong>: practica el mètode a mà sobre una graella estàtica, sense jugar-hi — escriu quantes inversions hi compta i comprova-ho.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Aquesta càpsula amaga una de les idees més potents de tota la matemàtica sota l'aparença d'un joguet de fira: com demostrar que una cosa és <em>impossible</em>. No difícil, no que ningú l'hagi aconseguida encara — impossible, per sempre, i sabent-ho amb certesa absoluta sense haver de provar-ho tot. Anem a veure com es fa, per què funciona, i per què el mateix argument reapareix des del cub de Rubik fins a la física de partícules.</p>
+
+          <h4>1. Els 1000 dòlars que ningú va cobrar</h4>
+          <p>Cap al 1880 el trencaclosques de les 15 peces va provocar una febre mundial comparable a la del cub de Rubik un segle després. Enmig d'aquella onada, el creador de trencaclosques nord-americà Sam Loyd va oferir <strong>1.000 dòlars</strong> —una fortuna considerable— a qui aconseguís resoldre'l partint de la posició ordenada però amb el 14 i el 15 intercanviats.</p>
+          <p>Milers de persones ho van intentar. Ningú va cobrar mai. I no perquè fos molt difícil: <strong>és impossible</strong>, i ja s'havia demostrat el 1879 —un any abans de l'oferta— en un article de William Johnson i William Story. Loyd sabia perfectament que oferia diners sense cap risc.</p>
+          <div class="deep-aside">
+            <strong>Un detall que agrada explicar.</strong> Loyd va afirmar tota la vida que ell havia inventat el trencaclosques. No era veritat: l'havia creat cap al 1874 un funcionari de correus de Canastota, Noyes Chapman. Loyd s'hi va apuntar quan ja era un fenomen, i la falsa atribució va quedar fixada en la literatura durant més d'un segle. La part matemàtica de la història, en canvi, és impecable i no s'ha mogut mai.
+          </div>
+
+          <h4>2. Del tauler a una llista de números</h4>
+          <p>El primer pas per poder demostrar res és deixar de veure un tauler i començar a veure un objecte matemàtic. Fem-ho: llegeix la graella <strong>com si fos un text</strong>, fila per fila i d'esquerra a dreta, i apunta els 15 números que trobis, ignorant el buit. Obtens una llista com 5, 2, 4, 15, 13, 7, …</p>
+          <p>Aquesta llista és una <strong>permutació</strong> dels números de l'1 al 15: una manera concreta d'ordenar-los. La posició ordenada correspon a la llista 1, 2, 3, …, 15. Qualsevol altra disposició és una barreja d'aquesta.</p>
+          <p>El pas conceptual important és aquest: <strong>el trencaclosques ja no és un tauler amb fitxes, és un punt dins del conjunt de totes les permutacions possibles.</strong> I d'aquest conjunt en sabem coses.</p>
+
+          <h4>3. Inversions: mesurar el desordre</h4>
+          <p>Necessitem una manera de quantificar «com de barrejada» està una llista. La més útil és comptar-ne les <strong>inversions</strong>: parelles de números que apareixen en l'ordre equivocat.</p>
+          <p>Concretament, per cada parella de fitxes, mira quina surt abans a la lectura i quina té el número més petit. Si la més gran surt abans que la més petita, aquella parella compta com una inversió. No cal que siguin veïnes: només compta l'ordre relatiu.</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: comptar inversions de la llista 3, 1, 2</span>
+            <span class="de-step">Parella (3,1): el 3 surt abans que l'1, i 3 &gt; 1 → <strong>inversió</strong></span>
+            <span class="de-step">Parella (3,2): el 3 surt abans que el 2, i 3 &gt; 2 → <strong>inversió</strong></span>
+            <span class="de-step">Parella (1,2): l'1 surt abans que el 2, i 1 &lt; 2 → ordre correcte, no compta</span>
+            <span class="de-step">Total: <strong>2 inversions</strong> → nombre parell → permutació <strong>parella</strong></span>
+          </div>
+          <p>El que interessa no és tant el nombre exacte com la seva <strong>paritat</strong>: si és parell o senar. Aquesta és l'activitat «Compta les inversions» de la càpsula, i val la pena fer-ne unes quantes a mà abans de continuar, perquè tot el que ve depèn d'entendre bé aquest recompte.</p>
+
+          <h4>4. Què li fa un moviment a la paritat</h4>
+          <p>Aquí és on hi ha la part que gairebé cap explicació breu desenvolupa, i que és el cor de tot. Un moviment legal consisteix a lliscar una fitxa veïna cap al buit. N'hi ha de dos tipus, i es comporten de maneres oposades.</p>
+          <h5>Moviment horitzontal</h5>
+          <p>La fitxa i el buit intercanvien posicions dins de la <strong>mateixa fila</strong>. Com que la lectura ignora el buit, la seqüència de números que llegim <em>no canvia gens</em>: les mateixes fitxes, en el mateix ordre. Per tant el nombre d'inversions no canvia ni en una unitat. I la fila del buit tampoc no canvia.</p>
+          <h5>Moviment vertical</h5>
+          <p>Aquí la fitxa salta a la fila de sobre o de sota. En la seqüència de lectura, aquesta fitxa <strong>se salta exactament tres fitxes</strong>. Per què tres? Perquè entre la posició antiga i la nova hi ha una fila sencera de 4 caselles, una de les quals l'ocupa el buit (que no es llegeix): queden <strong>3 fitxes</strong> pel mig.</p>
+          <p>I saltar per damunt de 3 fitxes equival a fer 3 bescanvis consecutius amb el veí immediat. Cada bescanvi de veïns canvia la paritat de les inversions (afegeix o treu exactament una inversió: la de la parella que s'ha bescanviat). Tres canvis de paritat seguits deixen la paritat <strong>capgirada</strong>.</p>
+          <div class="deep-key">
+            <strong>Resum del mecanisme.</strong> Moviment horitzontal: no canvia les inversions, no canvia la fila del buit. Moviment vertical: capgira la paritat de les inversions <em>i</em> canvia la fila del buit. Els dos canvis van sempre junts o no van cap dels dos. Per tant la quantitat<br>
+            <span style="display:block;text-align:center;margin:.5rem 0;font-family:var(--font-mono)">(nombre d'inversions) + (fila del buit)</span>
+            té <strong>sempre la mateixa paritat, passi el que passi</strong>. És un <em>invariant</em>.
+          </div>
+
+          <h4>5. De l'invariant a la impossibilitat</h4>
+          <p>Ara l'argument es tanca sol, i val la pena veure com de poc esforç costa un cop tens l'invariant.</p>
+          <p>A la posició resolta hi ha <strong>0 inversions</strong> i el buit és a la <strong>fila 4</strong>. La suma és 0 + 4 = 4, parella. (Amb la convenció de files 0-indexada que fa servir la càpsula, la suma és senar; el que importa no és el valor absolut sinó que la paritat mai canviï.)</p>
+          <p>Ara mira la posició de Loyd: exactament la mateixa, però amb el 14 i el 15 intercanviats. El buit segueix a la mateixa fila, però bescanviar dues fitxes veïnes afegeix <strong>exactament una inversió</strong>. La suma ha canviat de paritat.</p>
+          <p>I com que cap moviment legal no pot canviar aquesta paritat, <strong>no existeix cap seqüència de moviments</strong> —ni de deu, ni d'un milió— que porti d'una posició a l'altra. No és que sigui difícil: és que les dues posicions viuen en compartiments estancs de l'univers del trencaclosques.</p>
+          <div class="deep-key">
+            <strong>El teorema de Johnson–Story (1879), sencer.</strong> Les 16!/2 ≈ 10 bilions de disposicions possibles es reparteixen en <strong>exactament dues classes</strong> de la mateixa mida. Dins de cada classe, qualsevol posició es pot transformar en qualsevol altra. Entre classes, mai. Johnson va demostrar la meitat impossible; Story va demostrar que l'altra meitat sí que és tota accessible —i aquesta segona part és, de fet, la més laboriosa.
+          </div>
+          <div class="deep-aside">
+            <strong>Compte amb la direcció de l'argument.</strong> L'invariant demostra la <em>impossibilitat</em> de manera immediata i elegant. Però no demostra la possibilitat: que dues posicions tinguin la mateixa paritat no basta, per si sol, per garantir que hi hagi camí. Cal una construcció explícita, i és el que va fer Story. Aquesta asimetria —els invariants són fàcils per dir «no» i insuficients per dir «sí»— és exactament la mateixa que trobaràs a la càpsula de Nusos i tricolorabilitat.
+          </div>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p>La càpsula té dues activitats complementàries.</p>
+          <p><strong>Joc lliure.</strong> Mous fitxes i, a sota, tres números s'actualitzen a cada moviment: el nombre d'inversions, la fila del buit, i el veredicte de l'invariant. El propòsit no és resoldre el trencaclosques —això ja ho saps fer— sinó <strong>vigilar els números mentre jugues</strong>. Fes moviments horitzontals: veuràs les inversions quietes. Fes-ne un de vertical: veuràs el nombre saltar. I, mentrestant, el veredicte final no es mou mai. Estàs comprovant un teorema amb el dit.</p>
+          <p><strong>Compta les inversions.</strong> Et dona una graella estàtica i et demana el número. És la part avorrida però imprescindible: si no has comptat inversions a mà unes quantes vegades, l'invariant continua sent una afirmació abstracta.</p>
+          <div class="deep-example">
+            <span class="de-title">Recorregut: comprovar l'invariant en directe</span>
+            <span class="de-step">1. Ves a <strong>Joc lliure</strong> i apunta els tres números que veus a sota.</span>
+            <span class="de-step">2. Mou una fitxa <strong>horitzontalment</strong> cap al buit. Inversions: <em>idèntiques</em>. Fila del buit: <em>idèntica</em>.</span>
+            <span class="de-step">3. Mou-ne una <strong>verticalment</strong>. Inversions: han canviat (±1 o ±3). Fila del buit: ha canviat en 1.</span>
+            <span class="de-step">4. Comprova que la paritat de la suma és la mateixa que al pas 1.</span>
+            <span class="de-step">5. Repeteix-ho 20 cops, tan ràpid com vulguis. El veredicte no canviarà mai.</span>
+            <span class="de-step">6. Prem <strong>«Barreja de nou»</strong>: com que la barreja es fa amb moviments legals, la posició nova sempre és resoluble.</span>
+          </div>
+
+          <h4>7. La idea de fons: demostracions per invariant</h4>
+          <p>El que has fet aquí no és un truc del trencaclosques del 15. És una <strong>estratègia general de demostració</strong> que apareix a tot arreu, i val la pena enunciar-la en abstracte:</p>
+          <p style="margin-left:1rem"><em>Per demostrar que no es pot arribar de A a B mitjançant unes certes operacions, busca una quantitat que cap operació no canviï, i comprova que val coses diferents a A i a B.</em></p>
+          <p>La força d'aquest mètode és que <strong>substitueix una cerca infinita per un càlcul finit</strong>. La pregunta original —«hi ha alguna seqüència de moviments, de qualsevol longitud, que ho aconsegueixi?»— és impossible d'atacar per força bruta: hi ha infinites seqüències. La pregunta reformulada —«coincideixen les paritats?»— es respon en deu segons amb un llapis.</p>
+          <p>És la mateixa lògica que la conservació de l'energia en física: no cal seguir un sistema instant per instant per saber que certs estats finals són inabastables.</p>
+
+          <h4>8. El signe d'una permutació</h4>
+          <p>Anem un pas més enllà, perquè l'invariant no és un accident del tauler 4×4: és una manifestació d'una estructura algebraica.</p>
+          <p>A tota permutació se li pot assignar un <strong>signe</strong>: +1 si té un nombre parell d'inversions, −1 si en té un nombre senar. Aquesta assignació té una propietat notable: el signe d'una composició és el producte dels signes. En el llenguatge de la càpsula de Taules de Cayley, el signe és un <strong>homomorfisme</strong> del grup simètric Sₙ cap al grup {+1, −1}.</p>
+          <p>La conseqüència: cada <strong>transposició</strong> (bescanviar dos elements) té signe −1, sense excepció. I cada moviment del trencaclosques és exactament una transposició —entre el buit i una fitxa. Per això el signe canvia a cada moviment: no per una casualitat combinatòria, sinó perquè així és com funciona l'estructura.</p>
+          <p>Les permutacions de signe +1 formen un subgrup, el <strong>grup altern</strong> Aₙ, que conté exactament la meitat dels elements. Les posicions accessibles del trencaclosques (amb el buit tornat al seu racó) són precisament les que corresponen a A₁₅, i n'hi ha 15!/2 = <strong>653.837.184.000</strong>. Les «dues classes» del teorema de Johnson–Story són, en realitat, el grup altern i el seu complement.</p>
+
+          <h4>9. Aparicions fora de les matemàtiques</h4>
+          <p><strong>El cub de Rubik.</strong> Té tres invariants d'aquesta família alhora: la paritat de la permutació de les peces, l'orientació total dels vèrtexs (mòdul 3) i la de les arestes (mòdul 2). Per això <em>no</em> pots girar una sola aresta i deixar la resta igual, ni intercanviar només dues peces. Si desmuntes el cub i el tornes a muntar a l'atzar, tens una probabilitat d'1 entre 12 que sigui resoluble.</p>
+          <p><strong>Física de partícules.</strong> Les partícules es divideixen en fermions i bosons segons com es comporta la seva funció d'ona quan s'intercanvien dues partícules idèntiques: canvia de signe o no. És, literalment, el signe d'una permutació. El principi d'exclusió de Pauli —i, per tant, tota l'estructura de la taula periòdica— surt d'aquí.</p>
+          <p><strong>Determinants.</strong> La fórmula del determinant d'una matriu és una suma sobre totes les permutacions, cada terme multiplicat pel signe de la permutació. Que un determinant canviï de signe en intercanviar dues files és exactament el mateix fet que fa impossible el trencaclosques de Loyd.</p>
+          <p><strong>Verificació de programes i criptografia.</strong> La tècnica d'invariants s'usa contínuament en informàtica: un invariant de bucle és una propietat que es manté a cada iteració i que permet demostrar que un programa és correcte sense executar-lo per a totes les entrades possibles.</p>
+
+          <h4>10. Curiositats</h4>
+          <p><strong>El número de Déu del trencaclosques és 80.</strong> Es va demostrar que qualsevol posició resoluble es pot resoldre en un màxim de 80 moviments de fitxa, i que n'hi ha que en necessiten exactament 80. Va caldre potència de càlcul considerable per confirmar-ho. Per comparació, el cub de Rubik en necessita 20.</p>
+          <p><strong>Però el cas general és intractable.</strong> Trobar la solució <em>més curta</em> del trencaclosques n×n generalitzat és NP-difícil (Ratner i Warmuth, 1990). És a dir: saber si una posició és resoluble es fa en un instant amb l'invariant, però saber quin és el camí òptim és un dels problemes durs de la informàtica teòrica. La distància entre «sé que existeix» i «sé quin és» pot ser abismal.</p>
+          <p><strong>Loyd va provocar pèrdues econòmiques reals.</strong> Cròniques de l'època parlen de botiguers que tancaven per jugar-hi, funcionaris que hi perdien la jornada i patrons que van prohibir el trencaclosques a l'oficina. A França se'l va arribar a descriure com una plaga pitjor que l'alcohol o el tabac.</p>
+          <p><strong>La mateixa paritat, un tauler diferent.</strong> Si el tauler fos de 3×3 (el trencaclosques del 8), l'argument funcionaria igual però amb un detall: en un tauler d'amplada senar, els moviments verticals salten per damunt d'un nombre <em>parell</em> de fitxes, i llavors n'hi ha prou amb la paritat de les inversions, sense haver de mirar la fila del buit. La regla depèn de l'amplada del tauler, i aquest és un bon exercici per comprovar que has entès el mecanisme i no memoritzat la fórmula.</p>
+          <p><strong>La solució de Loyd, si s'hi val a fer trampa.</strong> Si gires el tauler sencer 90°, la lectura canvia i la paritat també. Alguns contemporanis ho van proposar com a «solució». Loyd, previsor, havia especificat que les fitxes havien d'acabar en l'orientació correcta.</p>
+
+          <h4>11. Connexió amb altres àrees</h4>
+          <p>Aquesta càpsula és, essencialment, una il·lustració física del grup altern, que és un dels objectes centrals de la càpsula de <strong>Taules de Cayley</strong>: allà construeixes taules de grups petits i en busques subgrups; aquí n'estàs manipulant un de 15! elements amb els dits.</p>
+          <p>La connexió amb la <strong>Teoria de Galois</strong> és encara més directa i històricament decisiva. El fet que Aₙ sigui «simple» (no es pot desmuntar) per a n ≥ 5 és exactament la raó per la qual les equacions de grau 5 no es poden resoldre per radicals. El mateix grup que fa impossible el trencaclosques de Loyd fa impossible la fórmula de la quíntica.</p>
+          <p>I amb <strong>Nusos i tricolorabilitat</strong> comparteix el mètode sencer: trobar una propietat que les transformacions permeses no poden alterar, i utilitzar-la per separar el possible de l'impossible. Canvien els objectes; l'estratègia és idèntica.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="controls-row">
+      <span class="chip-label">Activitat:</span>
+      <div class="mode-toggle" id="explSubToggle">
+        <button data-sub="play" class="active">Joc lliure</button>
+        <button data-sub="drill">Compta les inversions</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap puzzle-wrap flash-target" id="canvasWrap">
+      <!-- Joc lliure -->
+      <div id="playPanel">
+        <div class="puzzle-grid">
+          <div class="puzzle-grid-bg">
+            <div></div><div></div><div></div><div></div>
+            <div></div><div></div><div></div><div></div>
+            <div></div><div></div><div></div><div></div>
+            <div></div><div></div><div></div><div></div>
+          </div>
+          <div id="playGrid" style="position:absolute; inset:0;"></div>
+        </div>
+      </div>
+      <div class="parity-readout" id="liveParity"></div>
+      <div class="btn-row" style="display:flex;gap:.6rem;">
+        <button class="btn btn-ghost" id="shuffleBtn">Barreja de nou ↻</button>
+      </div>
+
+      <!-- Mini-exercici: compta inversions -->
+      <div class="drill-panel" id="drillPanel">
+        <div class="drill-grid" id="drillGrid"></div>
+        <div class="rs-row">
+          <span class="answer-label">Inversions:</span>
+          <input type="number" class="answer-input" id="drillInput" inputmode="numeric">
+          <button class="btn btn-primary" id="drillCheckBtn">Comprova ✔</button>
+        </div>
+        <span class="answer-feedback" id="drillFeedback"></span>
+        <button class="btn btn-ghost" id="drillNewBtn">Nova graella ↻</button>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Mou fitxes adjacents al buit per ordenar el trencaclosques.</div>
+
+    <p class="method-hint" id="methodPanel">Cada moviment és un intercanvi amb el buit: sempre canvia la paritat de la permutació. La invariant real combina la paritat de les inversions amb la posició (fila) del buit.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Trencaclosques del 15</div>
+        <div class="readout-def" id="readoutDef">Mou una fitxa adjacent al buit per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Permutacions i paritat</div>
+
+    <div class="type-card active" id="card-inversions" data-method="inversions" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Inversions</div>
+        <div class="type-range">Parells (i,j) fora d'ordre</div>
+        <div class="type-desc">Llegeix la graella com un text (fila per fila, ignorant el buit) i compara cada fitxa amb totes les que vénen després: cada parell fora d'ordre és una inversió. El comptador de dalt ho fa en directe cada cop que mous una fitxa.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-invariant" data-method="invariant" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La invariant</div>
+        <div class="type-range">inversions + posició del buit</div>
+        <div class="type-desc">Un moviment horitzontal no canvia ni les inversions ni la fila del buit; un de vertical canvia totes dues alhora. Per això la seva suma mai canvia de paritat — comprova-ho jugant: no trobaràs mai una excepció.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-solubilitat" data-method="solubilitat" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Solubilitat</div>
+        <div class="type-range">Teorema de Johnson–Story (1879)</div>
+        <div class="type-desc">L'estat resolt té 0 inversions i el buit a la fila 4 — suma senar. Com que la suma mai canvia de paritat, qualsevol graella amb suma parella és, per força, inabastable des de l'estat resolt.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> l'exemple clàssic: la configuració resolta amb el 14 i el 15 intercanviats <em>sembla</em> gairebé acabada, però no té solució — és exactament l'exemple que Sam Loyd va fer servir (i pel qual va oferir, sense risc, 1000$ a qui la resolgués).
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 02 · Àlgebra i Combinatòria</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  LÒGICA DEL TRENCACLOSQUES
+// ─────────────────────────────────────────────
+function countInversions(tiles) {
+  let inv = 0;
+  for (let i = 0; i < tiles.length; i++) for (let j = i + 1; j < tiles.length; j++) if (tiles[i] > tiles[j]) inv++;
+  return inv;
+}
+function boardStats(board) {
+  const tiles = board.filter(v => v !== 0);
+  const blankIdx = board.indexOf(0);
+  const blankRow = Math.floor(blankIdx / 4);
+  const blankCol = blankIdx % 4;
+  const inv = countInversions(tiles);
+  // Teorema: soluble ⟺ (inversions + FILA del buit, 0-indexada) és SENAR.
+  // (No la posició de lectura completa 0-15: un moviment horitzontal no canvia
+  // ni les inversions ni la fila, i un moviment vertical canvia totes dues alhora
+  // — així que és la fila, no la columna, la que forma l'invariant amb les inversions.)
+  const solvable = (inv + blankRow) % 2 === 1;
+  return { tiles, blankIdx, inv, solvable, blankRow, blankCol };
+}
+function neighborIndices(idx) {
+  const row = Math.floor(idx / 4), col = idx % 4;
+  const r = [];
+  if (row > 0) r.push(idx - 4);
+  if (row < 3) r.push(idx + 4);
+  if (col > 0) r.push(idx - 1);
+  if (col < 3) r.push(idx + 1);
+  return r;
+}
+function generateSolvableBoard(numMoves) {
+  let board = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0];
+  let blankIdx = 15, last = -1;
+  for (let m = 0; m < numMoves; m++) {
+    let choices = neighborIndices(blankIdx);
+    if (choices.length > 1) choices = choices.filter(c => c !== last);
+    const pick = choices[Math.floor(Math.random() * choices.length)];
+    [board[blankIdx], board[pick]] = [board[pick], board[blankIdx]];
+    last = blankIdx; blankIdx = pick;
+  }
+  return board;
+}
+function generateRandomBoard() {
+  const arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+const playGrid = document.getElementById('playGrid');
+const liveParity = document.getElementById('liveParity');
+
+let board = generateSolvableBoard(60);
+let explSub = 'play';
+
+// ─────────────────────────────────────────────
+//  JOC LLIURE — fitxes amb identitat de DOM estable (una per valor 1..15),
+//  reposicionades amb `transform` en lloc de redibuixar-se: així un moviment
+//  es veu com un lliscament suau (CSS transition), no com un salt sec.
+// ─────────────────────────────────────────────
+const tileEls = new Map(); // valor (1..15) → element persistent
+function cellStep() { return playGrid.getBoundingClientRect().width / 4; }
+function placeTile(el, idx) {
+  const step = cellStep();
+  const row = Math.floor(idx / 4), col = idx % 4;
+  el.style.transform = `translate(${col * step}px, ${row * step}px)`;
+}
+function buildPlayGrid() {
+  playGrid.innerHTML = '';
+  tileEls.clear();
+  board.forEach((v, idx) => {
+    if (v === 0) return; // el buit no té fitxa visible — es veu la graella de fons per sota
+    const b = document.createElement('button');
+    b.className = 'puzzle-tile';
+    b.textContent = String(v);
+    b.addEventListener('click', () => onTileClick(v));
+    playGrid.appendChild(b);
+    tileEls.set(v, b);
+    placeTile(b, idx);
+  });
+}
+function repositionAllTiles() {
+  board.forEach((v, idx) => { if (v !== 0) placeTile(tileEls.get(v), idx); });
+}
+window.addEventListener('resize', repositionAllTiles);
+function onTileClick(value) {
+  const idx = board.indexOf(value);
+  const blankIdx = board.indexOf(0);
+  if (!neighborIndices(blankIdx).includes(idx)) return;
+  [board[idx], board[blankIdx]] = [board[blankIdx], board[idx]];
+  placeTile(tileEls.get(value), blankIdx);
+  updateLiveParity();
+  const solved = board.every((v, i) => v === (i === 15 ? 0 : i + 1));
+  if (solved) { flash(wrap, 'var(--good)'); hint.textContent = 'Resolt! Barreja de nou per tornar-hi a jugar.'; }
+  else hint.textContent = 'Mou fitxes adjacents al buit per ordenar el trencaclosques.';
+}
+function updateLiveParity() {
+  const st = boardStats(board);
+  liveParity.innerHTML = `
+    <div class="pi-item"><span class="pi-label">Inversions</span><span class="pi-value">${st.inv} (${st.inv % 2 === 0 ? 'parell' : 'senar'})</span></div>
+    <div class="pi-item"><span class="pi-label">Fila del buit</span><span class="pi-value">${st.blankRow + 1}</span></div>
+    <div class="pi-item"><span class="pi-label">Invariant</span><span class="pi-value ${st.solvable ? 'good' : 'bad'}">${st.solvable ? 'Soluble ✔' : 'NO soluble ✕'}</span></div>`;
+  readoutNum.textContent = st.inv;
+  readoutName.textContent = `${st.inv} inversions · buit a la fila ${st.blankRow + 1}`;
+  readoutDef.textContent = st.solvable ? 'Aquesta configuració sempre té solució (ve d\'un estat resolt).' : 'Configuració sense solució.';
+}
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  board = generateSolvableBoard(80);
+  board.forEach((v, idx) => { if (v !== 0) placeTile(tileEls.get(v), idx); });
+  updateLiveParity();
+  hint.textContent = 'Mou fitxes adjacents al buit per ordenar el trencaclosques.';
+});
+
+// ─────────────────────────────────────────────
+//  MINI-EXERCICI: COMPTA LES INVERSIONS
+// ─────────────────────────────────────────────
+let drillBoard = null;
+function newDrill() {
+  drillBoard = generateRandomBoard();
+  const dg = document.getElementById('drillGrid');
+  dg.innerHTML = '';
+  drillBoard.forEach(v => {
+    const b = document.createElement('div');
+    b.className = 'puzzle-tile' + (v === 0 ? ' blank' : '');
+    b.textContent = v === 0 ? '' : String(v);
+    dg.appendChild(b);
+  });
+  document.getElementById('drillInput').value = '';
+  document.getElementById('drillFeedback').textContent = '';
+}
+document.getElementById('drillCheckBtn').addEventListener('click', () => {
+  const st = boardStats(drillBoard);
+  const guess = parseInt(document.getElementById('drillInput').value, 10);
+  const fb = document.getElementById('drillFeedback');
+  if (guess === st.inv) {
+    fb.textContent = `✔ Correcte! Són ${st.inv} inversions.`; fb.className = 'answer-feedback ok';
+  } else {
+    fb.textContent = `✕ No exactament — torna-ho a comptar (pista: compara cada fitxa amb totes les que venen després).`; fb.className = 'answer-feedback bad';
+  }
+});
+document.getElementById('drillNewBtn').addEventListener('click', newDrill);
+
+// ─────────────────────────────────────────────
+//  SUBACTIVITATS D'EXPLORA
+// ─────────────────────────────────────────────
+document.querySelectorAll('#explSubToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    explSub = btn.dataset.sub;
+    document.querySelectorAll('#explSubToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    document.getElementById('playPanel').style.display = explSub === 'play' ? 'block' : 'none';
+    liveParity.style.display = explSub === 'play' ? 'flex' : 'none';
+    document.getElementById('shuffleBtn').style.display = explSub === 'play' ? 'inline-flex' : 'none';
+    document.getElementById('drillPanel').classList.toggle('active', explSub === 'drill');
+    if (explSub === 'drill' && !drillBoard) newDrill();
+    hint.textContent = explSub === 'play' ? 'Mou fitxes adjacents al buit per ordenar el trencaclosques.' : 'Compta les inversions d\'aquesta graella estàtica i escriu-ne el nombre.';
+  });
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  inversions: "Llegeix les fitxes 1-15 en ordre de lectura (esquerra a dreta, dalt a baix, ignorant el buit). Una inversió és un parell que hi apareix en l'ordre equivocat.",
+  invariant: "Cada moviment és un intercanvi amb el buit: sempre canvia la paritat de la permutació completa (fitxes + buit).",
+  solubilitat: "La suma (inversions + posició de lectura del buit) sempre té la mateixa paritat que a l'estat resolt: si hi és senar, té solució; si no, mai la tindrà."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-inversions').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('inversions'); });
+document.getElementById('card-invariant').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('invariant'); });
+document.getElementById('card-solubilitat').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('solubilitat'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+buildPlayGrid();
+updateLiveParity();
+</script>
+</body>
+</html>

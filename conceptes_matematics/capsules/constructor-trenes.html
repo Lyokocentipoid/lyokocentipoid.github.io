@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Constructor de Trenes · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--algebra); }
+
+    .trena-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .85rem; overflow: auto; }
+
+    .word-box { width: 100%; background: var(--ink); border-radius: 10px; padding: .8rem 1rem; text-align: center; }
+    .word-box .label { color: #9d9ab8; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; font-family: var(--font-body); }
+    .word-box .word { display: block; margin-top: .35rem; color: #f5efe0; font-size: 1.1rem; font-family: var(--font-mono); word-break: break-word; line-height: 1.5; }
+    .word-box .word .g { color: #e0b355; }
+    .word-box.pulse { animation: trenaPulse .4s ease; }
+    @keyframes trenaPulse { 0% { transform: scale(1); } 45% { transform: scale(1.015); } 100% { transform: scale(1); } }
+
+    .pair-row { display: flex; flex-wrap: wrap; gap: .55rem; justify-content: center; }
+    /* font/color heretats: en passar de <div> a <button> (per accessibilitat
+       de teclat) el navegador aplicaria la seva tipografia de formulari. */
+    .pair-btn { min-width: 78px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); padding: .45rem .35rem; text-align: center; cursor: pointer; transition: all var(--tr); font-family: inherit; color: inherit; display: block; }
+    .pair-btn:hover { border-color: var(--m-color); }
+    .pair-btn .lbl { font-size: .64rem; color: var(--muted); }
+    .pair-btn .sym { display: block; font-size: 1rem; margin-top: .2rem; font-family: var(--font-mono); color: var(--ink); }
+    .pair-btn.state-over { background: color-mix(in srgb, var(--m-color) 14%, transparent); border-color: var(--m-color); }
+    .pair-btn.state-over .sym { color: var(--m-color); font-weight: 700; }
+    .pair-btn.state-under { background: color-mix(in srgb, var(--calcul) 12%, transparent); border-color: var(--calcul); }
+    .pair-btn.state-under .sym { color: var(--calcul); font-weight: 700; }
+
+    .trena-canvas-wrap { width: 100%; overflow-x: auto; display: flex; justify-content: center; padding: .2rem 0; }
+    canvas.braid { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); }
+
+    .quick-row { display: flex; flex-direction: column; gap: .5rem; width: 100%; }
+    .quick-row input[type=text] { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: .55rem .7rem; font-family: var(--font-mono); font-size: .84rem; background: var(--surface); color: var(--ink); }
+    .quick-row input[type=text]:focus { outline: 2px solid var(--m-color); outline-offset: 1px; }
+    .quick-row .hint-sm { font-size: .74rem; color: var(--muted); line-height: 1.5; }
+    .quick-row .hint-sm b { color: var(--ink); font-family: var(--font-mono); }
+
+    .trena-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
+    @media (max-width: 640px) { .trena-compare { grid-template-columns: 1fr; } }
+    .trena-compare-col { display: flex; flex-direction: column; gap: .4rem; }
+    .trena-compare-col label { font-size: .78rem; font-weight: 600; color: var(--ink); }
+
+    .result-box { display: none; padding: .7rem .9rem; border-radius: 9px; font-size: .83rem; line-height: 1.65; width: 100%; }
+    .result-box.active { display: block; }
+    .result-box .rb-row { font-family: var(--font-mono); font-size: .77rem; color: var(--muted); }
+    .result-box .rb-verdict { font-weight: 700; margin-top: .3rem; }
+    .result-box.result-good { background: color-mix(in srgb, var(--good) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--good) 32%, transparent); }
+    .result-box.result-good .rb-verdict { color: var(--good); }
+    .result-box.result-bad { background: color-mix(in srgb, var(--bad) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--bad) 28%, transparent); }
+    .result-box.result-bad .rb-verdict { color: var(--bad); }
+    .result-box.result-warn { background: #fdf6e3; border: 1px solid #f0e0ab; }
+    .result-box.result-warn .rb-verdict { color: #9c6f22; }
+
+    .trena-invariants { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); text-align: center; line-height: 1.5; }
+    .trena-invariants b { color: var(--m-color); }
+
+    .difficulty-row { display: flex; flex-direction: column; gap: .3rem; }
+    .difficulty-row .hint-sm { font-size: .76rem; color: var(--muted); line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--algebra)">Bloc 02 · Constructor de Trenes</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Constructor de Trenes</h1>
+      <p>Composa creuaments d'un grup de trenes d'Artin i mira com dues seqüències que semblen ben diferents poden ser, en realitat, la mateixa trena — i com demostrar-ho pas a pas, sense donar-ho per fet.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Imagina n fils penjant en paral·lel. A cada «instant», pots creuar dos fils veïns: el generador <strong>σᵢ</strong> vol dir «el fil de la posició i passa per <em>sobre</em> del de la posició i+1»; el seu invers <strong>σᵢ⁻¹</strong> és el mateix creuament però per <em>sota</em>. Encadenant-ne uns quants obtens una <strong>trena</strong>, i el conjunt de totes les trenes possibles amb n fils, amb aquesta manera de combinar-les, és el <a href="https://en.wikipedia.org/wiki/Braid_group" target="_blank" rel="noopener">grup de trenes</a> Bₙ, que <a href="https://ca.wikipedia.org/wiki/Emil_Artin" target="_blank" rel="noopener">Emil Artin</a> va formalitzar el 1925.</p>
+          <p>Aquest grup obeeix només 2 regles: creuaments <strong>llunyans commuten</strong> (σᵢσⱼ=σⱼσᵢ si |i−j|≥2, perquè no comparteixen cap fil) i la <strong>relació de trena</strong> (σᵢσᵢ₊₁σᵢ=σᵢ₊₁σᵢσᵢ₊₁). La conseqüència, sorprenent la primera vegada que la veus: dues seqüències de creuaments escrites de manera totalment diferent poden representar exactament la mateixa trena física. Decidir-ho —el «problema de la paraula»— és exactament el que fa el comparador d'aquesta càpsula.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Que Bₙ sigui un grup <strong>no abelià</strong> (l'ordre dels creuaments importa: σ₁σ₂ no és σ₂σ₁) amb una presentació tan senzilla el converteix en un dels exemples centrals de l'àlgebra combinatòria, i el problema de la paraula que hi planteges aquí és decidible amb tot rigor (a diferència del cas general de grups qualssevol, on Novikov i Boone van demostrar el 1955 que ni tan sols és sempre possible).</p>
+          <p>I hi ha un pont directe cap a una altra branca de les matemàtiques: si uneixes els extrems finals de cada fil amb el seu propi extrem inicial (sense tallar res), la trena es tanca en un <strong>nus o enllaç</strong>. El <a href="https://en.wikipedia.org/wiki/Alexander%27s_theorem" target="_blank" rel="noopener">teorema d'Alexander</a> diu que <em>tot</em> nus s'obté així, tancant alguna trena. La pròxima càpsula, «Nusos i tricolorabilitat», comença exactament on aquesta acaba.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria el nombre de fils n. Cada botó «Fils i–i+1» alterna entre recte, σᵢ (sobre) i σᵢ⁻¹ (sota); els parells veïns es desactiven sols quan comparteixen fil.</li>
+            <li>«Afegeix aquest instant» l'incorpora al dibuix, que creix cap avall. «Simplifica» cancel·la parelles σᵢσᵢ⁻¹ adjacents en directe; «Desfés» treu l'últim instant.</li>
+            <li>Si ho prefereixes, escriu la composició directament amb l'entrada ràpida (format sN / sNi, agrupa simultanis entre parèntesis).</li>
+            <li>Al comparador, construeix o escriu dues trenes i comprova si són la mateixa: l'app ho raona en veu alta —primer el nombre net de creuaments, després on acaba cada fil, i només si totes dues coincideixen intenta reduir-les a una forma comparable.</li>
+            <li>En Repte hi ha 4 tipus de pregunta, a l'atzar: <strong>Simplifica</strong> (construeix una forma més curta d'una paraula donada), <strong>Troba l'invers</strong> (construeix w⁻¹), <strong>Veritat o fals</strong> (són la mateixa trena dues paraules donades?) i <strong>Troba la permutació</strong> (tria, d'entre diverses opcions, on acaba cada fil). En dificultat normal pots demanar una pista a Simplifica/Invers (a canvi de menys punts).</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Una trena és una cosa que qualsevol sap fer amb els dits i que, tanmateix, amaga un dels grups més estudiats de la matemàtica moderna: infinit, no commutatiu, definit per només dues regles, i amb aplicacions que van des de la teoria de nusos fins als ordinadors quàntics. Aquí veurem d'on surten aquestes dues regles, per què decidir si dues trenes són iguals és un problema genuïnament difícil, i què està calculant de veritat el comparador de la càpsula.</p>
+
+          <h4>1. Què és una trena, amb precisió</h4>
+          <p>Imagina n fils penjant en paral·lel d'una barra horitzontal fins a una altra barra de sota. Els fils poden creuar-se entre ells pel camí, però hi ha tres regles: cap fil pot fer marxa enrere (sempre baixa), cap fil pot travessar-ne un altre, i els extrems queden fixats a les barres.</p>
+          <p>Dues trenes es consideren <strong>la mateixa</strong> si pots deformar-ne una fins a obtenir l'altra estirant i movent els fils per l'espai, sense tallar-los ni desenganxar-ne els extrems. Aquesta és la definició clau, i és intrínsecament <em>topològica</em>: no importa la forma exacta de les corbes, només l'entrellaçament.</p>
+          <p>Aquesta relació d'equivalència és el que fa que el tema sigui difícil. Dues trenes poden semblar completament diferents dibuixades i ser la mateixa; i dues que semblin gairebé idèntiques poden ser diferents. Cal, doncs, un mètode per decidir-ho que no depengui de mirar-se-les.</p>
+
+          <h4>2. Els generadors: per què només fils veïns</h4>
+          <p>Per convertir això en àlgebra, Emil Artin va proposar el 1925 descompondre qualsevol trena en peces mínimes. La peça mínima és <strong>un sol creuament entre dos fils veïns</strong>:</p>
+          <p style="margin-left:1rem"><strong>σᵢ</strong> = el fil de la posició i passa <em>per sobre</em> del de la posició i+1.<br>
+          <strong>σᵢ⁻¹</strong> = el mateix creuament, però <em>per sota</em>.</p>
+          <p>Una pregunta que sorgeix immediatament en fer servir la càpsula: <strong>per què no hi ha un generador que creui directament el fil 1 amb el 4?</strong> La resposta és a la vegada física i matemàtica. Físicament, el fil 1 no es pot teletransportar: per arribar al 4 ha de passar per damunt o per sota del 2 i del 3, i cadascun d'aquells passos és una decisió que canvia la trena. Matemàticament, si admetéssim un generador «σ₁,₄» seria ambigu: hi ha moltes maneres diferents d'arribar del fil 1 al 4, i totes donen trenes distintes.</p>
+          <p>Per això Artin es va limitar a creuaments de veïns. Qualsevol cosa més complexa <strong>s'ha de construir componen-la</strong>: per fer que el fil de la posició 1 viatgi fins a la 4 passant per sobre de tot, escrius σ₁σ₂σ₃ i obtens una diagonal neta que travessa tota la trena.</p>
+
+          <h4>3. Les dues úniques regles</h4>
+          <p>Amb els generadors i els seus inversos ja pots escriure qualsevol trena com una «paraula»: σ₁σ₂⁻¹σ₁σ₃. La pregunta és quan dues paraules diferents descriuen la mateixa trena. Sorprenentment, <strong>només calen dues regles</strong> (a més de la cancel·lació òbvia σᵢσᵢ⁻¹ = res).</p>
+          <h5>Regla 1: els creuaments llunyans commuten</h5>
+          <p>σᵢσⱼ = σⱼσᵢ quan |i−j| ≥ 2. La raó és evident quan la veus: si creues els fils 1 i 2, i després els fils 3 i 4, <strong>aquests dos creuaments no comparteixen cap fil</strong>. Són esdeveniments independents en zones separades de la trena, i podries fer-los simultàniament. L'ordre en què els escrius és una convenció de la notació, no un fet físic. La càpsula fa servir això: pots posar dos creuaments llunyans dins d'un mateix «instant», entre parèntesis.</p>
+          <h5>Regla 2: la relació de trena (o de Yang–Baxter)</h5>
+          <p>σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁. Aquesta és la interessant, i mereix una explicació amb noms. Anomenem A, B, C els tres fils que ocupen les posicions 1, 2, 3.</p>
+          <div class="deep-example">
+            <span class="de-title">Per què σ₁σ₂σ₁ i σ₂σ₁σ₂ són la mateixa trena</span>
+            <span class="de-step">Costat esquerre — σ₁σ₂σ₁, partint de (A,B,C):</span>
+            <span class="de-step">σ₁: A passa sobre B → ordre (B,A,C)</span>
+            <span class="de-step">σ₂: A passa sobre C → ordre (B,C,A)</span>
+            <span class="de-step">σ₁: B passa sobre C → ordre <strong>(C,B,A)</strong></span>
+            <span class="de-step">Costat dret — σ₂σ₁σ₂, partint de (A,B,C):</span>
+            <span class="de-step">σ₂: B passa sobre C → ordre (A,C,B)</span>
+            <span class="de-step">σ₁: A passa sobre C → ordre (C,A,B)</span>
+            <span class="de-step">σ₂: A passa sobre B → ordre <strong>(C,B,A)</strong></span>
+            <span class="de-step">Als dos costats: A acaba <strong>per damunt de tot</strong>, C per <strong>sota de tot</strong>, i B al mig.</span>
+          </div>
+          <p>La conclusió física és la clau: en tots dos casos hi ha un fil (l'A) que passa per damunt dels altres dos com un pont, sense enganxar-s'hi. I a sota seu, els fils B i C es creuen una vegada. L'única diferència entre les dues expressions és <strong>a quina alçada</strong> passa aquest creuament de sota: abans o després que el pont hi passi per damunt. Com que el pont no toca res, pots <strong>fer lliscar aquell creuament amunt i avall lliurement</strong> sense que cap fil travessi cap altre. Per això són la mateixa trena.</p>
+          <div class="deep-aside">
+            <strong>Nota sobre el nom.</strong> Des del punt de vista algebraic, aquesta relació no es «demostra»: forma part de la <em>definició</em> del grup de trenes que va donar Artin. El que sí que es demostra és que el model algebraic així definit descriu correctament les trenes físiques, i això és el que acabem de fer amb el seguiment dels fils. En teoria de nusos, aquesta deformació es coneix com el <strong>tercer moviment de Reidemeister</strong> —el mateix que apareix a la càpsula de Nusos i tricolorabilitat.
+          </div>
+
+          <h4>4. Per què això és un grup, i quin</h4>
+          <p>El conjunt de totes les trenes de n fils, amb l'operació «enganxa'n una sota l'altra», compleix les quatre condicions de la càpsula de Taules de Cayley: hi ha element neutre (els fils rectes), tot element té invers (fes la trena del revés, canviant sobre per sota), l'operació és associativa i és tancada. És el <strong>grup de trenes Bₙ</strong>.</p>
+          <p>Té dues propietats que el fan especialment interessant. Primera: és <strong>infinit</strong> (pots enrotllar dos fils tantes vegades com vulguis, i cada nombre de voltes dona una trena diferent). Segona: és <strong>no abelià</strong> per a n ≥ 3 — σ₁σ₂ ≠ σ₂σ₁, com pots comprovar amb el comparador de la càpsula. Un grup infinit i no abelià, definit per només dues relacions, és un objecte molt ric però molt difícil de manipular.</p>
+
+          <h4>5. El problema de la paraula</h4>
+          <p>La pregunta central de la càpsula —«són aquestes dues seqüències la mateixa trena?»— té un nom en àlgebra: el <strong>problema de la paraula</strong>. I no és una pregunta menor.</p>
+          <p>Per a grups en general, aquest problema és <strong>indecidible</strong>: Piotr Novikov (1955) i William Boone (1958) van demostrar, independentment, que existeixen grups amb una presentació finita per als quals <em>no pot existir</em> cap algorisme que decideixi si dues paraules són iguals. No és que no l'hàgim trobat: és que està demostrat que no n'hi ha cap.</p>
+          <p>El grup de trenes, en canvi, <strong>sí que té solució</strong>. Artin ja en va donar una el 1925, i Frank Garside en va desenvolupar una de molt més eficient el 1969. Que Bₙ estigui al costat bo de la frontera és part del motiu pel qual és tan estudiat: és prou complicat per ser interessant i prou dòcil per poder-hi calcular.</p>
+
+          <h4>6. Els invariants ràpids, i on fallen</h4>
+          <p>La càpsula calcula dos números que serveixen per descartar de pressa:</p>
+          <p><strong>L'exponent net.</strong> Compta +1 per cada σᵢ i −1 per cada σᵢ⁻¹. Com que les dues relacions d'Artin conserven aquest recompte (a la regla 1 no es canvia res, i a la regla 2 hi ha tres generadors positius a cada costat), <strong>dues trenes iguals han de tenir el mateix exponent</strong>. Si difereixen, ja s'ha acabat.</p>
+          <p><strong>La permutació.</strong> Oblida qui passa per sobre i qui per sota, i mira només on acaba cada fil. Això dona una permutació dels n fils, i defineix un homomorfisme de Bₙ cap al grup simètric Sₙ. També es conserva, i també serveix per descartar.</p>
+          <p>Però <strong>cap dels dos, ni els dos junts, no basten</strong>. I aquí hi ha un exemple que ho ensenya de manera contundent, i que pots reproduir tu mateix al comparador:</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: quan els invariants ràpids es queden curts</span>
+            <span class="de-step">Amb 3 fils, escriu al comparador: <strong>s1 s1 s2 s2 s1i s1i s2i s2i</strong></span>
+            <span class="de-step">És a dir, la trena σ₁²σ₂²σ₁⁻²σ₂⁻² (el «commutador» de σ₁² i σ₂²)</span>
+            <span class="de-step">Exponent net: 2+2−2−2 = <strong>0</strong> → igual que la trena trivial</span>
+            <span class="de-step">Permutació: cada σᵢ² deixa els fils on eren → <strong>identitat</strong> → igual que la trena trivial</span>
+            <span class="de-step">Els dos invariants diuen «podria ser la trena trivial»…</span>
+            <span class="de-step">…però <strong>no ho és</strong>: σ₁² i σ₂² generen un grup lliure, i el seu commutador no és mai trivial.</span>
+          </div>
+          <p>Compara-la amb la trena buida al comparador i veuràs que l'aplicació respon <strong>«no es pot determinar»</strong> en lloc d'afirmar que són iguals. Això no és un defecte de l'eina: és honestedat. Els invariants ràpids no han pogut descartar-ho, i la cerca acotada no ha trobat cap seqüència de relacions que les connecti —perquè no existeix. Un programa mal fet diria «iguals»; aquest diu el que sap i el que no.</p>
+
+          <h4>7. Què fem a l'element interactiu</h4>
+          <p><strong>Mode Explora.</strong> Cada botó «Fils i–i+1» és, literalment, un generador: el primer clic el posa a σᵢ (sobre), el segon a σᵢ⁻¹ (sota), el tercer el torna a recte. Els parells veïns es desactiven sols quan compartirien un fil, perquè un instant simultani només té sentit amb creuaments independents. «Afegeix aquest instant» l'incorpora al dibuix, que creix cap avall; «Simplifica» cancel·la les parelles σᵢσᵢ⁻¹ adjacents; el comparador respon la pregunta d'igualtat raonant en veu alta —primer l'exponent, després la permutació, i només si totes dues coincideixen intenta reduir les paraules.</p>
+          <p><strong>Mode Repte.</strong> Té quatre tipus de pregunta que cobreixen les operacions bàsiques del grup: <em>Simplifica</em> (troba una forma més curta de la mateixa trena), <em>Troba l'invers</em> (construeix w⁻¹, que és invertir l'ordre i canviar tots els signes), <em>Veritat o fals</em> (dues paraules donades són la mateixa trena?) i <em>Troba la permutació</em> (on acaba cada fil).</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: simplificar σ₁σ₂σ₁σ₂⁻¹σ₁⁻¹</span>
+            <span class="de-step">Escriu-ho a l'entrada ràpida: <strong>s1 s2 s1 s2i s1i</strong></span>
+            <span class="de-step">Pas 1: mira els tres primers, σ₁σ₂σ₁. Per la relació de trena, és igual a σ₂σ₁σ₂.</span>
+            <span class="de-step">Substituint: σ₂σ₁σ₂ · σ₂⁻¹σ₁⁻¹</span>
+            <span class="de-step">Pas 2: σ₂ i σ₂⁻¹ es cancel·len → σ₂σ₁σ₁⁻¹</span>
+            <span class="de-step">Pas 3: σ₁ i σ₁⁻¹ es cancel·len → <strong>σ₂</strong></span>
+            <span class="de-step">Comprova-ho: posa <strong>s1 s2 s1 s2i s1i</strong> a A i <strong>s2</strong> a B → l'app confirma que són iguals.</span>
+          </div>
+          <p>Fixa't que el pas 1 és imprescindible i no és obvi: sense aplicar la relació de trena, les cancel·lacions no apareixen. Aquesta és exactament la dificultat del problema de la paraula — a vegades cal <em>allargar</em> o reorganitzar una expressió abans de poder-la escurçar.</p>
+
+          <h4>8. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Teoria de nusos.</strong> Si uneixes cada extrem inferior amb el seu propi extrem superior, la trena es tanca i esdevé un nus o enllaç. El <strong>teorema d'Alexander</strong> (1923) diu que <em>tot</em> nus s'obté així. I el teorema de Markov diu exactament quan dues trenes donen el mateix nus. Junts converteixen la classificació de nusos en un problema sobre grups de trenes — i d'aquí en va sortir, el 1984, el polinomi de Jones, que li va valer a Vaughan Jones la medalla Fields.</p>
+          <p><strong>Ordinadors quàntics topològics.</strong> És potser l'aplicació més espectacular. Certes quasipartícules en dues dimensions, els <em>anyons</em>, tenen la propietat que intercanviar-ne dues no torna l'estat a l'original: el transforma segons una representació del grup de trenes. La proposta de Microsoft i altres és fer servir això per computar: <strong>el programa és una trena</strong>, i les portes lògiques són creuaments. L'avantatge és que el resultat depèn només de la topologia de la trena, no de la trajectòria exacta, i per tant és intrínsecament resistent al soroll.</p>
+          <p><strong>Física estadística.</strong> L'equació de Yang–Baxter —que és la nostra regla 2 en una altra forma— és la condició central dels models integrables de mecànica estadística. Va aparèixer independentment en aquell context abans que ningú notés que era la relació d'Artin.</p>
+          <p><strong>Robòtica i planificació de moviments.</strong> Coordinar diversos robots que es mouen en un pla sense xocar és, formalment, construir una trena en l'espai-temps: cada robot és un fil i el temps és la direcció vertical. Els algorismes de planificació treballen amb aquest espai de configuracions.</p>
+          <p><strong>Criptografia.</strong> Als anys 2000 es van proposar sistemes de clau pública basats en la dificultat del problema de conjugació al grup de trenes. La majoria han estat trencats, però la línia continua sent activa dins la «criptografia no commutativa».</p>
+
+          <h4>9. Curiositats</h4>
+          <p><strong>B₂ és, senzillament, els nombres enters.</strong> Amb només dos fils no hi ha veïns llunyans ni relació de trena: l'únic que pots fer és enrotllar-los. Una trena queda determinada pel nombre de voltes, amb signe. Per tant B₂ ≅ ℤ. Tota la complexitat apareix de cop en passar a tres fils.</p>
+          <p><strong>Cap trena té ordre finit.</strong> El grup de trenes és <em>lliure de torsió</em>: si repeteixes una trena no trivial les vegades que vulguis, mai no obtindràs els fils rectes. És molt diferent dels grups finits de la càpsula de Cayley, on tot element repetit prou vegades torna a la identitat.</p>
+          <p><strong>Es va trigar 75 anys a saber si es podien escriure com a matrius.</strong> La pregunta de si Bₙ és «lineal» (representable fidelment per matrius) va estar oberta des d'Artin fins al 2001, quan Stephen Bigelow i Daan Krammer la van respondre afirmativament, de manera independent i gairebé simultània.</p>
+          <p><strong>El mig gir fonamental.</strong> La trena Δ = σ₁σ₂σ₁ de tres fils fa exactament mitja volta a tot el feix, i inverteix l'ordre dels fils. El seu quadrat, Δ², és una volta sencera i té una propietat notable: <strong>commuta amb absolutament tot</strong>. És l'únic tipus d'element que ho fa, i genera el «centre» del grup. Aquesta és la peça sobre la qual Garside va construir el seu algorisme.</p>
+          <p><strong>La trencadissa de trenar cabell.</strong> Una trena de tres flocs de les de tota la vida és, en notació d'Artin, la repetició de (σ₁σ₂⁻¹) — creuar alternadament per sobre i per sota. Que quedi «plana» i no s'enrotlli sobre si mateixa és perquè els exponents s'alternen i l'exponent net creix molt a poc a poc.</p>
+
+          <h4>10. Connexió amb altres àrees</h4>
+          <p>Cap a l'àlgebra, aquesta càpsula és la continuació natural de <strong>Taules de Cayley</strong>: allà els grups són finits i caben en una taula; aquí n'hi ha un d'infinit que no cap en cap taula i que només es pot descriure per generadors i relacions. És el salt de «llistar els elements» a «descriure les regles», que és com es treballa amb els grups de veritat.</p>
+          <p>Cap a la topologia, connecta directament amb <strong>Nusos i tricolorabilitat</strong>: pel teorema d'Alexander, tot nus és el tancament d'una trena, i el trèvol que allà acoloreixes és exactament el tancament de σ₁³. Els moviments de Reidemeister d'aquella càpsula són els parents geomètrics de les relacions d'Artin d'aquesta.</p>
+          <p>I hi ha un pont amb el <strong>Trencaclosques del 15</strong> que val la pena notar: la projecció Bₙ → Sₙ que oblida sobre/sota és el mateix tipus d'homomorfisme que allà assigna un signe a cada permutació. En tots dos casos, oblidar informació de manera controlada produeix un invariant útil.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Fils (n):</span>
+      <div class="chip-row" id="strandRow"></div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <div class="difficulty-row">
+          <span class="rs-label">Dificultat:</span>
+          <div class="mode-toggle" id="difficultyToggle" style="--m-color: var(--algebra)">
+            <button data-d="normal" class="active">Normal (3–4 fils, amb pista)</button>
+            <button data-d="avancat">Avançat (5–8 fils, sense pista)</button>
+          </div>
+        </div>
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="150">
+          <span class="rs-val" id="repteTimeVal">150s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">150s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova trena ↻</button>
+    </div>
+
+    <div class="canvas-wrap trena-wrap flash-target" id="canvasWrap">
+      <div id="buildCluster" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:.85rem;">
+        <div class="word-box" id="wordBox">
+          <span class="label">Paraula (notació d'Artin)</span>
+          <span id="wordDisplay" class="word">Identitat (e)</span>
+        </div>
+
+        <div class="trena-canvas-wrap"><canvas id="braidCanvas" class="braid" width="360" height="360"></canvas></div>
+
+        <div class="trena-invariants" id="trenaInvariants"></div>
+
+        <div class="pair-row" id="pairButtons"></div>
+
+        <div class="chip-row">
+          <button class="btn btn-primary" id="commitBtn">+ Afegeix aquest instant</button>
+          <button class="btn btn-ghost" id="playBtn">▶ Reprodueix</button>
+          <button class="btn btn-ghost" id="undoBtn">← Desfés</button>
+          <button class="btn btn-ghost" id="simplifyBtn">✨ Simplifica</button>
+          <button class="btn btn-ghost" id="resetBtn">Netejar</button>
+        </div>
+      </div>
+
+      <div class="quick-row explora-only">
+        <label class="chip-label" for="quickInput">Entrada ràpida</label>
+        <input type="text" id="quickInput" placeholder="p.ex. s1 s2i (s1 s3) s2">
+        <div class="hint-sm">Format: <b>sN</b> = σₙ (sobre), <b>sNi</b> = σₙ⁻¹ (sota); simultanis entre parèntesis: <b>(s1 s3)</b>.</div>
+        <div class="chip-row">
+          <button class="btn btn-ghost" id="quickReplaceBtn">Substitueix la trena actual</button>
+          <button class="btn btn-ghost" id="quickAppendBtn">Afegeix al final</button>
+        </div>
+        <div class="result-box result-bad" id="quickError"></div>
+      </div>
+
+      <div class="explora-only" id="comparePanel" style="width:100%; flex-direction:column; gap:.6rem; border-top:1px solid var(--border); padding-top:.8rem;">
+        <span class="chip-label">Comparador d'equivalència (n = <span id="compareN"></span>)</span>
+        <div class="trena-compare">
+          <div class="trena-compare-col">
+            <label for="compareA">Composició A</label>
+            <input type="text" id="compareA" placeholder="s1 s2 s1">
+            <button class="btn btn-ghost" id="useCurrentABtn" style="align-self:flex-start">Usa la trena actual → A</button>
+          </div>
+          <div class="trena-compare-col">
+            <label for="compareB">Composició B</label>
+            <input type="text" id="compareB" placeholder="s2 s1 s2">
+            <button class="btn btn-ghost" id="useCurrentBBtn" style="align-self:flex-start">Usa la trena actual → B</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="runCompareBtn" style="align-self:center">Comprova si són la mateixa trena</button>
+        <div class="result-box" id="compareResult"></div>
+      </div>
+
+      <div class="repte-only" id="challengeArea" style="width:100%; flex-direction:column; align-items:center; gap:.7rem;">
+        <div class="canvas-hint" id="challengeInfo" style="margin:0;"></div>
+
+        <div class="trena-compare" id="veritatBox" style="display:none; width:100%;">
+          <div class="trena-compare-col">
+            <label>Paraula A</label>
+            <div class="word-box"><span id="veritatWordA" class="word"></span></div>
+          </div>
+          <div class="trena-compare-col">
+            <label>Paraula B</label>
+            <div class="word-box"><span id="veritatWordB" class="word"></span></div>
+          </div>
+        </div>
+        <div class="chip-row" id="veritatButtons" style="display:none;">
+          <button class="btn btn-primary" id="veritatSameBtn">✔ És la mateixa trena</button>
+          <button class="btn btn-ghost" id="veritatDiffBtn">✕ Són diferents</button>
+        </div>
+
+        <div class="word-box" id="permWordBox" style="display:none; width:100%;">
+          <span class="label">Paraula</span>
+          <span id="permWordDisplay" class="word"></span>
+        </div>
+        <div class="chip-row" id="permOptionsRow" style="display:none;"></div>
+
+        <div class="chip-row" id="challengeBuildActions">
+          <button class="btn btn-ink" id="checkChallengeBtn">Comprova la meva solució</button>
+          <button class="btn btn-ghost" id="hintBtn">Mostra una pista (−5 punts)</button>
+        </div>
+        <div class="result-box" id="challengeResult"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Clica un parell de fils per preparar el proper instant.</div>
+
+    <p class="method-hint" id="methodPanel">σᵢσⱼ=σⱼσᵢ si |i−j|≥2 (llunyans commuten); σᵢσᵢ₊₁σᵢ=σᵢ₊₁σᵢσᵢ₊₁ (relació de trena). Dues paraules són la mateixa trena si es connecten amb aquestes regles.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Identitat</div>
+        <div class="readout-def" id="readoutDef">Comença a afegir creuaments.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">El grup de trenes Bₙ</div>
+
+    <div class="type-card active" id="card-generadors" data-method="generadors" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Els generadors σᵢ</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>σ</mi><mi>i</mi></msub></math> (sobre) / <math xmlns="http://www.w3.org/1998/Math/MathML"><msubsup><mi>σ</mi><mi>i</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup></math> (sota)</div>
+        <div class="type-desc">Cada botó «Fils i–i+1» és literalment un generador o el seu invers. La paraula de dalt és, casella a casella, la seqüència de generadors que has triat.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-invariants" data-method="invariants" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Invariants ràpids</div>
+        <div class="type-range">Exponent · Permutació</div>
+        <div class="type-desc">El requadre sota el dibuix mostra, en directe, el nombre net de creuaments i on acaba cada fil de color. Si aquests dos números no coincideixen entre dues trenes, ja pots assegurar que són diferents sense mirar res més.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-formanormal" data-method="formanormal" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Forma normal i cerca</div>
+        <div class="type-range">Reducció + relació de trena</div>
+        <div class="type-desc">Si els invariants ràpids coincideixen, el comparador redueix totes dues paraules i, si cal, explora combinacions de les relacions per confirmar-ho —o admet honestament que no ho pot determinar dins el límit de cerca.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> tanca els extrems d'una trena i obtens un nus o enllaç (teorema d'Alexander) — el trèvol de la propera càpsula és exactament el tancament de σ₁³.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 02 · Àlgebra i Combinatòria</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  CONSTANTS I ESTAT
+// ─────────────────────────────────────────────
+const STRAND_COLORS = ['#0b7b86', '#5c3aa8', '#a02545', '#1a7a52', '#a9700f', '#2c5f8a'];
+// Disseny de la trena: NO són constants fixes — es recalculen a cada dibuix
+// (computeLayout) a partir de l'amplada real disponible al contenidor, perquè
+// el canvas ompli l'espai en lloc de quedar-se petit i encongit sempre a la
+// mateixa mida fixa, independentment de quants fils hi hagi.
+let startY = 34, stepHeight = 58, paddingX = 72, startX = 46, lineWidth = 12, tailLen = 26;
+const MAX_STRANDS = 8;
+function computeLayout(canvas, n) {
+  const wrapEl = canvas.closest('.trena-canvas-wrap');
+  const availW = Math.max(320, (wrapEl ? wrapEl.getBoundingClientRect().width : 480) - 8);
+  startX = Math.max(32, availW * 0.09);
+  paddingX = Math.max(58, (availW - startX * 2) / Math.max(1, n - 1));
+  lineWidth = Math.max(9, Math.min(15, paddingX * 0.19));
+  stepHeight = Math.max(58, paddingX * 0.95);
+}
+
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let strandCount = 4;
+let steps = [];       // array d'instants; cada instant = array de moviments 'sK' / 'sK_inv'
+let pairStates = {};  // idx -> 0 (recte) / 1 (sobre) / 2 (sota)
+let repteRound = null;
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 150, repteMaxTime = 150, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteDifficulty = 'normal';
+
+// ─────────────────────────────────────────────
+//  SELECCIÓ DE FILS (Explora)
+// ─────────────────────────────────────────────
+function buildStrandChips() {
+  const row = document.getElementById('strandRow');
+  row.innerHTML = '';
+  [3, 4, 5, 6].forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = n;
+    b.classList.toggle('active', n === strandCount);
+    b.addEventListener('click', () => { strandCount = n; steps = []; buildPairButtons(); updateUI(); highlightStrandChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightStrandChip() {
+  document.querySelectorAll('#strandRow .chip').forEach(c => c.classList.toggle('active', +c.textContent === strandCount));
+}
+buildStrandChips();
+
+// ─────────────────────────────────────────────
+//  BOTONS DE PARELLA (constructor de creuaments)
+// ─────────────────────────────────────────────
+function buildPairButtons() {
+  const row = document.getElementById('pairButtons');
+  row.innerHTML = '';
+  pairStates = {};
+  for (let i = 1; i <= strandCount - 1; i++) {
+    pairStates[i] = 0;
+    // <button>, no <div>: aquest és el gest central de la càpsula i amb un
+    // <div> no es podia ni enfocar ni activar amb teclat.
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pair-btn'; b.id = 'pairbtn-' + i;
+    b.innerHTML = `<span class="lbl">Fils ${i}–${i + 1}</span><span class="sym" aria-hidden="true">—</span>`;
+    b.addEventListener('click', () => togglePair(i));
+    row.appendChild(b);
+  }
+  renderPairButtons();
+}
+// Nom accessible de cada botó: el símbol visible (σ₁⁻¹) es marca aria-hidden
+// perquè un lector de pantalla no llegeixi «sigma subíndex u superíndex menys
+// u», i es descriu l'estat amb paraules, indicant també què farà el proper clic.
+const PAIR_STATE_WORDS = ['recte, sense creuament', 'creuament per sobre', 'creuament per sota'];
+function pairAriaLabel(idx, state) {
+  const next = PAIR_STATE_WORDS[(state + 1) % 3];
+  return `Fils ${idx} i ${idx + 1}: ${PAIR_STATE_WORDS[state]}. Activa per passar a ${next}.`;
+}
+function togglePair(idx) {
+  pairStates[idx] = (pairStates[idx] + 1) % 3;
+  if (pairStates[idx] !== 0) {
+    if (pairStates[idx - 1] !== undefined) pairStates[idx - 1] = 0;
+    if (pairStates[idx + 1] !== undefined) pairStates[idx + 1] = 0;
+  }
+  renderPairButtons();
+}
+function renderPairButtons() {
+  for (const idxStr in pairStates) {
+    const idx = +idxStr, st = pairStates[idx];
+    const el = document.getElementById('pairbtn-' + idx);
+    if (!el) continue;
+    el.className = 'pair-btn' + (st === 1 ? ' state-over' : st === 2 ? ' state-under' : '');
+    const sym = el.querySelector('.sym');
+    sym.innerHTML = st === 0 ? '—' : (st === 1 ? `σ<sub>${idx}</sub>` : `σ<sub>${idx}</sub><sup>-1</sup>`);
+    el.setAttribute('aria-label', pairAriaLabel(idx, st));
+  }
+}
+function commitInstant() {
+  const moves = [];
+  for (let i = 1; i <= strandCount - 1; i++) {
+    if (pairStates[i] === 1) moves.push('s' + i);
+    else if (pairStates[i] === 2) moves.push('s' + i + '_inv');
+  }
+  if (!moves.length) { hint.textContent = 'Marca algun creuament abans d\'afegir l\'instant.'; return; }
+  steps.push(moves);
+  for (const i in pairStates) pairStates[i] = 0;
+  renderPairButtons();
+  updateUI(true);
+  hint.textContent = 'Instant afegit. Segueix creuant, o compara / reprodueix la trena.';
+}
+document.getElementById('commitBtn').addEventListener('click', commitInstant);
+document.getElementById('undoBtn').addEventListener('click', () => { if (steps.length) { steps.pop(); updateUI(); } });
+document.getElementById('resetBtn').addEventListener('click', () => { steps = []; updateUI(); });
+
+// ─────────────────────────────────────────────
+//  TEXT DE LA PARAULA
+// ─────────────────────────────────────────────
+function getSymbol(move) {
+  const m = move.match(/^s(\d+)(_inv)?$/);
+  if (!m) return '';
+  return `σ<sub>${m[1]}</sub>` + (m[2] ? '<sup>-1</sup>' : '');
+}
+function wordHTML(stepsArr) {
+  if (!stepsArr.length) return 'Identitat (e)';
+  return stepsArr.map(instant => instant.length > 1
+    ? '(' + instant.map(s => `<span class="g">${getSymbol(s)}</span>`).join(' · ') + ')'
+    : `<span class="g">${getSymbol(instant[0])}</span>`
+  ).join(' · ');
+}
+function stepsToText(stepsArr) {
+  return stepsArr.map(instant => {
+    const toks = instant.map(m => { const mm = m.match(/^s(\d+)(_inv)?$/); return 's' + mm[1] + (mm[2] ? 'i' : ''); });
+    return toks.length > 1 ? '(' + toks.join(' ') + ')' : toks[0];
+  }).join(' ');
+}
+
+// ─────────────────────────────────────────────
+//  DIBUIX (bezier + "buit blanc" per marcar qui passa per sota)
+// ─────────────────────────────────────────────
+function bezierPoint(x1, y1, x2, y2, t) {
+  const cx1 = x1, cy1 = y1 + stepHeight * 0.4, cx2 = x2, cy2 = y2 - stepHeight * 0.4;
+  const mt = 1 - t;
+  return [
+    mt * mt * mt * x1 + 3 * mt * mt * t * cx1 + 3 * mt * t * t * cx2 + t * t * t * x2,
+    mt * mt * mt * y1 + 3 * mt * mt * t * cy1 + 3 * mt * t * t * cy2 + t * t * t * y2
+  ];
+}
+function drawStrandSeg(ctx, x1, y1, x2, y2, color, isMask, t0, t1) {
+  if (t1 <= t0) return;
+  const N = 18;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const t = t0 + (t1 - t0) * i / N;
+    const [x, y] = bezierPoint(x1, y1, x2, y2, t);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  if (isMask) { ctx.strokeStyle = cssVar('--surface', '#fff'); ctx.lineWidth = lineWidth + 8; ctx.lineCap = 'round'; ctx.stroke(); }
+  ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.lineCap = 'round'; ctx.stroke();
+}
+function sizeCanvas(canvas, n, stepsLen) {
+  computeLayout(canvas, n);
+  const cssW = Math.max(320, startX * 2 + (n - 1) * paddingX);
+  const cssH = Math.max(240, startY + (stepsLen + 1) * stepHeight + tailLen);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+}
+function drawBraidOn(canvas, n, stepsArr, opts) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.width / dpr, cssH = canvas.height / dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const colors = STRAND_COLORS.slice(0, n);
+  ctx.clearRect(0, 0, cssW, cssH);
+  let positions = []; for (let i = 0; i < n; i++) positions.push(i);
+
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.beginPath(); ctx.arc(startX + i * paddingX, startY, lineWidth / 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(27,30,45,.5)'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`${i + 1}`, startX + i * paddingX, startY - 12);
+  }
+
+  let currentY = startY;
+  const progress = (opts && opts.progress !== undefined) ? opts.progress : null;
+  let stoppedEarly = false;
+
+  for (let i = 0; i < stepsArr.length; i++) {
+    const stepMoves = stepsArr[i], nextY = currentY + stepHeight;
+    let stepProgress = 1;
+    if (progress !== null) {
+      stepProgress = Math.max(0, Math.min(1, progress - i));
+      if (stepProgress <= 0) { stoppedEarly = true; break; }
+    }
+    const prevPos = positions.slice();
+    const underPaths = [], overPaths = [], involved = new Set();
+    stepMoves.forEach(move => {
+      const m = move.match(/^s(\d+)(_inv)?$/);
+      const idx = parseInt(m[1], 10), inv = !!m[2];
+      const leftIdx = idx - 1, rightIdx = idx;
+      involved.add(leftIdx); involved.add(rightIdx);
+      positions[leftIdx] = prevPos[rightIdx]; positions[rightIdx] = prevPos[leftIdx];
+      if (inv) {
+        overPaths.push({ p1: rightIdx, p2: leftIdx, color: colors[prevPos[rightIdx]] });
+        underPaths.push({ p1: leftIdx, p2: rightIdx, color: colors[prevPos[leftIdx]] });
+      } else {
+        underPaths.push({ p1: rightIdx, p2: leftIdx, color: colors[prevPos[rightIdx]] });
+        overPaths.push({ p1: leftIdx, p2: rightIdx, color: colors[prevPos[leftIdx]] });
+      }
+    });
+    for (let p = 0; p < n; p++) if (!involved.has(p)) drawStrandSeg(ctx, startX + p * paddingX, currentY, startX + p * paddingX, nextY, colors[prevPos[p]], false, 0, stepProgress);
+    underPaths.forEach(path => drawStrandSeg(ctx, startX + path.p1 * paddingX, currentY, startX + path.p2 * paddingX, nextY, path.color, false, 0, stepProgress));
+    overPaths.forEach(path => drawStrandSeg(ctx, startX + path.p1 * paddingX, currentY, startX + path.p2 * paddingX, nextY, path.color, true, 0, stepProgress));
+    currentY = nextY;
+    if (stepProgress < 1) { stoppedEarly = true; break; }
+  }
+  if (!stoppedEarly) {
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath(); ctx.moveTo(startX + i * paddingX, currentY); ctx.lineTo(startX + i * paddingX, currentY + tailLen);
+      ctx.strokeStyle = colors[positions[i]]; ctx.lineWidth = lineWidth; ctx.lineCap = 'round'; ctx.stroke();
+    }
+  }
+  return positions;
+}
+// Identificador del bucle en curs. Sense això, cada clic a «Reprodueix»
+// engegava un rAF nou sense aturar l'anterior: dos (o cinc) bucles dibuixaven
+// alhora sobre el mateix canvas, competint pel mateix context i cremant CPU
+// fins al final de la seva durada.
+let braidAnimId = null;
+function stopBraidAnimation() {
+  if (braidAnimId !== null) { cancelAnimationFrame(braidAnimId); braidAnimId = null; }
+}
+function playAnimation() {
+  if (!steps.length) return;
+  const canvas = document.getElementById('braidCanvas');
+  stopBraidAnimation();
+  // Amb moviment reduït no s'anima: es dibuixa directament l'estat final.
+  if (prefersReducedMotion()) {
+    drawBraidOn(canvas, strandCount, steps, {});
+    announce(`Trena completa: ${steps.length} instant${steps.length === 1 ? '' : 's'}.`);
+    return;
+  }
+  // Es congelen mida i passos: si l'usuari edita la trena a mig reproduir,
+  // l'animació acaba el que havia començat en lloc de barrejar estats.
+  const frozenSteps = steps.map(inst => inst.slice());
+  const frozenN = strandCount;
+  const duration = Math.max(600, frozenSteps.length * 480);
+  let start = null;
+  function frame(ts) {
+    if (start === null) start = ts;
+    const progress = Math.min(frozenSteps.length, ((ts - start) / duration) * frozenSteps.length);
+    drawBraidOn(canvas, frozenN, frozenSteps, { progress });
+    if (ts - start < duration) { braidAnimId = requestAnimationFrame(frame); }
+    else { braidAnimId = null; drawBraidOn(canvas, frozenN, frozenSteps, {}); }
+  }
+  braidAnimId = requestAnimationFrame(frame);
+}
+document.getElementById('playBtn').addEventListener('click', playAnimation);
+
+// ─────────────────────────────────────────────
+//  SIMPLIFICACIÓ (cancel·lació lliure)
+// ─────────────────────────────────────────────
+function isOpposite(a, b) {
+  const ma = a.match(/^s(\d+)(_inv)?$/), mb = b.match(/^s(\d+)(_inv)?$/);
+  return !!ma && !!mb && ma[1] === mb[1] && (!!ma[2]) !== (!!mb[2]);
+}
+function simplifyBraid() {
+  let flat = []; steps.forEach(instant => instant.forEach(m => flat.push(m)));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < flat.length - 1; i++) {
+      if (isOpposite(flat[i], flat[i + 1])) { flat.splice(i, 2); changed = true; break; }
+    }
+  }
+  steps = flat.map(m => [m]);
+  updateUI(true);
+  hint.textContent = 'Simplificat: cancel·lades totes les parelles σᵢσᵢ⁻¹ adjacents.';
+}
+document.getElementById('simplifyBtn').addEventListener('click', simplifyBraid);
+
+// ─────────────────────────────────────────────
+//  ÀLGEBRA: invariants, forma normal, cerca acotada
+// ─────────────────────────────────────────────
+function flattenSteps(stepsArr) {
+  const flat = [];
+  stepsArr.forEach(instant => instant.forEach(mv => {
+    const m = mv.match(/^s(\d+)(_inv)?$/);
+    flat.push({ idx: parseInt(m[1], 10), sign: m[2] ? -1 : 1 });
+  }));
+  return flat;
+}
+function freeReduce(arr) {
+  const out = [];
+  for (const g of arr) {
+    const top = out[out.length - 1];
+    if (top && top.idx === g.idx && top.sign === -g.sign) out.pop(); else out.push(g);
+  }
+  return out;
+}
+function keyOf(arr) { return arr.map(g => g.idx + (g.sign < 0 ? 'i' : 'p')).join(','); }
+function exponentSum(arr) { return arr.reduce((a, g) => a + g.sign, 0); }
+function permutationArr(arr, n) {
+  const pos = []; for (let i = 0; i < n; i++) pos.push(i);
+  arr.forEach(g => { const l = g.idx - 1, r = g.idx; const tmp = pos[l]; pos[l] = pos[r]; pos[r] = tmp; });
+  return pos;
+}
+function permutationKey(arr, n) { return permutationArr(arr, n).join(','); }
+function commutationPass(arr) {
+  const a = arr.slice(); let did = false;
+  for (let k = 0; k < a.length - 1; k++) {
+    if (a[k].idx > a[k + 1].idx && Math.abs(a[k].idx - a[k + 1].idx) >= 2) { const t = a[k]; a[k] = a[k + 1]; a[k + 1] = t; did = true; }
+  }
+  return { arr: a, changed: did };
+}
+function normalize(arr) {
+  let cur = freeReduce(arr), iter = 0, changed = true;
+  while (changed && iter < 300) {
+    changed = false; iter++;
+    const red = freeReduce(cur);
+    if (red.length !== cur.length) { cur = red; changed = true; continue; }
+    const c = commutationPass(cur);
+    if (c.changed) { cur = freeReduce(c.arr); changed = true; }
+  }
+  return cur;
+}
+function neighborsOf(arr) {
+  const res = [];
+  for (let k = 0; k < arr.length - 1; k++) {
+    if (Math.abs(arr[k].idx - arr[k + 1].idx) >= 2) { const cp = arr.slice(); const t = cp[k]; cp[k] = cp[k + 1]; cp[k + 1] = t; res.push(cp); }
+  }
+  for (let k = 0; k < arr.length - 2; k++) {
+    const a = arr[k], b = arr[k + 1], c = arr[k + 2];
+    if (a.idx === c.idx && Math.abs(a.idx - b.idx) === 1 && a.sign === b.sign && b.sign === c.sign) {
+      const cp = arr.slice(); cp[k] = { idx: b.idx, sign: b.sign }; cp[k + 1] = { idx: a.idx, sign: a.sign }; cp[k + 2] = { idx: b.idx, sign: b.sign };
+      res.push(cp);
+    }
+  }
+  return res;
+}
+function exploreStates(startArr, maxStates) {
+  const visited = new Set([keyOf(freeReduce(startArr))]);
+  const queue = [freeReduce(startArr)]; let qi = 0;
+  while (qi < queue.length && visited.size < maxStates) {
+    const cur = queue[qi++];
+    for (const nb of neighborsOf(cur)) {
+      const red = freeReduce(nb), k = keyOf(red);
+      if (!visited.has(k)) { visited.add(k); queue.push(red); }
+    }
+  }
+  return visited;
+}
+function compareCompositions(w1, w2, n) {
+  const e1 = exponentSum(w1), e2 = exponentSum(w2);
+  const p1 = permutationKey(w1, n), p2 = permutationKey(w2, n);
+  if (e1 !== e2) return { equal: false, reason: 'exponent', e1, e2, p1, p2 };
+  if (p1 !== p2) return { equal: false, reason: 'permutation', e1, e2, p1, p2 };
+  const n1 = normalize(w1), n2 = normalize(w2);
+  if (keyOf(n1) === keyOf(n2)) return { equal: true, reason: 'normalform', e1, e2, p1, p2, n1, n2 };
+  const setA = exploreStates(n1, 2500), setB = exploreStates(n2, 2500);
+  for (const k of setA) if (setB.has(k)) return { equal: true, reason: 'search', e1, e2, p1, p2, n1, n2 };
+  return { equal: 'unknown', reason: 'inconclusive', e1, e2, p1, p2, n1, n2 };
+}
+function fmtWordKey(arr) {
+  if (!arr.length) return 'e';
+  return arr.map(g => 'σ' + g.idx + (g.sign < 0 ? '⁻¹' : '')).join('');
+}
+function fmtPerm(pkeyStr, n) {
+  return pkeyStr.split(',').map((v, i) => `${i + 1}→${+v + 1}`).join(', ');
+}
+
+// ─────────────────────────────────────────────
+//  ENTRADA RÀPIDA (paràmetre de text)
+// ─────────────────────────────────────────────
+function parseComposition(text, n) {
+  text = text.trim();
+  if (text === '') return { steps: [], error: null };
+  const tokenRe = /\(([^()]*)\)|(\S+)/g;
+  const outSteps = []; let m;
+  while ((m = tokenRe.exec(text)) !== null) {
+    const groupTokens = m[1] !== undefined ? m[1].trim().split(/\s+/).filter(Boolean) : [m[2]];
+    const moves = [], usedIdx = [];
+    for (const tok of groupTokens) {
+      const tm = tok.match(/^s(\d+)(i)?$/i);
+      if (!tm) return { steps: null, error: `Format no reconegut: "${tok}". Fes servir sN o sNi (p.ex. s2, s3i).` };
+      const idx = parseInt(tm[1], 10);
+      if (idx < 1 || idx > n - 1) return { steps: null, error: `s${idx} no és vàlid per a ${n} fils (ha d'estar entre 1 i ${n - 1}).` };
+      for (const u of usedIdx) if (Math.abs(u - idx) <= 1) return { steps: null, error: `"(${groupTokens.join(' ')})" comparteix un fil (s${u} i s${idx}) i no es pot combinar com a simultani.` };
+      usedIdx.push(idx);
+      moves.push('s' + idx + (tm[2] ? '_inv' : ''));
+    }
+    outSteps.push(moves);
+  }
+  return { steps: outSteps, error: null };
+}
+document.getElementById('quickReplaceBtn').addEventListener('click', () => applyQuickInput(true));
+document.getElementById('quickAppendBtn').addEventListener('click', () => applyQuickInput(false));
+function applyQuickInput(replace) {
+  const errBox = document.getElementById('quickError');
+  const res = parseComposition(document.getElementById('quickInput').value, strandCount);
+  if (res.error) { errBox.classList.add('active'); errBox.textContent = res.error; return; }
+  errBox.classList.remove('active');
+  steps = replace ? res.steps : steps.concat(res.steps);
+  updateUI(true);
+}
+
+// ─────────────────────────────────────────────
+//  COMPARADOR (Explora)
+// ─────────────────────────────────────────────
+function compareBraidsHTML(w1, w2, n) {
+  const res = compareCompositions(w1, w2, n);
+  let rows = `<div class="rb-row">Exponent A = <b>${res.e1 >= 0 ? '+' : ''}${res.e1}</b> &nbsp;·&nbsp; Exponent B = <b>${res.e2 >= 0 ? '+' : ''}${res.e2}</b></div>`;
+  let cls = 'result-bad', verdict = '';
+  if (res.reason === 'exponent') {
+    verdict = '❌ Diferents: el nombre net de creuaments no coincideix, així que no cal mirar res més.';
+  } else {
+    rows += `<div class="rb-row">Permutació A: ${fmtPerm(res.p1, n)}<br>Permutació B: ${fmtPerm(res.p2, n)}</div>`;
+    if (res.reason === 'permutation') {
+      verdict = '❌ Diferents: els fils no acaben a les mateixes posicions finals.';
+    } else {
+      rows += `<div class="rb-row">Forma reduïda A = <b>${fmtWordKey(res.n1)}</b> &nbsp;·&nbsp; Forma reduïda B = <b>${fmtWordKey(res.n2)}</b></div>`;
+      if (res.reason === 'normalform') { cls = 'result-good'; verdict = '✅ Són la mateixa trena: un cop reduïdes (cancel·lant i commutant fils llunyans), les dues paraules coincideixen exactament.'; }
+      else if (res.reason === 'search') { cls = 'result-good'; verdict = '✅ Són la mateixa trena: s\'ha trobat una seqüència de relacions (commutacions + relació de trena) que connecta totes dues.'; }
+      else { cls = 'result-warn'; verdict = '⚠️ No es pot determinar amb certesa: l\'exponent i la permutació coincideixen, però la cerca acotada no ha trobat una equivalència explícita. Prova de simplificar-les tu mateix.'; }
+    }
+  }
+  return { html: rows + `<div class="rb-verdict">${verdict}</div>`, cls, res };
+}
+document.getElementById('useCurrentABtn').addEventListener('click', () => { document.getElementById('compareA').value = stepsToText(steps); });
+document.getElementById('useCurrentBBtn').addEventListener('click', () => { document.getElementById('compareB').value = stepsToText(steps); });
+document.getElementById('runCompareBtn').addEventListener('click', () => {
+  const box = document.getElementById('compareResult');
+  const ra = parseComposition(document.getElementById('compareA').value, strandCount);
+  const rb = parseComposition(document.getElementById('compareB').value, strandCount);
+  box.classList.add('active');
+  if (ra.error) { box.className = 'result-box active result-bad'; box.textContent = 'Composició A: ' + ra.error; return; }
+  if (rb.error) { box.className = 'result-box active result-bad'; box.textContent = 'Composició B: ' + rb.error; return; }
+  const { html, cls } = compareBraidsHTML(flattenSteps(ra.steps), flattenSteps(rb.steps), strandCount);
+  box.className = 'result-box active ' + cls;
+  box.innerHTML = html;
+  flash(wrap, cls === 'result-good' ? cssVar('--good') : cls === 'result-bad' ? cssVar('--bad') : '#b8860b');
+});
+
+// ─────────────────────────────────────────────
+//  LECTURA (invariants en directe)
+// ─────────────────────────────────────────────
+function updateInvariants() {
+  const flat = flattenSteps(steps);
+  const e = exponentSum(flat);
+  const pos = permutationArr(flat, strandCount);
+  const permTxt = pos.map((v, i) => `${i + 1}→${v + 1}`).join(', ');
+  document.getElementById('trenaInvariants').innerHTML = steps.length
+    ? `Exponent net: <b>${e >= 0 ? '+' : ''}${e}</b> &nbsp;·&nbsp; Posicions finals: ${permTxt}`
+    : 'Encara no hi ha cap creuament — la trena és la identitat.';
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = e >= 0 ? '+' + e : String(e);
+  readoutName.textContent = `n=${strandCount} fils · ${flat.length} creuament${flat.length === 1 ? '' : 's'}`;
+  readoutDef.textContent = steps.length ? `Posicions finals: ${permTxt}` : 'Identitat: cada fil es queda on era.';
+}
+function updateUI(bounce) {
+  // Qualsevol canvi d'estat invalida una reproducció en curs: si no s'atura,
+  // el bucle antic continuaria pintant per sobre del dibuix nou.
+  stopBraidAnimation();
+  document.getElementById('wordDisplay').innerHTML = wordHTML(steps);
+  document.getElementById('compareN').textContent = strandCount;
+  const canvas = document.getElementById('braidCanvas');
+  sizeCanvas(canvas, strandCount, steps.length);
+  drawBraidOn(canvas, strandCount, steps, {});
+  updateInvariants();
+  // El <canvas> és opac per a un lector de pantalla: se li dona un nom que
+  // descriu l'estat real dibuixat i que es refresca a cada canvi.
+  const flatNow = flattenSteps(steps);
+  describeCanvas(document.getElementById('braidCanvas'),
+    steps.length
+      ? `Diagrama de la trena amb ${strandCount} fils i ${flatNow.length} creuament${flatNow.length === 1 ? '' : 's'}: ${fmtWordKey(flatNow)}. Posicions finals: ${permutationArr(flatNow, strandCount).map((v, i) => `${i + 1} acaba a ${v + 1}`).join(', ')}.`
+      : `Diagrama buit: ${strandCount} fils paral·lels, cap creuament (trena identitat).`);
+  if (bounce) { const box = document.getElementById('wordBox'); box.classList.remove('pulse'); void box.offsetWidth; box.classList.add('pulse'); }
+}
+window.addEventListener('resize', () => updateUI());
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function shuffleArray(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+// ─────────────────────────────────────────────
+//  GENERADORS D'EXERCICIS ALGEBRAICS
+//  Totes les paraules "equivalents" es construeixen inserint parelles que
+//  es cancel·len (g, g⁻¹) en posicions aleatòries — mai adivinades: cada
+//  exercici es verifica amb compareCompositions/normalize abans de mostrar-se,
+//  així que la resposta correcta és sempre certa per construcció.
+// ─────────────────────────────────────────────
+function randomReducedWord(n, len) {
+  let flat = [], attempts = 0;
+  while (flat.length < len && attempts < 2000) {
+    attempts++;
+    const idx = randInt(1, n - 1), sign = Math.random() < 0.5 ? -1 : 1;
+    const cand = flat.concat([{ idx, sign }]);
+    if (freeReduce(cand).length === cand.length) flat = cand;
+  }
+  return flat;
+}
+function padEquivalent(base, n, pads) {
+  let arr = base.slice();
+  for (let k = 0; k < pads; k++) {
+    const idx = randInt(1, n - 1), sign = Math.random() < 0.5 ? -1 : 1;
+    const pos = randInt(0, arr.length);
+    arr.splice(pos, 0, { idx, sign }, { idx, sign: -sign });
+  }
+  return arr;
+}
+function generateSimplificaExercise(n, len, pads) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const target = randomReducedWord(n, len);
+    const padded = padEquivalent(target, n, pads);
+    if (padded.length > target.length && keyOf(normalize(padded)) === keyOf(normalize(target))) return { padded, target };
+  }
+  const target = randomReducedWord(n, len);
+  return { padded: target, target };
+}
+function generateInversExercise(n, len) {
+  const w = randomReducedWord(n, len);
+  const inv = w.slice().reverse().map(g => ({ idx: g.idx, sign: -g.sign }));
+  return { w, inv };
+}
+function generateVeritatExercise(n, len) {
+  const flatA = randomReducedWord(n, len);
+  let flatB;
+  if (Math.random() < 0.5) {
+    flatB = padEquivalent(flatA, n, randInt(1, 3));
+  } else {
+    let attempt = 0;
+    do { flatB = randomReducedWord(n, len); attempt++; }
+    while (attempt < 20 && compareCompositions(flatA, flatB, n).equal !== false);
+  }
+  return { flatA, flatB, answer: compareCompositions(flatA, flatB, n).equal === true };
+}
+function generatePermExercise(n, len) {
+  const w = randomReducedWord(n, len);
+  const truePerm = permutationArr(w, n);
+  const options = [truePerm];
+  let guard = 0;
+  while (options.length < 3 && guard < 40) {
+    guard++;
+    const fake = truePerm.slice();
+    const i = randInt(0, n - 1), j = randInt(0, n - 1);
+    if (i === j) continue;
+    [fake[i], fake[j]] = [fake[j], fake[i]];
+    if (!options.some(o => o.join(',') === fake.join(','))) options.push(fake);
+  }
+  shuffleArray(options);
+  return { w, truePerm, options };
+}
+
+// ─────────────────────────────────────────────
+//  GESTIÓ DE RONDA
+// ─────────────────────────────────────────────
+const ROUND_TYPES = ['simplifica', 'invers', 'veritat', 'permutacio'];
+function hideAllRepteUI() {
+  document.getElementById('buildCluster').style.display = 'none';
+  document.getElementById('veritatBox').style.display = 'none';
+  document.getElementById('veritatButtons').style.display = 'none';
+  document.getElementById('permWordBox').style.display = 'none';
+  document.getElementById('permOptionsRow').style.display = 'none';
+  document.getElementById('challengeBuildActions').style.display = 'none';
+  document.getElementById('hintBtn').style.display = 'none';
+  document.getElementById('challengeResult').className = 'result-box';
+}
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  hideAllRepteUI();
+  const n = repteDifficulty === 'normal' ? randInt(3, 4) : randInt(4, Math.min(6, MAX_STRANDS));
+  const len = repteDifficulty === 'normal' ? randInt(2, 3) : randInt(3, 5);
+  const type = ROUND_TYPES[Math.floor(Math.random() * ROUND_TYPES.length)];
+  strandCount = n; steps = [];
+  buildPairButtons(); buildStrandChips();
+
+  if (type === 'simplifica') {
+    const pads = repteDifficulty === 'normal' ? randInt(1, 2) : randInt(2, 4);
+    const { padded, target } = generateSimplificaExercise(n, len, pads);
+    repteRound = { type, n, target, hintUsed: false };
+    document.getElementById('buildCluster').style.display = 'flex';
+    document.getElementById('challengeBuildActions').style.display = 'flex';
+    document.getElementById('hintBtn').style.display = repteDifficulty === 'normal' ? 'inline-flex' : 'none';
+    document.getElementById('challengeInfo').innerHTML = `<strong>Simplifica:</strong> construeix (amb les eines de dalt) una forma més curta de la trena<br><b>${fmtWordKey(padded)}</b>`;
+    updateUI();
+    hint.textContent = `Demostra que ${fmtWordKey(padded)} és una trena més simple.`;
+  } else if (type === 'invers') {
+    const { w, inv } = generateInversExercise(n, len);
+    repteRound = { type, n, target: inv, hintUsed: false };
+    document.getElementById('buildCluster').style.display = 'flex';
+    document.getElementById('challengeBuildActions').style.display = 'flex';
+    document.getElementById('hintBtn').style.display = repteDifficulty === 'normal' ? 'inline-flex' : 'none';
+    document.getElementById('challengeInfo').innerHTML = `<strong>Troba l'invers</strong> w⁻¹ d'aquesta trena:<br><b>w = ${fmtWordKey(w)}</b>`;
+    updateUI();
+    hint.textContent = `Construeix l'invers de w = ${fmtWordKey(w)}.`;
+  } else if (type === 'veritat') {
+    const { flatA, flatB, answer } = generateVeritatExercise(n, len);
+    repteRound = { type, n, answer };
+    document.getElementById('veritatBox').style.display = 'grid';
+    document.getElementById('veritatButtons').style.display = 'flex';
+    document.getElementById('veritatWordA').innerHTML = fmtWordKey(flatA);
+    document.getElementById('veritatWordB').innerHTML = fmtWordKey(flatB);
+    document.getElementById('challengeInfo').innerHTML = `<strong>Veritat o fals:</strong> són la mateixa trena, de ${n} fils?`;
+    hint.textContent = 'Compara les dues paraules — són la mateixa trena, o no?';
+  } else {
+    const { w, truePerm, options } = generatePermExercise(n, len);
+    repteRound = { type, n, truePerm };
+    document.getElementById('permWordBox').style.display = 'flex';
+    document.getElementById('permOptionsRow').style.display = 'flex';
+    document.getElementById('permWordDisplay').innerHTML = fmtWordKey(w);
+    renderPermOptions(options, truePerm);
+    document.getElementById('challengeInfo').innerHTML = `<strong>Troba la permutació:</strong> on acaba cada fil després d'aquesta trena?`;
+    hint.textContent = 'Tria, d\'entre les opcions, on acaba cada fil.';
+  }
+}
+function renderPermOptions(options, truePerm) {
+  const row = document.getElementById('permOptionsRow');
+  row.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost';
+    b.textContent = opt.map((v, i) => `${i + 1}→${v + 1}`).join('  ');
+    b.addEventListener('click', () => submitPerm(opt, truePerm));
+    row.appendChild(b);
+  });
+}
+function onRepteCorrect(hintUsed) {
+  const pts = hintUsed ? 5 : 10;
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 10);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+  flash(wrap, 'var(--good)');
+  return pts;
+}
+function scheduleNextRound(delay) {
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, delay);
+}
+document.getElementById('hintBtn').addEventListener('click', () => {
+  if (!repteRound) return;
+  repteRound.hintUsed = true;
+  document.getElementById('challengeInfo').innerHTML += `<br>Pista: la resposta és <b>${fmtWordKey(repteRound.target)}</b>.`;
+});
+document.getElementById('checkChallengeBtn').addEventListener('click', () => {
+  if (!repteRound || repteTimeUp || (repteRound.type !== 'simplifica' && repteRound.type !== 'invers')) return;
+  const box = document.getElementById('challengeResult');
+  const userFlat = flattenSteps(steps);
+  const res = compareCompositions(userFlat, repteRound.target, repteRound.n);
+  box.classList.add('active');
+  if (res.equal === true) {
+    const pts = onRepteCorrect(repteRound.hintUsed);
+    box.className = 'result-box active result-good';
+    box.textContent = `✅ Correcte! +${pts} punts. ${fmtWordKey(userFlat)} = ${fmtWordKey(repteRound.target)}.`;
+    scheduleNextRound(1400);
+  } else {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+    box.className = 'result-box active ' + (res.equal === false ? 'result-bad' : 'result-warn');
+    box.textContent = res.equal === false
+      ? (res.reason === 'exponent' ? '❌ Encara no hi és: l\'exponent net no coincideix.' : '❌ Encara no hi és: la permutació final no coincideix.')
+      : '⚠️ No es pot confirmar encara — prova de simplificar més la teva trena.';
+  }
+});
+document.getElementById('veritatSameBtn').addEventListener('click', () => submitVeritat(true));
+document.getElementById('veritatDiffBtn').addEventListener('click', () => submitVeritat(false));
+function submitVeritat(claim) {
+  if (!repteRound || repteRound.type !== 'veritat' || repteTimeUp) return;
+  const box = document.getElementById('challengeResult');
+  box.classList.add('active');
+  const correct = claim === repteRound.answer;
+  if (correct) {
+    const pts = onRepteCorrect(false);
+    box.className = 'result-box active result-good';
+    box.textContent = `✅ Correcte! +${pts} punts. ${repteRound.answer ? 'Són la mateixa trena.' : 'Són diferents.'}`;
+    scheduleNextRound(1400);
+  } else {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+    box.className = 'result-box active result-bad';
+    box.textContent = repteRound.answer ? '❌ En realitat SÍ que són la mateixa trena.' : '❌ En realitat NO són la mateixa trena.';
+  }
+}
+function submitPerm(chosen, truePerm) {
+  if (!repteRound || repteRound.type !== 'permutacio' || repteTimeUp) return;
+  const box = document.getElementById('challengeResult');
+  box.classList.add('active');
+  const correct = chosen.join(',') === truePerm.join(',');
+  if (correct) {
+    const pts = onRepteCorrect(false);
+    box.className = 'result-box active result-good';
+    box.textContent = `✅ Correcte! +${pts} punts.`;
+    scheduleNextRound(1400);
+  } else {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+    box.className = 'result-box active result-bad';
+    box.textContent = `❌ No és aquesta. La permutació correcta és: ${truePerm.map((v, i) => `${i + 1}→${v + 1}`).join(', ')}.`;
+  }
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.querySelectorAll('#difficultyToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#difficultyToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    repteDifficulty = btn.dataset.d;
+  });
+});
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer(); repteRound = null;
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('buildCluster').style.display = 'flex';
+  strandCount = 4; steps = [];
+  buildPairButtons(); buildStrandChips(); updateUI();
+  hint.textContent = 'Clica un parell de fils per preparar el proper instant.';
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  generadors: "σᵢ creua el fil i per sobre del i+1; σᵢ⁻¹ ho fa per sota. Encadenar-ne uns quants defineix la trena.",
+  invariants: "Exponent net i permutació final es calculen a l'instant: si difereixen entre dues trenes, ja són diferents.",
+  formanormal: "Reducció lliure + relació de trena, i si cal una cerca acotada, per confirmar (o no) l'equivalència exacta."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-generadors').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('generadors'); });
+document.getElementById('card-invariants').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('invariants'); });
+document.getElementById('card-formanormal').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('formanormal'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildPairButtons();
+updateUI();
+</script>
+</body>
+</html>

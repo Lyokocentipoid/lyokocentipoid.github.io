@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>De Fermat a RSA · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--aritmetica); }
+
+    .rsa-wrap { aspect-ratio: auto; padding: 1.1rem; display: flex; flex-direction: column; gap: .85rem; }
+    .vista-panel { display: none; flex-direction: column; gap: .8rem; }
+    .vista-panel.active { display: flex; }
+
+    /* ── Taula de potències ──
+       És dades tabulars de debò, així que va en un <table> amb capçaleres
+       associades: un canvas seria més fàcil de pintar però il·legible per a un
+       lector de pantalla. L'embolcall permet desplaçament horitzontal propi
+       perquè amb mòduls grans la taula no desbordi la pàgina. */
+    .pow-wrap { overflow-x: auto; max-width: 100%; }
+    table.pow-table { border-collapse: collapse; font-family: var(--font-mono); font-size: .72rem; margin: 0 auto; }
+    .pow-table th, .pow-table td { border: 1px solid var(--border); padding: .18rem .3rem; text-align: center; min-width: 25px; color: var(--muted); }
+    .pow-table thead th { background: var(--card); color: var(--m-color); font-weight: 700; }
+    .pow-table tbody th { background: var(--card); color: var(--ink); font-weight: 700; }
+    .pow-table td.one { color: var(--good); font-weight: 700; }
+    .pow-table .col-hi { background: color-mix(in srgb, var(--m-color) 13%, transparent); color: var(--ink); }
+    .pow-table td.col-hi.one { background: color-mix(in srgb, var(--good) 26%, transparent); color: var(--good); }
+    .pow-table tr.nocop th, .pow-table tr.nocop td { color: color-mix(in srgb, var(--muted) 50%, transparent); background: color-mix(in srgb, var(--bad) 5%, transparent); }
+    .pow-table tr.nocop td.col-hi { background: color-mix(in srgb, var(--bad) 11%, transparent); }
+
+    .k-control { display: flex; align-items: center; gap: .7rem; width: 100%; max-width: 420px; margin: 0 auto; }
+    .k-control input[type=range] { flex: 1; }
+    .k-control .k-val { font-family: var(--font-mono); font-weight: 700; color: var(--m-color); font-size: .95rem; min-width: 4.4em; text-align: center; }
+
+    .tally { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
+    .tally-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .28rem .7rem; border-radius: 100px; border: 1px solid var(--border); background: var(--card); font-family: var(--font-mono); font-size: .78rem; color: var(--muted); }
+    .tally-pill.full { background: color-mix(in srgb, var(--good) 18%, transparent); border-color: var(--good); color: var(--good); font-weight: 700; }
+
+    /* ── Panell de claus ── */
+    .key-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: .5rem; }
+    .key-box { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: .5rem .6rem; text-align: center; }
+    .key-box.lit { border-color: var(--m-color); background: color-mix(in srgb, var(--m-color) 8%, var(--card)); }
+    .key-box.pub { border-color: var(--good); background: color-mix(in srgb, var(--good) 8%, var(--card)); }
+    .key-box.sec { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 7%, var(--card)); }
+    .kb-lab { font-size: .62rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+    .kb-val { font-family: var(--font-mono); font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+    .key-box.pub .kb-val { color: var(--good); }
+    .key-box.sec .kb-val { color: var(--bad); }
+
+    .calc-sheet { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .8rem .9rem; font-size: .82rem; line-height: 1.7; max-height: 250px; overflow-y: auto; }
+    .cs-head { font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--m-color); margin-bottom: .2rem; }
+    .cs-line { font-family: var(--font-mono); font-size: .78rem; color: var(--ink); padding-left: .4rem; }
+    .cs-line.res { color: var(--good); font-weight: 700; }
+    .cs-note { font-size: .76rem; color: var(--muted); padding-left: .4rem; }
+    .sq-tab { font-family: var(--font-mono); font-size: .72rem; border-collapse: collapse; margin: .3rem 0 .3rem .4rem; }
+    .sq-tab td { padding: .1rem .5rem .1rem 0; color: var(--muted); }
+    .sq-tab td.hi { color: var(--m-color); font-weight: 700; }
+
+    /* ── Xifratge ── */
+    .word-row { display: flex; gap: .55rem; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .word-row input[type=text] { width: 170px; border: 1px solid var(--border); border-radius: 8px; padding: .45rem .6rem; font-family: var(--font-mono); font-size: .9rem; text-transform: uppercase; background: var(--surface); color: var(--ink); }
+    .cipher-wrap { overflow-x: auto; }
+    table.cipher-table { border-collapse: collapse; font-family: var(--font-mono); font-size: .74rem; margin: 0 auto; }
+    .cipher-table th, .cipher-table td { border: 1px solid var(--border); padding: .22rem .45rem; text-align: center; min-width: 30px; }
+    .cipher-table tbody th { text-align: right; color: var(--muted); font-size: .66rem; font-weight: 600; white-space: nowrap; background: var(--card); }
+    .cipher-table td.c { color: var(--bad); font-weight: 700; }
+    .cipher-table td.m { color: var(--good); font-weight: 700; }
+    .cipher-table td.l { color: var(--ink); font-weight: 700; }
+
+    .step-narration { width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65; }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+    .step-narration.good { background: color-mix(in srgb, var(--good) 9%, var(--surface)); border-color: color-mix(in srgb, var(--good) 32%, transparent); }
+    .step-narration.good .sn-title, .step-narration.good b { color: var(--good); }
+
+    .repte-panel { display: none; flex-direction: column; align-items: center; gap: .8rem; width: 100%; }
+    .repte-panel.active { display: flex; }
+    .repte-prompt { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; text-align: center; line-height: 1.6; }
+    .repte-prompt b { color: var(--m-color); font-family: var(--font-mono); }
+    .guess-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .guess-row input[type=number] { width: 120px; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; font-family: var(--font-mono); font-size: .95rem; text-align: center; background: var(--surface); color: var(--ink); }
+
+    .result-box { display: none; padding: .7rem .9rem; border-radius: 9px; font-size: .84rem; line-height: 1.6; width: 100%; }
+    .result-box.active { display: block; }
+    .result-box.ok { background: color-mix(in srgb, var(--good) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--good) 32%, transparent); }
+    .result-box.ok b { color: var(--good); }
+    .result-box.no { background: color-mix(in srgb, var(--bad) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--bad) 28%, transparent); }
+    .result-box.no b { color: var(--bad); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--aritmetica)">Bloc 01 · De Fermat a RSA</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>De Fermat a RSA</h1>
+      <p>Descobreix, omplint una taula de potències, un patró que Fermat va observar el 1640. Després construeix amb ell un sistema de xifratge de clau pública sencer —claus incloses— i xifra una paraula de veritat.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>El <a href="https://ca.wikipedia.org/wiki/Petit_teorema_de_Fermat" target="_blank" rel="noopener">petit teorema de Fermat</a> diu una cosa que sembla massa bonica per ser certa: si p és primer i a no és múltiple de p, aleshores</p>
+          <p style="text-align:center"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msup><mi>a</mi><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>≡</mo><mn>1</mn><mspace width="0.4em"/><mo>(</mo><mi>mod</mi><mspace width="0.2em"/><mi>p</mi><mo>)</mo></math></p>
+          <p>Sigui quina sigui la base. Eleva 2, 3, 4… a la potència p−1 i divideix per p: <strong>sempre sobra 1</strong>. La taula de la primera vista ho fa evident: la columna p−1 surt tota d'uns.</p>
+          <p>Euler ho va generalitzar a mòduls no primers substituint p−1 per <strong>φ(n)</strong>, la quantitat de números menors que n que no comparteixen cap factor amb ell. I aquesta generalització és, literalment, la peça sobre la qual descansa <strong>RSA</strong>: xifres elevant a una potència e, desxifres elevant a una altra potència d, i el teorema d'Euler és el que garanteix que tornes al punt de partida.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Fins al 1976 hi havia un problema que semblava insalvable: per parlar en secret amb algú calia haver-se posat d'acord abans en una clau, i posar-se d'acord en secret requeria… un canal segur. Un peix que es mossega la cua, i el motiu pel qual la criptografia era cosa de diplomàtics i militars amb valisa.</p>
+          <p>La <strong>clau pública</strong> el trenca. Publiques una clau que serveix <em>només per tancar</em>, i te'n guardes una altra que serveix per obrir. Qualsevol pot enviar-te un missatge xifrat sense haver-te vist mai, i ningú més el pot llegir.</p>
+          <p>RSA ho aconsegueix amb una asimetria de l'aritmètica: multiplicar dos primers grans és immediat, i desfer el producte és, fins on sabem, inabastable. La teva clau pública conté <strong>n = p·q</strong>; la privada necessita conèixer p i q. Tothom veu n, però ningú no en sap treure els factors.</p>
+          <p>Això és el que protegeix, ara mateix, el cadenat del navegador, les signatures del programari que instal·les, els passaports biomètrics i les actualitzacions del teu telèfon.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Vista <strong>«El teorema»</strong>: tria un mòdul i <strong>arrossega la barra de l'exponent</strong>. Cada posició il·lumina una columna de la taula, i el comptador et diu quantes bases hi donen 1.</li>
+            <li>Arrossega fins que el comptador s'ompli del tot. Amb un mòdul <strong>primer</strong>, això passa exactament a l'exponent p−1: acabes de trobar el teorema de Fermat tu mateix.</li>
+            <li>Prova ara un mòdul <strong>compost</strong> (9 o 15). El patró es trenca: les files de bases que comparteixen un factor amb el mòdul no arriben mai a 1, i la primera columna plena arriba abans de n−1.</li>
+            <li>Vista <strong>«Les claus»</strong>: tria dos primers p i q. Es calculen n = p·q i φ(n) = (p−1)(q−1). Tria una e vàlida i mira com surt la <strong>d</strong> amb Euclides estès, pas a pas.</li>
+            <li>Vista <strong>«Xifrar»</strong>: escriu una paraula. Cada lletra es converteix en un número, es xifra amb la clau pública i es desxifra amb la privada. A sota tens el càlcul complet d'una lletra per quadrats repetits.</li>
+            <li>En Repte hi ha tres preguntes: <strong>trencar</strong> una clau petita factoritzant n, calcular potències enormes fent servir el teorema, i trobar φ(n).</li>
+          </ol>
+        </div></div></div>
+      </div>
+
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Aquesta càpsula explica com una observació que Fermat va anotar en una carta el 1640, sense demostrar-la i sense cap aplicació a la vista, es va convertir tres-cents anys després en la peça que protegeix pràcticament totes les comunicacions d'internet. El camí passa per Euler, per un problema que semblava lògicament impossible, i per una asimetria de l'aritmètica que encara no sabem si és real o només un límit del nostre enginy.</p>
+
+          <h4>1. El problema que semblava insoluble</h4>
+          <p>Durant milers d'anys, tota la criptografia va compartir una mateixa forma: emissor i receptor comparteixen un secret —una clau— i el fan servir tots dos, un per tancar i l'altre per obrir. El xifratge del Cèsar, la màquina Enigma i els sistemes moderns de clau simètrica funcionen així.</p>
+          <p>Això arrossega un problema que es coneix com el <strong>problema de la distribució de claus</strong>, i és més greu del que sembla. Per parlar en secret amb algú, primer cal haver acordat una clau <em>en secret</em>. I per acordar-la en secret cal… un canal segur, que és exactament el que encara no tens. Durant segles l'única solució va ser física: valises diplomàtiques, missatgers, llibres de codis lliurats en mà.</p>
+          <p>Pitjor encara: amb N persones que vulguin parlar entre elles dues a dues calen N(N−1)/2 claus diferents. Per a mil persones, mig milió de claus. Per a internet, la xifra deixa de tenir sentit.</p>
+          <p>El 1976, Whitfield Diffie i Martin Hellman van publicar un article que proposava una idea que semblava contradictòria: <strong>una clau que serveix per tancar però no per obrir</strong>. Si existís, la podries publicar al diari. Qualsevol et podria enviar missatges secrets, i tu series l'únic capaç de llegir-los. Diffie i Hellman van descriure què hauria de fer un sistema així, però no en van trobar cap. El van trobar, un any després, Ron Rivest, Adi Shamir i Leonard Adleman.</p>
+
+          <h4>2. L'eina bàsica: elevar a potències en aritmètica modular</h4>
+          <p>Tot el que ve depèn d'una operació: calcular a<sup>k</sup> mod n. Fer-ho ingènuament —multiplicar a per si mateix k vegades— és inviable quan k té centenars de xifres. La solució és l'<strong>exponenciació per quadrats repetits</strong>, i és molt més eficient del que sembla.</p>
+          <p>La idea: en comptes de pujar d'un en un, vas quadrant. Amb a, a², a⁴, a⁸, a¹⁶… arribes a exponents enormes en molt pocs passos, i qualsevol exponent es reconstrueix sumant-ne uns quants, perquè cada número s'escriu en binari.</p>
+          <div class="deep-example">
+            <div class="de-title">Exemple · 17²⁷ mod 55</div>
+            <div class="de-step">27 en binari és <strong>11011</strong>, és a dir 16 + 8 + 2 + 1.</div>
+            <div class="de-step">Calculem quadrats successius mòdul 55: 17¹ = 17, 17² = 289 ≡ 14, 17⁴ ≡ 14² = 196 ≡ 31, 17⁸ ≡ 31² = 961 ≡ 26, 17¹⁶ ≡ 26² = 676 ≡ 16.</div>
+            <div class="de-step">Multipliquem els que toquen: 17¹⁶ · 17⁸ · 17² · 17¹ ≡ 16 · 26 · 14 · 17, tot mòdul 55, i dona <strong>8</strong>.</div>
+            <div class="de-step">Nou operacions en lloc de 27. Amb exponents de 2.048 bits la diferència és entre uns milers d'operacions i més que àtoms té l'univers.</div>
+          </div>
+          <p>Una cosa que convé notar: els números <em>mai</em> creixen. Es redueix mòdul n a cada pas, així que tot es manté per sota de n encara que l'exponent sigui astronòmic. Aquesta és la raó per la qual RSA és computable.</p>
+
+          <h4>3. El petit teorema de Fermat</h4>
+          <p>El 18 d'octubre de 1640, Fermat va escriure a Bernard Frénicle de Bessy explicant-li que si p és primer i a no és múltiple de p, aleshores p divideix a<sup>p−1</sup> − 1. Va afegir que li n'enviaria la demostració «si no temés ser massa llarg». No la va enviar mai, i com passa sovint amb Fermat, no se n'ha trobat cap rastre.</p>
+          <p>La primera demostració publicada és d'<strong>Euler</strong>, gairebé un segle després, el 1736. I n'hi ha una que val la pena veure perquè és purament combinatòria:</p>
+          <div class="deep-aside">
+            <strong>La demostració per reordenació.</strong> Pren els residus 1, 2, …, p−1 i multiplica'ls tots per a mòdul p. El resultat és <em>la mateixa llista, reordenada</em>: cap producte pot donar 0 (p és primer i no divideix ni a ni cap dels factors) i no n'hi pot haver dos d'iguals (si a·i ≡ a·j, com que a és invertible, i ≡ j). Multiplicant tota la llista de les dues maneres: a<sup>p−1</sup>·(p−1)! ≡ (p−1)! (mod p). Com que (p−1)! no és divisible per p, es pot cancel·lar, i queda a<sup>p−1</sup> ≡ 1.
+          </div>
+          <p>Fixa't que la cancel·lació final és el pas delicat, i és exactament on entra la primalitat: mòdul un número compost no sempre es pot cancel·lar. És el mateix punt que trencava el teorema xinès del residu amb mòduls no coprimers.</p>
+
+          <h4>4. La generalització d'Euler i la funció φ</h4>
+          <p>Euler no es va aturar a demostrar-lo: el va estendre a mòduls qualssevol. Per fer-ho va definir <strong>φ(n)</strong>, la quantitat d'enters entre 1 i n que no comparteixen cap factor amb n. Aleshores, per a tot a coprimer amb n:</p>
+          <p style="text-align:center"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msup><mi>a</mi><mrow><mi>φ</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></msup><mo>≡</mo><mn>1</mn><mspace width="0.4em"/><mo>(</mo><mi>mod</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math></p>
+          <p>Quan n = p és primer, tots els números de 1 a p−1 hi són coprimers, φ(p) = p−1, i es recupera Fermat com a cas particular.</p>
+          <p>El que fa φ utilitzable és que es calcula a partir de la factorització: és <strong>multiplicativa</strong> sobre factors coprimers, cosa que surt del teorema xinès del residu. Per a n = p·q amb p i q primers diferents:</p>
+          <p style="text-align:center"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>φ</mi><mo>(</mo><mi>p</mi><mi>q</mi><mo>)</mo><mo>=</mo><mo>(</mo><mi>p</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>(</mo><mi>q</mi><mo>−</mo><mn>1</mn><mo>)</mo></math></p>
+          <p>I aquí hi ha la trampa que fa possible RSA: <strong>calcular φ(n) és tan difícil com factoritzar n</strong>. Si saps que 55 = 5·11, φ(55) = 4·10 = 40 és immediat. Si només veus 55 i no en coneixes els factors, no tens cap drecera.</p>
+          <div class="deep-aside">
+            <strong>Un detall que la taula revela.</strong> A la primera vista veuràs que amb mòduls compostos la primera columna que surt tota d'uns arriba <em>abans</em> de φ(n). Amb n = 15, φ = 8, però ja a l'exponent 4 totes les bases coprimeres donen 1. Aquest exponent més petit té nom propi: és la <strong>funció de Carmichael</strong> λ(n), el mínim comú múltiple dels ordres. Sempre divideix φ(n), i per a mòduls primers hi coincideix. RSA funciona igualment amb qualsevol dels dos, i les implementacions modernes fan servir λ precisament perquè dona una clau privada més petita.
+          </div>
+
+          <h4>5. Per què funciona RSA</h4>
+          <p>Amb Euler a la mà, la construcció és sorprenentment curta.</p>
+          <div class="deep-example">
+            <div class="de-title">La construcció completa</div>
+            <div class="de-step"><strong>1.</strong> Tria dos primers diferents p i q. Calcula <strong>n = p·q</strong> i <strong>φ(n) = (p−1)(q−1)</strong>.</div>
+            <div class="de-step"><strong>2.</strong> Tria una <strong>e</strong> coprimera amb φ(n). El parell (n, e) és la <strong>clau pública</strong>: es publica.</div>
+            <div class="de-step"><strong>3.</strong> Calcula <strong>d</strong>, l'invers de e mòdul φ(n), amb Euclides estès. El parell (n, d) és la <strong>clau privada</strong>: no surt d'aquí.</div>
+            <div class="de-step"><strong>4.</strong> Xifrar: c = m<sup>e</sup> mod n. Desxifrar: m = c<sup>d</sup> mod n.</div>
+          </div>
+          <p>Que desxifrar desfaci exactament el xifratge és el que cal comprovar. Per construcció, e·d ≡ 1 (mod φ(n)), és a dir e·d = 1 + k·φ(n) per a algun enter k. Aleshores:</p>
+          <p style="text-align:center"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><msup><mi>c</mi><mi>d</mi></msup><mo>=</mo><msup><mrow><mo>(</mo><msup><mi>m</mi><mi>e</mi></msup><mo>)</mo></mrow><mi>d</mi></msup><mo>=</mo><msup><mi>m</mi><mrow><mn>1</mn><mo>+</mo><mi>k</mi><mi>φ</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></msup><mo>=</mo><mi>m</mi><mo>·</mo><msup><mrow><mo>(</mo><msup><mi>m</mi><mrow><mi>φ</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></msup><mo>)</mo></mrow><mi>k</mi></msup></math></p>
+          <p>I pel teorema d'Euler el parèntesi val 1, així que tot plegat és <strong>m</strong>. El missatge torna intacte.</p>
+          <p>Un detall tècnic honest: aquest argument suposa que m és coprimer amb n. Quan no ho és —quan m és múltiple de p o de q— el teorema d'Euler no s'aplica directament, però el resultat continua sent cert. Es demostra amb el <strong>teorema xinès del residu</strong>, comprovant la igualtat per separat mòdul p i mòdul q. És per això que RSA necessita que n sigui producte de primers <em>diferents</em>.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p>Les tres vistes recorren el camí sencer, i cadascuna alimenta la següent.</p>
+          <p>A <strong>«El teorema»</strong> hi ha la taula de totes les potències a<sup>k</sup> mod n. Arrossegant la barra de l'exponent il·lumines una columna i el comptador et diu quantes bases hi donen 1. Amb un mòdul primer, el comptador s'omple de cop justament a l'exponent p−1. Amb un de compost, les files de bases no coprimeres es marquen en vermell i no arriben mai a 1 —són exactament les que el teorema exclou—, i la primera columna plena apareix abans, a λ(n).</p>
+          <p>A <strong>«Les claus»</strong> tries p i q i es construeix tot el sistema: n, φ(n), les e vàlides, i la d calculada amb Euclides estès escrit pas a pas. Les caselles estan acolorides per recordar què és públic (verd) i què és secret (vermell).</p>
+          <p>A <strong>«Xifrar»</strong> escrius una paraula i veus cada lletra convertida en número, xifrada i desxifrada. A sota hi ha el càlcul complet d'una lletra per quadrats repetits, amb tots els quadrats intermedis.</p>
+
+          <h4>7. Recorregut complet: construir un sistema i xifrar</h4>
+          <div class="deep-example">
+            <div class="de-title">Pas a pas, amb p = 5 i q = 11</div>
+            <div class="de-step"><strong>1.</strong> A la vista «El teorema», posa el mòdul a <strong>11</strong> i arrossega l'exponent. A k = 10 el comptador marca 10 de 10: totes les bases donen 1. Acabes de veure que φ(11) = 10.</div>
+            <div class="de-step"><strong>2.</strong> Passa a «Les claus» i tria p = 5, q = 11. Surt <strong>n = 55</strong> i <strong>φ(n) = 4 · 10 = 40</strong>.</div>
+            <div class="de-step"><strong>3.</strong> Tria <strong>e = 3</strong>. És vàlida perquè mcd(3, 40) = 1. La clau pública és (55, 3).</div>
+            <div class="de-step"><strong>4.</strong> El panell calcula d amb Euclides estès: 40 = 13·3 + 1, i d'aquí 1 = 40 − 13·3, que mòdul 40 diu −13·3 ≡ 1. Com que −13 ≡ 27, surt <strong>d = 27</strong>. Comprovació: 3 · 27 = 81 = 2·40 + 1 ✓.</div>
+            <div class="de-step"><strong>5.</strong> Ves a «Xifrar» i escriu <strong>HOLA</strong>. La H és la lletra 8, i es xifra com 8³ = 512 = 9·55 + 17, o sigui <strong>c = 17</strong>.</div>
+            <div class="de-step"><strong>6.</strong> Per desxifrar cal 17²⁷ mod 55. Amb quadrats repetits: 17, 14, 31, 26, 16, i combinant-los surt <strong>8</strong>. Hem recuperat la H.</div>
+            <div class="de-step"><strong>7.</strong> Ara la part important: qualsevol que vegi la clau pública (55, 3) i el missatge xifrat pot trencar-lo, perquè 55 es factoritza mentalment. Torna a «Les claus» i observa que tota la seguretat es redueix a una pregunta: <em>saps trobar p i q a partir de n?</em></div>
+          </div>
+
+          <h4>8. Per què és segur (i què vol dir «segur» aquí)</h4>
+          <p>Val la pena ser precís sobre què se sap i què no. <strong>Ningú ha demostrat que RSA sigui segur.</strong> El que se sap és que trencar-lo pel camí evident requereix factoritzar n, i que ningú ha trobat cap manera ràpida de factoritzar.</p>
+          <p>L'asimetria és brutal. Multiplicar dos primers de 1.024 bits és instantani. El millor algorisme conegut per desfer-ho, el <em>garbell general del cos de nombres</em>, té un cost que creix de manera subexponencial: prou lent perquè, amb claus de 2.048 bits, superi qualsevol capacitat de còmput imaginable amb la tecnologia actual.</p>
+          <p>Però «no s'ha trobat» no és «no existeix». No hi ha cap demostració que factoritzar sigui difícil. I ja sabem que amb un ordinador quàntic prou gran <em>no ho seria</em>: l'algorisme de <strong>Shor</strong>, publicat el 1994, factoritza en temps polinòmic. Cap ordinador quàntic actual s'hi acosta ni de lluny, però la possibilitat és el motiu pel qual s'estan estandarditzant sistemes «postquàntics» basats en problemes diferents.</p>
+          <div class="deep-aside">
+            <strong>Per què les claus reals són tan grans.</strong> A la càpsula, n té dos dígits perquè la taula càpiga a la pantalla. Una clau real de 2.048 bits té uns <strong>617 dígits decimals</strong>, i els seus dos factors primers en tenen uns 308 cadascun. El rècord públic de factorització és RSA-250, de 829 bits, aconseguit el 2020 amb unes 2.700 anys-nucli de càlcul. Cada bit afegit a la clau dobla l'espai; la distància entre 829 i 2.048 bits no és una millora incremental, és un abisme.
+          </div>
+
+          <h4>9. Aparicions fora de les matemàtiques</h4>
+          <p><strong>El cadenat del navegador.</strong> Cada connexió HTTPS comença amb un intercanvi de clau pública. Avui la part de xifratge sovint la fan corbes el·líptiques, però l'esquema conceptual —clau pública per acordar, clau simètrica per parlar— és el que van inventar Diffie, Hellman i RSA.</p>
+          <p><strong>Signatures digitals.</strong> El mateix mecanisme al revés: xifres amb la clau <em>privada</em> i qualsevol ho verifica amb la pública. Com que només tu tens la privada, això prova que el missatge ve de tu. És el que fa que el teu telèfon accepti una actualització i rebutgi un programari manipulat.</p>
+          <p><strong>Passaports i targetes.</strong> Els xips dels passaports biomètrics, del DNI electrònic i de les targetes bancàries fan aritmètica modular amb claus RSA per demostrar que són autèntics sense revelar el seu secret.</p>
+          <p><strong>Test de primalitat.</strong> Fora de la criptografia, el teorema de Fermat és la base del <em>test de Fermat</em>: si a<sup>n−1</sup> ≢ 1 (mod n) per a alguna base a, aleshores n és compost amb tota seguretat, i sense haver-lo factoritzat. És l'avantpassat dels tests de Miller–Rabin que fan servir tots els sistemes que necessiten generar primers grans —incloent-hi, irònicament, la generació de claus RSA.</p>
+
+          <h4>10. Curiositats</h4>
+          <p><strong>Ja s'havia inventat, però era secret.</strong> El 1973, quatre anys abans de RSA, <strong>Clifford Cocks</strong> va descriure essencialment el mateix sistema mentre treballava al GCHQ britànic. Estava classificat i no es va desclassificar fins al 1997. Cocks no va rebre cap crèdit públic durant vint-i-quatre anys, i el seu descobriment no va tenir cap efecte sobre el món precisament perquè era secret —una ironia notable per a un sistema el propòsit del qual és fer públic el que abans era secret.</p>
+          <p><strong>Les paraules màgiques són l'aufrany llepafils.</strong> El 1977, Martin Gardner va publicar a <em>Scientific American</em> un repte de RSA amb una clau de 129 dígits, i va escriure que trencar-la requeriria una quantitat de temps astronòmica amb els algorismes coneguts. Es va trencar el <strong>1994</strong>, amb 600 voluntaris coordinats per internet i vuit mesos de càlcul. El missatge amagat era <em>«the magic words are squeamish ossifrage»</em>, una frase escollida perquè fos impossible d'endevinar. Cap dels tres autors de RSA havia previst internet.</p>
+          <p><strong>Els números que enganyen el test de Fermat.</strong> Hi ha compostos que passen el test de Fermat per a <em>totes</em> les bases coprimeres: es diuen <strong>nombres de Carmichael</strong>. El més petit és <strong>561 = 3·11·17</strong>. Són prou rars perquè el test sigui útil a la pràctica, però prou reals perquè calgui una versió més forta (Miller–Rabin). El tercer nombre de Carmichael és <strong>1729</strong>, el mateix número del taxi que Ramanujan va reconèixer des del llit d'hospital com el més petit expressable com a suma de dos cubs de dues maneres diferents.</p>
+          <p><strong>Fermat no va demostrar res.</strong> El «petit» teorema es diu així per distingir-lo del «gran» o «últim» teorema de Fermat, aquell que va anotar al marge dient que en tenia una demostració meravellosa que no hi cabia. Del petit tampoc no en va donar cap demostració —i en aquest cas la comunitat matemàtica només va haver d'esperar 96 anys, no 358.</p>
+          <p><strong>El nom hauria pogut ser un altre.</strong> L'ordre dels cognoms a «RSA» es va decidir alfabèticament. Adleman, de fet, va estar a punt de demanar que no el hi posessin: considerava que la seva contribució havia estat sobretot trencar les propostes prèvies de Rivest i Shamir fins que una va resistir.</p>
+
+          <h4>11. Connexió amb altres àrees</h4>
+          <p>Aquesta càpsula tanca el bloc recollint-ne totes les peces. <strong>El sedàs i el ritme dels primers</strong> proporciona la matèria primera: RSA necessita primers grans, i el fet que n'hi hagi molts —conseqüència directa del teorema dels nombres primers— és el que fa possible generar-ne a l'atzar en mil·lisegons. Si els primers fossin escassos, el sistema no existiria.</p>
+          <p><strong>Rellotges que encaixen</strong> hi apareix dues vegades: per demostrar que φ és multiplicativa i, sobretot, en el pas final de la demostració de correcció, quan el missatge no és coprimer amb n. A la pràctica, el teorema xinès del residu també és el que fa que desxifrar sigui unes quatre vegades més ràpid, calculant per separat mòdul p i mòdul q.</p>
+          <p><strong>Reciprocitat quadràtica</strong> comparteix el terreny: els residus quadràtics mòdul un primer són el cas e = 2, i entendre quan una cosa és quadrat mòdul n és una peça de molts altres criptosistemes.</p>
+          <p>Cap a l'àlgebra, el marc natural de tot això és la teoria de grups. Els invertibles mòdul n formen un grup de φ(n) elements, i el teorema d'Euler no és més que el <strong>teorema de Lagrange</strong> aplicat a aquest grup: l'ordre de qualsevol element divideix l'ordre del grup, i per tant elevar a φ(n) torna a la identitat. Quan a <strong>Taules de Cayley</strong> comprovis que elevar un element a l'ordre del grup dona sempre l'element neutre, estaràs demostrant el teorema de Fermat sense saber-ho.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="fermat" class="active">El teorema</button>
+        <button data-v="keys">Les claus</button>
+        <button data-v="cipher">Xifrar</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only" id="modControls">
+      <span class="help-wrap chip-label">
+        Mòdul:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Els mòduls en negre són primers i el teorema de Fermat s'hi compleix. Els marcats amb ⚠ són compostos: hi apareixen files vermelles que no arriben mai a 1.</span>
+      </span>
+      <div class="chip-row" id="modRow"></div>
+    </div>
+    <div class="controls-row explora-only" id="pqControls" style="display:none">
+      <span class="chip-label">p:</span><div class="chip-row" id="pRow"></div>
+      <span class="chip-label">q:</span><div class="chip-row" id="qRow"></div>
+    </div>
+    <div class="controls-row explora-only" id="eControls" style="display:none">
+      <span class="help-wrap chip-label">
+        Exponent públic e:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Només valen les e coprimeres amb φ(n): si compartissin un factor, e no tindria invers i no existiria cap clau privada.</span>
+      </span>
+      <div class="chip-row" id="eRow"></div>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap rsa-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA 1: EL TEOREMA -->
+      <div class="vista-panel active" id="vistaFermatPanel">
+        <div class="k-control">
+          <input type="range" id="kRange" min="1" max="10" step="1" value="1" aria-label="Exponent k">
+          <span class="k-val" id="kVal">k = 1</span>
+        </div>
+        <div class="tally" id="tallyRow"></div>
+        <div class="pow-wrap"><table class="pow-table" id="powTable"></table></div>
+        <div class="step-narration" id="fermatNarration"></div>
+      </div>
+
+      <!-- VISTA 2: LES CLAUS -->
+      <div class="vista-panel" id="vistaKeysPanel">
+        <div class="key-grid" id="keyGrid"></div>
+        <div class="calc-sheet" id="keyCalc"></div>
+        <div class="step-narration" id="keyNarration"></div>
+      </div>
+
+      <!-- VISTA 3: XIFRAR -->
+      <div class="vista-panel" id="vistaCipherPanel">
+        <div class="word-row">
+          <input type="text" id="wordInput" maxlength="8" value="HOLA" aria-label="Paraula per xifrar" spellcheck="false">
+          <button class="btn btn-ghost" id="wordBtn">Xifra ✉</button>
+        </div>
+        <div class="cipher-wrap"><table class="cipher-table" id="cipherTable"></table></div>
+        <div class="calc-sheet" id="sqCalc"></div>
+        <div class="step-narration" id="cipherNarration"></div>
+      </div>
+
+      <!-- REPTE -->
+      <div class="repte-panel" id="reptePanel">
+        <div class="repte-prompt" id="reptePrompt"></div>
+        <div class="guess-row" id="guessRow">
+          <input type="number" id="guessInput" inputmode="numeric" placeholder="la teva resposta">
+          <button class="btn btn-primary" id="submitGuessBtn">Comprova ✔</button>
+        </div>
+        <div class="result-box" id="repteResult"></div>
+      </div>
+
+    </div>
+    <div class="canvas-hint" id="hint">Arrossega la barra de l'exponent i mira quan s'omple el comptador.</div>
+
+    <p class="method-hint" id="methodPanel">Si p és primer i a no n'és múltiple, a^(p−1) ≡ 1 (mod p). La columna p−1 surt tota d'uns.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">1</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">El teorema</div>
+        <div class="readout-def" id="readoutDef">Busca l'exponent que ho posa tot a 1.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">De l'observació al criptosistema</div>
+
+    <div class="type-card active" id="card-fermat" data-method="fermat" style="--t-color:var(--aritmetica)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Petit teorema de Fermat</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>a</mi><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>≡</mo><mn>1</mn><mspace width="0.3em"/><mo>(</mo><mi>mod</mi><mspace width="0.2em"/><mi>p</mi><mo>)</mo></math></div>
+        <div class="type-desc">Enunciat el 1640 en una carta, sense demostració. Multiplicar tots els residus per a els reordena sense repetir-ne cap: d'aquí surt el teorema en tres línies.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-euler" data-method="euler" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Teorema d'Euler</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>a</mi><mrow><mi>φ</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></msup><mo>≡</mo><mn>1</mn><mspace width="0.3em"/><mo>(</mo><mi>mod</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math></div>
+        <div class="type-desc">La versió per a mòduls qualssevol, amb φ(n) en lloc de p−1. Calcular φ(n) és tan difícil com factoritzar n: aquí és on neix la seguretat.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-rsa" data-method="rsa" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">RSA</div>
+        <div class="type-range">e·d ≡ 1 (mod φ(n))</div>
+        <div class="type-desc">Xifrar és elevar a e; desxifrar, elevar a d. Que una operació desfaci l'altra és exactament el teorema d'Euler aplicat a m^(1+kφ(n)).</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> la clau pública i la privada són <em>el mateix tipus</em> d'objecte —un exponent i un mòdul— i el que les separa és només qui coneix p i q. Tota la seguretat de RSA es redueix a una pregunta oberta: ningú ha demostrat que factoritzar sigui difícil.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/fjxtmmpu" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Criptografia RSA: els nombres primers ens protegeixen</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 01 · Aritmètica i Teoria de Nombres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  NUCLI ARITMÈTIC
+// ─────────────────────────────────────────────
+function gcd(a, b) { while (b) { const t = a % b; a = b; b = t; } return a; }
+function isPrime(n) { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; }
+
+// Exponenciació per quadrats repetits. És el mètode escrit de la càpsula, i
+// per això retorna també els passos: el panell els ha de poder mostrar.
+function powMod(a, k, n) {
+  let acc = 1, x = ((a % n) + n) % n;
+  while (k > 0) { if (k & 1) acc = acc * x % n; x = x * x % n; k = Math.floor(k / 2); }
+  return acc;
+}
+function powModSteps(a, k, n) {
+  const bits = k.toString(2);
+  const steps = []; let acc = 1, x = ((a % n) + n) % n, kk = k, i = 0;
+  while (kk > 0) {
+    const use = (kk & 1) === 1;
+    steps.push({ i, pow: Math.pow(2, i), val: x, use, accAfter: use ? (acc = acc * x % n) : acc });
+    x = x * x % n; kk = Math.floor(kk / 2); i++;
+  }
+  return { bits, steps, result: acc };
+}
+function egcd(a, b) {
+  let or = a, r = b, os = 1, s = 0, ot = 0, t = 1;
+  while (r !== 0) { const q = Math.floor(or / r);
+    [or, r] = [r, or - q * r]; [os, s] = [s, os - q * s]; [ot, t] = [t, ot - q * t]; }
+  return [or, os, ot];
+}
+function modInv(b, m) { b = ((b % m) + m) % m; const [g, x] = egcd(b, m); return g !== 1 ? null : ((x % m) + m) % m; }
+function euclidRows(a, b) { const rows = []; let x = a, y = b;
+  while (y !== 0) { const q = Math.floor(x / y), r = x - q * y; rows.push({ x, y, q, r }); x = y; y = r; } return rows; }
+function phi(n) { let c = 0; for (let k = 1; k <= n; k++) if (gcd(k, n) === 1) c++; return c; }
+// Ordre multiplicatiu de a mòdul n (null si no és coprimer).
+function order(a, n) { if (gcd(a, n) !== 1) return null;
+  let x = a % n, o = 1; while (x !== 1) { x = x * a % n; o++; if (o > n) return null; } return o; }
+// λ(n) de Carmichael: el mínim exponent que posa TOTES les bases coprimeres a 1.
+function carmichael(n) { let l = 1;
+  for (let a = 1; a < n; a++) if (gcd(a, n) === 1) { const o = order(a, n); l = l / gcd(l, o) * o; } return l; }
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const MODS = [7, 9, 11, 13, 15];
+let M = 11, k = 1;
+const PRIMES = [3, 5, 7, 11, 13, 17, 19, 23];
+let p = 5, q = 11, e = 3;
+
+function nOf() { return p * q; }
+function phiOf() { return (p - 1) * (q - 1); }
+function dOf() { return modInv(e, phiOf()); }
+function validEs() { const f = phiOf(); const out = [];
+  for (let x = 3; x < f; x += 2) if (gcd(x, f) === 1) out.push(x); return out; }
+
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+// ─────────────────────────────────────────────
+//  VISTA 1 · LA TAULA DE POTÈNCIES
+// ─────────────────────────────────────────────
+// La taula es construeix un sol cop per mòdul; canviar l'exponent només mou
+// una classe. Reconstruir-la a cada pas de la barra faria que el navegador
+// remaquetés centenars de cel·les mentre s'arrossega.
+function buildPowTable() {
+  const t = document.getElementById('powTable');
+  const cols = M - 1;
+  let head = '<thead><tr><th scope="col">a \\ k</th>';
+  for (let x = 1; x <= cols; x++) head += `<th scope="col" data-k="${x}">${x}</th>`;
+  head += '</tr></thead><tbody>';
+  let body = '';
+  for (let a = 1; a < M; a++) {
+    const cop = gcd(a, M) === 1;
+    body += `<tr class="${cop ? '' : 'nocop'}"><th scope="row">${a}</th>`;
+    for (let x = 1; x <= cols; x++) {
+      const v = powMod(a, x, M);
+      body += `<td data-k="${x}" class="${v === 1 ? 'one' : ''}">${v}</td>`;
+    }
+    body += '</tr>';
+  }
+  t.innerHTML = head + body + '</tbody>';
+  t.setAttribute('aria-label', `Potències a elevat a k mòdul ${M}, per a a de 1 a ${M - 1} i k de 1 a ${M - 1}`);
+  const kr = document.getElementById('kRange');
+  kr.max = cols; if (k > cols) k = cols; kr.value = k;
+  highlightCol();
+}
+function coprimeCount() { let c = 0; for (let a = 1; a < M; a++) if (gcd(a, M) === 1) c++; return c; }
+function onesAt(x) { let c = 0; for (let a = 1; a < M; a++) if (powMod(a, x, M) === 1) c++; return c; }
+
+function highlightCol() {
+  const t = document.getElementById('powTable');
+  t.querySelectorAll('.col-hi').forEach(c => c.classList.remove('col-hi'));
+  t.querySelectorAll(`[data-k="${k}"]`).forEach(c => c.classList.add('col-hi'));
+  document.getElementById('kVal').textContent = 'k = ' + k;
+  document.getElementById('kRange').value = k;
+  readoutNum.textContent = k;
+
+  const ones = onesAt(k), cop = coprimeCount();
+  const tally = document.getElementById('tallyRow');
+  const full = ones === cop && cop > 0;
+  tally.innerHTML =
+    `<span class="lock-pill tally-pill${full ? ' full' : ''}">${ones} de ${cop} bases donen 1</span>` +
+    `<span class="tally-pill">mòdul ${M}${isPrime(M) ? ' · primer' : ' · compost'}</span>`;
+
+  const lam = carmichael(M), ph = phi(M);
+  const nar = document.getElementById('fermatNarration');
+  nar.className = 'step-narration' + (full ? ' good' : '');
+  if (!full) {
+    nar.innerHTML = `<span class="sn-title">Encara no</span>A l'exponent <b>k = ${k}</b> només <b>${ones}</b> de les ${cop} bases coprimeres donen 1. ` +
+      `Continua arrossegant: busques l'exponent que les posa <em>totes</em> a 1 alhora.`;
+    readoutName.textContent = 'El teorema';
+    readoutDef.textContent = `${ones} de ${cop} bases donen 1 a k = ${k}.`;
+  } else if (isPrime(M)) {
+    nar.innerHTML = `<span class="sn-title">Fermat</span>A <b>k = ${k}</b> les ${cop} bases donen 1 alhora` +
+      (k === M - 1 ? `, i ${k} = ${M} − 1. Això és el petit teorema de Fermat: <b>a^(p−1) ≡ 1 (mod p)</b> per a tota base que no sigui múltiple de p.`
+                   : `. El primer cop va ser a k = ${lam}; aquest n'és un múltiple, i per això també funciona.`);
+    readoutName.textContent = 'Teorema de Fermat';
+    readoutDef.textContent = `a^${M - 1} ≡ 1 (mod ${M}) per a totes les bases.`;
+  } else {
+    nar.innerHTML = `<span class="sn-title">Euler, no Fermat</span>A <b>k = ${k}</b> totes les ${cop} bases coprimeres donen 1 — però ${M} és <b>compost</b>. ` +
+      `Les files vermelles (bases que comparteixen un factor amb ${M}) no hi arriben mai. ` +
+      `Aquí el teorema de Fermat no s'aplica: el que val és el d'Euler, amb <b>φ(${M}) = ${ph}</b>. ` +
+      (lam < ph ? `I fixa't que la primera columna plena és <b>${lam}</b>, encara més petita que φ: és la funció de Carmichael λ(${M}).` : '');
+    readoutName.textContent = "Teorema d'Euler";
+    readoutDef.textContent = `φ(${M}) = ${ph}; les bases no coprimeres queden fora.`;
+  }
+  if (full) flash(wrap, cssVar('--good'));
+}
+document.getElementById('kRange').addEventListener('input', ev => { k = parseInt(ev.target.value, 10); highlightCol(); });
+
+function buildModChips() {
+  const row = document.getElementById('modRow');
+  row.innerHTML = '';
+  MODS.forEach(m => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip' + (m === M ? ' active' : '');
+    b.textContent = isPrime(m) ? String(m) : m + ' ⚠';
+    b.setAttribute('aria-label', `Mòdul ${m}${isPrime(m) ? ', primer' : ', compost'}`);
+    b.addEventListener('click', () => {
+      M = m; k = 1;
+      row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      b.classList.add('active');
+      setPressedGroup(row.querySelectorAll('.chip'), c => c === b);
+      buildPowTable();
+      announce(`Mòdul ${m}, ${isPrime(m) ? 'primer' : 'compost'}.`);
+    });
+    row.appendChild(b);
+  });
+  setPressedGroup(row.querySelectorAll('.chip'), c => c.classList.contains('active'));
+  enableArrowNavigation(row, '.chip');
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 2 · LES CLAUS
+// ─────────────────────────────────────────────
+function buildPQChips() {
+  [['pRow', 'p'], ['qRow', 'q']].forEach(([id, which]) => {
+    const row = document.getElementById(id);
+    row.innerHTML = '';
+    PRIMES.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = v; b.dataset.v = v;
+      b.setAttribute('aria-label', `${which} igual a ${v}`);
+      b.addEventListener('click', () => {
+        if (which === 'p') p = v; else q = v;
+        // p i q han de ser primers DIFERENTS: amb p = q el mòdul no és
+        // lliure de quadrats i el desxifratge falla per als múltiples de p.
+        if (p === q) { const alt = PRIMES.find(x => x !== p); if (which === 'p') q = alt; else p = alt; }
+        if (p * q <= 26) { const big = PRIMES.filter(x => x !== p).pop(); q = big; }
+        refreshKeys(true);
+      });
+      row.appendChild(b);
+    });
+    enableArrowNavigation(row, '.chip');
+  });
+}
+function buildEChips() {
+  const row = document.getElementById('eRow');
+  const es = validEs();
+  if (es.indexOf(e) === -1) e = es[0];
+  row.innerHTML = '';
+  es.slice(0, 10).forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip' + (v === e ? ' active' : ''); b.textContent = v; b.dataset.v = v;
+    b.setAttribute('aria-label', `Exponent públic ${v}`);
+    b.addEventListener('click', () => { e = v; refreshKeys(false); });
+    row.appendChild(b);
+  });
+  setPressedGroup(row.querySelectorAll('.chip'), c => +c.dataset.v === e);
+  enableArrowNavigation(row, '.chip');
+}
+
+function refreshKeys(rebuildE) {
+  document.querySelectorAll('#pRow .chip').forEach(c => {
+    const on = +c.dataset.v === p; c.classList.toggle('active', on); c.setAttribute('aria-pressed', on);
+  });
+  document.querySelectorAll('#qRow .chip').forEach(c => {
+    const on = +c.dataset.v === q; c.classList.toggle('active', on); c.setAttribute('aria-pressed', on);
+  });
+  if (rebuildE) buildEChips();
+  else setPressedGroup(document.querySelectorAll('#eRow .chip'), c => +c.dataset.v === e);
+  document.querySelectorAll('#eRow .chip').forEach(c => c.classList.toggle('active', +c.dataset.v === e));
+
+  const n = nOf(), f = phiOf(), d = dOf();
+  const g = document.getElementById('keyGrid');
+  const box = (lab, val, cls) => `<div class="key-box ${cls}"><div class="kb-lab">${lab}</div><div class="kb-val">${val}</div></div>`;
+  g.innerHTML = box('p · secret', p, 'sec') + box('q · secret', q, 'sec') +
+    box('n = p·q', n, 'pub') + box('φ(n) = (p−1)(q−1)', f, 'sec') +
+    box('e · públic', e, 'pub') + box('d · privat', d, 'sec');
+
+  // Càlcul escrit de d amb Euclides estès.
+  const rows = euclidRows(f, e);
+  const out = [];
+  out.push(`<div class="cs-head">La clau privada d</div>`);
+  out.push(`<div class="cs-note">d és l'invers de e mòdul φ(n): cal la d tal que ${e}·d ≡ 1 (mod ${f}).</div>`);
+  out.push('<table class="sq-tab">' + rows.map(r => `<tr><td>${r.x} = ${r.q}·${r.y} + ${r.r}</td></tr>`).join('') +
+    `<tr><td class="hi">mcd(${f}, ${e}) = 1 → l'invers existeix</td></tr></table>`);
+  out.push(`<div class="cs-line">d = <b>${d}</b></div>`);
+  out.push(`<div class="cs-line res">comprovació: ${e} · ${d} = ${e * d} = ${Math.floor(e * d / f)}·${f} + ${e * d % f}</div>`);
+  document.getElementById('keyCalc').innerHTML = out.join('');
+
+  const nar = document.getElementById('keyNarration');
+  nar.className = 'step-narration good';
+  nar.innerHTML = `<span class="sn-title">Sistema complet</span>Clau <b>pública (${n}, ${e})</b>, que es pot publicar; clau <b>privada (${n}, ${d})</b>, que no surt d'aquí. ` +
+    `Qui vegi ${n} i ${e} només pot trobar ${d} si sap factoritzar ${n} = ${p}·${q} — i amb dos dígits això és trivial, que és tota la lliçó. ` +
+    `Amb primers de 300 xifres cadascun, deixa de ser-ho.`;
+  readoutName.textContent = 'Les claus';
+  readoutDef.textContent = `n = ${n}, φ = ${f}, e = ${e}, d = ${d}.`;
+  readoutNum.textContent = n;
+  renderCipher();
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 3 · XIFRAR
+// ─────────────────────────────────────────────
+// A → 1 … Z → 26. Cal que el codi de la lletra sigui menor que n, i per això
+// els xips de p i q no deixen baixar n de 26.
+function letterToNum(ch) { return ch.charCodeAt(0) - 64; }
+function numToLetter(v) { return String.fromCharCode(v + 64); }
+
+function renderCipher() {
+  const n = nOf(), d = dOf();
+  const raw = (document.getElementById('wordInput').value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8);
+  const t = document.getElementById('cipherTable');
+  if (!raw) {
+    t.innerHTML = '';
+    document.getElementById('sqCalc').innerHTML = '';
+    const nar = document.getElementById('cipherNarration');
+    nar.className = 'step-narration';
+    nar.innerHTML = `<span class="sn-title">Escriu una paraula</span>Només lletres de la A a la Z, fins a 8.`;
+    return;
+  }
+  const letters = raw.split('');
+  const ms = letters.map(letterToNum);
+  const cs = ms.map(m => powMod(m, e, n));
+  const back = cs.map(c => powMod(c, d, n));
+  const rowsHtml = [
+    ['lletra', letters.map(l => `<td class="l">${l}</td>`)],
+    ['m (A=1…Z=26)', ms.map(v => `<td>${v}</td>`)],
+    [`xifrat c = m^${e} mod ${n}`, cs.map(v => `<td class="c">${v}</td>`)],
+    [`desxifrat c^${d} mod ${n}`, back.map(v => `<td class="m">${v}</td>`)],
+    ['recuperat', back.map(v => `<td class="l">${v >= 1 && v <= 26 ? numToLetter(v) : '·'}</td>`)]
+  ].map(([lab, cells]) => `<tr><th scope="row">${lab}</th>${cells.join('')}</tr>`).join('');
+  t.innerHTML = '<tbody>' + rowsHtml + '</tbody>';
+  t.setAttribute('aria-label', `Xifratge de ${raw}: codis ${ms.join(', ')}, xifrats ${cs.join(', ')}, recuperats ${back.join(', ')}`);
+
+  // Càlcul detallat per quadrats repetits del desxifratge de la primera lletra.
+  const c0 = cs[0], st = powModSteps(c0, d, n);
+  const out = [];
+  out.push(`<div class="cs-head">Desxifrar la ${letters[0]} per quadrats repetits</div>`);
+  out.push(`<div class="cs-note">Cal ${c0}<sup>${d}</sup> mod ${n}. L'exponent ${d} en binari és <b>${st.bits}</b>, i es llegeix de dreta a esquerra.</div>`);
+  out.push('<table class="sq-tab">' + st.steps.map(s =>
+    `<tr><td${s.use ? ' class="hi"' : ''}>${c0}^${s.pow} ≡ ${s.val}</td><td${s.use ? ' class="hi"' : ''}>${s.use ? '× s\'usa → acumulat ' + s.accAfter : '— no s\'usa'}</td></tr>`).join('') + '</table>');
+  out.push(`<div class="cs-line res">resultat: ${st.result} → lletra ${numToLetter(st.result)}</div>`);
+  out.push(`<div class="cs-note">${st.steps.length} operacions en lloc de ${d} multiplicacions.</div>`);
+  document.getElementById('sqCalc').innerHTML = out.join('');
+
+  const ok = back.every((v, i) => v === ms[i]);
+  const nar = document.getElementById('cipherNarration');
+  nar.className = 'step-narration' + (ok ? ' good' : '');
+  nar.innerHTML = `<span class="sn-title">${ok ? 'Rodó' : 'Atenció'}</span>` +
+    `<b>${raw}</b> es xifra com <b>${cs.join(' · ')}</b> amb la clau pública (${n}, ${e}), ` +
+    `i torna a ser <b>${back.map(v => numToLetter(v)).join('')}</b> amb la privada (${n}, ${d}). ` +
+    (ok ? `Elevar a e i després a d ha tornat al punt de partida: això és exactament el teorema d'Euler, perquè e·d = 1 + k·φ(n).` : '');
+  readoutName.textContent = 'Xifrar';
+  readoutDef.textContent = `${raw} → ${cs.join(' ')}`;
+}
+document.getElementById('wordBtn').addEventListener('click', renderCipher);
+document.getElementById('wordInput').addEventListener('input', renderCipher);
+
+// ─────────────────────────────────────────────
+//  VISTES
+// ─────────────────────────────────────────────
+let currentVista = 'fermat';
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  setPressedGroup(document.querySelectorAll('#vistaToggle button'), b => b.dataset.v === v);
+  document.getElementById('vistaFermatPanel').classList.toggle('active', v === 'fermat');
+  document.getElementById('vistaKeysPanel').classList.toggle('active', v === 'keys');
+  document.getElementById('vistaCipherPanel').classList.toggle('active', v === 'cipher');
+  // Cada vista té els seus controls: mostrar-los tots alhora ompliria la
+  // capçalera de xips que no fan res a la vista activa.
+  const show = (id, on) => { document.getElementById(id).style.display = (on && !repteMode) ? 'flex' : 'none'; };
+  show('modControls', v === 'fermat');
+  show('pqControls', v === 'keys' || v === 'cipher');
+  show('eControls', v === 'keys' || v === 'cipher');
+  if (v === 'fermat') { highlightCol(); hint.textContent = "Arrossega la barra de l'exponent i mira quan s'omple el comptador."; }
+  if (v === 'keys') { refreshKeys(true); hint.textContent = 'Tria p, q i e: la clau privada es calcula sola.'; }
+  if (v === 'cipher') { renderCipher(); hint.textContent = 'Escriu una paraula i mira-la anar i tornar.'; }
+}
+document.querySelectorAll('#vistaToggle button').forEach(b => b.addEventListener('click', () => setVista(b.dataset.v)));
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let round = null;
+
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function scheduleNext(delay) {
+  const snap = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snap) startRepteRound(); }, delay);
+}
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+const BREAK_PAIRS = (() => { const out = [];
+  PRIMES.forEach(a => PRIMES.forEach(b => { if (a < b && a * b > 26) out.push([a, b]); })); return out; })();
+const SMALL_PRIMES = [7, 11, 13, 17, 19, 23, 29, 31];
+const ROUND_TYPES = ['break', 'power', 'phi'];
+
+function startRepteRound() {
+  repteRoundId++;
+  const box = document.getElementById('repteResult');
+  box.className = 'result-box';
+  wrap.classList.remove('time-up');
+  document.getElementById('guessInput').value = '';
+  const type = pick(ROUND_TYPES);
+
+  if (type === 'break') {
+    const [a, b] = pick(BREAK_PAIRS);
+    const ee = validEsFor((a - 1) * (b - 1))[0];
+    round = { type, p: a, q: b, n: a * b, e: ee, answer: Math.min(a, b) };
+    document.getElementById('reptePrompt').innerHTML =
+      `Aquesta clau pública és <b>(n = ${a * b}, e = ${ee})</b>.<br>Quin és el <b>factor primer més petit</b> de n?` +
+      `<br><span style="font-size:.8rem;font-weight:400;color:var(--muted)">Trobar-lo és trencar la clau: d se'n dedueix tot seguit.</span>`;
+    hint.textContent = 'Prova de dividir n pels primers petits.';
+  } else if (type === 'power') {
+    const pp = pick(SMALL_PRIMES);
+    const a = randInt(2, pp - 1);
+    const k = randInt(200, 5000);
+    round = { type, p: pp, a, k, answer: powMod(a, k, pp) };
+    document.getElementById('reptePrompt').innerHTML =
+      `Quant val <b>${a}<sup>${k}</sup> mod ${pp}</b>?` +
+      `<br><span style="font-size:.8rem;font-weight:400;color:var(--muted)">Amb Fermat no cal calcular la potència: redueix l'exponent.</span>`;
+    hint.textContent = `Com que ${pp} és primer, ${a}^${pp - 1} ≡ 1. Redueix ${k} mòdul ${pp - 1}.`;
+  } else {
+    const [a, b] = pick(BREAK_PAIRS);
+    round = { type, p: a, q: b, n: a * b, answer: (a - 1) * (b - 1) };
+    document.getElementById('reptePrompt').innerHTML =
+      `Si <b>n = ${a * b}</b> és producte de dos primers, quant val <b>φ(n)</b>?` +
+      `<br><span style="font-size:.8rem;font-weight:400;color:var(--muted)">Factoritza primer; φ surt tot seguit.</span>`;
+    hint.textContent = 'φ(p·q) = (p−1)(q−1).';
+  }
+}
+function validEsFor(f) { const out = []; for (let x = 3; x < f; x += 2) if (gcd(x, f) === 1) out.push(x); return out; }
+
+function resolveRound(correct, explanation) {
+  if (round) round.resolved = true;
+  const box = document.getElementById('repteResult');
+  box.classList.add('active');
+  if (correct) { award(10); flash(wrap, cssVar('--good')); box.className = 'result-box active ok'; }
+  else { applyPenalty(); flash(wrap, cssVar('--bad')); box.className = 'result-box active no'; }
+  box.innerHTML = explanation;
+  announce(box.textContent);
+  scheduleNext(correct ? 1900 : 2800);
+}
+
+document.getElementById('submitGuessBtn').addEventListener('click', () => {
+  if (!round || repteTimeUp || round.resolved) return;
+  const g = parseFloat(document.getElementById('guessInput').value);
+  if (!isFinite(g)) { hint.textContent = 'Escriu un número abans de comprovar.'; return; }
+  const ok = Math.round(g) === round.answer;
+  if (round.type === 'break') {
+    const f = (round.p - 1) * (round.q - 1), d = modInv(round.e, f);
+    resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — ${round.n} = <b>${round.p} · ${round.q}</b>. ` +
+      `D'aquí φ(n) = ${round.p - 1}·${round.q - 1} = ${f}, i la clau privada és d = ${round.e}⁻¹ mod ${f} = <b>${d}</b>. ` +
+      `La clau ha quedat trencada del tot.`);
+  } else if (round.type === 'power') {
+    const red = round.k % (round.p - 1);
+    resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — ${round.a}<sup>${round.k}</sup> ≡ <b>${round.answer}</b> (mod ${round.p}). ` +
+      `Per Fermat, ${round.a}<sup>${round.p - 1}</sup> ≡ 1, així que només compta ${round.k} mod ${round.p - 1} = <b>${red}</b>: ` +
+      `n'hi ha prou de calcular ${round.a}<sup>${red}</sup> mod ${round.p}.`);
+  } else {
+    resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — ${round.n} = ${round.p}·${round.q}, ` +
+      `i φ(${round.n}) = (${round.p}−1)(${round.q}−1) = <b>${round.answer}</b>.`);
+  }
+});
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  document.querySelectorAll('.vista-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('reptePanel').classList.add('active');
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+      announce(`Temps esgotat. Puntuació final: ${score} punts.`, true);
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer(); round = null;
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  // Reset dels estils inline posats per JS, o queden per sobre del CSS.
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('reptePanel').classList.remove('active');
+  document.getElementById('repteResult').className = 'result-box';
+  setVista('fermat');
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+  document.querySelectorAll('.vista-panel').forEach(p => p.classList.remove('active'));
+  ['modControls', 'pqControls', 'eControls'].forEach(id => document.getElementById(id).style.display = 'none');
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  fermat: 'Si p és primer i a no n\'és múltiple, a^(p−1) ≡ 1 (mod p). La columna p−1 surt tota d\'uns.',
+  euler: 'Per a mòduls qualssevol, a^φ(n) ≡ 1 (mod n) sempre que a i n siguin coprimers. Fermat n\'és el cas p primer.',
+  rsa: 'Xifrar és elevar a e; desxifrar, a d. Com que e·d = 1 + k·φ(n), pel teorema d\'Euler es torna al missatge original.'
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-fermat').addEventListener('click', () => { flash(wrap, cssVar('--aritmetica')); setMethod('fermat'); if (!repteMode) { M = 11; buildModChips(); buildPowTable(); setVista('fermat'); } });
+document.getElementById('card-euler').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('euler'); if (!repteMode) { M = 15; buildModChips(); buildPowTable(); setVista('fermat'); } });
+document.getElementById('card-rsa').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('rsa'); if (!repteMode) setVista('keys'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildModChips();
+buildPowTable();
+buildPQChips();
+buildEChips();
+refreshKeys(true);
+setVista('fermat');
+</script>
+</body>
+</html>

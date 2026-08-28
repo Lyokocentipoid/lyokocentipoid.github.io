@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Característica d'Euler · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--geometria); }
+
+    .euler-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; gap: .9rem; }
+
+    /* ── Graella (p,q) ── */
+    .pq-layout { display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: flex-start; justify-content: center; }
+    .pq-grid-wrap { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+    .pq-grid { display: grid; gap: 3px; }
+    .pq-hcell {
+      font-family: var(--font-mono); font-weight: 700; font-size: .72rem; color: var(--m-color);
+      display: flex; align-items: center; justify-content: center; min-width: 38px; min-height: 34px; text-align: center;
+    }
+    .pq-cell {
+      width: 38px; height: 34px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .8rem; color: var(--muted); cursor: pointer; transition: all var(--tr);
+    }
+    .pq-cell:hover { border-color: var(--m-color); }
+    .pq-cell.selected { box-shadow: 0 0 0 2px var(--m-color); }
+    .pq-cell.found-sphere { background: color-mix(in srgb, var(--good) 20%, transparent); border-color: var(--good); color: var(--good); }
+    .pq-cell.tried-flat { background: color-mix(in srgb, var(--muted) 16%, transparent); color: var(--muted); }
+    .pq-cell.tried-hyper { background: color-mix(in srgb, var(--bad) 10%, transparent); border-color: var(--bad); color: var(--bad); }
+    .pq-legend { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; font-size: .72rem; color: var(--muted); }
+    .pq-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .pq-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+    .pq-diagram-panel { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 1; min-width: 230px; max-width: 300px; }
+    .pq-diagram-stage { position: relative; width: 100%; max-width: 220px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; visibility: hidden; }
+    .pq-diagram-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .pq-verdict { font-family: var(--font-display); font-weight: 700; font-size: .95rem; text-align: center; min-height: 1.3em; }
+    .pq-verdict.sphere { color: var(--good); }
+    .pq-verdict.flat { color: var(--muted); }
+    .pq-verdict.hyper { color: var(--bad); }
+    .pq-formula { font-family: var(--font-mono); font-size: .8rem; text-align: center; color: var(--ink); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .55rem .7rem; line-height: 1.55; width: 100%; }
+    .pq-formula b { color: var(--m-color); }
+    .pq-note { font-size: .76rem; color: var(--muted); text-align: center; line-height: 1.5; min-height: 1.2em; }
+    .pq-stats { font-family: var(--font-mono); font-size: .85rem; color: var(--m-color); font-weight: 700; text-align: center; min-height: 1.2em; }
+
+    .pq-classify-panel { display: none; flex-direction: column; align-items: center; gap: .9rem; padding: 1rem; }
+    .pq-classify-prompt { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; text-align: center; line-height: 1.6; }
+
+    .torus-panel { display: none; flex-direction: column; gap: .7rem; align-items: center; }
+    body.mode-explora .torus-panel.active { display: flex; }
+    .torus-grid-canvas { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    .torus-readout { font-family: var(--font-mono); font-size: .85rem; text-align: center; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--geometria)">Bloc 03 · Característica d'Euler</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Característica d'Euler i poliedres</h1>
+      <p>Combina la fórmula d'Euler amb el recompte d'arestes per descobrir per a quins (p,q) —costats per cara, cares per vèrtex— existeix realment un poliedre. La resposta és una desigualtat, i només la compleixen 5 parelles en tot l'univers.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Per a qualsevol poliedre (topològicament una esfera), <strong>vèrtexs − arestes + cares = 2</strong>, sempre —la <a href="https://ca.wikipedia.org/wiki/Leonhard_Euler" target="_blank" rel="noopener">fórmula d'Euler</a>. Aquest número (χ, «khi») és un <strong>invariant topològic</strong>. Fins aquí, un fet. La pregunta interessant és una altra: si exigeixes que <strong>totes les cares tinguin p costats</strong> i que <strong>q cares es trobin a cada vèrtex</strong> (un poliedre «regular», com el <a href="https://ca.wikipedia.org/wiki/S%C3%B2lid_plat%C3%B2nic" target="_blank" rel="noopener">sòlid platònic</a>), quines parelles (p,q) són geomètricament possibles?</p>
+          <p>Comptant les arestes de dues maneres —cada cara aporta p arestes però cada aresta la comparteixen 2 cares (A=pF/2); cada vèrtex té grau q, i cada aresta té 2 extrems (A=qV/2)— i substituint a V−A+F=2, tot es redueix a una única condició: <strong><math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><mi>p</mi></mfrac><mo>+</mo><mfrac><mn>1</mn><mi>q</mi></mfrac><mo>&gt;</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></math></strong>. Aquesta càpsula la comprova per tu, casella a casella, sense arrodoniments (compara 2(p+q) amb p·q, dues quantitats enteres).</p>
+          <p>Els diagrames que veuràs, un cop trobat un (p,q) vàlid, són <a href="https://en.wikipedia.org/wiki/Schlegel_diagram" target="_blank" rel="noopener">diagrames de Schlegel</a>: la projecció plana d'aquell poliedre real, calculada i comprovada perquè cap aresta en creui cap altra.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Resol la desigualtat per a tots els enters p,q≥3 i només en surten <strong>5 parelles</strong>: (3,3), (3,4), (3,5), (4,3), (5,3) —el tetràedre, l'octàedre, l'icosàedre, el cub i el dodecàedre. No és «n'hem trobat 5»: és una demostració que un sisè sòlid platònic és <strong>impossible</strong>, per a sempre, en qualsevol univers. És exactament el mateix tipus de resultat que la classificació de grups per isomorfisme a les Taules de Cayley: no una llista d'exemples, sinó la llista completa i tancada.</p>
+          <p>I encara hi ha un premi addicional: en la igualtat exacta (1/p+1/q=1/2) surten els <strong>3 mosaics plans regulars</strong> (triangles, quadrats, hexàgons) —(4,4) és, de fet, la mateixa graella que el panell «Tor i ampolla de Klein» d'aquesta mateixa càpsula enganxa per formar-ne un tor. Per sota d'1/2, la geometria és <strong>hiperbòlica</strong>: mosaics que només existeixen sense distorsió sobre una superfície corbada cap enfora, com als famosos gravats de <em>Límit del cercle</em> de <a href="https://ca.wikipedia.org/wiki/M._C._Escher" target="_blank" rel="noopener">M. C. Escher</a>. Una sola desigualtat, doncs, separa les tres grans geometries: esfèrica, plana i hiperbòlica.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>La graella té p (costats per cara) a les columnes i q (cares per vèrtex) a les files.</li>
+            <li>Clica qualsevol casella (p,q): a sota es compara 2(p+q) amb p·q en directe, amb els números exactes, sense arrodoniments.</li>
+            <li>Si el resultat és <strong>esfèric</strong>, apareix el sòlid platònic real que li correspon, amb el seu diagrama i V, A, F, χ deduïts directament de p i q —no cal comptar-los. Intenta trobar els 5.</li>
+            <li>Si dona <strong>pla</strong> o <strong>hiperbòlic</strong>, no hi ha cap sòlid finit possible, i l'app t'explica per què.</li>
+            <li>Al mode secundari «Tor i ampolla de Klein» (Explora), mira què passa quan, en lloc d'un poliedre tancat, agafes una graella plana i n'enganxes els costats de maneres diferents.</li>
+            <li>En Repte: troba els 5 sòlids abans que s'acabi el temps, o classifica ràpidament un (p,q) donat com a esfèric, pla o hiperbòlic.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Aquesta càpsula conté una de les demostracions més satisfactòries de tota la matemàtica elemental: la prova que només existeixen cinc sòlids platònics. No «n'hem trobat cinc i sembla que no n'hi ha més», sinó una demostració tancada que un sisè és impossible en qualsevol univers. I el més notable és amb què es fa: comptant. Anem a veure com una fórmula que sembla una curiositat aritmètica acaba sent una eina que distingeix un donut d'una esfera.</p>
+
+          <h4>1. La fórmula, i per què és estranya</h4>
+          <p>Agafa qualsevol poliedre convex. Compta'n els vèrtexs (V), les arestes (A) i les cares (F). Calcula V − A + F. Sempre dona <strong>2</strong>.</p>
+          <div class="deep-table-wrap"><table class="deep-table">
+            <thead><tr><th>sòlid</th><th>V</th><th>A</th><th>F</th><th>V − A + F</th></tr></thead>
+            <tbody>
+              <tr><td>tetràedre</td><td>4</td><td>6</td><td>4</td><td>2</td></tr>
+              <tr><td>cub</td><td>8</td><td>12</td><td>6</td><td>2</td></tr>
+              <tr><td>octàedre</td><td>6</td><td>12</td><td>8</td><td>2</td></tr>
+              <tr><td>dodecàedre</td><td>20</td><td>30</td><td>12</td><td>2</td></tr>
+              <tr><td>icosàedre</td><td>12</td><td>30</td><td>20</td><td>2</td></tr>
+              <tr><td>piràmide de base quadrada</td><td>5</td><td>8</td><td>5</td><td>2</td></tr>
+            </tbody>
+          </table></div>
+          <p>El que fa que això sigui desconcertant és que <strong>els tres números individuals no tenen res en comú</strong>. El dodecàedre té 20 vèrtexs i l'octàedre 6; el cub té 6 cares i l'icosàedre 20. No hi ha cap patró. I tanmateix la combinació V−A+F dona sempre el mateix.</p>
+          <p>Encara més sorprenent: pots <strong>deformar</strong> el sòlid tant com vulguis —inflar-lo, aixafar-lo, torçar-lo— i mentre no el trenquis ni hi facis forats, el número no canvia. Pots afegir vèrtexs i cares: si divideixes una cara quadrada en dos triangles, afegeixes 1 aresta i 1 cara, i −1+1 = 0. El número aguanta.</p>
+          <div class="deep-key">
+            <strong>Això és el que vol dir «invariant topològic».</strong> V−A+F no mesura mida, ni angles, ni volum: mesura una propietat que sobreviu a qualsevol deformació contínua. Aquest número es diu <strong>característica d'Euler</strong> i s'escriu χ («khi»). Per a tot el que sigui topològicament una esfera, χ = 2.
+          </div>
+
+          <h4>2. Per què és certa: la demostració d'aplanar</h4>
+          <p>La demostració clàssica (Cauchy, 1811) és una de les més boniques que hi ha, i és totalment visualitzable.</p>
+          <p><strong>Pas 1.</strong> Treu una cara del poliedre i, pel forat, estira la resta fins a aplanar-la damunt d'una taula. Obtens un dibuix pla amb els mateixos vèrtexs i arestes, i una cara menys. Ara has de demostrar que, per a aquest dibuix pla, V − A + F = 1.</p>
+          <p>(Això és exactament el que són els <strong>diagrames de Schlegel</strong> que la càpsula et dibuixa quan trobes un (p,q) vàlid: la projecció plana d'un poliedre real, feta de manera que cap aresta en creui cap altra.)</p>
+          <p><strong>Pas 2.</strong> Triangula: si alguna cara té més de 3 costats, traça-hi diagonals. Cada diagonal afegeix 1 aresta i 1 cara, i com que apareixen amb signes oposats, V−A+F no canvia.</p>
+          <p><strong>Pas 3.</strong> Ara ves eliminant triangles de la vora, un a un. Hi ha dos casos: si el triangle toca la vora per una sola aresta, en treure'l perds 1 aresta i 1 cara → sense canvi. Si hi toca per dues arestes, perds 2 arestes, 1 vèrtex i 1 cara → −1 +2 −1 = 0, tampoc no canvia.</p>
+          <p><strong>Pas 4.</strong> Continua fins que només quedi un triangle. Aleshores V=3, A=3, F=1 (la cara interior), i 3−3+1 = <strong>1</strong>. Com que cap pas ha canviat el valor, valia 1 des del principi. Tornant a afegir la cara que havíem tret al pas 1: <strong>V−A+F = 2</strong>. ∎</p>
+          <div class="deep-aside">
+            <strong>Aquesta demostració té una història.</strong> Durant més d'un segle es van anar trobant «contraexemples» a la fórmula d'Euler: poliedres amb forats, amb cares que es toquen de maneres estranyes, amb cavitats interiors. Cada vegada calia refinar la definició de «poliedre». El filòsof de la ciència Imre Lakatos hi va dedicar un llibre sencer, <em>Proofs and Refutations</em> (1976), escrit com un diàleg d'aula, que és probablement la millor descripció que s'ha fet mai de com progressen de veritat les matemàtiques: no per acumulació de veritats, sinó per lluita amb els casos que no encaixen.
+          </div>
+
+          <h4>3. De la fórmula a la desigualtat: el cor de la càpsula</h4>
+          <p>Ara la pregunta interessant, que és la que fa servir l'element interactiu. Exigim que el poliedre sigui <strong>regular</strong>: que <em>totes</em> les cares tinguin el mateix nombre de costats (diguem-ne <strong>p</strong>) i que a <em>cada</em> vèrtex s'hi trobin el mateix nombre de cares (diguem-ne <strong>q</strong>). Quines parelles (p,q) són possibles?</p>
+          <p>La clau és comptar les arestes <strong>de dues maneres diferents</strong>, una tècnica que apareix constantment en combinatòria.</p>
+          <div class="deep-example">
+            <span class="de-title">La derivació, pas a pas</span>
+            <span class="de-step"><strong>Comptant per cares:</strong> cada cara té p arestes → p·F arestes comptades…</span>
+            <span class="de-step">…però cada aresta la comparteixen exactament 2 cares, així que l'hem comptat dues vegades:</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;p·F = 2A &nbsp;→&nbsp; F = 2A/p</span>
+            <span class="de-step"><strong>Comptant per vèrtexs:</strong> a cada vèrtex hi arriben q arestes → q·V extrems…</span>
+            <span class="de-step">…però cada aresta té 2 extrems:</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;q·V = 2A &nbsp;→&nbsp; V = 2A/q</span>
+            <span class="de-step"><strong>Substituïm a V − A + F = 2:</strong></span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;2A/q − A + 2A/p = 2</span>
+            <span class="de-step">Dividim-ho tot per 2A (que és positiu):</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;1/q − 1/2 + 1/p = 1/A</span>
+            <span class="de-step">Com que A &gt; 0, el costat dret és positiu. Per tant:</span>
+            <span class="de-step">&nbsp;&nbsp;&nbsp;<strong>1/p + 1/q &gt; 1/2</strong></span>
+          </div>
+          <p>Tot el problema geomètric s'ha reduït a una <strong>única desigualtat entre dos enters</strong>. I ara només cal buscar-hi solucions amb p ≥ 3 i q ≥ 3 (una cara necessita almenys 3 costats; un vèrtex necessita almenys 3 cares per no ser pla).</p>
+
+          <h4>4. Només cinc, i per què no n'hi pot haver cap més</h4>
+          <p>Aquí és on la cerca s'acaba de pressa, i val la pena veure per què.</p>
+          <p>Si p ≥ 6 i q ≥ 3, aleshores 1/p + 1/q ≤ 1/6 + 1/3 = 1/2, que <em>no</em> és estrictament major que 1/2. Fallat. El mateix argument per simetria amb q ≥ 6. Per tant <strong>tant p com q han de ser 3, 4 o 5</strong>: només 9 casos per comprovar.</p>
+          <div class="deep-table-wrap"><table class="deep-table">
+            <thead><tr><th>(p,q)</th><th>1/p + 1/q</th><th>&gt; 1/2?</th><th>sòlid</th></tr></thead>
+            <tbody>
+              <tr><td>(3,3)</td><td>2/3 ≈ 0,667</td><td>sí</td><td>tetràedre</td></tr>
+              <tr><td>(3,4)</td><td>7/12 ≈ 0,583</td><td>sí</td><td>octàedre</td></tr>
+              <tr><td>(3,5)</td><td>8/15 ≈ 0,533</td><td>sí</td><td>icosàedre</td></tr>
+              <tr><td>(4,3)</td><td>7/12 ≈ 0,583</td><td>sí</td><td>cub</td></tr>
+              <tr><td>(5,3)</td><td>8/15 ≈ 0,533</td><td>sí</td><td>dodecàedre</td></tr>
+              <tr><td>(4,4)</td><td>1/2</td><td>no (igual)</td><td>mosaic quadrat pla</td></tr>
+              <tr><td>(3,6) i (6,3)</td><td>1/2</td><td>no (igual)</td><td>mosaics triangular i hexagonal</td></tr>
+              <tr><td>(4,5), (5,4), (5,5)</td><td>&lt; 1/2</td><td>no</td><td>geometria hiperbòlica</td></tr>
+            </tbody>
+          </table></div>
+          <p>Cinc solucions. Ni una més, per sempre. <strong>Això no és una llista d'exemples: és una classificació completa i tancada</strong>, del mateix tipus que la dels grups d'ordre petit a la càpsula de Taules de Cayley.</p>
+          <div class="deep-key">
+            <strong>Un detall de rigor que la càpsula respecta.</strong> Comparar 1/p+1/q amb 1/2 amb decimals convida a errors d'arrodoniment. L'aplicació no ho fa així: multiplica per 2pq i compara <strong>2(p+q) amb p·q</strong>, dues quantitats enteres. La comparació és exacta, sense cap decimal pel mig. És una bona pràctica general: quan un criteri es pot expressar amb enters, val la pena fer-ho.
+          </div>
+
+          <h4>5. Els altres dos casos: quan la igualtat i quan menys</h4>
+          <p>La taula d'abans amaga una segona història. Els casos descartats no són «res»: són <strong>altres geometries</strong>.</p>
+          <p><strong>Quan 1/p + 1/q = 1/2</strong> exactament, l'equació 1/A = 0 diu que farien falta infinites arestes. No es tanca cap sòlid: en surt un <strong>mosaic infinit del pla</strong>. I només n'hi ha tres: (3,6) triangles, (4,4) quadrats, (6,3) hexàgons. Són exactament els tres únics mosaics regulars del pla, i aquest és el motiu pel qual les rajoles i els ruscos d'abelles tenen les formes que tenen.</p>
+          <p><strong>Quan 1/p + 1/q &lt; 1/2</strong>, la figura no cap ni a l'esfera ni al pla: només existeix sobre una superfície <strong>corbada cap enfora</strong>, el pla hiperbòlic. Aquestes són les tessel·lacions que Escher va dibuixar a la sèrie <em>Límit del cercle</em>, on les figures s'encongeixen infinitament cap a la vora.</p>
+          <p>Dit d'una altra manera: <strong>una sola desigualtat entre dos enters separa les tres grans geometries</strong> —esfèrica, euclidiana i hiperbòlica. El signe de 1/p + 1/q − 1/2 et diu en quin dels tres mons vius.</p>
+
+          <h4>6. Quan χ no val 2: superfícies amb forats</h4>
+          <p>La segona vista de la càpsula («Tor i ampolla de Klein») explora què passa si abandonem l'esfera.</p>
+          <p>Agafa un quadrat i decideix que les vores oposades estan <strong>enganxades</strong>. Si enganxes els dos costats horitzontals en el mateix sentit i els dos verticals també, obtens un <strong>tor</strong> (un dònut) — és exactament el que passa als videojocs on surts per la dreta i entres per l'esquerra. Si enganxes els verticals en <em>sentits oposats</em>, obtens una <strong>ampolla de Klein</strong>, una superfície que no té «dins» ni «fora» i que no cap a l'espai tridimensional sense autointersecar-se.</p>
+          <p>La càpsula et deixa comptar V, A i F en els tres casos. El resultat és el següent, i és tot el punt:</p>
+          <div class="deep-table-wrap"><table class="deep-table">
+            <thead><tr><th>superfície</th><th>V</th><th>A</th><th>F</th><th>χ</th></tr></thead>
+            <tbody>
+              <tr><td>quadrat pla (esfera)</td><td>25</td><td>40</td><td>17</td><td>2</td></tr>
+              <tr><td>tor</td><td>16</td><td>32</td><td>16</td><td>0</td></tr>
+              <tr><td>ampolla de Klein</td><td>16</td><td>32</td><td>16</td><td>0</td></tr>
+            </tbody>
+          </table></div>
+          <p>En enganxar les vores, els vèrtexs i les arestes de la vora es fusionen de dos en dos, i el compte canvia. <strong>El tor té χ = 0, no 2.</strong> Per això no hi pot haver cap «sòlid platònic toroïdal» amb la nostra desigualtat: la desigualtat sortia de posar-hi un 2.</p>
+          <p>En general, per a una superfície orientable amb g forats, χ = 2 − 2g. Esfera (g=0): 2. Tor (g=1): 0. Tor doble (g=2): −2. <strong>La característica d'Euler compta forats.</strong></p>
+          <div class="deep-aside">
+            <strong>Tor i ampolla de Klein tenen la mateixa χ i no són la mateixa cosa.</strong> Totes dues donen 0, però el tor és orientable i l'ampolla de Klein no ho és. Això il·lustra un límit important dels invariants: <strong>si difereixen, els objectes són diferents; si coincideixen, no en sabem res</strong>. És exactament la mateixa asimetria que trobaràs a Nusos i tricolorabilitat i al Trencaclosques del 15.
+          </div>
+
+          <h4>7. Què fem a l'element interactiu</h4>
+          <p><strong>La graella (p,q).</strong> Cada casella és una parella candidata. En clicar-la, l'aplicació comprova la desigualtat amb aritmètica entera i et classifica el resultat en tres colors: verd si és un sòlid real (esfèric), gris si dona igualtat (mosaic pla) i vermell si queda per sota (hiperbòlic). No estàs consultant una llista memoritzada: estàs <strong>executant la classificació</strong>, casella a casella.</p>
+          <p><strong>Els diagrames de Schlegel.</strong> Quan encertes un (p,q) vàlid, es dibuixa la projecció plana d'aquell poliedre. No és una imatge decorativa: és el mateix objecte del pas 1 de la demostració de Cauchy, i està calculat perquè cap aresta en creui cap altra.</p>
+          <p><strong>La vista del tor.</strong> Les fletxes de les vores no són adorns: indiquen quins costats s'enganxen i <em>en quin sentit</em>. La diferència entre el tor i l'ampolla de Klein és, literalment, una fletxa girada.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: descobrir els cinc</span>
+            <span class="de-step">1. Clica (3,3). 1/3+1/3 = 2/3 &gt; 1/2 ✓ → verd. Apareix el tetràedre.</span>
+            <span class="de-step">2. Clica (3,4) i (4,3). Els dos passen → octàedre i cub. <strong>Fixa't que no són el mateix:</strong> intercanviar p i q dona sòlids diferents (són «duals»).</span>
+            <span class="de-step">3. Clica (4,4). 1/4+1/4 = 1/2 exactament → gris. No es tanca: és el mosaic quadrat.</span>
+            <span class="de-step">4. Clica (3,5) i (5,3) → icosàedre i dodecàedre. Ja en portes cinc.</span>
+            <span class="de-step">5. Clica (5,5). 1/5+1/5 = 2/5 &lt; 1/2 → vermell. Hiperbòlic.</span>
+            <span class="de-step">6. Prova (3,6): dona exactament 1/2 → el mosaic triangular.</span>
+            <span class="de-step">7. Prova qualsevol cosa amb p≥6 i q≥6: sempre vermell. Ja no cal seguir.</span>
+          </div>
+
+          <h4>8. Aparicions fora de les matemàtiques</h4>
+          <p><strong>La pilota de futbol i el fullerè.</strong> Una pilota clàssica té 12 pentàgons i 20 hexàgons. Els 20 hexàgons són negociables; els <strong>12 pentàgons no</strong>. Si construeixes una superfície tancada només amb pentàgons i hexàgons, i a cada vèrtex n'hi conflueixen 3, Euler t'obliga a tenir-ne exactament 12: fent el compte surt χ = p/6, i imposar χ = 2 dona p = 12, independentment de quants hexàgons hi posis. La molècula C₆₀ —el «buckminsterfullerè», premi Nobel de Química el 1996— té exactament aquesta estructura, i per la mateixa raó.</p>
+          <p><strong>Cartografia i el teorema dels quatre colors.</strong> Tot mapa pla es pot acolorir amb 4 colors sense que dos països veïns comparteixin color. La fórmula d'Euler és un ingredient bàsic de la demostració (Appel i Haken, 1976 — la primera demostració important assistida per ordinador).</p>
+          <p><strong>Geometria diferencial.</strong> El teorema de Gauss–Bonnet diu que la curvatura total d'una superfície tancada és 2πχ. És a dir: <strong>la geometria (curvatura, que es mesura localment) està lligada a la topologia (χ, que és global)</strong>. Per molt que deformis una esfera, la curvatura total és sempre 4π.</p>
+          <p><strong>Xarxes i circuits.</strong> Per a un graf pla connex, V−A+F=2 dona relacions immediates entre nusos, connexions i regions. S'usa en disseny de circuits impresos per determinar si un circuit es pot traçar sense creuaments.</p>
+          <p><strong>Anàlisi de dades.</strong> La topologia algebraica aplicada («homologia persistent») usa generalitzacions de χ per detectar forats i cavitats en núvols de punts de dades d'alta dimensió, en camps que van de la genòmica a la neurociència.</p>
+
+          <h4>9. Curiositats</h4>
+          <p><strong>Descartes hi va arribar 100 anys abans i no ho va publicar.</strong> Al voltant del 1630 René Descartes va escriure un resultat equivalent en un manuscrit que va romandre inèdit. El text es va perdre, se'n va trobar una còpia feta per Leibniz al segle XIX, i per això de vegades es parla del teorema de Descartes–Euler.</p>
+          <p><strong>Euler no en va donar una demostració correcta.</strong> Quan va enunciar la fórmula el 1750, la seva justificació tenia buits. La primera demostració satisfactòria és de Legendre (1794), amb geometria esfèrica, i la d'aplanar que hem vist és de Cauchy (1811).</p>
+          <p><strong>Els cinc sòlids són tres parelles i un solitari.</strong> El cub i l'octàedre són <em>duals</em> (intercanvia cares i vèrtexs i obtens l'altre); el dodecàedre i l'icosàedre també. El tetràedre és dual de si mateix. En la taula (p,q), la dualitat és simplement intercanviar p i q — per això (3,4) i (4,3) hi surten tots dos.</p>
+          <p><strong>Plató els va assignar els elements.</strong> Al <em>Timeu</em>: tetràedre = foc, cub = terra, octàedre = aire, icosàedre = aigua. El dodecàedre, descobert després, va quedar per al cosmos sencer perquè no quedaven elements. Kepler encara va intentar el 1596, al <em>Mysterium Cosmographicum</em>, explicar les òrbites dels planetes encaixant-hi els cinc sòlids. Estava equivocat, però el llibre el va portar a les dades que després li van donar les seves lleis.</p>
+          <p><strong>Un teorema que no admet excepcions… fins que en trobes.</strong> La fórmula falla per a poliedres amb forats (un marc de quadre té χ = 0) i per a poliedres no convexos amb cares que es toquen malament. Cada excepció històrica va obligar a precisar la definició, i aquest procés és el que Lakatos va convertir en filosofia de la ciència.</p>
+          <p><strong>La demostració cap en una servilleta.</strong> Tot el resultat —que només hi ha cinc sòlids platònics— es dedueix de comptar arestes de dues maneres i resoldre una desigualtat amb dos enters petits. És un dels millors exemples de com un canvi de representació (de geometria a aritmètica) pot convertir un problema aparentment inabastable en una comprovació de nou casos.</p>
+
+          <h4>10. Connexió amb altres àrees</h4>
+          <p>Amb <strong>Nusos i tricolorabilitat</strong> comparteix el mateix bloc temàtic i la mateixa filosofia: buscar quantitats que sobrevisquin a la deformació. χ és un invariant de superfícies; la tricolorabilitat és un invariant de nusos. Totes dues serveixen per distingir, i cap de les dues per identificar.</p>
+          <p>Amb <strong>Taules de Cayley</strong> comparteix l'estructura de resultat: una classificació completa i tancada. Allà, tots els grups d'un ordre donat; aquí, tots els poliedres regulars. I no és casualitat que els grups de simetria dels cinc sòlids platònics siguin només tres (els del cub i l'octàedre coincideixen, i els del dodecàedre i l'icosàedre també), un altre reflex de la dualitat.</p>
+          <p>I amb el <strong>Pla d'Argand</strong> hi ha un pont concret: els vèrtexs d'un polígon regular de n costats inscrit en una circumferència són exactament les arrels n-èsimes de la unitat. El mateix objecte, vist com a geometria aquí i com a àlgebra allà.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="eulerViewToggle">
+        <button data-view="pq" class="active">Sòlids platònics (p,q)</button>
+        <button data-view="torus">Tor i ampolla de Klein</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only" id="pqControlsRow">
+      <span class="chip-label" id="pqFoundTracker">Sòlids trobats: 0 / 5</span>
+      <button class="btn btn-ghost" id="resetPQBtn">Reinicia la graella ↻</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap euler-wrap flash-target" id="canvasWrap">
+      <div class="pq-legend" id="pqArea-legend">
+        <span><i style="background:color-mix(in srgb, var(--good) 40%, transparent)"></i> esfèric (poliedre)</span>
+        <span><i style="background:color-mix(in srgb, var(--muted) 30%, transparent)"></i> pla (mosaic)</span>
+        <span><i style="background:color-mix(in srgb, var(--bad) 25%, transparent)"></i> hiperbòlic</span>
+      </div>
+      <div class="pq-layout" id="pqArea">
+        <div class="pq-grid-wrap">
+          <div class="pq-grid" id="pqGrid"></div>
+        </div>
+        <div class="pq-diagram-panel">
+          <div class="pq-diagram-stage" id="pqDiagramStage"><canvas id="pqCanvas"></canvas></div>
+          <div class="pq-verdict" id="pqVerdict"></div>
+          <div class="pq-formula" id="pqFormula">Clica una casella (p,q) de la graella.</div>
+          <div class="pq-stats" id="pqStats"></div>
+          <div class="pq-note" id="pqNote"></div>
+        </div>
+      </div>
+
+      <div class="pq-classify-panel" id="pqClassifyPanel">
+        <div class="pq-classify-prompt" id="pqClassifyPrompt"></div>
+        <div class="chip-row">
+          <button class="btn btn-primary" id="classifySphereBtn">✓ Esfèric (poliedre)</button>
+          <button class="btn btn-ghost" id="classifyFlatBtn">— Pla (mosaic)</button>
+          <button class="btn btn-ghost" id="classifyHyperBtn">✕ Hiperbòlic</button>
+        </div>
+      </div>
+
+      <div class="torus-panel" id="torusPanel">
+        <div class="mode-toggle" id="torusToggle" style="--m-color: var(--geometria)">
+          <button data-t="flat" class="active">Full pla</button>
+          <button data-t="torus">Tor</button>
+          <button data-t="klein">Ampolla de Klein</button>
+        </div>
+        <canvas id="torusCanvas" class="torus-grid-canvas" width="260" height="260"></canvas>
+        <div class="torus-readout" id="torusReadout"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" role="status" id="hint">Clica una casella (p,q) i mira si forma un poliedre real.</div>
+
+    <p class="method-hint" id="methodPanel">1/p + 1/q &gt; 1/2 (comparat com 2(p+q) vs p·q): si es compleix, existeix un poliedre; si s'iguala, un mosaic pla; si no, és hiperbòlic.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Tria (p,q)</div>
+        <div class="readout-def" id="readoutDef">Clica una casella per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Euler i la classificació dels sòlids regulars</div>
+
+    <div class="type-card active" id="card-desigualtat" data-method="desigualtat" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La desigualtat</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><mi>p</mi></mfrac><mo>+</mo><mfrac><mn>1</mn><mi>q</mi></mfrac><mo>&gt;</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></math></div>
+        <div class="type-desc">Surt de combinar V−A+F=2 amb el recompte d'arestes (A=pF/2=qV/2). Clica qualsevol casella de la graella per veure-la comprovada amb números exactes, no aproximats.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-platonics" data-method="platonics" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Els 5 sòlids platònics</div>
+        <div class="type-range">(3,3) (3,4) (3,5) (4,3) (5,3)</div>
+        <div class="type-desc">Totes les (p,q) que compleixen la desigualtat, i cap més: tetràedre, octàedre, icosàedre, cub, dodecàedre. Prova-ho tu mateix a la graella —no en trobaràs un sisè, mai.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-geometries" data-method="geometries" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Esfèric, pla o hiperbòlic</div>
+        <div class="type-range">&gt; = &lt; 1/2</div>
+        <div class="type-desc">La mateixa desigualtat, en els 3 casos possibles, separa les tres grans geometries. El cas «pla» (4,4) és exactament la graella que el mode Tor enganxa a sota.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> no cal provar les 25 caselles — si p i q són tots dos ≥4, aleshores 1/p+1/q≤1/4+1/4=1/2, mai més gran. Tots els sòlids platònics tenen, doncs, algun costat igual a 3.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/R5p8ZFjk" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>La fórmula d'Euler i els poliedres amb forats</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 03 · Geometria i Topologia</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ELS 5 SÒLIDS PLATÒNICS
+//  Coordenades 2D d'un diagrama de Schlegel real per a cadascun, calculades
+//  amb l'embolcall convex (convex hull) dels vèrtexs 3D estàndard + una
+//  projecció en perspectiva des d'un punt just fora de la cara exterior.
+//  Verificat programàticament abans de fixar-ho aquí: V,A,F,χ correctes,
+//  cada cara amb exactament p costats, cada vèrtex amb grau exactament q,
+//  i CAP aresta es creua amb cap altra en el pla.
+// ─────────────────────────────────────────────
+const PLATONIC_LAYOUTS = {
+  tetra: { p:3, q:3, name:'Tetràedre',
+    V:[[-0.7071,-0.7071],[0.9659,-0.2588],[-0.2588,0.9659],[-0.0,-0.0]],
+    F:[[0,2,3],[1,3,2],[1,0,3]],
+    ext:[0,1,2] },
+  cube: { p:4, q:3, name:'Cub',
+    V:[[0.7071,0.7071],[0.1714,0.1714],[0.7071,-0.7071],[0.1714,-0.1714],[-0.7071,0.7071],[-0.1714,0.1714],[-0.7071,-0.7071],[-0.1714,-0.1714]],
+    F:[[0,1,5,4],[4,5,7,6],[1,0,2,3],[3,2,6,7],[1,3,7,5]],
+    ext:[2,0,4,6] },
+  octa: { p:3, q:4, name:'Octàedre',
+    V:[[0.2588,0.9659],[-0.0627,-0.2342],[0.2342,0.0627],[-0.9659,-0.2588],[-0.1714,0.1714],[0.7071,-0.7071]],
+    F:[[5,3,1],[3,4,1],[0,4,3],[0,5,2],[2,5,1],[0,2,4],[4,2,1]],
+    ext:[0,3,5] },
+  icosa: { p:3, q:5, name:'Icosàedre',
+    V:[[0.1213,0.0194],[-0.2737,0.3368],[-0.1549,-0.4054],[0.1884,-0.2319],[-0.0774,0.0953],[-0.2951,-0.0472],[-0.0438,-0.1147],[0.3568,0.9342],[-0.9874,-0.1581],[0.4285,0.0686],[0.6306,-0.7761],[0.1066,0.2792]],
+    F:[[10,8,2],[5,2,8],[11,0,4],[3,10,2],[1,5,8],[1,8,7],[4,5,1],[11,4,1],[11,1,7],[4,6,5],[6,2,5],[4,0,6],[6,3,2],[6,0,3],[11,7,9],[0,11,9],[9,7,10],[3,9,10],[0,9,3]],
+    ext:[7,8,10] },
+  dodeca: { p:5, q:3, name:'Dodecàedre',
+    V:[[0.5967,0.4336],[0.0749,0.2306],[0.5967,-0.4336],[0.0749,-0.2306],[-0.309,0.9511],[-0.4466,0.3244],[-0.309,-0.9511],[-0.4466,-0.3244],[0.1706,0.525],[-1.0,0.0],[0.809,-0.5878],[0.809,0.5878],[0.2424,0.0],[0.1706,-0.525],[-0.2279,0.7015],[-0.2279,-0.7015],[-0.7376,0.0],[-0.1961,-0.1425],[0.552,0.0],[-0.1961,0.1425]],
+    F:[[3,13,15,7,17],[1,12,3,17,19],[12,18,2,13,3],[13,2,10,6,15],[8,1,19,5,14],[2,18,0,11,10],[0,8,14,4,11],[18,12,1,8,0],[7,15,6,9,16],[4,14,5,16,9],[19,17,7,16,5]],
+    ext:[10,11,4,9,6] },
+};
+
+// ─────────────────────────────────────────────
+//  MATEMÀTICA: 1/p+1/q vs 1/2, sempre en aritmètica entera exacta
+// ─────────────────────────────────────────────
+function classify(p, q) {
+  const lhs = 2 * (p + q), rhs = p * q;
+  if (lhs > rhs) return 'sphere';
+  if (lhs === rhs) return 'flat';
+  return 'hyper';
+}
+function solidKey(p, q) {
+  for (const k in PLATONIC_LAYOUTS) { const s = PLATONIC_LAYOUTS[k]; if (s.p === p && s.q === q) return k; }
+  return null;
+}
+function solidStats(p, q) {
+  // A(1/p+1/q-1/2)=1  =>  A = 2pq / (2(p+q)-pq)
+  const denom = 2 * (p + q) - p * q;
+  const A = (2 * p * q) / denom;
+  return { V: (2 * A) / q, A, F: (2 * A) / p };
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+const PQ_RANGE = [3, 4, 5, 6, 7];
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRoundType = 'find';
+let repteClassifyAnswer = null;
+
+// ─────────────────────────────────────────────
+//  GRAELLA (p,q)
+// ─────────────────────────────────────────────
+function buildPQGrid() {
+  const grid = document.getElementById('pqGrid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${PQ_RANGE.length + 1}, minmax(34px,1fr))`;
+  const corner = document.createElement('div'); corner.className = 'pq-hcell'; corner.textContent = '';
+  grid.appendChild(corner);
+  PQ_RANGE.forEach(p => { const h = document.createElement('div'); h.className = 'pq-hcell'; h.textContent = 'p=' + p; grid.appendChild(h); });
+  PQ_RANGE.forEach(q => {
+    const rh = document.createElement('div'); rh.className = 'pq-hcell'; rh.textContent = 'q=' + q; grid.appendChild(rh);
+    PQ_RANGE.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'pq-cell'; b.dataset.p = p; b.dataset.q = q;
+      b.addEventListener('click', () => onPQClick(p, q, b));
+      grid.appendChild(b);
+    });
+  });
+}
+function cellBtn(p, q) { return document.querySelector(`.pq-cell[data-p="${p}"][data-q="${q}"]`); }
+
+function onPQClick(p, q, btn) {
+  document.querySelectorAll('.pq-cell').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  const cls = classify(p, q);
+  const alreadyClicked = btn.classList.contains('found-sphere') || btn.classList.contains('tried-flat') || btn.classList.contains('tried-hyper');
+  btn.classList.remove('found-sphere', 'tried-flat', 'tried-hyper');
+  if (cls === 'sphere') { btn.classList.add('found-sphere'); btn.textContent = '✓'; }
+  else if (cls === 'flat') { btn.classList.add('tried-flat'); btn.textContent = '='; }
+  else { btn.classList.add('tried-hyper'); btn.textContent = '×'; }
+
+  showPQResult(p, q, cls);
+  updateFoundTracker();
+
+  if (repteMode && repteRoundType === 'find') handleRepteFindClick(p, q, cls, alreadyClicked);
+}
+
+function showPQResult(p, q, cls) {
+  const lhs = 2 * (p + q), rhs = p * q;
+  const cmp = lhs > rhs ? '&gt;' : (lhs === rhs ? '=' : '&lt;');
+  document.getElementById('pqFormula').innerHTML =
+    `2×(p+q) = 2×(${p}+${q}) = <b>${lhs}</b> &nbsp;·&nbsp; p×q = ${p}×${q} = <b>${rhs}</b><br>${lhs} ${cmp} ${rhs} &nbsp;→&nbsp; 1/p + 1/q ${cmp} 1/2`;
+
+  const verdictEl = document.getElementById('pqVerdict');
+  const noteEl = document.getElementById('pqNote');
+  const stage = document.getElementById('pqDiagramStage');
+  verdictEl.className = 'pq-verdict ' + cls;
+
+  if (cls === 'sphere') {
+    const key = solidKey(p, q);
+    const s = PLATONIC_LAYOUTS[key];
+    verdictEl.textContent = `✓ Esfèric — és el ${s.name}!`;
+    drawPlatonic(key);
+    stage.style.visibility = 'visible';
+    const st = solidStats(p, q);
+    document.getElementById('pqStats').textContent = `V=${st.V} · A=${st.A} · F=${st.F} · χ=2`;
+    noteEl.textContent = 'Deduïts directament de p i q amb les fórmules A=2pq/(2(p+q)−pq), V=2A/q, F=2A/p — no cal comptar res.';
+  } else {
+    stage.style.visibility = 'hidden';
+    document.getElementById('pqStats').textContent = '';
+    if (cls === 'flat') {
+      verdictEl.textContent = '— Pla: mosaic infinit, no un poliedre finit';
+      noteEl.textContent = (p === 4 && q === 4)
+        ? 'Aquesta és exactament la graella 4×4 que el mode «Tor i ampolla de Klein» (a dalt) enganxa per formar-ne un tor.'
+        : `Un mosaic de p=${p}-gons amb q=${q} a cada vèrtex omple el pla exactament, sense sobrar ni faltar angle — com un tauler d'escacs (4,4) o una xarxa d'hexàgons (6,3).`;
+    } else {
+      verdictEl.textContent = '✕ Hiperbòlic: ni tan sols pla';
+      noteEl.textContent = `Amb p=${p} i q=${q} sobra angle a cada vèrtex: només es pot dibuixar sense arrugues sobre una superfície corbada cap enfora, com als mosaics de Límit del cercle d'Escher.`;
+    }
+  }
+  updateReadout(p, q, cls);
+}
+
+function updateReadout(p, q, cls) {
+  readoutBadge.classList.add('active');
+  if (cls === 'sphere') {
+    const key = solidKey(p, q);
+    readoutNum.textContent = '✓';
+    readoutName.textContent = PLATONIC_LAYOUTS[key].name;
+    readoutDef.textContent = `(p,q) = (${p}, ${q}) — un dels 5 sòlids platònics.`;
+  } else {
+    readoutNum.textContent = cls === 'flat' ? '=' : '✕';
+    readoutName.textContent = `(p,q) = (${p}, ${q})`;
+    readoutDef.textContent = cls === 'flat' ? 'Mosaic pla infinit, no un sòlid finit.' : 'Geometria hiperbòlica — no es pot fer un poliedre.';
+  }
+}
+function updateFoundTracker() {
+  const n = document.querySelectorAll('.pq-cell.found-sphere').length;
+  document.getElementById('pqFoundTracker').textContent = `Sòlids trobats: ${n} / 5`;
+}
+function resetPQExplore() {
+  document.querySelectorAll('.pq-cell').forEach(c => { c.className = 'pq-cell'; c.textContent = ''; });
+  document.getElementById('pqDiagramStage').style.visibility = 'hidden';
+  document.getElementById('pqVerdict').textContent = ''; document.getElementById('pqVerdict').className = 'pq-verdict';
+  document.getElementById('pqFormula').textContent = 'Clica una casella (p,q) de la graella.';
+  document.getElementById('pqStats').textContent = '';
+  document.getElementById('pqNote').textContent = '';
+  updateFoundTracker();
+  readoutBadge.classList.remove('active');
+  readoutNum.textContent = '…'; readoutName.textContent = 'Tria (p,q)'; readoutDef.textContent = 'Clica una casella per començar.';
+}
+document.getElementById('resetPQBtn').addEventListener('click', () => { resetPQExplore(); hint.textContent = 'Clica una casella (p,q) i mira si forma un poliedre real.'; });
+
+// ─────────────────────────────────────────────
+//  DIBUIX DEL SÒLID (diagrama de Schlegel)
+// ─────────────────────────────────────────────
+function drawPlatonic(key) {
+  const s = PLATONIC_LAYOUTS[key];
+  const canvas = document.getElementById('pqCanvas');
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  const cx = rect.width / 2, cy = rect.height / 2, R = Math.min(rect.width, rect.height) * 0.44;
+  const pts = s.V.map(([x, y]) => ({ x: cx + x * R, y: cy + y * R }));
+
+  ctx.setLineDash([4, 3]);
+  ctx.strokeStyle = 'rgba(27,30,45,.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  s.ext.forEach((vi, i) => { const p = pts[vi]; if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+  ctx.closePath(); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = 'rgba(27,30,45,.55)'; ctx.lineWidth = 1.5;
+  ctx.fillStyle = hexToRgba(cssVar('--geometria'), 0.07);
+  s.F.forEach(vs => {
+    ctx.beginPath();
+    vs.forEach((vi, i) => { const p = pts[vi]; if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  });
+  pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fillStyle = 'rgba(27,30,45,.6)'; ctx.fill(); });
+  // El diagrama de Schlegel és la peça central d'aquesta vista: sense text
+  // alternatiu, un lector de pantalla només trobaria un element buit. Es
+  // recomponen V, A i F des de (p,q) i es diu la fórmula d'Euler amb els
+  // números reals d'aquest sòlid, que és el que el diagrama demostra.
+  const V = 4 * s.p / (2 * s.p + 2 * s.q - s.p * s.q);
+  const A = 2 * s.p * s.q / (2 * s.p + 2 * s.q - s.p * s.q);
+  const F = 4 * s.q / (2 * s.p + 2 * s.q - s.p * s.q);
+  // «de + el» s'apostrofa davant de vocal: del cub, però de l'octàedre.
+  const nomMinuscula = s.name.charAt(0).toLowerCase() + s.name.slice(1);
+  const deArticle = /^[aeiouàèéíòóúh]/i.test(nomMinuscula) ? `de l'${nomMinuscula}` : `del ${nomMinuscula}`;
+  describeCanvas(canvas,
+    `Diagrama de Schlegel ${deArticle}: la projecció plana d'aquest poliedre, amb ${s.p} costats per cara i ${s.q} cares a cada vèrtex. ` +
+    `Té ${V} vèrtexs, ${A} arestes i ${F} cares, i per tant ${V} − ${A} + ${F} = ${V - A + F}, com diu la fórmula d'Euler.`);
+}
+window.addEventListener('resize', () => {
+  const sel = document.querySelector('.pq-cell.selected');
+  if (sel && sel.classList.contains('found-sphere')) drawPlatonic(solidKey(+sel.dataset.p, +sel.dataset.q));
+});
+
+// ─────────────────────────────────────────────
+//  VISTA TOR / AMPOLLA DE KLEIN
+// ─────────────────────────────────────────────
+function torusStats(mode, n) {
+  if (mode === 'flat') return { V: (n + 1) * (n + 1), E: 2 * n * (n + 1), F: n * n + 1 };
+  return { V: n * n, E: 2 * n * n, F: n * n };
+}
+function drawTorusGrid(mode) {
+  const tc = document.getElementById('torusCanvas');
+  const tctx = tc.getContext('2d');
+  const n = 4, pad = 24, size = tc.width - pad * 2, step = size / n;
+  tctx.clearRect(0, 0, tc.width, tc.height);
+  tctx.strokeStyle = 'rgba(27,30,45,.5)'; tctx.lineWidth = 1.4;
+  for (let i = 0; i <= n; i++) {
+    tctx.beginPath(); tctx.moveTo(pad, pad + i * step); tctx.lineTo(pad + size, pad + i * step); tctx.stroke();
+    tctx.beginPath(); tctx.moveTo(pad + i * step, pad); tctx.lineTo(pad + i * step, pad + size); tctx.stroke();
+  }
+  if (mode !== 'flat') {
+    const col = cssVar('--geometria');
+    tctx.fillStyle = col; tctx.font = '700 13px sans-serif'; tctx.textAlign = 'center';
+    tctx.fillText('→', pad + size / 2, pad - 8);
+    tctx.fillText('→', pad + size / 2, pad + size + 16);
+    const arrow = mode === 'torus' ? '↑' : '↓';
+    tctx.fillText('↑', pad - 14, pad + size / 2);
+    tctx.fillText(arrow, pad + size + 14, pad + size / 2);
+  }
+  // Les fletxes de les vores són tota la informació d'aquesta figura: diuen
+  // quins costats s'enganxen i en quin sentit. Dites amb paraules, perquè
+  // la diferència entre tor i ampolla de Klein (una fletxa girada) no es
+  // perdi per a qui no veu el dibuix.
+  const st = torusStats(mode, n);
+  const identificacio = {
+    flat: 'Cap costat enganxat: és un quadrat pla corrent.',
+    torus: 'Els dos costats horitzontals s\'enganxen en el mateix sentit, i els dos verticals també: en resulta un tor (un dònut).',
+    klein: 'Els costats horitzontals s\'enganxen en el mateix sentit, però els verticals en sentits OPOSATS (fixa\'t en la fletxa girada): en resulta una ampolla de Klein.'
+  }[mode];
+  describeCanvas(tc,
+    `Quadrícula de ${n} per ${n} amb les vores marcades amb fletxes. ${identificacio} ` +
+    `Comptant-hi: ${st.V} vèrtexs, ${st.E} arestes i ${st.F} cares, o sigui ${st.V} − ${st.E} + ${st.F} = ${st.V - st.E + st.F}.`);
+}
+document.querySelectorAll('#torusToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#torusToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    const mode = btn.dataset.t;
+    drawTorusGrid(mode);
+    const st = torusStats(mode, 4);
+    const chi = st.V - st.E + st.F;
+    const names = { flat: 'Full pla (graella oberta)', torus: 'Tor (dues parelles enganxades)', klein: 'Ampolla de Klein (una parella invertida)' };
+    document.getElementById('torusReadout').innerHTML = `${names[mode]}<br>V=${st.V} · A=${st.E} · F=${st.F} · <strong>χ=${chi}</strong>`;
+  });
+});
+
+document.querySelectorAll('#eulerViewToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#eulerViewToggle button').forEach(b => b.classList.toggle('active', b === btn));
+    const v = btn.dataset.view;
+    document.getElementById('pqArea').style.display = v === 'pq' ? 'flex' : 'none';
+    document.getElementById('pqArea-legend').style.display = v === 'pq' ? 'flex' : 'none';
+    document.getElementById('pqControlsRow').style.display = v === 'pq' ? 'flex' : 'none';
+    document.getElementById('torusPanel').classList.toggle('active', v === 'torus');
+    if (v === 'torus') { drawTorusGrid('flat'); document.querySelector('#torusToggle button[data-t="flat"]').click(); }
+  });
+});
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function handleRepteFindClick(p, q, cls, alreadyClicked) {
+  if (cls === 'sphere') {
+    if (!alreadyClicked) {
+      score += 10; streak++;
+      document.getElementById('rpScore').textContent = score;
+      document.getElementById('rpStreak').textContent = streak;
+      timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+      document.getElementById('rpTime').textContent = timeLeft + 's';
+      flash(wrap, 'var(--good)');
+      if (document.querySelectorAll('.pq-cell.found-sphere').length === 5) {
+        hint.textContent = 'Trobats els 5! Següent ronda...';
+        const snapshot = repteRoundId;
+        setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1200);
+      }
+    }
+  } else if (alreadyClicked) {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+  }
+}
+
+function startFindRound() {
+  document.getElementById('pqArea').style.display = 'flex';
+  document.getElementById('pqArea-legend').style.display = 'flex';
+  document.getElementById('pqClassifyPanel').style.display = 'none';
+  resetPQExplore();
+  hint.textContent = "Troba les 5 combinacions (p,q) que formen un sòlid platònic, abans que s'acabi el temps!";
+}
+function startClassifyRound() {
+  document.getElementById('pqArea').style.display = 'none';
+  document.getElementById('pqArea-legend').style.display = 'none';
+  document.getElementById('pqClassifyPanel').style.display = 'flex';
+  const p = 3 + Math.floor(Math.random() * 6), q = 3 + Math.floor(Math.random() * 6);
+  repteClassifyAnswer = classify(p, q);
+  document.getElementById('pqClassifyPrompt').innerHTML = `(p, q) = (<b>${p}</b>, <b>${q}</b>)<br><span style="font-size:.72rem;color:var(--muted);font-weight:400;">Esfèric, pla o hiperbòlic?</span>`;
+  hint.textContent = 'Prediu-ho abans de comprovar-ho.';
+  readoutBadge.classList.remove('active');
+}
+function submitClassify(answer) {
+  if (repteTimeUp) return;
+  const correct = answer === repteClassifyAnswer;
+  const names = { sphere: 'esfèric', flat: 'pla', hyper: 'hiperbòlic' };
+  if (correct) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 6);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    hint.textContent = '✔ Correcte!';
+  } else {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+    hint.textContent = `✕ Era ${names[repteClassifyAnswer]}.`;
+  }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, correct ? 1000 : 1500);
+}
+document.getElementById('classifySphereBtn').addEventListener('click', () => submitClassify('sphere'));
+document.getElementById('classifyFlatBtn').addEventListener('click', () => submitClassify('flat'));
+document.getElementById('classifyHyperBtn').addEventListener('click', () => submitClassify('hyper'));
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  repteRoundType = Math.random() < 0.6 ? 'find' : 'classify';
+  if (repteRoundType === 'find') startFindRound(); else startClassifyRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      readoutBadge.classList.add('active');
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('pqClassifyPanel').style.display = 'none';
+  document.getElementById('pqArea').style.display = 'flex';
+  document.getElementById('pqArea-legend').style.display = 'flex';
+  resetPQExplore();
+  hint.textContent = 'Clica una casella (p,q) i mira si forma un poliedre real.';
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  desigualtat: "1/p + 1/q > 1/2 (comparat com 2(p+q) vs p·q): surt de V−A+F=2 combinada amb el recompte d'arestes.",
+  platonics: "Les úniques (p,q) que compleixen la desigualtat: (3,3) (3,4) (3,5) (4,3) (5,3). Cap sisè sòlid platònic és possible.",
+  geometries: "La mateixa desigualtat, en >, = o <, separa la geometria esfèrica, la plana i la hiperbòlica."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-desigualtat').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('desigualtat'); });
+document.getElementById('card-platonics').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('platonics'); });
+document.getElementById('card-geometries').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('geometries'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildPQGrid();
+resetPQExplore();
+</script>
+</body>
+</html>

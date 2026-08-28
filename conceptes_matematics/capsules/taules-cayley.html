@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taules de Cayley · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--algebra); }
+
+    .cayley-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .9rem; overflow: auto; }
+    .cayley-grid { display: grid; gap: 3px; }
+    .cayley-grid .hcell {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-weight: 700; font-size: .82rem; color: var(--m-color);
+      background: color-mix(in srgb, var(--m-color) 10%, transparent); border-radius: 6px; min-width: 34px; min-height: 34px; padding: .2rem;
+    }
+    .cayley-cell {
+      min-width: 34px; min-height: 34px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font-mono); font-weight: 700; font-size: .82rem; color: var(--ink); cursor: pointer; transition: all var(--tr);
+    }
+    .cayley-cell:hover { border-color: var(--m-color); }
+    .cayley-cell.selected { border-color: var(--m-color); box-shadow: 0 0 0 2px color-mix(in srgb, var(--m-color) 35%, transparent); }
+    .cayley-cell.correct { background: color-mix(in srgb, var(--good) 16%, transparent); border-color: var(--good); color: var(--good); cursor: default; }
+    .cayley-cell.readonly { background: color-mix(in srgb, var(--m-color) 6%, transparent); cursor: default; }
+    /* és un <button> (accessible amb teclat): cal treure la vora per defecte */
+    .hcell.corner-reset { cursor: pointer; transition: all var(--tr); border: none; font: inherit; font-family: var(--font-mono); font-weight: 700; }
+    .hcell.corner-reset:hover { background: var(--m-color); color: #fff; }
+
+    .elem-chip { min-width: 40px; }
+    .elem-chip.candidate { background: var(--m-color); border-color: var(--m-color); color: #fff; }
+    .elem-chip.slot { min-width: 44px; }
+    .elem-chip.slot.selected { outline: 2px solid var(--m-color); outline-offset: 1px; }
+
+    .subgroup-panel, .iso-panel { display: none; flex-direction: column; gap: .6rem; align-items: center; }
+    .iso-row { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+
+    /* ── Visualització geomètrica: cada element del grup és, de veritat, un
+       moviment (una rotació, un bescanvi, una simetria) — no només una lletra
+       en una taula. Es reprodueix sola en seleccionar una casella. ── */
+    .viz-panel { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .6rem .6rem .3rem; display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+    .viz-panel canvas { width: 100%; height: 150px; }
+    .viz-caption { font-size: .78rem; color: var(--muted); text-align: center; min-height: 1.3em; }
+    .viz-caption b { color: var(--m-color); font-family: var(--font-mono); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--algebra)">Bloc 02 · Taules de Cayley</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Taules de Cayley</h1>
+      <p>Construeix tu mateix la taula d'operació d'un grup, casella a casella. Després, comprova quins subconjunts són subgrups (tancament en viu) o si dos grups del mateix ordre són, de fet, el mateix grup amagat sota noms diferents.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Un <strong>grup</strong> és un conjunt d'elements amb una operació (∘) que combina qualsevol parell donant sempre un altre element del mateix conjunt, i que compleix 4 condicions: <strong>tancament</strong> (el resultat sempre hi és), <strong>associativitat</strong> ((a∘b)∘c = a∘(b∘c)), hi ha un <strong>element neutre</strong> e (a∘e = a), i cada element té un <strong>invers</strong> (a∘a⁻¹ = e).</p>
+          <p>Però abans d'arribar a res abstracte: cada element d'un grup és, quasi sempre, un <strong>moviment concret</strong> — girar un rellotge, capgirar un rectangle, barrejar 3 boles. Per això aquesta càpsula sempre mostra l'animació del moviment real abans de demanar-te la resposta: la taula no és una llista de símbols, és el registre de «què passa si encadenes dos moviments».</p>
+          <p>Una <strong>taula de <a href="https://ca.wikipedia.org/wiki/Arthur_Cayley" target="_blank" rel="noopener">Cayley</a></strong> és la taula de multiplicar d'aquests moviments: la fila i la columna són els elements, i la casella (i,j) és el resultat d'encadenar-los, gᵢ∘gⱼ. Si la taula és simètrica respecte de la diagonal, el grup és <strong>abelià</strong> (l'ordre no importa, gᵢ∘gⱼ = gⱼ∘gᵢ); si no, no ho és.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Els grups són el llenguatge matemàtic de la <strong>simetria</strong>: les rotacions d'un <a href="https://ca.wikipedia.org/wiki/Grup_diedral" target="_blank" rel="noopener">polígon (grup diedral)</a>, les <a href="https://ca.wikipedia.org/wiki/Grup_sim%C3%A8tric" target="_blank" rel="noopener">permutacions d'objectes (grup simètric)</a>, les transformacions que deixen una molècula igual... tot això són grups. Estudiar-los en abstracte (via la seva taula) permet reconèixer la mateixa estructura amagada en situacions aparentment molt diferents — per això et deixem comparar-ne dos amb el mode isomorfisme.</p>
+          <p>Els grups cíclics <strong>Z/n</strong> que veus aquí no són només aritmètica abstracta: són exactament les <strong>simetries rotacionals d'un polígon regular de n costats</strong> (girs sols, sense reflexions) — Z/3 és el triangle, Z/4 el quadrat, Z/5 el pentàgon. En surten arreu: Z/12 és, literalment, com sumen les hores d'un rellotge (girar 5 hores i després 9 més és el mateix que girar-ne 2, perquè 5+9=14≡2 mod 12) i, amb 12 notes en lloc de 12 hores, també és com funciona la transposició d'una melodia en música. El grup diedral <strong>Dₙ</strong> hi afegeix les n reflexions —per això sempre té 2n elements—: D₄, el quadrat complet, ja hi era; ara també pots triar <strong>D₅</strong>, les 10 simetries completes d'un pentàgon regular.</p>
+          <p>Un <strong>subgrup</strong> és un tros del grup que ja forma un grup pel seu compte — i, sorprenentment, per a un grup finit, només cal comprovar que el subconjunt és tancat (no calen comprovar per separat l'element neutre ni els inversos, ja hi surten sols). Dos grups són <strong>isomorfs</strong> quan, per molt que es diguin diferent, tenen exactament la mateixa estructura interna: és una de les preguntes centrals de l'àlgebra abstracta.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria un grup (Z/n, Z/2×Z/2, S₃, D₄ o D₅).</li>
+            <li>Clica una casella buida de la taula: a dalt, una animació mostra el moviment real que representa l'element de la fila, seguit del moviment de l'element de la columna — mira on acaben els punts de colors.</li>
+            <li>Tria, dels xips, l'element que creus que coincideix amb el resultat final de l'animació; si t'equivoques, torna-ho a provar.</li>
+            <li>Clica el «∘» de la cantonada per desseleccionar la casella actual i tornar l'animació a la posició inicial; clica qualsevol casella ja resposta (verda) per tornar-ne a veure l'animació sense poder-ne canviar el valor.</li>
+            <li>Amb la taula plena, canvia a la vista «Subgrups»: clica elements per afegir-los o treure'ls d'un conjunt candidat, i mira en viu si és tancat.</li>
+            <li>En mode Repte, també apareixen rondes d'isomorfisme: reordena els xips del Grup B (clica'n dos per intercanviar-los) fins que la seva taula coincideixi casella a casella amb la del Grup A — o declara que no és possible.</li>
+          </ol>
+        </div></div></div>
+      </div>
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Els grups són l'abstracció més rendible de les matemàtiques: una definició de quatre línies que descriu alhora les simetries d'un cristall, les solucions d'una equació, els moviments d'un cub de Rubik i la conservació de l'energia. D'on surt aquesta definició, per què hi és cada condició, què construeixes quan omples una casella, i per què «són el mateix grup?» és molt més difícil del que sembla.</p>
+
+          <h4>1. El problema que va fer necessària la definició</h4>
+          <p>Val la pena començar per on va començar la història, perquè la definició abstracta de grup no va caure del cel: va sorgir de gent que intentava resoldre un problema concret i es va adonar que sempre reapareixia la mateixa estructura.</p>
+          <p>El problema era resoldre equacions per radicals. Hi ha fórmula per al grau 2 (la de tota la vida), n'hi ha per al grau 3 i per al grau 4, i durant tres segles ningú en va trobar cap per al grau 5. A principis del segle XIX, Abel i després Galois van entendre per què: la clau no eren les arrels en si, sinó <strong>com es poden permutar les arrels entre elles sense que cap relació algebraica es trenqui</strong>. Aquell conjunt de permutacions vàlides tenia una estructura interna molt marcada, i era aquella estructura la que decidia si l'equació es podia resoldre o no. Galois va ser qui va batejar-la: <em>groupe</em>.</p>
+          <p>El salt següent el va fer Arthur Cayley el 1854. Va observar que la mateixa estructura apareixia en llocs que no tenien res a veure amb equacions —moviments geomètrics, aritmètiques modulars, matrius— i va proposar quedar-se només amb les <strong>regles del joc</strong>, oblidant de què estaven fets els objectes. Aquesta és la idea abstracta de grup, i és la que fa que aquesta càpsula tingui sentit: una taula pot descriure alhora coses que semblaven no tenir res en comú.</p>
+
+          <h4>2. Les quatre condicions</h4>
+          <p>Un grup és un conjunt d'elements amb una operació ∘ que compleix quatre coses. Enunciar-les és fàcil; el que val la pena és veure què passa si en falta alguna.</p>
+          <p><strong>(1) Tancament.</strong> Combinar dos elements del conjunt ha de donar un element del conjunt. Sense això no es pot ni construir la taula: hi hauria caselles el resultat de les quals no cabria a la graella. <em>Exemple del que falla:</em> els números senars amb la suma no són tancats, perquè 3+5 = 8 és parell.</p>
+          <p><strong>(2) Associativitat.</strong> (a∘b)∘c = a∘(b∘c). Sense això, escriure a∘b∘c no vol dir res, perquè el resultat dependria d'on posessis els parèntesis. És la condició que permet parlar de «encadenar moviments» sense haver d'especificar l'ordre d'agrupació. <em>Exemple del que falla:</em> la resta, perquè (8−3)−2 = 3 però 8−(3−2) = 7.</p>
+          <p><strong>(3) Element neutre.</strong> Hi ha d'haver un element e que no faci res: a∘e = e∘a = a. En termes de moviments, és el «quedar-se quiet». Sense ell no hi ha punt de referència ni es pot parlar de desfer res.</p>
+          <p><strong>(4) Invers.</strong> Cada element ha de tenir un company que el desfaci: a∘a⁻¹ = e. Aquesta és, potser, la condició més exigent i la que dona als grups tot el seu poder: <strong>tot moviment ha de ser reversible</strong>.</p>
+          <div class="deep-key">
+            <strong>Per què aquestes quatre i no unes altres?</strong> Perquè són exactament les propietats que compleix qualsevol col·lecció de «coses que es poden fer i desfer, i encadenar». Si tens un conjunt de transformacions reversibles i el tanques sota composició, obtens un grup automàticament. La definició no és arbitrària: és la destil·lació del concepte de <em>simetria</em>.
+          </div>
+
+          <h4>3. Per què el moviment i no el símbol</h4>
+          <p>Aquí hi ha una decisió pedagògica que val la pena explicar. La majoria de textos presenten un grup com una taula de símbols: e, r, r², s… i et demanen que en manipulis les lletres. El problema és que així la taula sembla una convenció arbitrària que cal memoritzar.</p>
+          <p>Però <strong>cada element d'un grup és, gairebé sempre, un moviment concret</strong>. A Z/4, «r» vol dir «gira un quart de volta». A D₄, «s» vol dir «capgira el quadrat». A S₃, els elements són maneres de barrejar tres boles. Per això, quan cliques una casella, la càpsula <em>primer</em> et reprodueix l'animació: veus com actua l'element de la columna sobre els punts de colors, i després com hi actua el de la fila. La casella no és un símbol que has de recordar; és el registre de <strong>on han acabat els punts</strong>.</p>
+          <p>Hi ha un detall d'ordre que sovint confon i que la càpsula fa explícit amb l'animació. La casella (i,j) és gᵢ∘gⱼ, i això es llegeix com una composició de funcions: <strong>primer actua gⱼ (la columna) i després gᵢ (la fila)</strong>, igual que a f(g(x)) primer s'aplica g. L'animació ho fa en aquest ordre precisament perquè aquesta convenció no s'hagi de memoritzar.</p>
+
+          <h4>4. La taula és un quadrat llatí</h4>
+          <p>Un cop n'hagis omplert unes quantes, notaràs una cosa: <strong>a cada fila i a cada columna, cada element apareix exactament una vegada</strong>. Mai se'n repeteix cap, mai en falta cap. Una graella amb aquesta propietat es diu «quadrat llatí», com un sudoku sense les caixes.</p>
+          <p>La demostració és curta i val la pena seguir-la, perquè fa servir la condició (4). Suposem que a una fila hi apareix dues vegades el mateix resultat: g∘x = g∘y. Multipliquem tots dos costats per g⁻¹ per l'esquerra: g⁻¹∘(g∘x) = g⁻¹∘(g∘y). Per associativitat això és (g⁻¹∘g)∘x = (g⁻¹∘g)∘y, o sigui e∘x = e∘y, o sigui <strong>x = y</strong>. És a dir: no eren dues entrades diferents. Per tant no hi pot haver repeticions.</p>
+          <div class="deep-aside">
+            <strong>Compte amb el recíproc.</strong> Tota taula de grup és un quadrat llatí, però <em>no</em> tot quadrat llatí és una taula de grup. La propietat de quadrat llatí surt del tancament i dels inversos; l'associativitat és una condició completament independent, i és fàcil construir quadrats llatins que no la compleixen. Aquesta és la raó per la qual comprovar que una cosa és un grup requereix verificar l'associativitat per separat, i és també per què és tan laboriós fer-ho a mà: amb n elements hi ha n³ tripletes a comprovar.
+          </div>
+
+          <h4>5. Abelians i no abelians</h4>
+          <p>Si la taula surt <strong>simètrica respecte de la diagonal</strong>, vol dir que gᵢ∘gⱼ = gⱼ∘gᵢ per a tot parell: el grup és <em>abelià</em> (en honor a Abel) i l'ordre de les operacions no importa. Tots els Z/n ho són.</p>
+          <p>D₄, D₅ i S₃ no ho són, i la manera de convèncer-se'n no és mirar la taula sinó fer-ho amb les mans. Agafa un llibre. Gira'l 90° sobre la taula i després capgira'l com si obrissis la tapa. Ara torna a començar i fes els dos moviments <strong>en l'ordre contrari</strong>. El llibre no acaba igual. Aquest fet físic tan tangible és exactament el que la taula registra quan no és simètrica.</p>
+          <p>Aquesta distinció, que sembla un detall tècnic, és <strong>la frontera on viu tota la teoria de Galois</strong>: com veuràs a aquella càpsula, que una equació es pugui resoldre per radicals depèn de si el seu grup es pot desmuntar en peces abelianes. La commutativitat no és una comoditat de càlcul; és una propietat estructural amb conseqüències enormes.</p>
+
+          <h4>6. Subgrups i el teorema de Lagrange</h4>
+          <p>Un <strong>subgrup</strong> és un tros del grup que ja forma un grup per si sol. La vista «Subgrups» de la càpsula et deixa marcar elements i comprova en directe si el conjunt candidat és <em>tancat</em>: si combinant-ne dos qualssevol mai en surts.</p>
+          <p>I aquí hi ha una economia sorprenent: <strong>per a un grup finit, comprovar el tancament n'hi ha prou</strong>. No cal verificar per separat que hi és l'element neutre ni que hi són els inversos —hi surten sols. La raó: si a és al conjunt i el conjunt és tancat, també hi són a², a³, … Com que el grup és finit, aquesta llista s'ha de repetir en algun moment, i d'aquí se'n dedueix que alguna potència d'a és e, i que la potència anterior és a⁻¹. Tot cau del tancament.</p>
+          <div class="deep-key">
+            <strong>Teorema de Lagrange.</strong> L'ordre (nombre d'elements) de qualsevol subgrup <strong>divideix</strong> l'ordre del grup. En un grup de 12 elements només pot haver-hi subgrups de mida 1, 2, 3, 4, 6 o 12 — mai de 5. És una restricció duríssima obtinguda gratis, i explica per què els grups d'ordre primer són tan especials: si |G| = p primer, els únics subgrups possibles són el trivial i el grup sencer, i d'això se'n dedueix que G ha de ser cíclic. <strong>Prova-ho a la càpsula:</strong> amb Z/5 no trobaràs cap subgrup propi no trivial, per molt que ho intentis.
+          </div>
+
+          <h4>7. Quan són el mateix grup?</h4>
+          <p>Aquí arriba el motiu real pel qual Cayley volia taules. Dos grups poden tenir els elements amb noms completament diferents i ser, estructuralment, idèntics. Es diu que són <strong>isomorfs</strong>: existeix una manera de reetiquetar els elements de l'un amb els noms de l'altre de manera que les dues taules coincideixin casella a casella. Formalment, una bijecció σ amb σ(a∘b) = σ(a)∘σ(b).</p>
+          <p>L'exemple canònic —i el que hi ha al mode Repte— són <strong>Z/4 i Z/2×Z/2</strong>. Tots dos tenen exactament 4 elements. Tots dos són abelians. Les seves taules són quadrats llatins 4×4 simètrics. I tanmateix <strong>no són isomorfs</strong>, i es pot demostrar sense provar les 24 reetiquetacions possibles: a Z/4 hi ha un element que, repetit, triga 4 passos a tornar a l'origen (té «ordre 4»); a Z/2×Z/2 tots els elements no neutres tornen a l'origen en 2 passos. Com que un isomorfisme ha de conservar l'ordre de cada element, no n'hi pot haver cap.</p>
+          <p>Aquesta manera d'argumentar —trobar una propietat que un isomorfisme hauria de conservar i veure que difereix— és la tècnica estàndard, i és la mateixa idea d'<em>invariant</em> que trobaràs al Trencaclosques del 15 i a Nusos i tricolorabilitat.</p>
+
+          <h4>8. Recorregut amb l'element interactiu</h4>
+          <div class="deep-example">
+            <span class="de-title">Exemple: construir Z/4 i trobar-hi els subgrups</span>
+            <span class="de-step">1. Tria el xip <strong>Z/4</strong>. Elements: 0, 1, 2, 3 (girs de 0, 90, 180 i 270 graus).</span>
+            <span class="de-step">2. Clica la casella (fila 1, columna 2). L'animació gira els punts 2 posicions (columna) i després 1 més (fila).</span>
+            <span class="de-step">3. Els punts han acabat girats 3 posicions → tria el xip <strong>3</strong>. Correcte: 1+2 = 3 (mod 4).</span>
+            <span class="de-step">4. Clica (2,2): 2 posicions i 2 més = 4 = una volta sencera → torna a l'inici → resposta <strong>0</strong>.</span>
+            <span class="de-step">5. Omple-ho tot. Comprova que cada fila i columna té 0,1,2,3 exactament un cop.</span>
+            <span class="de-step">6. La taula surt simètrica → Z/4 és abelià.</span>
+            <span class="de-step">7. Ves a <strong>Subgrups</strong>. Marca {0} → tancat (subgrup trivial, mida 1).</span>
+            <span class="de-step">8. Marca {0, 2} → 2+2 = 0 ✓, tancat → <strong>subgrup de mida 2</strong>. I 2 divideix 4 ✓ (Lagrange).</span>
+            <span class="de-step">9. Marca {0, 1} → 1+1 = 2, que no hi és → <strong>no tancat</strong>, no és subgrup.</span>
+            <span class="de-step">10. Prova {0,1,2} → mida 3, i 3 no divideix 4: Lagrange ja garanteix que fracassarà.</span>
+          </div>
+          <p>Un cop t'hi trobis còmode, prova <strong>D₅</strong>: 10 elements, les simetries completes d'un pentàgon (5 girs i 5 reflexions). La taula és de 100 caselles i no és simètrica —les reflexions no commuten amb els girs—, i és l'exemple més gran de la càpsula. Fixa't que Lagrange permet subgrups de mida 1, 2, 5 i 10: hi trobaràs el subgrup dels 5 girs (que és Z/5) i cinc subgrups de mida 2, un per cada reflexió.</p>
+
+          <h4>9. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Química i cristal·lografia.</strong> Les simetries d'una molècula formen un grup, i aquest grup determina quines vibracions són actives a l'espectroscòpia infraroja o Raman. Els químics usen taules de caràcters —descendents directes de les taules de Cayley— per predir espectres sense resoldre cap equació. Al món cristal·lí només hi ha <strong>230 grups espacials</strong> possibles en tres dimensions: un resultat de classificació completa, com el dels 5 sòlids platònics.</p>
+          <p><strong>Física.</strong> El teorema de Noether (1918) diu que <em>cada simetria contínua correspon a una llei de conservació</em>: la invariància per translació temporal dona la conservació de l'energia; la invariància per rotació dona la conservació del moment angular. El model estàndard de la física de partícules s'enuncia, literalment, com un grup: SU(3)×SU(2)×U(1).</p>
+          <p><strong>Criptografia.</strong> La seguretat de Diffie–Hellman i de la criptografia de corbes el·líptiques es basa en la dificultat del «logaritme discret» dins d'un grup concret. Tota la seguretat de les connexions HTTPS descansa sobre l'estructura de grup.</p>
+          <p><strong>Codis correctors d'errors.</strong> Els codis lineals que fan que un CD ratllat encara soni o que les fotos de sondes espacials arribin senceres són subgrups d'un grup de vectors.</p>
+
+          <h4>10. Curiositats</h4>
+          <p><strong>Tot grup és, en el fons, un grup de permutacions.</strong> El teorema de Cayley diu que qualsevol grup és isomorf a un subgrup d'un grup simètric. La demostració és elegant: agafa la taula del grup i mira cada <em>fila</em> com una permutació dels elements. Com que cada fila és un quadrat llatí, ho és de debò, i aquesta correspondència és un isomorfisme. Dit d'una altra manera: <strong>la taula que estàs omplint ja és, ella mateixa, la demostració del teorema</strong>.</p>
+          <p><strong>Quants grups hi ha de cada mida?</strong> La successió no té cap patró obvi: per a n = 1, 2, 3, … el nombre de grups diferents és 1, 1, 1, 2, 1, 2, 1, <strong>5</strong>, 2, 2, 1, 5, … Els d'ordre primer són sempre un de sol; el d'ordre 8 ja en té cinc. I d'ordre 1024 n'hi ha més de <strong>49 mil milions</strong>. La mida no diu gairebé res sobre la complexitat.</p>
+          <p><strong>La classificació dels grups simples finits.</strong> És, amb diferència, la demostració col·lectiva més llarga de la història: milers de pàgines repartides en centenars d'articles de més de cent autors, entre els anys 50 i els 80 (amb un forat que no es va tancar del tot fins al 2004). El resultat classifica tots els «àtoms» dels quals estan fets els grups finits. Entre ells hi ha 26 grups «esporàdics» que no encaixen en cap família, i el més gran es diu el <strong>Monstre</strong>: té aproximadament 8×10⁵³ elements, més que àtoms té la Terra.</p>
+          <p><strong>El cub de Rubik és un grup.</strong> Els seus 43.252.003.274.489.856.000 estats accessibles formen un grup sota composició de moviments. Que hi hagi exactament aquest nombre —i no els 5×10²⁰ que sortirien si es poguessin desmuntar les peces— és una conseqüència d'invariants de paritat i orientació molt semblants als que fan servir el Trencaclosques del 15.</p>
+          <p><strong>Galois va escriure-ho la nit abans de morir.</strong> Tenia 20 anys, va morir en un duel el 1832, i la nit anterior va escriure febrilment les idees que fundarien tot això, amb notes al marge que deien «no tinc temps». La paraula «grup» amb el sentit matemàtic actual surt d'aquells papers.</p>
+
+          <h4>11. Connexió amb altres àrees</h4>
+          <p>Aquesta càpsula és, en cert sentit, la infraestructura de tot el bloc d'àlgebra. Al <strong>Trencaclosques del 15</strong> hi trobaràs el grup altern —les permutacions parelles— fent de guardià del que és possible i el que no. Al <strong>Constructor de Trenes</strong> hi ha un grup infinit i no abelià definit només amb dues relacions, i el problema de decidir si dues expressions són el mateix element. A la <strong>Teoria de Galois</strong> hi apareix el grup que decideix si una equació és resoluble, i concretament Z/2×Z/2, un dels que pots construir aquí.</p>
+          <p>I hi ha un pont directe cap a l'aritmètica: els grups Z/n que veus com a girs d'un polígon són <em>exactament</em> el mateix que l'aritmètica modular de la càpsula de Reciprocitat quadràtica. Quan allà sumes hores en un rellotge, aquí estàs girant un polígon. La taula és la mateixa; només hi canvia el dibuix.</p>
+
+        </div></div></div>
+      </div>
+
+    </div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Grup:</span>
+      <div class="chip-row" id="groupRow"></div>
+    </div>
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle subview-toggle" id="subviewToggle">
+        <button data-view="build" class="active">Omple la taula</button>
+        <button data-view="subgroups">Subgrups</button>
+      </div>
+      <button class="btn btn-ghost" id="resetTableBtn">Reinicia la taula ↻</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap cayley-wrap flash-target" id="canvasWrap">
+      <div class="viz-panel" id="vizPanel">
+        <canvas id="vizCanvas"></canvas>
+        <div class="viz-caption" id="vizCaption">Tria un grup i clica una casella de la taula: aquí es veurà quin moviment geomètric és cada element.</div>
+      </div>
+      <div class="cayley-grid" id="buildGrid"></div>
+      <div class="chip-row" id="elemChipRow"></div>
+
+      <div class="subgroup-panel" id="subgroupPanel">
+        <span class="chip-label">Clica elements per afegir-los/treure'ls del subconjunt candidat:</span>
+        <div class="chip-row" id="candidateChipRow"></div>
+        <span class="answer-feedback" id="closureReadout">Selecciona almenys un element.</span>
+      </div>
+
+      <div class="iso-panel" id="isoPanel">
+        <div style="display:flex; gap:2rem; flex-wrap:wrap; justify-content:center;">
+          <div>
+            <div class="chip-label" id="groupALabel" style="text-align:center;margin-bottom:.4rem;">Grup A</div>
+            <div class="cayley-grid" id="isoGridA"></div>
+          </div>
+          <div>
+            <div class="chip-label" id="groupBLabel" style="text-align:center;margin-bottom:.4rem;">Grup B (reordena'l)</div>
+            <div class="iso-row" id="isoSlots"></div>
+          </div>
+        </div>
+        <span class="answer-feedback" id="isoMatchReadout">Caselles coincidents: 0 / 0</span>
+        <div class="btn-row" style="display:flex;gap:.6rem;">
+          <button class="btn btn-primary" id="isoFoundBtn" disabled>✔ Són isomorfs (ho tinc!)</button>
+          <button class="btn btn-ghost" id="notIsoBtn">✕ NO són isomorfs</button>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Tria un grup per començar a omplir-ne la taula.</div>
+
+    <p class="method-hint" id="methodPanel">Clica una casella buida i després l'element que hi correspon. Cada casella (i,j) és el resultat d'operar l'element de la fila amb el de la columna.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Tria un grup</div>
+        <div class="readout-def" id="readoutDef">Fes clic en un xip per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Grups i taules de Cayley</div>
+
+    <div class="type-card active" id="card-taula" data-method="taula" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La taula</div>
+        <div class="type-range">Cel·la (i,j) = <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>g</mi><mi>i</mi></msub><mo>∘</mo><msub><mi>g</mi><mi>j</mi></msub></math></div>
+        <div class="type-desc">Cada casella surt de l'animació de dalt: encadena el moviment de la fila amb el de la columna i mira on acaba. Si la taula resulta simètrica respecte la diagonal, el grup és abelià (l'ordre dels moviments no importa).</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-subgrups" data-method="subgrups" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Subgrups</div>
+        <div class="type-range">Tancament</div>
+        <div class="type-desc">A la vista Subgrups, arrossega elements a un conjunt candidat: si els seus moviments combinats mai surten del conjunt, ja és, per si sol, un subgrup — sense haver de comprovar res més.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-isomorfisme" data-method="isomorfisme" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Isomorfisme</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>σ</mi><mo>(</mo><mi>a</mi><mo>∘</mo><mi>b</mi><mo>)</mo><mo>=</mo><mi>σ</mi><mo>(</mo><mi>a</mi><mo>)</mo><mo>∘</mo><mi>σ</mi><mo>(</mo><mi>b</mi><mo>)</mo></math></div>
+        <div class="type-desc">En Repte, reordena el Grup B fins que la seva taula coincideixi amb la del Grup A casella a casella: si ho aconsegueixes, has trobat la re-etiquetació que demostra que són, de fet, el mateix grup.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> Z/4 i Z/2×Z/2 tenen totes dues 4 elements, però <em>no</em> són isomorfs: a Z/4 hi ha un element d'ordre 4, mentre que a Z/2×Z/2 tots els elements (excepte la identitat) tenen ordre 2.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/d7u3qrgk" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>El grup de simetries del quadrat</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 02 · Àlgebra i Combinatòria</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  DEFINICIÓ DE GRUPS (taula = índexs dins group.elems)
+// ─────────────────────────────────────────────
+function groupZ(n) {
+  const elems = Array.from({ length: n }, (_, i) => String(i));
+  const table = [];
+  for (let i = 0; i < n; i++) { table.push([]); for (let j = 0; j < n; j++) table[i].push((i + j) % n); }
+  // perms[k] = "gira k posicions" — la mateixa acció geomètrica que dona nom al grup cíclic.
+  const perms = Array.from({ length: n }, (_, k) => Array.from({ length: n }, (_, x) => (x + k) % n));
+  return { name: `Z/${n}`, elems, table, order: n, perms, shape: 'circle', vizNote: 'gira {n} posicions sobre el rellotge' };
+}
+function groupKlein() {
+  const elems = ['e', 'a', 'b', 'c'];
+  const pairs = [[0, 0], [1, 0], [0, 1], [1, 1]];
+  const table = pairs.map(p => pairs.map(q => {
+    const r = [(p[0] + q[0]) % 2, (p[1] + q[1]) % 2];
+    return pairs.findIndex(x => x[0] === r[0] && x[1] === r[1]);
+  }));
+  // perms: acció sobre les 4 cantonades d'un rectangle (TL=0,TR=1,BR=2,BL=3).
+  const perms = [
+    [0, 1, 2, 3], // e
+    [1, 0, 3, 2], // a: capgira horitzontal (esquerra-dreta)
+    [3, 2, 1, 0], // b: capgira vertical (dalt-baix)
+    [2, 3, 0, 1], // c: gira 180°
+  ];
+  return { name: 'Z/2×Z/2', elems, table, order: 4, perms, shape: 'corners4-rect' };
+}
+function groupFromPerms(name, labels, perms, shape) {
+  const n = labels.length;
+  const compose = (A, B) => B.map(x => A[x]); // (A∘B)[k] = A[B[k]]
+  const table = [];
+  for (let i = 0; i < n; i++) {
+    table.push([]);
+    for (let j = 0; j < n; j++) {
+      const prod = compose(perms[i], perms[j]);
+      table[i].push(perms.findIndex(p => p.every((v, k) => v === prod[k])));
+    }
+  }
+  return { name, elems: labels, table, order: n, perms, shape };
+}
+const S3 = groupFromPerms('S₃', ['e', 'r', 'r²', 's', 'sr', 'sr²'],
+  [[0, 1, 2], [1, 2, 0], [2, 0, 1], [1, 0, 2], [0, 2, 1], [2, 1, 0]], 'row3');
+const D4 = groupFromPerms('D₄', ['e', 'r', 'r²', 'r³', 's', 'sr', 'sr²', 'sr³'],
+  [[0, 1, 2, 3], [1, 2, 3, 0], [2, 3, 0, 1], [3, 0, 1, 2], [0, 3, 2, 1], [3, 2, 1, 0], [2, 1, 0, 3], [1, 0, 3, 2]], 'corners4-square');
+// D₅ = simetries completes d'un pentàgon regular: 5 girs r^k (x↦x+k mod 5) +
+// 5 reflexions s·r^k (x↦k−x mod 5) — la família estàndard de generadors d'un
+// grup diedral, tancada per composició per construcció algebraica.
+const D5_ROT = Array.from({ length: 5 }, (_, k) => Array.from({ length: 5 }, (_, x) => (x + k) % 5));
+const D5_REF = Array.from({ length: 5 }, (_, k) => Array.from({ length: 5 }, (_, x) => (k - x + 5) % 5));
+const D5 = groupFromPerms('D₅', ['e', 'r', 'r²', 'r³', 'r⁴', 's', 'sr', 'sr²', 'sr³', 'sr⁴'],
+  [...D5_ROT, ...D5_REF], 'pentagon');
+
+const GROUPS = { Z3: groupZ(3), Z4: groupZ(4), Z5: groupZ(5), Z6: groupZ(6), Klein: groupKlein(), S3, D4, D5 };
+
+// Descripció en català de cada moviment, per element i grup — el que fa
+// realment visible que "gᵢ" no és una lletra, sinó una acció concreta.
+const ELEM_MOVE_DESC = {
+  Z3: i => i === 0 ? 'es queda quiet' : `gira ${i} pas${i > 1 ? 'sos' : ''} en sentit horari`,
+  Z4: i => i === 0 ? 'es queda quiet' : `gira ${i} pas${i > 1 ? 'sos' : ''} en sentit horari`,
+  Z5: i => i === 0 ? 'es queda quiet' : `gira ${i} pas${i > 1 ? 'sos' : ''} en sentit horari`,
+  Z6: i => i === 0 ? 'es queda quiet' : `gira ${i} pas${i > 1 ? 'sos' : ''} en sentit horari`,
+  Klein: i => ['es queda quiet', 'capgira en horitzontal (esquerra↔dreta)', 'capgira en vertical (dalt↔baix)', 'gira 180°'][i],
+  S3: i => i === 0 ? 'es queda quiet' : `permuta les 3 boles (${['', 'r', 'r²', 's', 'sr', 'sr²'][i]})`,
+  D4: i => i === 0 ? 'es queda quiet' : (i <= 3 ? `gira el quadrat ${i * 90}°` : 'reflecteix el quadrat'),
+  D5: i => i === 0 ? 'es queda quiet' : (i <= 4 ? `gira el pentàgon ${i * 72}°` : 'reflecteix el pentàgon'),
+};
+
+// ─────────────────────────────────────────────
+//  VISUALITZACIÓ GEOMÈTRICA
+//  Cada element del grup és una acció real sobre uns quants "objectes"
+//  (punts d'un rellotge, cantonades d'un rectangle/quadrat, boles en fila).
+//  OJO: el nombre d'objectes NO sempre coincideix amb l'ordre del grup
+//  (S₃ té 6 elements però actua sobre només 3 boles; D₄ en té 8 però
+//  actua sobre 4 cantonades) — per això es fa servir perms[0].length,
+//  mai group.order, per determinar quants marcadors cal dibuixar.
+// ─────────────────────────────────────────────
+const VIZ_COLORS = ['#0b7b86', '#5c3aa8', '#a02545', '#1a7a52', '#a9700f'];
+
+function shapeSlotPositions(shape, n, cx, cy, w, h) {
+  if (shape === 'circle') {
+    const R = Math.min(w, h) * 0.36;
+    return Array.from({ length: n }, (_, i) => {
+      const a = -Math.PI / 2 + i * (2 * Math.PI / n);
+      return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R };
+    });
+  }
+  if (shape === 'corners4-rect') {
+    const rw = w * 0.3, rh = h * 0.32;
+    return [{ x: cx - rw, y: cy - rh }, { x: cx + rw, y: cy - rh }, { x: cx + rw, y: cy + rh }, { x: cx - rw, y: cy + rh }];
+  }
+  if (shape === 'corners4-square') {
+    const s = Math.min(w * 0.3, h * 0.36);
+    return [{ x: cx - s, y: cy - s }, { x: cx + s, y: cy - s }, { x: cx + s, y: cy + s }, { x: cx - s, y: cy + s }];
+  }
+  if (shape === 'pentagon') {
+    const R = Math.min(w, h) * 0.36;
+    return Array.from({ length: 5 }, (_, i) => {
+      const a = -Math.PI / 2 + i * (2 * Math.PI / 5);
+      return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R };
+    });
+  }
+  if (shape === 'row3') {
+    const gap = w * 0.22;
+    return [0, 1, 2].map(i => ({ x: cx + (i - 1) * gap, y: cy }));
+  }
+  return [];
+}
+function drawShapeOutline(ctx, shape, positions, cx, cy) {
+  ctx.strokeStyle = 'rgba(27,30,45,.22)'; ctx.lineWidth = 1.5;
+  if (shape === 'circle') {
+    const R = Math.hypot(positions[0].x - cx, positions[0].y - cy);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+  } else if (shape === 'row3') {
+    ctx.beginPath(); ctx.moveTo(positions[0].x, positions[0].y); ctx.lineTo(positions[2].x, positions[2].y); ctx.stroke();
+  } else {
+    ctx.beginPath();
+    positions.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.closePath(); ctx.stroke();
+  }
+}
+
+const vizCanvas = document.getElementById('vizCanvas');
+const vizCtx = vizCanvas.getContext('2d');
+const vizCaption = document.getElementById('vizCaption');
+let vizAnimId = null, lastVizIJ = null;
+// currentPts: posicions (píxels) que hi ha DIBUIXADES ara mateix — null vol dir
+// "en repòs a la posició inicial (identitat)". Es fa servir per saber si cal un
+// petit "salt de tornada" abans de la propera animació, en lloc d'un tall sec.
+let currentPts = null;
+
+function drawViz(objState) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = vizCanvas.getBoundingClientRect();
+  vizCanvas.width = rect.width * dpr; vizCanvas.height = rect.height * dpr;
+  vizCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = rect.height, cx = w / 2, cy = h / 2;
+  vizCtx.clearRect(0, 0, w, h);
+  if (!group) return null;
+  const objN = group.perms[0].length;
+  const positions = shapeSlotPositions(group.shape, objN, cx, cy, w, h);
+  drawShapeOutline(vizCtx, group.shape, positions, cx, cy);
+  positions.forEach((p, s) => { roundRect(vizCtx, p.x - 2.5, p.y - 2.5, 5, 5, 2.5, 'rgba(27,30,45,.3)', null); });
+  const state = objState || Array.from({ length: objN }, (_, k) => k);
+  state.forEach((slot, k) => {
+    const p = positions[slot];
+    vizCtx.beginPath(); vizCtx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+    vizCtx.fillStyle = VIZ_COLORS[k % VIZ_COLORS.length];
+    vizCtx.fill();
+    txt(vizCtx, String(k + 1), p.x, p.y, 10, '#fff', 'center', 700, 'JetBrains Mono');
+  });
+  currentPts = null; // aquesta funció només dibuixa l'estat de repòs (identitat)
+  return positions;
+}
+// Pintat d'un fotograma de la visualització. Extret del bucle d'animació
+// perquè el camí de «moviment reduït» (que dibuixa només l'estat final) pugui
+// fer servir exactament el mateix codi de dibuix en lloc de duplicar-lo.
+function paintViz(positions, pts, cx, cy) {
+  const dpr = window.devicePixelRatio || 1;
+  vizCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+  drawShapeOutline(vizCtx, group.shape, positions, cx, cy);
+  positions.forEach(p => roundRect(vizCtx, p.x - 2.5, p.y - 2.5, 5, 5, 2.5, 'rgba(27,30,45,.3)', null));
+  pts.forEach((p, k) => {
+    vizCtx.beginPath(); vizCtx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+    vizCtx.fillStyle = VIZ_COLORS[k % VIZ_COLORS.length]; vizCtx.fill();
+    txt(vizCtx, String(k + 1), p.x, p.y, 10, '#fff', 'center', 700, 'JetBrains Mono');
+  });
+}
+function lerpPt(a, b, t) { return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }; }
+function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+function interpState(stateA, stateB, positions, t) {
+  return stateA.map((slotA, k) => lerpPt(positions[slotA], positions[stateB[k]], t));
+}
+
+function animateComposition(i, j, isReplay) {
+  if (!group || !group.perms) return;
+  lastVizIJ = [i, j];
+  cancelAnimationFrame(vizAnimId);
+  const objN = group.perms[0].length;
+  const rect = vizCanvas.getBoundingClientRect();
+  const positions = shapeSlotPositions(group.shape, objN, rect.width / 2, rect.height / 2, rect.width, rect.height);
+  // Conveni: la casella (i,j) = gᵢ∘gⱼ es llegeix com una composició de funcions,
+  // (gᵢ∘gⱼ)(x) = gᵢ(gⱼ(x)) — així que gⱼ (la COLUMNA) actua primer, i gᵢ (la
+  // FILA) actua després, sobre el resultat. Verificat per força bruta contra
+  // taula.table per als 7 grups abans de fixar aquest ordre.
+  const state0 = Array.from({ length: objN }, (_, k) => k);
+  const state1 = state0.map(s => group.perms[j][s]);
+  const state2 = state1.map(s => group.perms[i][s]);
+  const identityPts = state0.map(k => positions[k]);
+  // Si l'última animació es va quedar aturada fora de la posició inicial (o es
+  // va interrompre a mig camí), primer hi tornem amb un petit salt animat en
+  // lloc de tallar en sec — currentPts sempre és l'últim fotograma realment
+  // dibuixat, encara que l'animació anterior no hagués acabat.
+  const startPts = currentPts || identityPts;
+  const needsReset = currentPts !== null;
+  const moveI = (ELEM_MOVE_DESC[groupKey] || (() => ''))(i);
+  const moveJ = (ELEM_MOVE_DESC[groupKey] || (() => ''))(j);
+  // En Repte, l'objectiu és la velocitat d'introducció de dades, no la lectura
+  // pausada — es manté el mateix moviment en dos temps però molt accelerat.
+  const speed = repteMode ? 0.28 : 1;
+  const RESET = (needsReset ? 450 : 0) * speed;
+  const HOP = 1100 * speed, PAUSE = 650 * speed, total = RESET + HOP * 2 + PAUSE;
+  const t0 = performance.now();
+
+  const finalCaption = isReplay
+    ? `${group.elems[i]} ∘ ${group.elems[j]} = <b>${group.elems[group.table[i][j]]}</b> — ja tens aquesta casella resposta.`
+    : `Aquest és el resultat de ${group.elems[i]} ∘ ${group.elems[j]} — quin xip hi coincideix?`;
+
+  // Moviment reduït: es dibuixa directament l'estat final en lloc d'animar el
+  // desplaçament dels punts. La informació pedagògica (on acaba cadascun) es
+  // conserva sencera; només desapareix el moviment.
+  if (prefersReducedMotion()) {
+    const finalPts = state2.map(s => positions[s]);
+    currentPts = finalPts;
+    paintViz(positions, finalPts, rect.width / 2, rect.height / 2);
+    vizCaption.innerHTML = finalCaption;
+    describeCanvas(vizCanvas, `Composició ${group.elems[i]} ∘ ${group.elems[j]}: primer actua ${group.elems[j]} (${moveJ}), després ${group.elems[i]} (${moveI}).`);
+    return;
+  }
+
+  function frame(now) {
+    const el = now - t0;
+    let pts;
+    if (el < RESET) {
+      pts = startPts.map((p, k) => lerpPt(p, identityPts[k], easeInOut(el / RESET)));
+      vizCaption.innerHTML = `Tornem a la posició de partida...`;
+    } else if (el < RESET + HOP) {
+      pts = interpState(state0, state1, positions, easeInOut((el - RESET) / HOP));
+      vizCaption.innerHTML = `Pas 1 — primer actua la COLUMNA: <b>${group.elems[j]}</b> ${moveJ}...`;
+    } else if (el < RESET + HOP + PAUSE) {
+      pts = state1.map(s => positions[s]);
+      vizCaption.innerHTML = `Ara, sobre aquest resultat, apliquem la FILA: <b>${group.elems[i]}</b>...`;
+    } else if (el < RESET + 2 * HOP + PAUSE) {
+      pts = interpState(state1, state2, positions, easeInOut((el - RESET - HOP - PAUSE) / HOP));
+      vizCaption.innerHTML = `Pas 2 — la FILA: <b>${group.elems[i]}</b> ${moveI}...`;
+    } else {
+      pts = state2.map(s => positions[s]);
+      vizCaption.innerHTML = finalCaption;
+    }
+    currentPts = pts;
+    paintViz(positions, pts, rect.width / 2, rect.height / 2);
+    if (el < total) vizAnimId = requestAnimationFrame(frame);
+  }
+  vizAnimId = requestAnimationFrame(frame);
+}
+window.addEventListener('resize', () => { if (!lastVizIJ) drawViz(null); });
+function resetViz() {
+  cancelAnimationFrame(vizAnimId);
+  lastVizIJ = null;
+  vizCaption.textContent = 'Clica una casella de la taula: aquí es veurà quin moviment geomètric és cada element.';
+  drawViz(null);
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+const groupRow = document.getElementById('groupRow');
+const buildGrid = document.getElementById('buildGrid');
+const elemChipRow = document.getElementById('elemChipRow');
+const subgroupPanel = document.getElementById('subgroupPanel');
+const isoPanel = document.getElementById('isoPanel');
+
+let group = null;
+let groupKey = 'Z4';
+let filled = [];
+let filledCount = 0;
+let selectedCell = null;
+let subview = 'build';
+let candidateSet = new Set();
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRoundType = 'build';
+
+// ─────────────────────────────────────────────
+//  SELECCIÓ DE GRUP
+// ─────────────────────────────────────────────
+function buildGroupChips() {
+  groupRow.innerHTML = '';
+  Object.keys(GROUPS).forEach(key => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = GROUPS[key].name; b.dataset.key = key;
+    b.addEventListener('click', () => { setGroup(key); highlightGroupChip(key); });
+    groupRow.appendChild(b);
+  });
+}
+function highlightGroupChip(key) {
+  groupRow.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.key === key));
+}
+buildGroupChips();
+
+function setGroup(key) {
+  groupKey = key;
+  group = GROUPS[key];
+  filled = Array.from({ length: group.order }, () => Array(group.order).fill(false));
+  filledCount = 0;
+  selectedCell = null;
+  candidateSet = new Set();
+  renderBuildGrid();
+  renderElemChips();
+  renderCandidateChips();
+  updateClosureCheck();
+  updateReadout();
+  updateHintText();
+  resetViz();
+}
+
+// ─────────────────────────────────────────────
+//  GRAELLA (mode "omple la taula")
+// ─────────────────────────────────────────────
+function renderBuildGrid(readOnlyPrefill) {
+  buildGrid.innerHTML = '';
+  buildGrid.style.gridTemplateColumns = `repeat(${group.order + 1}, minmax(30px,1fr))`;
+  // <button>, no <div>: aquest control reinicia la selecció i l'animació, i
+  // amb un <div> no era accessible amb teclat.
+  const corner = document.createElement('button');
+  corner.type = 'button';
+  corner.className = 'hcell corner-reset'; corner.textContent = '∘';
+  corner.title = 'Desselecciona i torna l\'animació a la posició inicial';
+  corner.setAttribute('aria-label', 'Desselecciona la casella i torna l\'animació a la posició inicial');
+  corner.addEventListener('click', deselectCell);
+  buildGrid.appendChild(corner);
+  // Capçaleres: són retolació, no controls. Se'ls dona role de capçalera de
+  // columna/fila perquè un lector de pantalla pugui situar-se dins la taula.
+  group.elems.forEach(e => { const h = document.createElement('div'); h.className = 'hcell'; h.setAttribute('role', 'columnheader'); h.textContent = e; buildGrid.appendChild(h); });
+  for (let i = 0; i < group.order; i++) {
+    const rh = document.createElement('div'); rh.className = 'hcell'; rh.setAttribute('role', 'rowheader'); rh.textContent = group.elems[i]; buildGrid.appendChild(rh);
+    for (let j = 0; j < group.order; j++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cayley-cell';
+      btn.dataset.i = i; btn.dataset.j = j;
+      // Una casella buida no té text: sense aria-label un lector de pantalla
+      // només diria «botó», sense dir de quina cel·la (i,j) es tracta.
+      if (filled[i][j]) {
+        btn.textContent = group.elems[group.table[i][j]]; btn.classList.add('correct');
+        btn.title = 'Torna a veure l\'animació d\'aquesta casella';
+        btn.setAttribute('aria-label', `${group.elems[i]} operat amb ${group.elems[j]} és igual a ${group.elems[group.table[i][j]]}. Activa per repetir-ne l'animació.`);
+      } else {
+        btn.setAttribute('aria-label', `Casella buida: ${group.elems[i]} operat amb ${group.elems[j]}. Activa per veure'n l'animació i respondre-la.`);
+      }
+      buildGrid.appendChild(btn);
+    }
+  }
+}
+function deselectCell() {
+  buildGrid.querySelectorAll('.cayley-cell').forEach(c => c.classList.remove('selected'));
+  selectedCell = null;
+  hint.textContent = 'Clica una casella buida de la taula per començar.';
+  updateReadout();
+  resetViz();
+}
+function replayCell(i, j) {
+  buildGrid.querySelectorAll('.cayley-cell').forEach(c => c.classList.remove('selected'));
+  selectedCell = null;
+  hint.textContent = `Reproduint (${group.elems[i]}, ${group.elems[j]}) — ja tens aquesta casella resposta.`;
+  updateReadout();
+  animateComposition(i, j, true);
+}
+// Delegat una sola vegada sobre el contenidor (no dins renderBuildGrid, que es
+// crida a cada canvi de grup): una casella pot passar de buida a correcta en
+// ple joc sense tornar a renderitzar-se, així que cal decidir buit/replay en
+// el moment del clic, no en el moment de dibuixar el botó.
+buildGrid.addEventListener('click', (e) => {
+  const btn = e.target.closest('.cayley-cell');
+  if (!btn) return;
+  const i = +btn.dataset.i, j = +btn.dataset.j;
+  if (filled[i][j]) replayCell(i, j); else onCellClick(i, j, btn);
+});
+function onCellClick(i, j, btn) {
+  if (filled[i][j]) return;
+  buildGrid.querySelectorAll('.cayley-cell').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedCell = { i, j, btn };
+  hint.textContent = `Casella (${group.elems[i]}, ${group.elems[j]}) seleccionada. Mira l'animació de dalt i tria l'element resultant.`;
+  updateReadout();
+  animateComposition(i, j);
+}
+function renderElemChips() {
+  elemChipRow.innerHTML = '';
+  group.elems.forEach(label => {
+    const b = document.createElement('button');
+    b.className = 'chip elem-chip'; b.textContent = label;
+    b.addEventListener('click', () => onElementChipClick(label));
+    elemChipRow.appendChild(b);
+  });
+}
+function onElementChipClick(label) {
+  if (!selectedCell) { hint.textContent = 'Primer clica una casella buida de la taula.'; return; }
+  const { i, j, btn } = selectedCell;
+  const correctLabel = group.elems[group.table[i][j]];
+  if (label === correctLabel) {
+    btn.textContent = label; btn.classList.remove('selected'); btn.classList.add('correct');
+    // La casella es muta aquí mateix, sense tornar a renderitzar la graella:
+    // cal actualitzar-ne també el nom accessible i el title, o es quedarien
+    // dient «Casella buida» per sempre més.
+    btn.title = 'Torna a veure l\'animació d\'aquesta casella';
+    btn.setAttribute('aria-label', `${group.elems[i]} operat amb ${group.elems[j]} és igual a ${label}. Activa per repetir-ne l'animació.`);
+    filled[i][j] = true; filledCount++;
+    selectedCell = null;
+    flash(wrap, 'var(--good)');
+    if (repteMode) { score++; streak++; document.getElementById('rpScore').textContent = score; document.getElementById('rpStreak').textContent = streak; timeLeft = Math.min(repteMaxTime, timeLeft + 2); document.getElementById('rpTime').textContent = timeLeft + 's'; }
+    updateReadout(); updateHintText();
+    announce(`Correcte: ${group.elems[i]} ∘ ${group.elems[j]} = ${label}. Falten ${group.order * group.order - filledCount} caselles.`);
+    if (filledCount === group.order * group.order) onTableComplete();
+  } else {
+    flash(btn, 'var(--bad)');
+    announce(`${label} no és correcte per a ${group.elems[i]} ∘ ${group.elems[j]}. Torna-ho a provar.`);
+    if (repteMode) applyPenalty();
+  }
+}
+function onTableComplete() {
+  hint.textContent = repteMode ? 'Taula completa!' : 'Taula completa! Ja pots explorar-ne els subgrups.';
+  if (repteMode) {
+    const snapshot = repteRoundId;
+    setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 900);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SUBGRUPS
+// ─────────────────────────────────────────────
+function renderCandidateChips() {
+  const row = document.getElementById('candidateChipRow');
+  row.innerHTML = '';
+  group.elems.forEach(label => {
+    const b = document.createElement('button');
+    b.className = 'chip elem-chip'; b.textContent = label;
+    b.addEventListener('click', () => {
+      if (candidateSet.has(label)) candidateSet.delete(label); else candidateSet.add(label);
+      b.classList.toggle('candidate', candidateSet.has(label));
+      updateClosureCheck();
+    });
+    row.appendChild(b);
+  });
+}
+function updateClosureCheck() {
+  const readout = document.getElementById('closureReadout');
+  const arr = Array.from(candidateSet);
+  if (!arr.length) { readout.textContent = 'Selecciona almenys un element.'; readout.className = 'answer-feedback'; return; }
+  let closed = true;
+  for (const a of arr) for (const b of arr) {
+    const ai = group.elems.indexOf(a), bi = group.elems.indexOf(b);
+    const prod = group.elems[group.table[ai][bi]];
+    if (!candidateSet.has(prod)) closed = false;
+  }
+  readout.textContent = closed
+    ? `✓ Tancat! {${arr.join(', ')}} és un subgrup d'ordre ${arr.length}.`
+    : `✕ No tancat: algun producte surt del conjunt.`;
+  readout.className = 'answer-feedback ' + (closed ? 'ok' : 'bad');
+}
+
+// ─────────────────────────────────────────────
+//  VISTES (Explora)
+// ─────────────────────────────────────────────
+function setSubview(v) {
+  subview = v;
+  document.querySelectorAll('#subviewToggle button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  buildGrid.style.display = v === 'build' ? 'grid' : 'none';
+  elemChipRow.style.display = v === 'build' ? 'flex' : 'none';
+  document.getElementById('vizPanel').style.display = v === 'build' ? 'flex' : 'none';
+  subgroupPanel.style.display = v === 'subgroups' ? 'flex' : 'none';
+  isoPanel.style.display = 'none';
+  updateHintText();
+}
+document.querySelectorAll('#subviewToggle button').forEach(btn => btn.addEventListener('click', () => setSubview(btn.dataset.view)));
+
+// ─────────────────────────────────────────────
+//  ISOMORFISME (Repte)
+// ─────────────────────────────────────────────
+const ISO_ROUNDS = [
+  { aKey: 'Z4', bKey: 'Z4', answer: true },
+  { aKey: 'Klein', bKey: 'Klein', answer: true },
+  { aKey: 'Z4', bKey: 'Klein', answer: false },
+  { aKey: 'Z6', bKey: 'Z6', answer: true },
+  { aKey: 'S3', bKey: 'S3', answer: true },
+  { aKey: 'Z6', bKey: 'S3', answer: false },
+];
+let isoRound = null, bAssignment = [], isoSelectedSlot = null;
+
+function shuffleArray(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function renderReadOnlyGrid(el, g) {
+  el.innerHTML = '';
+  el.style.gridTemplateColumns = `repeat(${g.order + 1}, minmax(28px,1fr))`;
+  const corner = document.createElement('div'); corner.className = 'hcell'; corner.textContent = '∘';
+  el.appendChild(corner);
+  g.elems.forEach(e => { const h = document.createElement('div'); h.className = 'hcell'; h.textContent = e; el.appendChild(h); });
+  for (let i = 0; i < g.order; i++) {
+    const rh = document.createElement('div'); rh.className = 'hcell'; rh.textContent = g.elems[i]; el.appendChild(rh);
+    for (let j = 0; j < g.order; j++) {
+      const c = document.createElement('div'); c.className = 'cayley-cell readonly';
+      c.textContent = g.elems[g.table[i][j]];
+      el.appendChild(c);
+    }
+  }
+}
+
+function startIsoRound() {
+  const pick = ISO_ROUNDS[Math.floor(Math.random() * ISO_ROUNDS.length)];
+  isoRound = pick;
+  const gA = GROUPS[pick.aKey], gB = GROUPS[pick.bKey];
+  document.getElementById('groupALabel').textContent = `Grup A (${gA.name})`;
+  document.getElementById('groupBLabel').textContent = `Grup B (${gB.name}) — reordena'l`;
+  renderReadOnlyGrid(document.getElementById('isoGridA'), gA);
+  bAssignment = shuffleArray(gB.elems.map((_, i) => i));
+  isoSelectedSlot = null;
+  renderIsoSlots();
+  updateIsoMatch();
+}
+function renderIsoSlots() {
+  const gB = GROUPS[isoRound.bKey];
+  const row = document.getElementById('isoSlots');
+  row.innerHTML = '';
+  bAssignment.forEach((elemIdx, slot) => {
+    const b = document.createElement('button');
+    b.className = 'chip elem-chip slot';
+    b.textContent = gB.elems[elemIdx];
+    b.classList.toggle('selected', isoSelectedSlot === slot);
+    b.addEventListener('click', () => onSlotClick(slot));
+    row.appendChild(b);
+  });
+}
+function onSlotClick(k) {
+  if (isoSelectedSlot === null) { isoSelectedSlot = k; }
+  else {
+    const tmp = bAssignment[isoSelectedSlot]; bAssignment[isoSelectedSlot] = bAssignment[k]; bAssignment[k] = tmp;
+    isoSelectedSlot = null;
+    updateIsoMatch();
+  }
+  renderIsoSlots();
+}
+function updateIsoMatch() {
+  const gA = GROUPS[isoRound.aKey], gB = GROUPS[isoRound.bKey];
+  let matches = 0, total = gA.order * gA.order;
+  for (let i = 0; i < gA.order; i++) for (let j = 0; j < gA.order; j++) {
+    const aProd = gA.table[i][j];
+    const bProd = gB.table[bAssignment[i]][bAssignment[j]];
+    if (bAssignment[aProd] === bProd) matches++;
+  }
+  document.getElementById('isoMatchReadout').textContent = `Caselles coincidents: ${matches} / ${total}`;
+  document.getElementById('isoFoundBtn').disabled = matches !== total;
+}
+document.getElementById('isoFoundBtn').addEventListener('click', () => submitIsoAnswer(true));
+document.getElementById('notIsoBtn').addEventListener('click', () => submitIsoAnswer(false));
+function submitIsoAnswer(claim) {
+  const correct = claim === isoRound.answer;
+  if (correct) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 10);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    hint.textContent = isoRound.answer ? '✔ Correcte, són isomorfs!' : '✔ Correcte, no ho són!';
+  } else {
+    applyPenalty();
+    flash(wrap, 'var(--bad)');
+    hint.textContent = isoRound.answer ? 'Torna-ho a provar: SÍ que ho són.' : 'Torna-ho a provar: NO ho són.';
+  }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, correct ? 1300 : 300);
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA
+// ─────────────────────────────────────────────
+function updateHintText() {
+  if (!group) return;
+  if (repteMode) return; // el text el gestionen les rondes
+  if (subview === 'subgroups') { hint.textContent = 'Clica elements per formar un subconjunt i comprova si és tancat.'; return; }
+  hint.textContent = filledCount === group.order * group.order
+    ? "Fet! Prova el mode Subgrups o un altre grup."
+    : 'Clica una casella buida i després l\'element resultant.';
+}
+function updateReadout() {
+  if (!group) {
+    readoutBadge.classList.remove('active');
+    readoutNum.textContent = '…'; readoutName.textContent = 'Tria un grup'; readoutDef.textContent = '';
+    return;
+  }
+  readoutBadge.classList.add('active');
+  // El nombre de caselles plenes ja es veu perfectament a la graella —
+  // mostrar-lo també aquí és redundant. En comptes d'això, aquest requadre
+  // mostra la pregunta pendent (quina casella s'està animant ara mateix).
+  if (selectedCell) {
+    readoutNum.textContent = '?';
+    readoutName.textContent = `${group.elems[selectedCell.i]} ∘ ${group.elems[selectedCell.j]}`;
+    readoutDef.textContent = "Mira l'animació de dalt i tria, dels xips, l'element resultant.";
+  } else if (filledCount === group.order * group.order) {
+    readoutNum.textContent = '✓';
+    readoutName.textContent = group.name;
+    readoutDef.textContent = `Taula completa — ordre ${group.order}.`;
+  } else {
+    readoutNum.textContent = group.order;
+    readoutName.textContent = group.name;
+    readoutDef.textContent = `Ordre ${group.order} · clica una casella buida per començar-la.`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+const BUILD_POOL = ['Z3', 'Z4', 'Z5', 'Z6', 'Klein', 'S3'];
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  repteRoundType = Math.random() < 0.5 ? 'build' : 'iso';
+  if (repteRoundType === 'build') {
+    buildGrid.style.display = 'grid'; elemChipRow.style.display = 'flex';
+    document.getElementById('vizPanel').style.display = 'flex';
+    subgroupPanel.style.display = 'none'; isoPanel.style.display = 'none';
+    const key = BUILD_POOL[Math.floor(Math.random() * BUILD_POOL.length)];
+    highlightGroupChip(key);
+    setGroup(key);
+    hint.textContent = `Omple tota la taula de ${group.name} tan ràpid com puguis!`;
+  } else {
+    buildGrid.style.display = 'none'; elemChipRow.style.display = 'none';
+    document.getElementById('vizPanel').style.display = 'none';
+    subgroupPanel.style.display = 'none'; isoPanel.style.display = 'flex';
+    startIsoRound();
+    hint.textContent = 'Reordena el Grup B (clica dos xips per intercanviar-los) i digues si són isomorfs.';
+  }
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  isoPanel.style.display = 'none';
+  setSubview('build');
+  setGroup(groupKey);
+  highlightGroupChip(groupKey);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+document.getElementById('resetTableBtn').addEventListener('click', () => setGroup(groupKey));
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  taula: "Clica una casella buida i després l'element resultant. La casella (i,j) és sempre gᵢ ∘ gⱼ, en aquest ordre.",
+  subgrups: "Un subconjunt no buit tancat sota l'operació (el producte de dos elements qualssevol del conjunt torna a ser-hi) ja és un subgrup.",
+  isomorfisme: "Reordena els elements del Grup B fins que la seva taula, casella a casella, coincideixi amb la del Grup A."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-taula').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('taula'); if (!repteMode) setSubview('build'); });
+document.getElementById('card-subgrups').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('subgrups'); if (!repteMode) setSubview('subgroups'); });
+document.getElementById('card-isomorfisme').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('isomorfisme'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+highlightGroupChip('Z4');
+setGroup('Z4');
+setSubview('build');
+</script>
+</body>
+</html>

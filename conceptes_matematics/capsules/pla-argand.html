@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pla d'Argand · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--calcul); }
+
+    .argand-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    .argand-stage { position: relative; width: 100%; max-width: 400px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .argand-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .step-narration {
+      width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65;
+    }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+    .step-narration .sn-row { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); display: block; margin-top: .15rem; }
+    .step-narration .sn-row b { color: var(--ink); }
+
+    .vista-panel { display: none; flex-direction: column; align-items: center; gap: .75rem; width: 100%; }
+    .vista-panel.active { display: flex; }
+
+    /* Controls numèrics equivalents a arrossegar sobre el pla */
+    .coord-controls { display: flex; flex-direction: column; gap: .4rem; align-items: center; width: 100%; }
+    .coord-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center; }
+    .coord-row label { font-size: .74rem; color: var(--muted); font-family: var(--font-mono); }
+    .coord-row input[type=number] {
+      width: 76px; border: 1px solid var(--border); border-radius: 8px; padding: .35rem .5rem;
+      font-family: var(--font-mono); font-size: .82rem; background: var(--surface); color: var(--ink);
+    }
+    .root-tracker { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); text-align: center; }
+    .z-legend { display: flex; gap: 1.1rem; flex-wrap: wrap; justify-content: center; font-size: .74rem; color: var(--muted); }
+    .z-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .z-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--calcul)">Bloc 04 · Pla d'Argand</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Pla d'Argand: multiplicar és girar</h1>
+      <p>Arrossega dos nombres complexos i mira el seu producte aparèixer sol: l'angle se suma, la distància a l'origen es multiplica. Després, gira-ho al revés: troba totes les arrels d'un número, una a una, i comprova que sempre n'hi ha exactament les que toquen.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Al <a href="https://ca.wikipedia.org/wiki/Pla_complex" target="_blank" rel="noopener">pla complex</a> —o <strong>pla d'Argand</strong>, en honor de <a href="https://ca.wikipedia.org/wiki/Jean-Robert_Argand" target="_blank" rel="noopener">Jean-Robert Argand</a>, que en va publicar la representació geomètrica el 1806— cada punt z=a+bi es pot descriure de dues maneres equivalents: per les seves coordenades (a,b), o per la seva distància a l'origen (el <strong>mòdul</strong> |z|) i l'angle que fa amb l'eix horitzontal (l'<strong>argument</strong>, arg(z)). Aquesta segona manera és la que fa que multiplicar sigui, literalment, girar.</p>
+          <p>Multiplicant z₁·z₂: el mòdul del resultat és |z₁|·|z₂| (es multiplica) i l'argument és arg(z₁)+arg(z₂) (se suma). Es dedueix expandint (cosθ₁+isinθ₁)(cosθ₂+isinθ₂) i reconeixent les fórmules trigonomètriques de l'angle suma —no és una regla arbitrària, surt sola de l'àlgebra.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Gira la lògica cap a l'altra banda: si multiplicar suma angles, trobar les arrels n-èsimes d'un número w (els z tals que zⁿ=w) vol dir repartir l'angle de w en n trossos iguals. La resposta és neta i completa: sempre hi ha exactament <strong>n</strong> arrels, totes a la mateixa distància |w|^(1/n) de l'origen, separades per un angle de 2π/n —mai una més, mai una menys.</p>
+          <p>Quan w=1, aquestes arrels es diuen <a href="https://ca.wikipedia.org/wiki/Arrel_de_la_unitat" target="_blank" rel="noopener">arrels de la unitat</a>: cauen exactament als vèrtexs d'un polígon regular de n costats inscrit en la circumferència unitat —el mateix polígon regular que apareix a Característica d'Euler, ara vist com un fet purament algebraic.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li><strong>Multiplicació:</strong> arrossega els punts blau (z₁) i vermell (z₂). El producte (daurat) es recalcula en directe, amb els arcs d'angle i els cercles de mòdul dibuixats.</li>
+            <li><strong>Arrels n-èsimes:</strong> arrossega w (el punt objectiu) i tria n. Clica a qualsevol lloc del pla per provar una arrel: si el teu clic, elevat a n, s'acosta prou a w, s'encaixa exactament al lloc correcte.</li>
+            <li>Troba-les totes: el comptador et diu quantes en portes.</li>
+            <li>Cada control té un botó «?» amb una explicació curta.</li>
+            <li>En Repte: prediu el mòdul i l'angle d'un producte abans de veure'l, o troba totes les arrels abans que s'acabi el temps.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Els nombres complexos tenen la pitjor campanya de màrqueting de la història de les matemàtiques: es diuen «imaginaris», el nom els el va posar algú que els menyspreava, i normalment s'introdueixen dient que serveixen per resoldre x²+1=0 —cosa que és certa però no explica per què algú els va acabar acceptant. La història real és una altra, i és molt millor. I un cop entesa, el fet central d'aquesta càpsula (multiplicar és girar) deixa de ser un truc i esdevé inevitable.</p>
+
+          <h4>1. Per què ningú necessitava els complexos per a x² + 1 = 0</h4>
+          <p>Comencem desmuntant la versió escolar. Durant segles, els matemàtics es van trobar amb equacions com x² + 1 = 0 i van fer el més raonable: <strong>dir que no tenien solució</strong>. I ja està. No hi ha cap crisi: la paràbola y = x²+1 no toca l'eix, i s'ha acabat. Ningú va inventar cap número nou per això.</p>
+          <p>El que sí que va forçar la situació va ser una cosa molt més incòmoda: <strong>equacions de tercer grau amb tres arrels reals perfectament visibles, on la fórmula per trobar-les passava obligatòriament per arrels de números negatius</strong>.</p>
+          <p>Cardano va publicar la fórmula del tercer grau el 1545. Quan la va aplicar a certs casos, li apareixien arrels quadrades de negatius <em>a mig camí</em>, tot i que la resposta final era un enter net. Els números impossibles no eren la resposta: eren el camí.</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: l'equació que ho va canviar tot, x³ = 15x + 4</span>
+            <span class="de-step">Aquesta equació té una arrel òbvia: <strong>x = 4</strong>, perquè 4³ = 64 i 15·4+4 = 64 ✓</span>
+            <span class="de-step">Però la fórmula de Cardano dona: x = ∛(2 + 11i) + ∛(2 − 11i)</span>
+            <span class="de-step">Apareixen arrels de negatius, tot i que la resposta és un enter.</span>
+            <span class="de-step">Rafael Bombelli (1572) va tenir el valor de continuar el càlcul. Va comprovar que:</span>
+            <span class="de-step">&nbsp;&nbsp;(2 + i)³ = 8 + 12i + 6i² + i³ = 8 + 12i − 6 − i = <strong>2 + 11i</strong> ✓</span>
+            <span class="de-step">&nbsp;&nbsp;(2 − i)³ = <strong>2 − 11i</strong> ✓</span>
+            <span class="de-step">Per tant: ∛(2+11i) + ∛(2−11i) = (2+i) + (2−i) = <strong>4</strong> ✓</span>
+            <span class="de-step">Els termes imaginaris s'anul·len i queda la resposta correcta.</span>
+          </div>
+          <p>Aquest cas es coneix com el <em>casus irreducibilis</em>, i té una propietat notable: quan una cúbica té <strong>tres arrels reals diferents</strong>, la fórmula de Cardano <em>sempre</em> passa pels complexos. No és evitable. No es tracta d'una manca d'enginy: es pot demostrar que no hi ha cap manera d'expressar aquelles arrels reals amb radicals reals.</p>
+          <div class="deep-key">
+            <strong>La conclusió històrica.</strong> Els complexos no es van acceptar perquè volguéssim solucions a equacions sense solució. Es van acceptar perquè eren <strong>indispensables per obtenir respostes reals a preguntes reals</strong>. Eren una eina de pas que funcionava massa bé per ignorar-la, encara que ningú entengués què eren. Aquesta incomoditat va durar dos segles i mig.
+          </div>
+
+          <h4>2. La imatge que ho va resoldre tot</h4>
+          <p>El problema de fons era que ningú sabia <em>què eren</em>. Descartes els va batejar «imaginaris» amb intenció despectiva, i el nom va quedar. Euler els feia servir amb virtuosisme sense saber ben bé sobre què treballava.</p>
+          <p>La solució va arribar amb una idea d'una simplicitat desconcertant: <strong>si els reals viuen en una línia, posem els complexos en un pla</strong>. El número a+bi és el punt de coordenades (a,b). El va proposar el topògraf noruec Caspar Wessel el 1797 (i ningú se'n va assabentar), després Jean-Robert Argand el 1806, i finalment Gauss el 1831 —i és a partir de Gauss que la comunitat ho accepta.</p>
+          <p>De cop, els nombres complexos no eren fantasmes: eren punts. I tot el que abans era misteriós es va tornar geomètric.</p>
+
+          <h4>3. Mòdul i argument: la descripció que ho explica tot</h4>
+          <p>Un punt del pla es pot descriure de dues maneres. La cartesiana és la que ja coneixes: <strong>z = a + bi</strong>, amb a l'horitzontal i b la vertical. Però n'hi ha una altra, i és la que fa que tot funcioni:</p>
+          <p style="margin-left:1rem"><strong>Mòdul |z|</strong> = la distància a l'origen = √(a²+b²)<br>
+          <strong>Argument arg(z)</strong> = l'angle que forma amb l'eix horitzontal</p>
+          <p>Amb aquesta descripció, z = |z|(cos θ + i sin θ). Ara mirem què passa en multiplicar dos números escrits així:</p>
+          <div class="deep-example">
+            <span class="de-title">La derivació: per què multiplicar és girar</span>
+            <span class="de-step">z₁z₂ = |z₁||z₂| · (cos θ₁ + i sin θ₁)(cos θ₂ + i sin θ₂)</span>
+            <span class="de-step">Expandim el producte dels parèntesis:</span>
+            <span class="de-step">&nbsp;&nbsp;= cos θ₁cos θ₂ + i cos θ₁sin θ₂ + i sin θ₁cos θ₂ + i² sin θ₁sin θ₂</span>
+            <span class="de-step">Com que i² = −1, agrupem la part real i la imaginària:</span>
+            <span class="de-step">&nbsp;&nbsp;= (cos θ₁cos θ₂ − sin θ₁sin θ₂) + i(cos θ₁sin θ₂ + sin θ₁cos θ₂)</span>
+            <span class="de-step">I aquestes dues expressions són <strong>exactament</strong> les fórmules de l'angle suma:</span>
+            <span class="de-step">&nbsp;&nbsp;= cos(θ₁+θ₂) + i sin(θ₁+θ₂)</span>
+            <span class="de-step">Conclusió: <strong>|z₁z₂| = |z₁||z₂|</strong> i <strong>arg(z₁z₂) = arg(z₁) + arg(z₂)</strong></span>
+          </div>
+          <p>Els mòduls <strong>es multipliquen</strong>; els arguments <strong>se sumen</strong>. Multiplicar per un número complex és, doncs, dues operacions geomètriques alhora: <strong>escalar i girar</strong>.</p>
+          <p>I ara el cas particular que ho il·lumina tot: què és multiplicar per i? El número i té mòdul 1 i argument 90°. Per tant multiplicar per i <strong>no canvia la mida i gira exactament un quart de volta</strong>. I què és i²? Girar 90° dues vegades, o sigui 180°, que és el mateix que canviar de signe. <strong>Per això i² = −1</strong> — no és una definició arbitrària que cal empassar-se, és una conseqüència de la geometria.</p>
+
+          <h4>4. Girar l'argument: les arrels n-èsimes</h4>
+          <p>Un cop tens la regla, aplicar-la a l'inrevés és immediat. Si multiplicar suma angles, elevar a la n multiplica l'angle per n. Per tant, <strong>trobar les arrels n-èsimes d'un número w vol dir repartir el seu angle en n trossos iguals</strong>.</p>
+          <p>La resposta és neta i completa: hi ha exactament <strong>n</strong> arrels, totes a distància |w|^(1/n) de l'origen, i separades entre elles per un angle de 2π/n. Ni una més, ni una menys. Cauen als vèrtexs d'un polígon regular de n costats.</p>
+          <p>Per què n i no una? Perquè els angles θ, θ+2π, θ+4π… descriuen la <em>mateixa</em> direcció, però en dividir-los per n donen resultats <em>diferents</em>: θ/n, θ/n + 2π/n, θ/n + 4π/n… Després de n passos tornes al principi. La multiplicitat surt de l'ambigüitat de l'angle.</p>
+          <p>Quan w = 1, aquestes arrels s'anomenen <strong>arrels de la unitat</strong>, i formen un polígon regular inscrit a la circumferència unitat amb un vèrtex a l'1. Són, alhora, un objecte geomètric i un grup cíclic: exactament el Z/n de la càpsula de Taules de Cayley.</p>
+
+          <h4>5. Què fem a l'element interactiu</h4>
+          <p><strong>Vista Multiplicació.</strong> Arrossegues z₁ (blau) i z₂ (vermell) i el producte (daurat) es recalcula en directe. El que cal mirar no és el punt daurat sinó <strong>els arcs i els cercles</strong>: els arcs mostren els tres arguments, i pots comprovar visualment que el tercer és la suma dels altres dos; els cercles mostren els tres mòduls.</p>
+          <p>Els camps numèrics de sota permeten posar valors <strong>exactes</strong>, cosa que arrossegant és impossible. Aquesta és la manera de comprovar els casos nets: posa z₁ = i i z₂ = i (és a dir, real 0 i imaginari 1 als dos) i veuràs el producte caure exactament a −1.</p>
+          <p><strong>Vista Arrels n-èsimes.</strong> Tries n i arrossegues w. Després cliques al pla per <em>proposar</em> una arrel: si el teu punt, elevat a n, cau prou a prop de w, s'encaixa exactament al lloc correcte. El comptador et diu quantes n'has trobat de les n que hi ha.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: comprovar que i² = −1</span>
+            <span class="de-step">1. Vista Multiplicació. Als camps: z₁ real = 0, z₁ imag. = 1. (Això és i.)</span>
+            <span class="de-step">2. Igual per a z₂: real = 0, imag. = 1.</span>
+            <span class="de-step">3. Mira la narració: |z₁| = 1, arg(z₁) = 90°. Igual per a z₂.</span>
+            <span class="de-step">4. El producte: mòdul 1 × 1 = <strong>1</strong>; angle 90° + 90° = <strong>180°</strong>.</span>
+            <span class="de-step">5. Un número de mòdul 1 i angle 180° és exactament <strong>−1</strong>. ✓</span>
+            <span class="de-step">6. Ara prova z₁ = 2 (real 2, imag. 0) i z₂ = i: el producte és 2i, girat 90° i de mida 2.</span>
+            <span class="de-step">7. Ves a la vista d'arrels, posa n = 3 i w = 1 → les tres arrels cúbiques de la unitat formen un triangle equilàter.</span>
+            <span class="de-step">8. Prova n = 6: hexàgon regular. Els vèrtexs són exactament els que veuries a la càpsula d'Euler.</span>
+          </div>
+
+          <h4>6. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Corrent altern.</strong> Tota l'enginyeria elèctrica de corrent altern es fa amb complexos. Una tensió sinusoidal es representa com un <em>fasor</em>: un número complex on el mòdul és l'amplitud i l'argument és la fase. Sumar dues senyals desfasades, que amb trigonometria és un embolic, es converteix en sumar dos vectors. Els enginyers escriuen j en lloc de i perquè la i ja és la intensitat.</p>
+          <p><strong>Mecànica quàntica.</strong> L'estat d'un sistema quàntic és una funció d'ona amb valors complexos, i la probabilitat és el mòdul al quadrat. No és una comoditat de càlcul: la fase relativa entre estats és el que produeix la interferència, i la interferència és el fenomen quàntic per excel·lència. Sense complexos, no hi ha física quàntica.</p>
+          <p><strong>Processament de senyal.</strong> La transformada de Fourier, que trobaràs a la càpsula de Sèries de Fourier, s'escriu de manera molt més neta amb exponencials complexes que amb sinus i cosinus. La FFT —l'algorisme que fa possible l'MP3, el JPEG, el WiFi i la ressonància magnètica— treballa amb números complexos de principi a fi.</p>
+          <p><strong>Control i estabilitat.</strong> Un sistema de control és estable si els «pols» de la seva funció de transferència tenen part real negativa. Tot el disseny de sistemes de control es fa mirant on cauen uns punts al pla complex.</p>
+          <p><strong>Gràfics i robòtica.</strong> Les rotacions al pla es fan multiplicant per complexos unitaris. En tres dimensions, l'equivalent són els <em>quaternions</em>, que és el que fan servir els motors de videojocs i els sistemes d'orientació de satèl·lits per evitar problemes que els angles d'Euler tenen.</p>
+          <p><strong>Aerodinàmica i fluids.</strong> Les transformacions conformes —funcions complexes que preserven angles— permeten convertir el flux al voltant d'un cilindre (fàcil) en el flux al voltant d'un perfil d'ala (difícil). La transformació de Jukovski va ser, durant dècades, l'eina bàsica de disseny d'ales.</p>
+
+          <h4>7. Curiositats</h4>
+          <p><strong>El nom és un insult que va quedar.</strong> «Imaginari» el va encunyar Descartes al segle XVII amb sentit despectiu: eren números que només existien a la imaginació. Gauss, que els entenia perfectament, va lamentar el nom i va proposar dir-los «laterals», precisament perquè viuen a un costat de la recta real. No li van fer cas.</p>
+          <p><strong>Wessel va publicar-ho primer i va passar desapercebut durant un segle.</strong> El seu article de 1797 estava escrit en danès, en una revista poc llegida, i no es va redescobrir fins al 1895. Argand, que era comptable i matemàtic aficionat, va publicar el seu el 1806 en un fullet <strong>sense signar</strong>; va caldre una petita recerca per esbrinar-ne l'autor.</p>
+          <p><strong>El teorema fonamental de l'àlgebra és, en el fons, un teorema d'anàlisi.</strong> Diu que tot polinomi de grau n amb coeficients complexos té exactament n arrels complexes. El que és notable és que <strong>no cal ampliar més</strong>: afegint una sola arrel (la i) queda tot tancat per sempre. Gauss en va donar quatre demostracions al llarg de la vida, la primera a la seva tesi doctoral de 1799.</p>
+          <p><strong>La fórmula més bonica de la matemàtica surt d'aquí.</strong> Combinant la fórmula d'Euler e^(iθ) = cos θ + i sin θ amb θ = π, s'obté <strong>e^(iπ) + 1 = 0</strong>, que relaciona en cinc símbols les constants e, i, π, 1 i 0. En enquestes entre matemàtics surt regularment com el resultat més bell de tots.</p>
+          <p><strong>Hamilton va trigar deu anys a trobar-ne la versió 3D, i no existeix.</strong> William Rowan Hamilton va buscar durant una dècada una manera d'estendre els complexos a tres dimensions. És impossible. El 1843, caminant pel pont de Broome a Dublín, va entendre que calien <em>quatre</em> dimensions i va gravar la fórmula dels quaternions a la pedra del pont amb un ganivet. Hi ha una placa que ho commemora.</p>
+          <p><strong>Els enters de Gauss.</strong> Els complexos amb parts entera i imaginària senceres (a+bi amb a,b enters) formen un sistema aritmètic propi on es pot parlar de primers i factorització única. Gauss els va inventar per atacar les lleis de reciprocitat cúbica i biquadràtica que apareixen a la càpsula de Reciprocitat quadràtica. Un fet curiós que se'n dedueix: el 5, que és primer als enters normals, <strong>no ho és</strong> aquí, perquè 5 = (2+i)(2−i).</p>
+
+          <h4>8. Connexió amb altres àrees</h4>
+          <p>Amb <strong>Característica d'Euler</strong> hi ha una connexió literal: els vèrtexs d'un polígon regular de n costats inscrit en una circumferència són <em>exactament</em> les arrels n-èsimes de la unitat. El mateix objecte, vist com a geometria allà i com a àlgebra aquí.</p>
+          <p>Amb <strong>Taules de Cayley</strong>: les arrels n-èsimes de la unitat, amb la multiplicació, formen el grup cíclic Z/n. Quan allà gires un polígon, aquí estàs multiplicant complexos. Són la mateixa estructura amb dos vestits.</p>
+          <p>Amb el <strong>Mètode de Newton</strong>: la vista del fractal d'aquella càpsula viu en aquest pla, i el que s'hi calcula són les arrels de zⁿ−1, o sigui les arrels de la unitat d'aquí. Val la pena veure les dues càpsules seguides.</p>
+          <p>I amb <strong>Sèries de Fourier</strong>: les arrels de la unitat són les freqüències fonamentals de la transformada discreta de Fourier. La FFT s'entén molt millor un cop saps que multiplicar per una arrel de la unitat és girar.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="mul" class="active">Multiplicació</button>
+        <button data-v="roots">Arrels n-èsimes</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only vista-mul-only">
+      <span class="help-wrap chip-label">
+        Arrossega z₁ i z₂
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Clica i arrossega qualsevol dels dos punts petits (blau=z₁, vermell=z₂). El producte (punt daurat) segueix el moviment a l'instant.</span>
+      </span>
+      <button class="btn btn-ghost" id="resetMulBtn">Reinicia z₁, z₂</button>
+    </div>
+    <div class="controls-row explora-only vista-roots-only" style="display:none;">
+      <span class="help-wrap chip-label">
+        n:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">El nombre d'arrels que busques. Cada zⁿ=w té exactament n solucions, mai més.</span>
+      </span>
+      <div class="chip-row" id="nRow"></div>
+      <button class="btn btn-ghost" id="resetRootsBtn">Reinicia</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap argand-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA MULTIPLICACIÓ -->
+      <div class="vista-panel active" id="vistaMulPanel">
+        <div class="z-legend">
+          <span><i style="background:#2563eb"></i> z₁</span>
+          <span><i style="background:#c23b3b"></i> z₂</span>
+          <span><i style="background:#c08a2e"></i> z₁·z₂</span>
+        </div>
+        <div class="argand-stage"><canvas id="mulCanvas"></canvas></div>
+
+        <!-- Equivalent per teclat de l'arrossegament sobre el pla. A més de
+             fer la càpsula utilitzable sense ratolí, permet posar valors
+             EXACTES (z₁ = i, per exemple), cosa que arrossegant no es pot. -->
+        <div class="coord-controls" id="mulCoords">
+          <span class="chip-label">O escriu-ne les coordenades:</span>
+          <div class="coord-row">
+            <label for="z1re">z₁ real</label><input type="number" id="z1re" step="0.1" inputmode="decimal">
+            <label for="z1im">z₁ imag.</label><input type="number" id="z1im" step="0.1" inputmode="decimal">
+          </div>
+          <div class="coord-row">
+            <label for="z2re">z₂ real</label><input type="number" id="z2re" step="0.1" inputmode="decimal">
+            <label for="z2im">z₂ imag.</label><input type="number" id="z2im" step="0.1" inputmode="decimal">
+          </div>
+        </div>
+        <div class="step-narration" id="mulNarration"></div>
+      </div>
+
+      <!-- VISTA ARRELS -->
+      <div class="vista-panel" id="vistaRootsPanel">
+        <div class="argand-stage"><canvas id="rootsCanvas"></canvas></div>
+        <div class="root-tracker" id="rootTracker">Trobades: 0 / 3</div>
+        <div class="step-narration" id="rootsNarration"></div>
+      </div>
+
+      <!-- REPTE -->
+      <div class="repte-only" id="reptePanel" style="width:100%;flex-direction:column;align-items:center;gap:.7rem;">
+        <div class="argand-stage"><canvas id="repteCanvas"></canvas></div>
+        <div class="root-tracker" id="repteTracker"></div>
+        <div class="step-narration" id="repteNarration"></div>
+        <div class="chip-row" id="repteButtonsRow"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" role="status" id="hint">Arrossega z₁ o z₂ per començar.</div>
+
+    <p class="method-hint" id="methodPanel">z₁·z₂: mòdul |z₁|·|z₂|, argument arg(z₁)+arg(z₂). zⁿ=w té exactament n solucions, separades 2π/n radiants.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Encara res</div>
+        <div class="readout-def" id="readoutDef">Arrossega un punt per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Multiplicar, girar, i repartir un angle</div>
+
+    <div class="type-card active" id="card-multiplicacio" data-method="multiplicacio" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Multiplicar és girar</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo>|</mo><msub><mi>z</mi><mn>1</mn></msub><msub><mi>z</mi><mn>2</mn></msub><mo>|</mo><mo>=</mo><mo>|</mo><msub><mi>z</mi><mn>1</mn></msub><mo>|</mo><mo>|</mo><msub><mi>z</mi><mn>2</mn></msub><mo>|</mo></math> · els arguments se sumen</div>
+        <div class="type-desc">Arrossega z₁ o z₂ i mira els arcs d'angle i els cercles de mòdul de la Vista 1: el producte sempre cau exactament on prediuen aquestes dues regles.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-arrels" data-method="arrels" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Exactament n arrels</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mrow><mo>|</mo><mi>w</mi><mo>|</mo></mrow><mrow><mn>1</mn><mo>/</mo><mi>n</mi></mrow></msup></math>, separades <math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mi>n</mi></mfrac></math></div>
+        <div class="type-desc">A la Vista 2, cada clic que encaixa marca una arrel real. Troba-les totes i veuràs que formen un polígon regular perfecte al voltant de l'origen.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-unitat" data-method="unitat" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Arrels de la unitat</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>w</mi><mi>n</mi></msup><mo>=</mo><mn>1</mn></math></div>
+        <div class="type-desc">El cas w=1: les n arrels cauen exactament als vèrtexs d'un n-gon regular inscrit en el cercle unitat —el mateix polígon que decideix, a Característica d'Euler, si existeix un sòlid platònic.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Prova-ho:</strong> posa w just sobre el cercle unitat i n=6 — les 6 arrels formaran un hexàgon regular perfecte, cadascuna a 60° de la següent.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/vBgKcgwX" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>El producte de nombres complexos</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 04 · Càlcul i Anàlisi Matemàtica</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ARITMÈTICA COMPLEXA
+// ─────────────────────────────────────────────
+function cMul(a, b) { return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re }; }
+function cMod(a) { return Math.hypot(a.re, a.im); }
+function cArg(a) { return Math.atan2(a.im, a.re); }
+function cFromPolar(r, th) { return { re: r * Math.cos(th), im: r * Math.sin(th) }; }
+function cPowMod(a, n) { return Math.pow(cMod(a), n); }
+function nthRoots(w, n) {
+  const r = Math.pow(cMod(w), 1 / n), baseArg = cArg(w) / n;
+  return Array.from({ length: n }, (_, k) => cFromPolar(r, baseArg + k * 2 * Math.PI / n));
+}
+function fmtC(z) { return `${fmtNum(z.re, 2)}${z.im >= 0 ? '+' : '−'}${fmtNum(Math.abs(z.im), 2)}i`; }
+function fmtAngle(th) { let d = th * 180 / Math.PI; if (d < 0) d += 360; return fmtNum(d, 1) + '°'; }
+
+const RANGE = 2.3;
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let currentVista = 'mul';
+let z1 = { re: 1.1, im: 0.6 }, z2 = { re: -0.6, im: 0.9 };
+let dragTarget = null;
+
+let rootN = 3, rootW = { re: -1.2, im: 0.9 };
+let foundRoots = new Set();
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRoundType = 'predict';
+let repteState = null;
+
+// ─────────────────────────────────────────────
+//  COORDENADES / DIBUIX BASE
+// ─────────────────────────────────────────────
+function setupHiDPI(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+// NOTA: fem servir aquest helper local, en píxels CSS, i NO el pointerXY()
+// compartit — aquell retorna píxels de dispositiu, pensat per a capsules que
+// dibuixen directament a l'escala canvas.width/height sense ctx.setTransform.
+// Aquí dibuixem en escala CSS (via setupHiDPI+setTransform), així que les
+// coordenades del punter també han de ser-ho, o els arrossegaments es
+// desplacen segons devicePixelRatio (invisible en aquest sandbox, on val 1).
+function localPointerXY(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const src = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+function makeXY(w, h) {
+  const s = Math.min(w, h) / (2 * RANGE);
+  const cx = w / 2, cy = h / 2;
+  return {
+    toPx: (z) => ({ px: cx + z.re * s, py: cy - z.im * s }),
+    toC: (px, py) => ({ re: (px - cx) / s, im: (cy - py) / s })
+  };
+}
+function drawGrid(ctx, w, h, xy) {
+  ctx.strokeStyle = 'rgba(27,30,45,.15)'; ctx.lineWidth = 1;
+  for (let v = -Math.floor(RANGE); v <= Math.floor(RANGE); v++) {
+    const p1 = xy.toPx({ re: v, im: -RANGE }), p2 = xy.toPx({ re: v, im: RANGE });
+    ctx.beginPath(); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); ctx.stroke();
+    const p3 = xy.toPx({ re: -RANGE, im: v }), p4 = xy.toPx({ re: RANGE, im: v });
+    ctx.beginPath(); ctx.moveTo(p3.px, p3.py); ctx.lineTo(p4.px, p4.py); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(27,30,45,.4)'; ctx.lineWidth = 1.4;
+  const o1 = xy.toPx({ re: -RANGE, im: 0 }), o2 = xy.toPx({ re: RANGE, im: 0 });
+  ctx.beginPath(); ctx.moveTo(o1.px, o1.py); ctx.lineTo(o2.px, o2.py); ctx.stroke();
+  const o3 = xy.toPx({ re: 0, im: -RANGE }), o4 = xy.toPx({ re: 0, im: RANGE });
+  ctx.beginPath(); ctx.moveTo(o3.px, o3.py); ctx.lineTo(o4.px, o4.py); ctx.stroke();
+}
+function drawPoint(ctx, xy, z, color, label) {
+  const p = xy.toPx(z);
+  ctx.beginPath(); ctx.arc(p.px, p.py, 7, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (label) { ctx.fillStyle = 'rgba(27,30,45,.65)'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(label, p.px, p.py - 12); }
+}
+function drawSegment(ctx, xy, a, b, color, width, dash) {
+  const p1 = xy.toPx(a), p2 = xy.toPx(b);
+  ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.beginPath(); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function drawCircle(ctx, xy, radius, color) {
+  const c = xy.toPx({ re: 0, im: 0 });
+  const edge = xy.toPx({ re: radius, im: 0 });
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(c.px, c.py, Math.abs(edge.px - c.px), 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function drawArc(ctx, xy, radius, a0, a1, color) {
+  const c = xy.toPx({ re: 0, im: 0 });
+  const edge = xy.toPx({ re: radius, im: 0 });
+  const r = Math.abs(edge.px - c.px);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(c.px, c.py, r, -a0, -a1, a0 < a1); ctx.stroke();
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 1 — MULTIPLICACIÓ
+// ─────────────────────────────────────────────
+function drawMul() {
+  const canvas = document.getElementById('mulCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawGrid(ctx, w, h, xy);
+  const prod = cMul(z1, z2);
+  drawCircle(ctx, xy, cMod(z1), 'rgba(37,99,235,.35)');
+  drawCircle(ctx, xy, cMod(z2), 'rgba(194,59,59,.35)');
+  drawCircle(ctx, xy, cMod(prod), 'rgba(192,138,46,.45)');
+  drawArc(ctx, xy, 0.5, 0, cArg(z1), '#2563eb');
+  drawArc(ctx, xy, 0.75, 0, cArg(z2), '#c23b3b');
+  drawArc(ctx, xy, 1.0, 0, cArg(prod), '#c08a2e');
+  drawSegment(ctx, xy, { re: 0, im: 0 }, z1, '#2563eb', 1.6);
+  drawSegment(ctx, xy, { re: 0, im: 0 }, z2, '#c23b3b', 1.6);
+  drawSegment(ctx, xy, { re: 0, im: 0 }, prod, '#c08a2e', 1.8);
+  drawPoint(ctx, xy, z1, '#2563eb', 'z₁');
+  drawPoint(ctx, xy, z2, '#c23b3b', 'z₂');
+  drawPoint(ctx, xy, prod, '#c08a2e', 'z₁z₂');
+  // La idea central de la càpsula (els mòduls es multipliquen, els arguments
+  // se sumen) només es veia al dibuix: aquí queda dita amb paraules.
+  describeCanvas(canvas,
+    `Pla complex. z₁ = ${fmtC(z1)}, de mòdul ${fmtNum(cMod(z1), 2)} i argument ${fmtAngle(cArg(z1))}. ` +
+    `z₂ = ${fmtC(z2)}, de mòdul ${fmtNum(cMod(z2), 2)} i argument ${fmtAngle(cArg(z2))}. ` +
+    `El producte z₁·z₂ = ${fmtC(prod)} té mòdul ${fmtNum(cMod(prod), 2)}, que és el producte dels mòduls, ` +
+    `i argument ${fmtAngle(cArg(prod))}, que és la suma dels arguments.`);
+}
+function updateMulNarration() {
+  const prod = cMul(z1, z2);
+  const el = document.getElementById('mulNarration');
+  el.innerHTML = `<span class="sn-title">Producte en directe</span>
+    <span class="sn-row">z₁ = ${fmtC(z1)} &nbsp;→&nbsp; |z₁|=<b>${fmtNum(cMod(z1), 2)}</b>, arg=<b>${fmtAngle(cArg(z1))}</b></span>
+    <span class="sn-row">z₂ = ${fmtC(z2)} &nbsp;→&nbsp; |z₂|=<b>${fmtNum(cMod(z2), 2)}</b>, arg=<b>${fmtAngle(cArg(z2))}</b></span>
+    <span class="sn-row">z₁·z₂ = ${fmtC(prod)} &nbsp;→&nbsp; mòdul <b>${fmtNum(cMod(z1), 2)}×${fmtNum(cMod(z2), 2)}=${fmtNum(cMod(prod), 2)}</b>, angle <b>${fmtAngle(cArg(z1))}+${fmtAngle(cArg(z2))}=${fmtAngle(cArg(prod))}</b></span>`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmtNum(cMod(prod), 2);
+  readoutName.textContent = 'z₁·z₂ = ' + fmtC(prod);
+  readoutDef.textContent = `mòdul ${fmtNum(cMod(prod), 2)}, angle ${fmtAngle(cArg(prod))}`;
+}
+function nearestPoint(c, xy) {
+  const p1 = xy.toPx(z1), p2 = xy.toPx(z2);
+  const d1 = Math.hypot(c.px - p1.px, c.py - p1.py), d2 = Math.hypot(c.px - p2.px, c.py - p2.py);
+  if (Math.min(d1, d2) > 26) return null;
+  return d1 < d2 ? 'z1' : 'z2';
+}
+function mulPointerDown(e) {
+  const canvas = document.getElementById('mulCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const p = localPointerXY(e, canvas);
+  const which = nearestPoint({ px: p.x, py: p.y }, makeXY(rect.width, rect.height));
+  if (which) { dragTarget = which; e.preventDefault(); }
+}
+function mulPointerMove(e) {
+  if (!dragTarget) return;
+  e.preventDefault();
+  const canvas = document.getElementById('mulCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const p = localPointerXY(e, canvas);
+  const xy = makeXY(rect.width, rect.height);
+  const c = xy.toC(p.x, p.y);
+  if (dragTarget === 'z1') z1 = c; else z2 = c;
+  drawMul(); updateMulNarration();
+  syncMulInputs();   // arrossegar també ha d'actualitzar els camps numèrics
+}
+function mulPointerUp() { dragTarget = null; }
+const mulCanvas = document.getElementById('mulCanvas');
+mulCanvas.addEventListener('mousedown', mulPointerDown);
+mulCanvas.addEventListener('mousemove', mulPointerMove);
+window.addEventListener('mouseup', mulPointerUp);
+mulCanvas.addEventListener('touchstart', mulPointerDown, { passive: false });
+mulCanvas.addEventListener('touchmove', mulPointerMove, { passive: false });
+mulCanvas.addEventListener('touchend', mulPointerUp);
+document.getElementById('resetMulBtn').addEventListener('click', () => { z1 = { re: 1.1, im: 0.6 }; z2 = { re: -0.6, im: 0.9 }; drawMul(); updateMulNarration(); syncMulInputs(); });
+
+// ── Entrada per teclat de z₁ i z₂ ────────────────────────────────────────
+// Els camps són la font de la veritat només mentre s'escriuen: la resta del
+// temps segueixen l'estat (syncMulInputs), de manera que arrossegar el punt
+// també els actualitza i les dues vies no es poden desincronitzar.
+const MUL_RANGE = 2.2;   // mateix abast que el pla dibuixat
+function syncMulInputs() {
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (el && document.activeElement !== el) el.value = v.toFixed(2);
+  };
+  set('z1re', z1.re); set('z1im', z1.im);
+  set('z2re', z2.re); set('z2im', z2.im);
+}
+[['z1re', z => z1, 're'], ['z1im', z => z1, 'im'], ['z2re', z => z2, 're'], ['z2im', z => z2, 'im']]
+  .forEach(([id, target, comp]) => {
+    document.getElementById(id).addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (!isFinite(v)) return;               // camp buit o a mig escriure: no fer res
+      target()[comp] = clamp(v, -MUL_RANGE, MUL_RANGE);
+      drawMul(); updateMulNarration();
+    });
+    // En sortir del camp es normalitza el que s'hi veu (p. ex. si s'ha acotat).
+    document.getElementById(id).addEventListener('blur', syncMulInputs);
+  });
+
+// ─────────────────────────────────────────────
+//  VISTA 2 — ARRELS N-ÈSIMES
+// ─────────────────────────────────────────────
+function buildNChips() {
+  const row = document.getElementById('nRow');
+  row.innerHTML = '';
+  [2, 3, 4, 5, 6].forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = n;
+    b.classList.toggle('active', n === rootN);
+    b.addEventListener('click', () => { rootN = n; foundRoots = new Set(); drawRoots(); updateRootTracker(); highlightNChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightNChip() { document.querySelectorAll('#nRow .chip').forEach(c => c.classList.toggle('active', +c.textContent === rootN)); }
+function updateRootTracker() { document.getElementById('rootTracker').textContent = `Trobades: ${foundRoots.size} / ${rootN}`; }
+function drawRoots() {
+  const canvas = document.getElementById('rootsCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawGrid(ctx, w, h, xy);
+  drawPoint(ctx, xy, rootW, '#c08a2e', 'w');
+  const roots = nthRoots(rootW, rootN);
+  roots.forEach((r, k) => {
+    if (foundRoots.has(k)) drawPoint(ctx, xy, r, '#1a7a52', 'z' + (k + 1));
+    else { const p = xy.toPx(r); ctx.beginPath(); ctx.arc(p.px, p.py, 4, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(27,30,45,.3)'; ctx.lineWidth = 1.3; ctx.stroke(); }
+  });
+}
+function rootsPointerDown(e) {
+  const canvas = document.getElementById('rootsCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const p = localPointerXY(e, canvas);
+  const xy = makeXY(rect.width, rect.height);
+  const wp = xy.toPx(rootW);
+  if (Math.hypot(p.x - wp.px, p.y - wp.py) < 26) { dragTarget = 'w'; e.preventDefault(); return; }
+  // treat as a guess click
+  const guess = xy.toC(p.x, p.y);
+  submitRootGuess(guess);
+}
+function rootsPointerMove(e) {
+  if (dragTarget !== 'w') return;
+  e.preventDefault();
+  const canvas = document.getElementById('rootsCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const p = localPointerXY(e, canvas);
+  const xy = makeXY(rect.width, rect.height);
+  rootW = xy.toC(p.x, p.y);
+  foundRoots = new Set();
+  drawRoots(); updateRootTracker();
+  document.getElementById('rootsNarration').innerHTML = `<span class="sn-title">w ha canviat</span>w = ${fmtC(rootW)} → |w|=${fmtNum(cMod(rootW), 2)}, arg=${fmtAngle(cArg(rootW))}. Les arrels es reinicien.`;
+}
+function rootsPointerUp() { dragTarget = null; }
+const rootsCanvas = document.getElementById('rootsCanvas');
+rootsCanvas.addEventListener('mousedown', rootsPointerDown);
+rootsCanvas.addEventListener('mousemove', rootsPointerMove);
+window.addEventListener('mouseup', rootsPointerUp);
+rootsCanvas.addEventListener('touchstart', rootsPointerDown, { passive: false });
+rootsCanvas.addEventListener('touchmove', rootsPointerMove, { passive: false });
+rootsCanvas.addEventListener('touchend', rootsPointerUp);
+function submitRootGuess(guess) {
+  const roots = nthRoots(rootW, rootN);
+  let best = -1, bestDist = Infinity;
+  roots.forEach((r, k) => { const d = Math.hypot(guess.re - r.re, guess.im - r.im); if (d < bestDist) { bestDist = d; best = k; } });
+  const el = document.getElementById('rootsNarration');
+  if (bestDist < 0.35 && !foundRoots.has(best)) {
+    foundRoots.add(best);
+    drawRoots(); updateRootTracker();
+    flash(wrap, 'var(--good)');
+    el.innerHTML = `<span class="sn-title">Trobada!</span>z${best + 1} = ${fmtC(roots[best])} — comprova-ho: (${fmtNum(cMod(roots[best]), 2)})^${rootN}=${fmtNum(cPowMod(roots[best], rootN), 2)}≈|w|=${fmtNum(cMod(rootW), 2)}, i l'angle ×${rootN} torna a arg(w).`;
+    readoutBadge.classList.add('active');
+    readoutNum.textContent = foundRoots.size + '/' + rootN;
+    readoutName.textContent = `Arrel z${best + 1} trobada`;
+    readoutDef.textContent = fmtC(roots[best]);
+  } else if (foundRoots.has(best)) {
+    el.innerHTML = `<span class="sn-title">Ja la tenies</span>Aquesta arrel (z${best + 1}) ja estava trobada. Prova en un altre lloc del pla.`;
+  } else {
+    el.innerHTML = `<span class="sn-title">Encara no</span>Massa lluny de qualsevol arrel real. Recorda: totes són a distància |w|^(1/${rootN})=${fmtNum(Math.pow(cMod(rootW), 1 / rootN), 2)} de l'origen.`;
+  }
+}
+document.getElementById('resetRootsBtn').addEventListener('click', () => { foundRoots = new Set(); drawRoots(); updateRootTracker(); document.getElementById('rootsNarration').innerHTML = ''; });
+
+// ─────────────────────────────────────────────
+//  CANVI DE VISTA
+// ─────────────────────────────────────────────
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  document.getElementById('vistaMulPanel').classList.toggle('active', v === 'mul');
+  document.getElementById('vistaRootsPanel').classList.toggle('active', v === 'roots');
+  document.querySelectorAll('.vista-mul-only').forEach(el => el.style.display = v === 'mul' ? 'flex' : 'none');
+  document.querySelectorAll('.vista-roots-only').forEach(el => el.style.display = v === 'roots' ? 'flex' : 'none');
+  if (v === 'mul') { drawMul(); updateMulNarration(); hint.textContent = 'Arrossega z₁ o z₂.'; }
+  if (v === 'roots') { drawRoots(); updateRootTracker(); hint.textContent = 'Clica per provar una arrel, o arrossega w.'; }
+  initHelpPopups();
+}
+document.querySelectorAll('#vistaToggle button').forEach(btn => btn.addEventListener('click', () => setVista(btn.dataset.v)));
+window.addEventListener('resize', () => { if (currentVista === 'mul') drawMul(); else drawRoots(); });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function advanceRepte(delay) {
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, delay);
+}
+function repteDrawStatic(za, zb) {
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawGrid(ctx, w, h, xy);
+  drawSegment(ctx, xy, { re: 0, im: 0 }, za, '#2563eb', 1.6);
+  drawSegment(ctx, xy, { re: 0, im: 0 }, zb, '#c23b3b', 1.6);
+  drawPoint(ctx, xy, za, '#2563eb', 'z₁');
+  drawPoint(ctx, xy, zb, '#c23b3b', 'z₂');
+}
+function startPredictRound() {
+  const rnd = () => ({ re: -1.6 + Math.random() * 3.2, im: -1.6 + Math.random() * 3.2 });
+  const za = rnd(), zb = rnd();
+  const prod = cMul(za, zb);
+  repteState = { type: 'predict', za, zb, prod };
+  repteDrawStatic(za, zb);
+  document.getElementById('repteTracker').textContent = '';
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">Predicció</span>z₁=${fmtC(za)}, z₂=${fmtC(zb)}. Quin serà, aproximadament, l'angle de z₁·z₂?`;
+  const correctDeg = ((cArg(prod) * 180 / Math.PI) % 360 + 360) % 360;
+  const opts = [correctDeg, (correctDeg + 90) % 360, (correctDeg + 180) % 360, (correctDeg + 45) % 360];
+  for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[opts[i], opts[j]] = [opts[j], opts[i]]; }
+  buildRepteButtons(opts.map(d => fmtNum(d, 0) + '°'), (i) => submitPredict(Math.abs(opts[i] - correctDeg) < 1));
+  hint.textContent = 'Tria l\'angle correcte del producte.';
+}
+function submitPredict(correct) {
+  if (repteTimeUp) return;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  const p = repteState.prod;
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — z₁·z₂=${fmtC(p)}, arg=${fmtAngle(cArg(p))}.`;
+  advanceRepte(correct ? 1200 : 1800);
+}
+function startFindAllRound() {
+  const n = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+  const w = cFromPolar(0.9 + Math.random() * 1.1, Math.random() * 2 * Math.PI);
+  repteState = { type: 'find', n, w, found: new Set() };
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w: cw, h } = setupHiDPI(canvas);
+  const xy = makeXY(cw, h);
+  ctx.clearRect(0, 0, cw, h);
+  drawGrid(ctx, cw, h, xy);
+  drawPoint(ctx, xy, w, '#c08a2e', 'w');
+  document.getElementById('repteTracker').textContent = `Trobades: 0 / ${n}`;
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">Troba-les totes</span>Clica per provar les ${n} arrels de w=${fmtC(w)}.`;
+  document.getElementById('repteButtonsRow').innerHTML = '';
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const xyc = makeXY(rect.width, rect.height);
+    const p = localPointerXY(e, canvas);
+    const guess = xyc.toC(p.x, p.y);
+    const roots = nthRoots(w, n);
+    let best = -1, bestDist = Infinity;
+    roots.forEach((r, k) => { const d = Math.hypot(guess.re - r.re, guess.im - r.im); if (d < bestDist) { bestDist = d; best = k; } });
+    if (bestDist < 0.35 && !repteState.found.has(best)) {
+      repteState.found.add(best);
+      award(6);
+      flash(wrap, 'var(--good)');
+      const p2 = xyc.toPx(roots[best]);
+      ctx.beginPath(); ctx.arc(p2.px, p2.py, 7, 0, Math.PI * 2); ctx.fillStyle = '#1a7a52'; ctx.fill();
+      document.getElementById('repteTracker').textContent = `Trobades: ${repteState.found.size} / ${n}`;
+      if (repteState.found.size === n) {
+        document.getElementById('repteNarration').innerHTML += `<br>✔ Totes trobades!`;
+        canvas.onclick = null;
+        advanceRepte(1200);
+      }
+    } else if (!repteState.found.has(best)) { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  };
+  hint.textContent = `Troba les ${n} arrels abans que s'acabi el temps.`;
+}
+function buildRepteButtons(labels, onClick) {
+  const row = document.getElementById('repteButtonsRow');
+  row.innerHTML = '';
+  labels.forEach((l, i) => {
+    const b = document.createElement('button');
+    b.className = i === 0 ? 'btn btn-primary' : 'btn btn-ghost';
+    b.textContent = l;
+    b.addEventListener('click', () => onClick(i));
+    row.appendChild(b);
+  });
+}
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  document.getElementById('repteCanvas').onclick = null;
+  readoutBadge.classList.remove('active');
+  repteRoundType = Math.random() < 0.5 ? 'predict' : 'find';
+  if (repteRoundType === 'predict') startPredictRound(); else startFindAllRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      document.getElementById('repteCanvas').onclick = null;
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  document.getElementById('repteCanvas').onclick = null;
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  setVista(currentVista);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  multiplicacio: "z₁·z₂ té mòdul |z₁|·|z₂| i argument arg(z₁)+arg(z₂) — multiplicar mòduls, sumar angles.",
+  arrels: "zⁿ=w té exactament n solucions, a distància |w|^(1/n) de l'origen, separades 2π/n radiants.",
+  unitat: "Les arrels de zⁿ=1 formen un n-gon regular inscrit en el cercle unitat."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-multiplicacio').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('multiplicacio'); if (!repteMode) setVista('mul'); });
+document.getElementById('card-arrels').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('arrels'); if (!repteMode) setVista('roots'); });
+document.getElementById('card-unitat').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('unitat'); if (!repteMode) { rootW = cFromPolar(1, 0.3); rootN = 6; foundRoots = new Set(); setVista('roots'); buildNChips(); drawRoots(); updateRootTracker(); } });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildNChips();
+setVista('mul');
+syncMulInputs();
+</script>
+</body>
+</html>

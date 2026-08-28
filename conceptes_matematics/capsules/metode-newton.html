@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mètode de Newton · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--calcul); }
+
+    .newton-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    /* Controls equivalents al clic sobre la gràfica (accessibles amb teclat) */
+    .point-controls { display: flex; flex-direction: column; gap: .4rem; align-items: center; width: 100%; margin-top: .6rem; }
+    .point-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center; }
+    .point-row label { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); }
+    .point-row input[type=number] {
+      width: 78px; border: 1px solid var(--border); border-radius: 8px; padding: .35rem .5rem;
+      font-family: var(--font-mono); font-size: .82rem; background: var(--surface); color: var(--ink);
+    }
+    .newton-stage { position: relative; width: 100%; max-width: 400px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; cursor: crosshair; }
+    .newton-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .step-narration {
+      width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65;
+    }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+
+    .vista-panel { display: none; flex-direction: column; align-items: center; gap: .75rem; width: 100%; }
+    .vista-panel.active { display: flex; }
+
+    .root-legend { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; font-size: .74rem; color: var(--muted); }
+    .root-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .root-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--calcul)">Bloc 04 · Mètode de Newton</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Mètode de Newton i el seu fractal</h1>
+      <p>Salta la tangent cap a l'eix, repeteix, i arribes a l'arrel en un parell de passos. Aplica exactament la mateixa idea al pla complex i, sense canviar-hi res més, apareix un fractal: la mateixa regla, ben coneguda i predictible, amagant una frontera que no ho és gens.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>El <a href="https://ca.wikipedia.org/wiki/M%C3%A8tode_de_Newton" target="_blank" rel="noopener">mètode</a> de <a href="https://ca.wikipedia.org/wiki/Isaac_Newton" target="_blank" rel="noopener">Newton</a> troba arrels de f(x)=0 sense fórmula: comença a x₀, traça la tangent a la corba en aquest punt, i mira on aquesta línia recta talla l'eix —aquest punt és x₁, normalment molt més a prop de l'arrel real. Repetint-ho, <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>x</mi><mi>n</mi></msub><mo>−</mo><mfrac><mrow><mi>f</mi><mo>(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><msup><mi>f</mi><mo>′</mo></msup><mo>(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>)</mo></mrow></mfrac></math>, la convergència sol ser vertiginosa: cada pas, aproximadament, dobla el nombre de xifres correctes.</p>
+          <p>«Normalment» és la paraula clau: des d'alguns punts de partida, el mètode no convergeix mai —fins i tot pot quedar atrapat en un cicle perfecte, saltant d'un punt a un altre per sempre sense arribar enlloc.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>La mateixa fórmula funciona igual si x és un número complex: només cal saber derivar i dividir nombres complexos. Per a un polinomi com z³−1=0 (3 arrels), cada punt de partida del pla acaba convergint cap a una de les 3 —i pintar cada punt segons quina arrel «tria» produeix el <a href="https://en.wikipedia.org/wiki/Newton_fractal" target="_blank" rel="noopener">fractal de Newton</a>: fronteres infinitament complicades entre 3 regions ben simples, generades per un mètode que, en 1D, sembla de manual.</p>
+          <p>És un recordatori important: sistemes completament deterministes (cap atzar enlloc, cada pas surt d'una fórmula fixa) poden tenir un comportament impossible de predir sense simular-lo pas a pas —el mateix esperit que el Joc del caos, ara des d'un mètode numèric ben conegut en lloc d'un procés aleatori.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li><strong>Pas a pas:</strong> tria f(x), clica un x₀ sobre l'eix, i prem «Següent pas» per veure la tangent saltar cap a l'arrel —o, amb la funció especial, quedar atrapada en un cicle.</li>
+            <li><strong>Pla complex:</strong> tria un polinomi, clica un punt per veure'n el camí de convergència.</li>
+            <li>«Revela el fractal» calcula, per a tot el pla visible, quina arrel «guanya» cada punt —un càlcul real fet a l'instant, no una imatge estàtica.</li>
+            <li>Amb el fractal ja revelat, clica'n qualsevol punt per veure exactament el seu camí de convergència superposat.</li>
+            <li>En Repte: prediu quina arrel guanyarà un punt, o si un x₀ convergeix o queda atrapat.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">El mètode de Newton és, probablement, l'algorisme més usat de la història del càlcul científic: hi ha una versió seva dins de gairebé tot el que calcula alguna cosa, des del teu processador fins als models climàtics. La seva idea cap en una frase, la seva velocitat és espectacular, i tanmateix pot fallar de maneres tan estranyes que van fer falta cent anys i el descobriment dels fractals per entendre-les.</p>
+
+          <h4>1. El problema, i per què no hi ha fórmula</h4>
+          <p>Volem resoldre f(x) = 0. Per a polinomis de grau 2 hi ha fórmula; per als de grau 3 i 4 també, tot i que horribles. A partir del grau 5 <strong>no n'hi ha cap</strong>, i això no és una limitació temporal sinó un teorema —el d'Abel–Ruffini, que trobaràs demostrat conceptualment a la càpsula de Teoria de Galois.</p>
+          <p>I això només parlant de polinomis. Per a equacions com cos x = x, o x·eˣ = 1, no hi ha ni tan sols l'esperança d'una fórmula amb funcions elementals.</p>
+          <p>La conclusió pràctica és que, per a la immensa majoria d'equacions del món real, <strong>no hi ha resposta exacta escrivible</strong>. El que hi ha és una resposta calculable amb tanta precisió com vulguis. I la manera d'obtenir-la és el tema d'aquesta càpsula.</p>
+
+          <h4>2. La idea: si no saps resoldre-ho, aproxima-ho per una recta</h4>
+          <p>La intuïció és aquesta: les corbes són difícils, les rectes són fàcils. Si a prop del punt on som la corba s'assembla a una recta, resolguem el problema de la recta i acceptem la seva resposta com a millor aproximació.</p>
+          <p>Concretament: som a x₀. Tracem la <strong>tangent</strong> a la corba en aquell punt —la recta que millor l'aproxima localment. Aquesta recta sí que sabem on talla l'eix. Aquell punt de tall és el nostre x₁. Repetim.</p>
+          <div class="deep-example">
+            <span class="de-title">La derivació de la fórmula</span>
+            <span class="de-step">La tangent a f en x₀ té pendent f′(x₀) i passa per (x₀, f(x₀)):</span>
+            <span class="de-step">&nbsp;&nbsp;y − f(x₀) = f′(x₀)·(x − x₀)</span>
+            <span class="de-step">Busquem on talla l'eix, és a dir on y = 0:</span>
+            <span class="de-step">&nbsp;&nbsp;−f(x₀) = f′(x₀)·(x − x₀)</span>
+            <span class="de-step">&nbsp;&nbsp;x − x₀ = −f(x₀)/f′(x₀)</span>
+            <span class="de-step">I aquest x és el nostre x₁:</span>
+            <span class="de-step">&nbsp;&nbsp;<strong>xₙ₊₁ = xₙ − f(xₙ)/f′(xₙ)</strong></span>
+          </div>
+          <p>Res més. Tot el mètode és aquesta línia. La divisió per f′ té una lectura clara: <strong>si el pendent és gran, el salt és petit</strong> (la corba baixa de pressa, no cal anar gaire lluny); si el pendent és petit, el salt és enorme (la corba és gairebé plana i l'eix queda molt lluny). Això ja anuncia el problema que veurem al punt 4.</p>
+
+          <h4>3. Convergència quadràtica: per què és tan bo</h4>
+          <p>Aquí hi ha el motiu pel qual aquest mètode ha sobreviscut 350 anys. Quan funciona, <strong>el nombre de xifres correctes es duplica a cada pas</strong>.</p>
+          <p>La raó és que l'error del pas següent és proporcional al <em>quadrat</em> de l'error actual: si eₙ és l'error, eₙ₊₁ ≈ C·eₙ². Si tens 3 xifres correctes (error ~10⁻³), el pas següent en tindrà ~6, i el següent ~12.</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: calcular √2 amb f(x) = x² − 2, des de x₀ = 1</span>
+            <span class="de-step">x₀ = 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → 0 xifres correctes</span>
+            <span class="de-step">x₁ = 1,5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → 1 xifra</span>
+            <span class="de-step">x₂ = 1,41666666…&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → 2 xifres</span>
+            <span class="de-step">x₃ = 1,41421568…&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → 5 xifres</span>
+            <span class="de-step">x₄ = 1,41421356237468…&nbsp; → 11 xifres</span>
+            <span class="de-step">x₅ = 1,41421356237309504880… → <strong>24 xifres</strong></span>
+            <span class="de-step">La successió 0 → 1 → 2 → 5 → 11 → 24 <strong>es va doblant</strong>. En 5 passos.</span>
+          </div>
+          <div class="deep-aside">
+            <strong>Aquest cas concret té 3.700 anys.</strong> Si escrius la iteració de Newton per a f(x) = x² − a i la simplifiques, surt xₙ₊₁ = (xₙ + a/xₙ)/2: <strong>fes la mitjana entre la teva estimació i a dividit per la teva estimació</strong>. Aquest és exactament el «mètode babilònic» per calcular arrels quadrades, documentat en tauletes cuneïformes de cap al 1700 aC. Els babilonis feien servir Newton mil·lennis abans que Newton, sense saber què era una derivada.
+          </div>
+          <p>D'on surt el quadrat? De Taylor. Prop de l'arrel r, f(r) = 0, i desenvolupant f al voltant de xₙ es veu que els termes de primer ordre s'anul·len exactament per la construcció del mètode, i el primer que sobreviu és el de segon ordre, proporcional a (xₙ−r)². El mètode és quadràtic perquè la tangent captura tota la informació de primer ordre.</p>
+
+          <h4>4. Quan falla, i com de malament pot fallar</h4>
+          <p>«Quan funciona» és la clau, i les maneres de fallar són instructives.</p>
+          <h5>Derivada zero</h5>
+          <p>Si f′(xₙ) = 0, la tangent és horitzontal i no talla mai l'eix: la fórmula divideix per zero i el mètode s'atura en sec. A la càpsula, l'aplicació t'ho diu explícitament quan passa.</p>
+          <h5>Divergència</h5>
+          <p>Si comences massa lluny o la funció té la forma equivocada, els salts poden allunyar-te en lloc d'acostar-te, i escapar cap a l'infinit.</p>
+          <h5>Cicles</h5>
+          <p>Aquest és el més inquietant. El mètode pot quedar atrapat saltant entre uns pocs punts <strong>per sempre</strong>, sense divergir ni convergir. La càpsula en té l'exemple clàssic:</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: el cicle perfecte de f(x) = x³ − 2x + 2</span>
+            <span class="de-step">f(x) = x³ − 2x + 2, f′(x) = 3x² − 2</span>
+            <span class="de-step">Comencem a <strong>x₀ = 0</strong>: f(0) = 2, f′(0) = −2</span>
+            <span class="de-step">x₁ = 0 − 2/(−2) = <strong>1</strong></span>
+            <span class="de-step">A x = 1: f(1) = 1, f′(1) = 1</span>
+            <span class="de-step">x₂ = 1 − 1/1 = <strong>0</strong>&nbsp;&nbsp;← hem tornat al principi</span>
+            <span class="de-step">La successió és 0 → 1 → 0 → 1 → 0 → 1 → … <strong>per sempre</strong></span>
+            <span class="de-step">I l'equació SÍ que té una arrel real, a x ≈ −1,769. El mètode no hi arribarà mai des de x₀=0.</span>
+          </div>
+          <p>Pots reproduir-ho exactament a la càpsula escrivint x₀ = 0 al camp numèric i prement «Següent pas» unes quantes vegades. Amb el ratolí seria pràcticament impossible encertar el 0 exacte; per això hi ha el camp.</p>
+
+          <h4>5. El pla complex: on el fracàs es fa bonic</h4>
+          <p>Aquí ve el gir. La fórmula de Newton no necessita que x sigui real: només cal saber derivar, restar i dividir, i els nombres complexos permeten fer-ho tot. Així que apliquem-la al pla complex.</p>
+          <p>Prenem z³ − 1 = 0. Té tres arrels, les tres arrels cúbiques de la unitat, situades als vèrtexs d'un triangle equilàter (exactament el que veuries a la càpsula del Pla d'Argand). Cada punt de partida del pla convergeix cap a una de les tres. La pregunta natural és: <strong>cap a quina?</strong></p>
+          <p>La pregunta la va plantejar Arthur Cayley el 1879. Va resoldre el cas quadràtic sense dificultat —el pla es parteix en dos semiplans per la mediatriu, net i avorrit— i després va escriure que el cas cúbic «sembla presentar dificultats considerables». Va abandonar-lo.</p>
+          <p>Tenia raó. Si pintes cada punt del pla segons quina arrel «guanya», no surten tres regions amb fronteres suaus: surt un <strong>fractal</strong> de complexitat infinita. I la seva frontera té una propietat que costa d'assimilar:</p>
+          <div class="deep-key">
+            <strong>A la frontera, els tres colors es toquen alhora.</strong> No hi ha cap punt de la frontera que separi només dues regions. <em>Tot</em> punt frontera té, tan a prop com vulguis, punts que van a parar a les tres arrels diferents. És a dir: la frontera entre la regió vermella i la blava <em>és també</em> la frontera amb la verda, a tot arreu. Aquesta propietat, deguda a Fatou i Julia (cap al 1918), és el que fa que la figura sigui infinitament intricada: no es pot dibuixar cap línia divisòria «neta» enlloc.
+          </div>
+          <p>Això vol dir que, a prop de la frontera, <strong>la pregunta «cap a quina arrel convergeix?» és numèricament impossible de respondre amb seguretat</strong>: qualsevol error d'arrodoniment, per petit que sigui, pot canviar la resposta. Un mètode completament determinista, amb una fórmula d'una sola línia i cap atzar enlloc, produeix un comportament impredictible en la pràctica.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p><strong>Vista 1D, pas a pas.</strong> Tries f(x), fixes x₀ (clicant la gràfica o escrivint-lo) i prems «Següent pas». Es dibuixa la tangent i el salt fins a l'eix. La narració de sota et dona el valor de x, de f(x) i de f′(x) a cada iteració, que és el que et permet <em>veure</em> la convergència quadràtica: mira com f(x) es va apropant a zero afegint zeros de cop.</p>
+          <p><strong>Vista del pla complex.</strong> Tries un polinomi i cliques (o escrius) un punt de partida: es dibuixa el camí complet de convergència, salt a salt. El botó «Revela el fractal» calcula, per a cada punt d'una graella de tot el pla visible, quina arrel guanya —són desenes de milers d'iteracions de Newton fetes a l'instant, no una imatge pregravada. Un cop revelat, pots seguir clicant punts per superposar-hi camins concrets.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: veure els tres comportaments</span>
+            <span class="de-step">1. Vista 1D, funció <strong>x²−2</strong>. Escriu x₀ = 1 i prem «Següent pas» cinc vegades.</span>
+            <span class="de-step">2. Mira f(x) a la narració: 1 → 0,25 → 0,0069 → 6×10⁻⁶ → 4,5×10⁻¹². <strong>Convergència quadràtica.</strong></span>
+            <span class="de-step">3. Canvia a <strong>x³−2x+2</strong>, escriu x₀ = 0, i prem «Següent pas» sis vegades → 0,1,0,1,0,1. <strong>Cicle.</strong></span>
+            <span class="de-step">4. Amb la mateixa funció, prova x₀ = −2 → ara sí que convergeix, cap a −1,769.</span>
+            <span class="de-step">5. Ves a la <strong>vista complexa</strong> amb z³−1 i prem «Revela el fractal».</span>
+            <span class="de-step">6. Clica ben endins d'una regió de color: el camí és curt i directe.</span>
+            <span class="de-step">7. Clica just a la frontera entre colors: el camí es torna llarg i erràtic abans d'assentar-se.</span>
+            <span class="de-step">8. Clica dos punts gairebé idèntics a la frontera: poden acabar en arrels <strong>diferents</strong>.</span>
+          </div>
+
+          <h4>7. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Dins del teu processador.</strong> Molts processadors no tenen circuit de divisió: calculen 1/a amb Newton aplicat a f(x) = 1/x − a, que dona la iteració xₙ₊₁ = xₙ(2 − a·xₙ) —<strong>només multiplicacions i restes</strong>. Les arrels quadrades es fan igual. Cada divisió que fa el teu ordinador pot ser, literalment, unes quantes iteracions de Newton.</p>
+          <p><strong>La famosa «fast inverse square root».</strong> El codi del motor de Quake III per calcular 1/√x combinava un truc de bits amb <em>una sola</em> iteració de Newton per refinar-lo. Va ser prou eficaç per fer possible la il·luminació en temps real als ordinadors de finals dels 90, i el fragment de codi és probablement el més comentat de la història dels videojocs.</p>
+          <p><strong>Optimització i aprenentatge automàtic.</strong> Trobar el mínim d'una funció és trobar on la derivada s'anul·la: Newton aplicat a f′. Els mètodes de segon ordre i les seves aproximacions (quasi-Newton, BFGS, L-BFGS) són eines estàndard, i tot l'entrenament de models s'hi basa en algun grau.</p>
+          <p><strong>Enginyeria i simulació.</strong> Els mètodes implícits per a equacions diferencials rígides (vegeu la càpsula de Camp de pendents) requereixen resoldre una equació no lineal a cada pas, i ho fan amb Newton. El mateix per als simuladors de circuits, els solucionadors d'elements finits i els models de flux de potència a les xarxes elèctriques.</p>
+          <p><strong>Finances.</strong> Calcular la taxa interna de retorn (TIR) d'un flux de caixa, o la volatilitat implícita d'una opció a partir del seu preu, són equacions sense solució tancada que es resolen amb Newton.</p>
+
+          <h4>8. Curiositats</h4>
+          <p><strong>Newton no el va escriure així.</strong> El mètode que Newton va descriure cap al 1669 no feia servir derivades ni era iteratiu en el sentit modern: era un procediment algebraic per a polinomis. Joseph Raphson el va simplificar el 1690, i Thomas Simpson el 1740 va ser el primer a donar-li la forma general amb f′ i a aplicar-lo a sistemes d'equacions. El nom just seria «mètode de Newton–Raphson–Simpson», però la història és injusta amb els noms.</p>
+          <p><strong>El fractal de Newton és anterior al concepte de fractal.</strong> Cayley va topar amb el problema el 1879. Fatou i Julia en van desenvolupar la teoria cap al 1918-1920, sense poder-ne veure mai una imatge. Va caldre esperar als ordinadors dels anys 70 i 80 perquè algú pogués <em>mirar</em> allò que havien descrit. Mandelbrot va explicar que veure aquelles imatges va ser el que el va convèncer que hi havia una geometria per descobrir.</p>
+          <p><strong>Hi ha punts de partida que no van enlloc.</strong> A més dels cicles, existeixen punts inicials des dels quals el mètode no convergeix mai a cap arrel. Per al fractal de Newton, el conjunt d'aquests punts és precisament la frontera fractal, que té mesura zero (és «infinitament prim») però és infinitament complicat i està a tot arreu.</p>
+          <p><strong>La convergència quadràtica té lletra petita.</strong> Només es dona si l'arrel és <em>simple</em>. Si f té una arrel doble (com x² a f(x)=x²), la convergència passa a ser només lineal i el mètode perd tot el seu avantatge. Hi ha una versió modificada que recupera la velocitat si saps la multiplicitat de l'arrel.</p>
+          <p><strong>Es pot fer servir per calcular π.</strong> Aplicant Newton a f(x) = sin x amb x₀ = 3 s'obté 3,141592653589793… en només dues o tres iteracions, perquè sin té una arrel simple a π i la seva derivada allà val −1, cosa que fa la constant d'error molt favorable.</p>
+          <p><strong>El mètode de la secant és Newton per als mandrosos.</strong> Si no vols (o no pots) calcular f′, la pots aproximar amb el pendent entre els dos últims punts. La convergència baixa d'ordre 2 a ordre 1,618… —el nombre auri, que apareix aquí per una raó completament diferent de la de la càpsula de Fraccions contínues.</p>
+
+          <h4>9. Connexió amb altres àrees</h4>
+          <p>Amb el <strong>Joc del caos</strong> forma una parella perfecta i complementària: allà s'itera una regla <em>aleatòria</em> i n'apareix una figura ordenada; aquí s'itera una regla <em>completament determinista</em> i n'apareix una frontera impredictible. Junts diuen que la complexitat no ve de l'atzar sinó de la iteració.</p>
+          <p>Amb el <strong>Pla d'Argand</strong> la connexió és literal: la vista complexa d'aquesta càpsula viu en aquell pla, i les arrels que hi busca (les de zⁿ−1) són exactament les arrels de la unitat que allà es dibuixen com un polígon regular.</p>
+          <p>Amb <strong>Teoria de Galois</strong> hi ha una relació de causa i efecte: allà es demostra que <em>no pot existir</em> una fórmula per al grau 5; aquí es veu què es fa a la pràctica quan no n'hi ha. Els dos resultats són les dues cares de la mateixa moneda.</p>
+          <p>I amb <strong>Camp de pendents</strong> comparteix l'esperit de l'anàlisi numèrica: mètodes iteratius, ordres de convergència, i la consciència que un mètode pot donar-te un número perfectament formatat que sigui completament equivocat si no en respectes les condicions d'ús.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="real" class="active">Pas a pas (1D)</button>
+        <button data-v="complex">Pla complex i fractal</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only vista-real-only">
+      <span class="help-wrap chip-label">
+        f(x):
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">La tercera opció és famosa: des de x₀=0, Newton queda atrapat en un cicle perfecte de període 2 (0→1→0→1...) i mai troba cap arrel real.</span>
+      </span>
+      <div class="chip-row" id="realFnRow"></div>
+      <button class="btn btn-primary" id="nextStepBtn">Següent pas →</button>
+      <button class="btn btn-ghost" id="resetRealBtn">Reinicia</button>
+    </div>
+    <div class="controls-row explora-only vista-complex-only" style="display:none;">
+      <span class="help-wrap chip-label">
+        Polinomi:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Cada opció té les seves arrels ja calculades exactament (arrels de la unitat) — així es pot classificar amb certesa a quina convergeix cada punt.</span>
+      </span>
+      <div class="chip-row" id="complexFnRow"></div>
+      <button class="btn btn-primary" id="revealFractalBtn">Revela el fractal</button>
+      <button class="btn btn-ghost" id="resetComplexBtn">Reinicia</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap newton-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA 1D -->
+      <div class="vista-panel active" id="vistaRealPanel">
+        <div class="newton-stage"><canvas id="realCanvas"></canvas></div>
+
+        <!-- Equivalent per teclat de clicar la gràfica per triar x₀. Escriure
+             el valor permet, a més, provar punts de partida exactes: amb
+             x³−2x+2 i x₀=0 el mètode entra en un cicle 0 → 1 → 0 que
+             encertar amb el ratolí és pràcticament impossible. -->
+        <div class="point-controls">
+          <span class="chip-label">O escriu el punt de partida:</span>
+          <div class="point-row">
+            <label for="realX0">x₀</label><input type="number" id="realX0" step="0.1" value="1" inputmode="decimal">
+            <button class="btn btn-ghost" id="realStartBtn">Comença-hi a iterar</button>
+          </div>
+        </div>
+        <div class="step-narration" id="realNarration"></div>
+      </div>
+
+      <!-- VISTA COMPLEXA -->
+      <div class="vista-panel" id="vistaComplexPanel">
+        <div class="root-legend" id="complexLegend"></div>
+        <div class="newton-stage"><canvas id="complexCanvas"></canvas></div>
+
+        <div class="point-controls">
+          <span class="chip-label">O escriu el punt de partida:</span>
+          <div class="point-row">
+            <label for="cplxRe">z₀ real</label><input type="number" id="cplxRe" step="0.1" value="0.5" inputmode="decimal">
+            <label for="cplxIm">z₀ imag.</label><input type="number" id="cplxIm" step="0.1" value="0.5" inputmode="decimal">
+            <button class="btn btn-ghost" id="cplxStartBtn">Segueix-ne el camí</button>
+          </div>
+        </div>
+        <div class="step-narration" id="complexNarration"></div>
+      </div>
+
+      <!-- REPTE -->
+      <div class="repte-only" id="reptePanel" style="width:100%;flex-direction:column;align-items:center;gap:.7rem;">
+        <div class="newton-stage" id="repteStage"><canvas id="repteCanvas"></canvas></div>
+        <div class="step-narration" id="repteNarration"></div>
+        <div class="chip-row" id="repteButtonsRow"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Tria una funció i clica un punt de partida.</div>
+
+    <p class="method-hint" id="methodPanel">xₙ₊₁=xₙ−f(xₙ)/f'(xₙ): salta la tangent fins a l'eix. Al pla complex, cada punt convergeix cap a l'arrel més «accessible» des d'allà.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Cap pas encara</div>
+        <div class="readout-def" id="readoutDef">Clica un punt per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Newton, arrels, i el fractal amagat</div>
+
+    <div class="type-card active" id="card-tangent" data-method="tangent" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La tangent salta</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>x</mi><mi>n</mi></msub><mo>−</mo><mfrac><mrow><mi>f</mi><mo>(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>)</mo></mrow><mrow><msup><mi>f</mi><mo>′</mo></msup><mo>(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>)</mo></mrow></mfrac></math></div>
+        <div class="type-desc">Cada «Següent pas» dibuixa la tangent real a (xₙ,f(xₙ)) i marca on talla l'eix. Amb la funció especial, mira com el «salt» torna sempre al mateix parell de punts.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-conques" data-method="conques" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Conques d'atracció</div>
+        <div class="type-range">Cada arrel «reclama» una regió</div>
+        <div class="type-desc">Clica qualsevol punt del pla complex per veure exactament cap a quina arrel el porta el mètode —lluny de les fronteres, la resposta és òbvia; a prop, no gens.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-fractal" data-method="fractal" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">El fractal de Newton</div>
+        <div class="type-range">Frontera de dimensió no entera</div>
+        <div class="type-desc">«Revela el fractal» pinta miles de punts alhora. La vora entre colors mai s'allisa per molt que t'hi acostis: és tan complicada aquí com a qualsevol altra escala.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> a la Vista 1D, prova f(x)=x³−2x+2 amb x₀=0 exactament. No és un error de l'app: Newton pot fallar de veritat, fins i tot per a funcions ben senzilles.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/XCrwWHzy" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>El mètode de Newton-Raphson</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 04 · Càlcul i Anàlisi Matemàtica</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ARITMÈTICA COMPLEXA I POLINOMIS
+// ─────────────────────────────────────────────
+function cAdd(a, b) { return { re: a.re + b.re, im: a.im + b.im }; }
+function cSub(a, b) { return { re: a.re - b.re, im: a.im - b.im }; }
+function cMul(a, b) { return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re }; }
+function cDiv(a, b) { const d = b.re * b.re + b.im * b.im; return { re: (a.re * b.re + a.im * b.im) / d, im: (a.im * b.re - a.re * b.im) / d }; }
+function cMod(a) { return Math.hypot(a.re, a.im); }
+function polyEval(coeffs, z) {
+  let result = { re: 0, im: 0 }, zPow = { re: 1, im: 0 };
+  for (let i = 0; i < coeffs.length; i++) { result = cAdd(result, { re: coeffs[i] * zPow.re, im: coeffs[i] * zPow.im }); zPow = cMul(zPow, z); }
+  return result;
+}
+function polyDeriv(coeffs) { return coeffs.slice(1).map((c, i) => c * (i + 1)); }
+function newtonStepC(coeffs, derivCoeffs, z) { return cSub(z, cDiv(polyEval(coeffs, z), polyEval(derivCoeffs, z))); }
+
+// ─────────────────────────────────────────────
+//  DADES
+// ─────────────────────────────────────────────
+const REAL_POOL = [
+  { key: 'sq2', label: 'x²−2', f: x => x * x - 2, fp: x => 2 * x, roots: [-Math.SQRT2, Math.SQRT2] },
+  { key: 'cubic1', label: 'x³−x', f: x => x * x * x - x, fp: x => 3 * x * x - 1, roots: [-1, 0, 1] },
+  { key: 'pathological', label: 'x³−2x+2 (especial)', f: x => x * x * x - 2 * x + 2, fp: x => 3 * x * x - 2, roots: [-1.7692923542] }
+];
+const COMPLEX_POOL = [
+  { key: 'z3', label: 'z³−1', coeffs: [-1, 0, 0, 1], roots: [{ re: 1, im: 0 }, { re: -0.5, im: 0.8660254 }, { re: -0.5, im: -0.8660254 }], colors: ['#2563eb', '#c23b3b', '#1a7a52'] },
+  { key: 'z4', label: 'z⁴−1', coeffs: [-1, 0, 0, 0, 1], roots: [{ re: 1, im: 0 }, { re: 0, im: 1 }, { re: -1, im: 0 }, { re: 0, im: -1 }], colors: ['#2563eb', '#c23b3b', '#1a7a52', '#c08a2e'] }
+];
+const X_RANGE = [-2.4, 2.4], Y_RANGE_1D = [-3, 5];
+const C_RANGE = 2.0;
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let currentVista = 'real';
+let currentRealKey = 'sq2';
+let realSteps = []; // [x0, x1, x2, ...]
+let currentComplexKey = 'z3';
+let complexPath = null; // [z0,z1,...]
+let fractalData = null; // {gridN, rootIdx:[...]}
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteState = null;
+
+// ─────────────────────────────────────────────
+//  DPI / COORDENADES (escala CSS, com Camp de pendents i Pla d'Argand)
+// ─────────────────────────────────────────────
+function setupHiDPI(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+function localPointerXY(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const src = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+function makeXY1D(w, h) {
+  const sx = w / (X_RANGE[1] - X_RANGE[0]), sy = h / (Y_RANGE_1D[1] - Y_RANGE_1D[0]);
+  return {
+    toPx: (x, y) => ({ px: (x - X_RANGE[0]) * sx, py: h - (y - Y_RANGE_1D[0]) * sy }),
+    toX: (px) => X_RANGE[0] + px / sx
+  };
+}
+function makeXYC(w, h) {
+  const s = Math.min(w, h) / (2 * C_RANGE);
+  const cx = w / 2, cy = h / 2;
+  return { toPx: (z) => ({ px: cx + z.re * s, py: cy - z.im * s }), toC: (px, py) => ({ re: (px - cx) / s, im: (cy - py) / s }) };
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 1 — PAS A PAS (1D)
+// ─────────────────────────────────────────────
+function buildRealChips() {
+  const row = document.getElementById('realFnRow');
+  row.innerHTML = '';
+  REAL_POOL.forEach(fo => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = fo.label;
+    b.classList.toggle('active', fo.key === currentRealKey);
+    b.addEventListener('click', () => { currentRealKey = fo.key; realSteps = []; drawReal(); updateRealNarration(); highlightRealChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightRealChip() { document.querySelectorAll('#realFnRow .chip').forEach(c => c.classList.toggle('active', REAL_POOL.find(f => f.label === c.textContent).key === currentRealKey)); }
+function currentRealFn() { return REAL_POOL.find(f => f.key === currentRealKey); }
+function drawReal() {
+  const canvas = document.getElementById('realCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY1D(w, h);
+  ctx.clearRect(0, 0, w, h);
+  const fo = currentRealFn();
+  ctx.strokeStyle = 'rgba(27,30,45,.3)'; ctx.lineWidth = 1;
+  const ax0 = xy.toPx(X_RANGE[0], 0), ax1 = xy.toPx(X_RANGE[1], 0);
+  ctx.beginPath(); ctx.moveTo(ax0.px, ax0.py); ctx.lineTo(ax1.px, ax1.py); ctx.stroke();
+  ctx.strokeStyle = cssVar('--calcul'); ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i <= 120; i++) { const x = X_RANGE[0] + (X_RANGE[1] - X_RANGE[0]) * i / 120; const p = xy.toPx(x, fo.f(x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke();
+  fo.roots.forEach(r => { const p = xy.toPx(r, 0); ctx.beginPath(); ctx.arc(p.px, p.py, 4, 0, Math.PI * 2); ctx.fillStyle = cssVar('--good'); ctx.fill(); });
+  if (realSteps.length) {
+    const xn = realSteps[realSteps.length - 1];
+    const p0 = xy.toPx(xn, 0), p1 = xy.toPx(xn, fo.f(xn));
+    ctx.strokeStyle = 'rgba(27,30,45,.4)'; ctx.lineWidth = 1.2; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(p0.px, p0.py); ctx.lineTo(p1.px, p1.py); ctx.stroke(); ctx.setLineDash([]);
+    if (realSteps.length > 1) {
+      const xPrev = realSteps[realSteps.length - 2];
+      const pT0 = xy.toPx(xPrev, fo.f(xPrev)), pT1 = xy.toPx(xn, 0);
+      ctx.strokeStyle = cssVar('--bad'); ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(pT0.px, pT0.py); ctx.lineTo(pT1.px, pT1.py); ctx.stroke();
+    }
+    realSteps.forEach((x, i) => { const p = xy.toPx(x, 0); ctx.beginPath(); ctx.arc(p.px, p.py, 4, 0, Math.PI * 2); ctx.fillStyle = i === realSteps.length - 1 ? cssVar('--calcul') : 'rgba(27,30,45,.35)'; ctx.fill(); });
+  }
+  const last = realSteps.length ? realSteps[realSteps.length - 1] : null;
+  describeCanvas(canvas,
+    `Gràfica de ${fo.label} amb el mètode de Newton. ` +
+    (realSteps.length
+      ? `${realSteps.length - 1} pas${realSteps.length - 1 === 1 ? '' : 'sos'} fets des de x₀ = ${fmtNum(realSteps[0], 4)}. ` +
+        `Iteració actual: x = ${fmtNum(last, 6)}, on la funció val ${fmtNum(fo.f(last), 6)}.`
+      : 'Encara no has triat cap punt de partida: clica la gràfica per començar-hi a iterar.'));
+}
+function onRealClick(e) {
+  const canvas = document.getElementById('realCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const xy = makeXY1D(rect.width, rect.height);
+  const p = localPointerXY(e, canvas);
+  const x0 = xy.toX(p.x);
+  realSteps = [x0];
+  drawReal(); updateRealNarration();
+}
+function nextRealStep() {
+  if (!realSteps.length) { hint.textContent = 'Clica primer un punt de partida sobre l\'eix.'; return; }
+  const fo = currentRealFn();
+  const xn = realSteps[realSteps.length - 1];
+  const fpv = fo.fp(xn);
+  if (Math.abs(fpv) < 1e-9) { document.getElementById('realNarration').innerHTML += '<br><b>f\'(x)=0 — el mètode s\'atura, la tangent és horitzontal.</b>'; return; }
+  const xnext = xn - fo.f(xn) / fpv;
+  realSteps.push(xnext);
+  drawReal(); updateRealNarration();
+}
+function updateRealNarration() {
+  const el = document.getElementById('realNarration');
+  const fo = currentRealFn();
+  if (!realSteps.length) { el.innerHTML = '<span class="sn-title">Encara res</span>Clica un punt sobre l\'eix per triar x₀.'; readoutBadge.classList.remove('active'); return; }
+  const xn = realSteps[realSteps.length - 1];
+  let txt = `x${subscriptNum(realSteps.length - 1)} = <b>${fmtNum(xn, 5)}</b>, f(x)=${fmtNum(fo.f(xn), 4)}, f'(x)=${fmtNum(fo.fp(xn), 4)}.`;
+  if (realSteps.length >= 5 && Math.abs(realSteps[realSteps.length - 1] - realSteps[realSteps.length - 3]) < 1e-6 && Math.abs(fo.f(xn)) > 1e-3) {
+    txt += ` <b>Atrapat en un cicle</b> — repeteix els mateixos valors sense apropar-se a cap arrel.`;
+  } else if (Math.abs(fo.f(xn)) < 1e-6) {
+    txt += ` Convergit a una arrel real.`;
+  }
+  el.innerHTML = '<span class="sn-title">Pas ' + (realSteps.length - 1) + '</span>' + txt;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmtNum(xn, 3);
+  readoutName.textContent = `pas ${realSteps.length - 1}`;
+  readoutDef.textContent = `f(x)=${fmtNum(fo.f(xn), 4)}`;
+}
+function subscriptNum(n) { const subs = '₀₁₂₃₄₅₆₇₈₉'; return String(n).split('').map(d => subs[+d]).join(''); }
+document.getElementById('realCanvas').addEventListener('click', onRealClick);
+document.getElementById('realStartBtn').addEventListener('click', () => {
+  const x0 = clamp(parseFloat(document.getElementById('realX0').value) || 0, X_RANGE[0], X_RANGE[1]);
+  realSteps = [x0];
+  drawReal(); updateRealNarration();
+  announce(`Iteració iniciada a x₀ igual a ${fmtNum(x0, 3)}.`);
+});
+document.getElementById('nextStepBtn').addEventListener('click', nextRealStep);
+document.getElementById('resetRealBtn').addEventListener('click', () => { realSteps = []; drawReal(); updateRealNarration(); });
+
+// ─────────────────────────────────────────────
+//  VISTA 2 — PLA COMPLEX I FRACTAL
+// ─────────────────────────────────────────────
+function buildComplexChips() {
+  const row = document.getElementById('complexFnRow');
+  row.innerHTML = '';
+  COMPLEX_POOL.forEach(fo => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = fo.label;
+    b.classList.toggle('active', fo.key === currentComplexKey);
+    b.addEventListener('click', () => { currentComplexKey = fo.key; complexPath = null; fractalData = null; drawComplex(); buildComplexLegend(); highlightComplexChip(); document.getElementById('complexNarration').innerHTML = ''; });
+    row.appendChild(b);
+  });
+}
+function highlightComplexChip() { document.querySelectorAll('#complexFnRow .chip').forEach(c => c.classList.toggle('active', COMPLEX_POOL.find(f => f.label === c.textContent).key === currentComplexKey)); }
+function currentComplexFn() { return COMPLEX_POOL.find(f => f.key === currentComplexKey); }
+function buildComplexLegend() {
+  const fo = currentComplexFn();
+  document.getElementById('complexLegend').innerHTML = fo.roots.map((r, i) => `<span><i style="background:${fo.colors[i]}"></i>arrel ${i + 1}</span>`).join('');
+}
+function nearestRootIdx(fo, z) {
+  let best = 0, bestD = Infinity;
+  fo.roots.forEach((r, i) => { const d = Math.hypot(z.re - r.re, z.im - r.im); if (d < bestD) { bestD = d; best = i; } });
+  return best;
+}
+function computeFractal(fo, gridN) {
+  const derivCoeffs = polyDeriv(fo.coeffs);
+  const rootIdx = new Uint8Array(gridN * gridN);
+  for (let gy = 0; gy < gridN; gy++) {
+    for (let gx = 0; gx < gridN; gx++) {
+      const re = -C_RANGE + (2 * C_RANGE) * (gx + 0.5) / gridN;
+      const im = C_RANGE - (2 * C_RANGE) * (gy + 0.5) / gridN;
+      let z = { re, im };
+      for (let it = 0; it < 25; it++) z = newtonStepC(fo.coeffs, derivCoeffs, z);
+      rootIdx[gy * gridN + gx] = nearestRootIdx(fo, z);
+    }
+  }
+  return { gridN, rootIdx };
+}
+function tracePath(fo, z0, maxIt) {
+  const derivCoeffs = polyDeriv(fo.coeffs);
+  const path = [z0]; let z = z0;
+  for (let i = 0; i < maxIt; i++) { z = newtonStepC(fo.coeffs, derivCoeffs, z); path.push(z); if (cMod(cSub(z, path[path.length - 2])) < 1e-7) break; }
+  return path;
+}
+function drawComplex() {
+  const canvas = document.getElementById('complexCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXYC(w, h);
+  ctx.clearRect(0, 0, w, h);
+  const fo = currentComplexFn();
+  if (fractalData) {
+    const cell = w / fractalData.gridN;
+    for (let gy = 0; gy < fractalData.gridN; gy++) for (let gx = 0; gx < fractalData.gridN; gx++) {
+      ctx.fillStyle = hexToRgba(fo.colors[fractalData.rootIdx[gy * fractalData.gridN + gx]], 0.55);
+      ctx.fillRect(gx * cell, gy * cell, cell + 0.5, cell + 0.5);
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(27,30,45,.15)'; ctx.lineWidth = 1;
+    for (let v = -Math.floor(C_RANGE); v <= Math.floor(C_RANGE); v++) {
+      const p1 = xy.toPx({ re: v, im: -C_RANGE }), p2 = xy.toPx({ re: v, im: C_RANGE });
+      ctx.beginPath(); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); ctx.stroke();
+      const p3 = xy.toPx({ re: -C_RANGE, im: v }), p4 = xy.toPx({ re: C_RANGE, im: v });
+      ctx.beginPath(); ctx.moveTo(p3.px, p3.py); ctx.lineTo(p4.px, p4.py); ctx.stroke();
+    }
+  }
+  fo.roots.forEach((r, i) => { const p = xy.toPx(r); ctx.beginPath(); ctx.arc(p.px, p.py, 5, 0, Math.PI * 2); ctx.fillStyle = fo.colors[i]; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4; ctx.stroke(); });
+  if (complexPath) {
+    ctx.strokeStyle = 'rgba(27,30,45,.75)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    complexPath.forEach((z, i) => { const p = xy.toPx(z); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); });
+    ctx.stroke();
+    complexPath.forEach((z, i) => { const p = xy.toPx(z); ctx.beginPath(); ctx.arc(p.px, p.py, i === 0 ? 4 : 2.5, 0, Math.PI * 2); ctx.fillStyle = i === 0 ? cssVar('--bad') : 'rgba(27,30,45,.6)'; ctx.fill(); });
+  }
+}
+// Traça el camí des de z₀ i n'actualitza tota la lectura. Extret de
+// onComplexClick perquè l'entrada per teclat faci exactament el mateix
+// càlcul i la mateixa narració, en lloc de duplicar-los (i desincronitzar-se
+// a la primera modificació que es faci en un dels dos llocs).
+function startComplexFrom(z0) {
+  const fo = currentComplexFn();
+  complexPath = tracePath(fo, z0, 30);
+  drawComplex();
+  const last = complexPath[complexPath.length - 1];
+  const idx = nearestRootIdx(fo, last);
+  const converged = cMod(cSub(last, fo.roots[idx])) < 1e-4;
+  const passos = complexPath.length - 1;
+  document.getElementById('complexNarration').innerHTML =
+    `<span class="sn-title">Camí de ${passos} passos</span>Des de z₀=${fmtNum(z0.re, 2)}${z0.im >= 0 ? '+' : '−'}${fmtNum(Math.abs(z0.im), 2)}i, ${converged ? `convergeix a l'<b>arrel ${idx + 1}</b>` : 'encara no s\'ha assentat del tot'} en ${passos} passos.`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = 'z' + subscriptNum(idx + 1);
+  readoutName.textContent = `Arrel ${idx + 1}`;
+  readoutDef.textContent = `${passos} passos des del punt triat`;
+  return { idx, converged, passos };
+}
+function onComplexClick(e) {
+  const canvas = document.getElementById('complexCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const xy = makeXYC(rect.width, rect.height);
+  const p = localPointerXY(e, canvas);
+  startComplexFrom(xy.toC(p.x, p.y));
+}
+document.getElementById('complexCanvas').addEventListener('click', onComplexClick);
+document.getElementById('cplxStartBtn').addEventListener('click', () => {
+  const z0 = {
+    re: clamp(parseFloat(document.getElementById('cplxRe').value) || 0, -C_RANGE, C_RANGE),
+    im: clamp(parseFloat(document.getElementById('cplxIm').value) || 0, -C_RANGE, C_RANGE)
+  };
+  const r = startComplexFrom(z0);
+  announce(`Des de z₀ igual a ${fmtNum(z0.re, 2)} més ${fmtNum(z0.im, 2)} i: ${r.converged ? `convergeix a l'arrel ${r.idx + 1}` : 'encara no s\'ha assentat'} en ${r.passos} passos.`);
+});
+document.getElementById('revealFractalBtn').addEventListener('click', () => {
+  fractalData = computeFractal(currentComplexFn(), 110);
+  drawComplex();
+  document.getElementById('complexNarration').innerHTML = `<span class="sn-title">Fractal revelat</span>${110 * 110} punts calculats, 25 passos de Newton cadascun. Clica'n qualsevol per veure el seu camí concret superposat.`;
+});
+document.getElementById('resetComplexBtn').addEventListener('click', () => { complexPath = null; fractalData = null; drawComplex(); document.getElementById('complexNarration').innerHTML = ''; });
+
+// ─────────────────────────────────────────────
+//  CANVI DE VISTA
+// ─────────────────────────────────────────────
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  document.getElementById('vistaRealPanel').classList.toggle('active', v === 'real');
+  document.getElementById('vistaComplexPanel').classList.toggle('active', v === 'complex');
+  document.querySelectorAll('.vista-real-only').forEach(el => el.style.display = v === 'real' ? 'flex' : 'none');
+  document.querySelectorAll('.vista-complex-only').forEach(el => el.style.display = v === 'complex' ? 'flex' : 'none');
+  if (v === 'real') { drawReal(); updateRealNarration(); hint.textContent = 'Clica un x₀ sobre l\'eix.'; }
+  if (v === 'complex') { drawComplex(); buildComplexLegend(); hint.textContent = 'Clica un punt del pla, o revela el fractal.'; }
+  initHelpPopups();
+}
+document.querySelectorAll('#vistaToggle button').forEach(btn => btn.addEventListener('click', () => setVista(btn.dataset.v)));
+window.addEventListener('resize', () => { drawReal(); drawComplex(); });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function advanceRepte(delay) { const snapshot = repteRoundId; setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, delay); }
+function buildRepteButtons(labels, onClick) {
+  const row = document.getElementById('repteButtonsRow');
+  row.innerHTML = '';
+  labels.forEach((l, i) => { const b = document.createElement('button'); b.className = i === 0 ? 'btn btn-primary' : 'btn btn-ghost'; b.textContent = l; b.addEventListener('click', () => onClick(i)); row.appendChild(b); });
+}
+
+function startBasinRound() {
+  const fo = COMPLEX_POOL[Math.floor(Math.random() * COMPLEX_POOL.length)];
+  const z0 = { re: -C_RANGE * 0.85 + Math.random() * C_RANGE * 1.7, im: -C_RANGE * 0.85 + Math.random() * C_RANGE * 1.7 };
+  const path = tracePath(fo, z0, 30);
+  const correctIdx = nearestRootIdx(fo, path[path.length - 1]);
+  repteState = { type: 'basin', fo, z0, correctIdx };
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXYC(w, h);
+  ctx.clearRect(0, 0, w, h);
+  fo.roots.forEach((r, i) => { const p = xy.toPx(r); ctx.beginPath(); ctx.arc(p.px, p.py, 6, 0, Math.PI * 2); ctx.fillStyle = fo.colors[i]; ctx.fill(); ctx.fillStyle = 'rgba(27,30,45,.6)'; ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.fillText('' + (i + 1), p.px, p.py - 12); });
+  const p0 = xy.toPx(z0);
+  ctx.beginPath(); ctx.arc(p0.px, p0.py, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(27,30,45,.7)'; ctx.fill();
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${fo.label}</span>El punt fosc: a quina arrel (numerada) creus que convergirà?`;
+  buildRepteButtons(fo.roots.map((_, i) => 'Arrel ' + (i + 1)), (i) => submitBasin(i));
+  hint.textContent = 'Prediu la conca d\'atracció.';
+}
+function submitBasin(claim) {
+  if (repteTimeUp) return;
+  const correct = claim === repteState.correctIdx;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — convergeix a l'arrel ${repteState.correctIdx + 1}.`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+
+function startConvergeRound() {
+  const fo = REAL_POOL[Math.floor(Math.random() * REAL_POOL.length)];
+  const x0 = fo.key === 'pathological' && Math.random() < 0.5 ? 0 : (-2 + Math.random() * 4);
+  let xs = [x0];
+  for (let i = 0; i < 6; i++) { const fpv = fo.fp(xs[xs.length - 1]); if (Math.abs(fpv) < 1e-9) break; xs.push(xs[xs.length - 1] - fo.f(xs[xs.length - 1]) / fpv); }
+  const cycles = xs.length >= 6 && Math.abs(xs[xs.length - 1] - xs[xs.length - 3]) < 1e-6 && Math.abs(fo.f(xs[xs.length - 1])) > 1e-3;
+  repteState = { type: 'converge', fo, x0, cycles };
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY1D(w, h);
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = cssVar('--calcul'); ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 100; i++) { const x = X_RANGE[0] + (X_RANGE[1] - X_RANGE[0]) * i / 100; const p = xy.toPx(x, fo.f(x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke();
+  const p0 = xy.toPx(x0, 0);
+  ctx.beginPath(); ctx.arc(p0.px, p0.py, 6, 0, Math.PI * 2); ctx.fillStyle = cssVar('--bad'); ctx.fill();
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${fo.label}, x₀=${fmtNum(x0, 2)}</span>Des d'aquí, Newton convergeix a una arrel, o queda atrapat sense convergir mai?`;
+  buildRepteButtons(['Convergeix', 'Queda atrapat'], (i) => submitConverge(i === 1));
+  hint.textContent = 'Prediu si Newton convergirà des d\'aquest punt.';
+}
+function submitConverge(claim) {
+  if (repteTimeUp) return;
+  const correct = claim === repteState.cycles;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — ${repteState.cycles ? 'queda atrapat en un cicle.' : 'convergeix normalment.'}`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  readoutBadge.classList.remove('active');
+  if (Math.random() < 0.5) startBasinRound(); else startConvergeRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  setVista(currentVista);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  tangent: "xₙ₊₁=xₙ−f(xₙ)/f'(xₙ): la tangent a la corba talla l'eix més a prop de l'arrel real.",
+  conques: "Cada punt de partida convergeix a l'arrel més 'accessible' seguint la mateixa fórmula, ara en el pla complex.",
+  fractal: "Pintar cada punt segons la seva arrel de convergència revela una frontera que mai s'allisa per molt que hi facis zoom."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-tangent').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('tangent'); if (!repteMode) setVista('real'); });
+document.getElementById('card-conques').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('conques'); if (!repteMode) setVista('complex'); });
+document.getElementById('card-fractal').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('fractal'); if (!repteMode) { setVista('complex'); if (!fractalData) document.getElementById('revealFractalBtn').click(); } });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildRealChips();
+buildComplexChips();
+setVista('real');
+</script>
+</body>
+</html>

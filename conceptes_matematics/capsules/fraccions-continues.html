@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraccions contínues · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--aritmetica); }
+
+    .rect-label { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); text-align: center; }
+    #confirmBtn { align-self: flex-start; }
+    #pellCheck { font-family: var(--font-mono); font-size: .85rem; }
+    #pellCheck.ok { color: var(--good); font-weight: 700; }
+
+    /* ── Fracció imbricada (figura de la secció "Què és?") ──
+       Grid en comptes de flex: cada .frac és una pila de 3 files (numerador,
+       barra, denominador) que s'amplen totes juntes a l'ample del contingut
+       més ample — així la barra sempre queda exactament sota el que toca,
+       sense els buits que deixava el flex+border-bottom anterior. */
+    .cf-diagram { display: flex; align-items: center; justify-content: center; gap: .2rem; padding: 1.5rem .75rem; font-family: var(--font-mono); font-size: 1.15rem; color: var(--ink); overflow-x: auto; white-space: nowrap; }
+    /* (Les regles .frac/.num/.bar/.den que hi havia aquí componien la torre de
+       fraccions a mà. Ara la compon MathML natiu i han quedat sense ús.) */
+
+    /* ── Explicació del pas, sempre visible sota el rectangle ── */
+    .sq-count { font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; color: var(--m-color); min-width: 2ch; text-align: center; }
+    #squareStepper .btn { min-width: 44px; justify-content: center; font-size: 1.1rem; padding: .5rem .9rem; }
+    #squareStepper .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .step-explain {
+      background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .75rem 1rem; font-size: .85rem; color: var(--ink); line-height: 1.6;
+    }
+    .step-explain b { color: var(--m-color); font-family: var(--font-mono); }
+
+    /* ── Vista 2: l'equació de Pell calculada directament ── */
+    .vista-panel { display: none; }
+    .vista-panel.active { display: block; }
+    .pell-n-chip.special { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+    .pell-display { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem .9rem; margin-top: .9rem; }
+    .pell-eq { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--m-color); text-align: center; }
+    .pell-cf { font-family: var(--font-mono); font-size: .95rem; text-align: center; margin-top: .7rem; overflow-x: auto; white-space: nowrap; padding-bottom: .2rem; }
+    .pell-period { background: color-mix(in srgb, var(--m-color) 16%, transparent); padding: .05rem .3rem; border-radius: 4px; }
+    .pell-sol { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; text-align: center; margin-top: .8rem; color: var(--ink); word-break: break-all; }
+    .pell-verify { font-family: var(--font-mono); font-size: .82rem; text-align: center; margin-top: .35rem; color: var(--muted); word-break: break-all; }
+    .pell-verify b { color: var(--good); }
+    .pell-digits { text-align: center; font-size: .76rem; color: var(--muted); margin-top: .5rem; }
+    .pell-digits b { color: var(--m-color); font-family: var(--font-mono); }
+    .pell-trace-label { font-size: .78rem; color: var(--muted); line-height: 1.5; margin-top: .9rem; text-align: center; }
+    .pell-trace-wrap { max-height: 220px; overflow-y: auto; overflow-x: auto; margin-top: .5rem; border: 1px solid var(--border); border-radius: 8px; }
+    table.pell-trace { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: .78rem; white-space: nowrap; }
+    table.pell-trace th { position: sticky; top: 0; background: var(--card); text-align: left; padding: .35rem .6rem; border-bottom: 1px solid var(--border); font-family: var(--font-body); font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    table.pell-trace td { padding: .3rem .6rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); color: var(--ink); }
+    table.pell-trace tr:last-child td { border-bottom: none; }
+    table.pell-trace tr.pell-trace-hit td { background: color-mix(in srgb, var(--good) 14%, transparent); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--aritmetica)">Bloc 01 · Fraccions contínues</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA: canvas -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Fraccions contínues</h1>
+      <p>Retalla el quadrat més gran possible d'un rectangle, una vegada i una altra. El nombre de quadrats a cada pas és un terme de la fracció contínua — i per a √N, el patró que es repeteix resol l'equació de Pell.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Un número real es pot escriure com a fracció «normal» o en forma decimal — però també es pot escriure com una <strong>fracció contínua</strong>: una torre de fraccions imbricades unes dins les altres.</p>
+          <!-- MathML natiu: substitueix una torre de fraccions feta a mà amb
+               <span class="frac"> imbricats. Aquella versió es veia bé però un
+               lector de pantalla la llegia com a text pla («x = a₀ + 1 a₁ + 1
+               a₂ + ⋱»), on el «1 a₁» sona a multiplicació i l'estructura de
+               fracció desapareix del tot. Amb <mfrac>, el navegador la comunica
+               com el que és. No cal cap biblioteca: MathML Core és natiu a
+               Firefox, Safari i Chrome/Edge (des de la v109). -->
+          <div class="explain-figure cf-diagram">
+            <math display="block" xmlns="http://www.w3.org/1998/Math/MathML">
+              <mi>x</mi><mo>=</mo>
+              <msub><mi>a</mi><mn>0</mn></msub><mo>+</mo>
+              <mfrac>
+                <mn>1</mn>
+                <mrow>
+                  <msub><mi>a</mi><mn>1</mn></msub><mo>+</mo>
+                  <mfrac>
+                    <mn>1</mn>
+                    <mrow>
+                      <msub><mi>a</mi><mn>2</mn></msub><mo>+</mo>
+                      <mfrac><mn>1</mn><mo>⋱</mo></mfrac>
+                    </mrow>
+                  </mfrac>
+                </mrow>
+              </mfrac>
+            </math>
+          </div>
+          <div class="explain-figure-caption">La torre de fraccions que dona nom a les fraccions contínues, escrita de forma compacta com [a₀; a₁, a₂, ...].</div>
+          <p>Els números a₀, a₁, a₂... (sempre enters) es diuen <strong>quocients parcials</strong>, i es calculen un a un: a₀ és la part entera de x; al que sobra se li fa la inversa (1 dividit per la part que falta) i es torna a agafar la part entera, obtenint a₁; i així successivament. Si x és racional, el procés s'acaba en algun punt (deixa de sobrar res); si x és irracional, no s'acaba mai.</p>
+          <p>Aquest mateix procés té una lectura geomètrica, que és la que farem servir aquí: imagina un rectangle de costats x i 1. a₀ és quantes vegades el costat curt (1) cap dins del llarg (x). Retalla aquests a₀ quadrats i mira què queda: un rectangle més petit, amb els costats bescanviats. Repeteix-ho amb aquest nou rectangle per trobar a₁, i així successivament — és, de fet, el mateix algorisme d'Euclides que ja coneixes per al màxim comú divisor, aplicat aquí a qualsevol número real, no només a enters.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Els <strong>convergents</strong> pₙ/qₙ — les fraccions que resulten de tallar la torre en cada pis — són, es pot demostrar, <strong>les millors aproximacions racionals possibles</strong> per a aquella mida de denominador: no hi ha cap altra fracció amb un denominador igual o més petit que quedi més a prop de x. És per això que 22/7 aproxima π tan bé amb un denominador tan petit.</p>
+          <p>Quan x = √N (amb N que no és un quadrat perfecte), passa una cosa notable: la fracció contínua és <strong>sempre periòdica</strong>, tard o d'hora es repeteix per sempre (<a href="https://en.wikipedia.org/wiki/Periodic_continued_fraction" target="_blank" rel="noopener">teorema de Lagrange</a>). Aquesta periodicitat no és una curiositat estètica: és exactament el que permet resoldre l'<a href="https://en.wikipedia.org/wiki/Pell%27s_equation" target="_blank" rel="noopener">equació de Pell</a>, x² − N y² = 1.</p>
+          <p>«Resoldre-la» vol dir una cosa molt concreta: trobar x,y que siguin <strong>nombres enters</strong>, no qualsevol parell real (d'aquests n'hi ha infinits, formen tota una hipèrbola, i no diuen res d'interessant). Trobar-ne un parell enter és, en canvi, genuïnament difícil —i el mètode per fer-ho, la <a href="https://en.wikipedia.org/wiki/Chakravala_method" target="_blank" rel="noopener">chakravala</a>, el van descobrir matemàtics indis (Brahmagupta, després Bhāskara II) segles abans que Fermat el llencés com a repte als seus col·legues europeus el 1657 —i, per una ironia històrica, el nom «de Pell» li ve d'un error d'Euler, que hi va confondre l'autoria: John Pell amb prou feines hi va treballar. Sota el capó, el mètode indi i el de les fraccions contínues són el mateix algorisme.</p>
+          <p>Un fet que sorprèn la primera vegada: la mida d'N no diu res sobre la mida de la solució. Explora-ho a la segona pestanya d'aquesta càpsula.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria un número amb els xips de dalt: una arrel √N, el nombre auri φ, o una fracció p/q.</li>
+            <li>El rectangle mostra els dos costats actuals (llarg × curt). Arrossega d'esquerra a dreta: el nombre de quadrats sencers de costat curt que hi caben es mostra en gran, actualitzant-se en directe mentre mous el dit o el ratolí.</li>
+            <li>Quan creguis que ja no hi cap cap quadrat més, prem «Confirma». Si encara en cabia un altre, t'ho dirà — continua arrossegant cap a la dreta.</li>
+            <li>Just sota el rectangle, un requadre explica exactament per què el rectangle següent té les mides que té.</li>
+            <li>A dalt es va escrivint la notació [a₀; a₁, a₂, ...] i el convergent actual, comparat amb el valor real.</li>
+            <li>En mode Repte, cada convergent es comprova automàticament contra x² − Ny² = 1: quan hi encaixa, has resolt l'equació de Pell amb els teus propis passos.</li>
+            <li>Canvia a la pestanya <strong>«L'equació de Pell»</strong> per veure-la calculada directament per a diversos N —incloent-hi N=61, on la solució més petita té 10 xifres.</li>
+          </ol>
+        </div></div></div>
+      </div>
+
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+          <p class="deep-lead">Construïm la idea des de zero: d'on surt la notació, per què el rectangle és exactament el mateix que l'algorisme, per què els convergents són òptims, i com tot això acaba resolent una equació que va tenir Europa encallada un segle.</p>
+
+          <h4>1. Com s'escriu un número?</h4>
+          <p>Estem tan acostumats a la notació decimal que oblidem que és una <strong>tria arbitrària</strong>. Escriure π = 3,14159… vol dir «3 unitats, 1 desena, 4 centèsimes…»: tot depèn de què hàgim decidit que és una desena, i això depèn de tenir deu dits. En base 2, els mateixos números tenen dígits completament diferents. La notació decimal, doncs, no ens diu res sobre <em>el número</em>; ens diu com es comporta el número respecte d'una base que hem escollit nosaltres.</p>
+          <p>I això té conseqüències incòmodes. En decimal, 1/3 = 0,333… és infinit i periòdic, mentre que 1/2 = 0,5 s'acaba de seguida. Però 1/3 i 1/2 són, aritmèticament, exactament la mateixa mena d'objecte: dues fraccions senzilles. La diferència entre elles no és matemàtica, és un accident de la base 10. Pitjor encara: mirant els decimals de 0,333… i els de 0,101001000100001… (que és irracional) no hi ha manera òbvia de distingir qui és racional i qui no.</p>
+          <p>Les <strong>fraccions contínues</strong> arreglen exactament això. No depenen de cap base. S'obtenen només amb dues operacions —agafar la part entera i fer la inversa— i el resultat és una espècie de «carnet d'identitat aritmètic» del número: la seva forma et diu immediatament si és racional, si és una arrel quadrada, o si és cap de les dues coses.</p>
+
+          <h4>2. Construcció</h4>
+          <p>El procediment és una recepta de dues instruccions que es repeteixen. Partim d'un número x:</p>
+          <p><strong>(a)</strong> Agafa la part entera: a₀ = ⌊x⌋. El que sobra, x − a₀, és un número entre 0 i 1. <strong>(b)</strong> Si el que sobra és 0, has acabat. Si no, fes-ne la inversa —com que era menor que 1, la inversa és més gran que 1— i torna al pas (a) amb aquest número nou.</p>
+          <p>Cada volta produeix un enter aₙ. La llista d'aquests enters, escrita [a₀; a₁, a₂, …], és la fracció contínua de x. Vegem-ho amb un número concret.</p>
+
+          <div class="deep-example">
+            <span class="de-title">Exemple: 415/93</span>
+            <span class="de-step">415/93 = 4,4623…&nbsp; → part entera <strong>a₀ = 4</strong>; sobra 415 − 4·93 = 43, és a dir 43/93</span>
+            <span class="de-step">invertim: 93/43 = 2,1627…&nbsp; → <strong>a₁ = 2</strong>; sobra 93 − 2·43 = 7, és a dir 7/43</span>
+            <span class="de-step">invertim: 43/7 = 6,1428…&nbsp; → <strong>a₂ = 6</strong>; sobra 43 − 6·7 = 1, és a dir 1/7</span>
+            <span class="de-step">invertim: 7/1 = 7 exacte&nbsp; → <strong>a₃ = 7</strong>; no sobra res: <strong>fi</strong></span>
+            <span class="de-step">Resultat: 415/93 = [4; 2, 6, 7]</span>
+          </div>
+
+          <p>Fixa't en els números que han anat apareixent com a residus: 93, 43, 7, 1. Si has vist mai l'algorisme d'Euclides per calcular el màxim comú divisor de 415 i 93, són exactament els mateixos. No s'hi assemblen: <strong>són el mateix càlcul</strong>. La fracció contínua d'un racional p/q no és res més que l'algorisme d'Euclides aplicat a p i q, apuntant els quocients en lloc de només el residu final. D'aquí surt un fet immediat i important: com que l'algorisme d'Euclides sempre acaba quan els números són enters, <strong>la fracció contínua d'un racional sempre és finita</strong>. I a l'inrevés: si s'acaba, el número era racional.</p>
+
+          <h4>3. Exemple amb un rectangle</h4>
+          <p>Ara ve la part que l'element interactiu d'aquesta càpsula fa visible. Agafa un rectangle de costats x i 1 (el llarg i el curt). Pregunta: <em>quants quadrats de costat 1 hi caben, de manera sencera, dins d'aquest rectangle?</em> La resposta és ⌊x⌋, que és exactament a₀. Retalla'ls. El que queda és un rectangle més petit, de costats 1 i x − a₀.</p>
+          <p>Aquest rectangle nou té el costat curt on abans hi havia el llarg. Si el gires perquè torni a estar «de cara», les seves proporcions són 1 : (x−a₀), o sigui, la proporció d'abans invertida. I què fa el pas (b) de la recepta? Exactament això: invertir. Per tant, <strong>retallar quadrats i girar el que queda és la versió geomètrica d'agafar la part entera i invertir</strong>. Cada terme de la fracció contínua és, literalment, «quants quadrats hi cabien en aquest pas».</p>
+          <div class="deep-aside">
+            <strong>Per què val la pena veure-ho així.</strong> La versió geomètrica explica una cosa que la versió numèrica amaga: per què el procés s'atura amb els racionals i no s'atura mai amb els irracionals. Si x = p/q és racional, tots els rectangles que van apareixent tenen costats que són múltiples enters d'una unitat comuna (el màxim comú divisor), i cada retallada la fa més petita — no pot durar per sempre. Si x és irracional, no existeix cap unitat comuna que mesuri exactament els dos costats (això és, precisament, el que vol dir «incommensurable», la paraula que feien servir els grecs), i per tant la retallada no s'acaba mai. La irracionalitat de √2 es pot demostrar exactament així, sense parlar de parells i senars.
+          </div>
+
+          <h4>4. Els convergents</h4>
+          <p>Si tallem la torre de fraccions en un pis qualsevol, obtenim un número racional. Aquests talls es diuen <strong>convergents</strong> i s'escriuen pₙ/qₙ. No cal recalcular-los des de zero cada vegada: hi ha una recurrència que els genera un darrere l'altre.</p>
+          <p style="text-align:center;margin:.7rem 0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><msub><mi>a</mi><mi>n</mi></msub><msub><mi>p</mi><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>p</mi><mrow><mi>n</mi><mo>−</mo><mn>2</mn></mrow></msub></math>
+            &nbsp;&nbsp;i&nbsp;&nbsp;
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>q</mi><mi>n</mi></msub><mo>=</mo><msub><mi>a</mi><mi>n</mi></msub><msub><mi>q</mi><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>q</mi><mrow><mi>n</mi><mo>−</mo><mn>2</mn></mrow></msub></math>
+          </p>
+          <p>Hi ha una identitat que surt d'aquesta recurrència i que ho explica gairebé tot: pₙqₙ₋₁ − pₙ₋₁qₙ = (−1)ⁿ⁻¹. Té dues lectures. La primera: com que el resultat és ±1, qualsevol divisor comú de pₙ i qₙ hauria de dividir 1, o sigui que <strong>els convergents ja surten sempre simplificats</strong>, sense haver de fer res. La segona és més potent: dividint-ho tot per qₙqₙ₋₁ s'obté que la distància entre dos convergents consecutius és exactament 1/(qₙqₙ₋₁). Com que els convergents van saltant alternativament per sota i per damunt del valor real, aquesta distància <strong>acota l'error</strong>: |x − pₙ/qₙ| &lt; 1/(qₙqₙ₊₁).</p>
+          <p>Aquí hi ha la clau de tot. Aquesta cota depèn de <strong>qₙ₊₁</strong>, que és aproximadament aₙ₊₁·qₙ. Per tant: <strong>com més gran sigui el terme següent de la fracció contínua, millor és l'aproximació que acabes d'obtenir.</strong> Un terme gros vol dir que el residu que quedava era minúscul, i per tant que ja eres molt a prop. Això no és una observació estètica: és un criteri que es pot llegir directament de la llista de termes.</p>
+
+          <div class="deep-example">
+            <span class="de-title">Exemple: per què 355/113 aproxima π tan bé</span>
+            <span class="de-step">π = [3; 7, 15, 1, <strong>292</strong>, 1, 1, 1, 2, …]</span>
+            <span class="de-step">convergents: 3 → 22/7 → 333/106 → <strong>355/113</strong> → 103993/33102 → …</span>
+            <span class="de-step">355/113 = 3,14159292…&nbsp;·&nbsp;π = 3,14159265…&nbsp;→ error ≈ 2,7 × 10⁻⁷</span>
+            <span class="de-step">El terme següent és <strong>292</strong>, enorme → l'error és ~1/(113·292·113) ≈ 3×10⁻⁷</span>
+          </div>
+          <p>Amb un denominador de només tres xifres, 355/113 clava π fins a la sisena decimal. No és sort ni casualitat: és perquè al lloc número quatre de la fracció contínua de π hi ha un 292, un terme excepcionalment gran. Els matemàtics xinesos ja coneixien aquesta fracció al segle V (Zu Chongzhi), mil anys abans que existís la teoria que explica per què funciona tan bé.</p>
+          <div class="deep-key">
+            <strong>El teorema, dit amb precisió:</strong> si p/q és una fracció qualsevol amb q ≤ qₙ, aleshores |x − pₙ/qₙ| ≤ |x − p/q|. És a dir, cap fracció amb un denominador igual o més petit no s'acosta més a x que el convergent. I encara més fort: tota fracció que compleixi |x − p/q| &lt; 1/(2q²) <em>ha de ser</em> un convergent de x. Les bones aproximacions no només inclouen els convergents: <em>són</em> els convergents.
+          </div>
+
+          <h4>5. Quan el procés no s'acaba</h4>
+          <p>Ja hem vist que racional ⟺ finita. Què passa amb els irracionals? El cas més net és el nombre auri φ = (1+√5)/2, que compleix φ = 1 + 1/φ. Substituint aquesta igualtat dins d'ella mateixa una i altra vegada s'obté φ = [1; 1, 1, 1, 1, …], tot uns per sempre.</p>
+          <p>Segons el que hem dit al punt 4, tots els termes iguals a 1 —el valor més petit possible— vol dir que <strong>cap convergent és mai especialment bo</strong>. Per això φ es coneix com «el número més irracional que hi ha»: és el que pitjor s'aproxima per fraccions. I això té una conseqüència física real, no només aritmètica: les llavors de gira-sol i les fulles de moltes plantes se separen amb un angle relacionat amb φ precisament perquè és l'angle que <em>mai</em> es repeteix de manera aproximada, i això les fa empaquetar-se sense deixar forats.</p>
+          <p>El cas de les arrels quadrades és diferent i encara més notable. Per a qualsevol N que no sigui un quadrat perfecte, la fracció contínua de √N <strong>sempre acaba sent periòdica</strong>: un bloc de termes que es repeteix indefinidament (teorema de Lagrange, 1770). √2 = [1; 2, 2, 2, …], √3 = [1; 1, 2, 1, 2, …], √7 = [2; 1, 1, 1, 4, …]. La forma d'aquesta periodicitat és el que fa possible tot el que ve ara.</p>
+
+          <h4>6. L'equació de Pell</h4>
+          <p>L'equació x² − N y² = 1 sembla inofensiva. Si acceptem solucions reals qualssevol, n'hi ha infinites i no diuen res: formen una hipèrbola. El problema de veritat és exigir que <strong>x i y siguin nombres enters</strong>. Aquesta restricció ho canvia tot: de sobte hem de trobar punts de coordenades enteres sobre una corba, i no hi ha cap fórmula que els doni.</p>
+          <p>La connexió amb les fraccions contínues surt de reescriure l'equació. Si x² − Ny² = 1, dividint per y² tenim (x/y)² − N = 1/y², és a dir, (x/y)² és gairebé exactament N. Dit d'una altra manera: <strong>x/y ha de ser una aproximació racional excel·lent de √N</strong>. I pel teorema del punt 4, les aproximacions excel·lents no poden ser altra cosa que convergents. Per això la recepta funciona: es calculen els convergents de √N, un darrere l'altre, i es prova cadascun contra l'equació fins que un hi encaixa. La periodicitat garanteix que passarà.</p>
+          <div class="deep-aside">
+            <strong>Un detall sorprenent.</strong> La mida d'N no diu absolutament res sobre la mida de la solució. Per a N = 60 la solució més petita és (31, 4), que cap en una línia. Per a N = 61 —el número següent— la solució més petita és <strong>x = 1.766.319.049, y = 226.153.980</strong>. Fermat va llançar precisament el cas N = 61 com a repte als matemàtics anglesos el 1657, sabent molt bé el que feia. Aquest salt brutal es deu al període: el de √61 té 11 termes, un nombre senar, i quan el període és senar cal recórrer-lo <em>dues vegades</em> senceres abans que aparegui el +1 (a la primera volta surt −1). Pots comprovar-ho tu mateix a la pestanya «L'equació de Pell»: la taula t'ensenya els 22 convergents provats i quin valor donava cadascun.
+          </div>
+
+          <h4>7. Què fem a l'element interactiu</h4>
+          <p>La càpsula té dues vistes que fan coses complementàries.</p>
+          <p><strong>La vista «Retalla el rectangle»</strong> et fa executar l'algorisme a mà. Cada arrossegada és un pas: decideixes quants quadrats hi caben, ho confirmes, i el rectangle es transforma en el següent. Aquí no hi ha res calculat per tu excepte la comprovació: si dius que hi caben menys quadrats dels que hi caben de veritat, t'avisa. El requadre de sota et diu per què el rectangle nou té les mides que té, i a dalt es va escrivint la notació [a₀; a₁, …] i el convergent actual comparat amb el valor real, perquè vegis l'error encongir-se.</p>
+          <p><strong>La vista «L'equació de Pell»</strong> fa el camí complet automàticament per a un N que triïs, i —això és el important— <strong>t'ensenya la feina, no només el resultat</strong>. La taula del final llista tots els convergents que s'han hagut de provar, amb el valor de x² − Ny² per a cadascun, i marca en verd el primer que dona 1. Així es veu que trobar la solució no és aplicar una fórmula, sinó una cerca ordenada que la teoria garanteix que acabarà.</p>
+
+          <div class="deep-example">
+            <span class="de-title">Resolució de √3 amb l'element interactiu</span>
+            <span class="de-step">1. Tria el xip <strong>√3</strong>. El rectangle inicial fa 1,732 × 1.</span>
+            <span class="de-step">2. Arrossega: hi cap <strong>1</strong> quadrat de costat 1 (perquè 1,732 &lt; 2). Confirma → a₀ = 1.</span>
+            <span class="de-step">3. Sobra un rectangle 1 × 0,732, que girat és 1,366 × 1. Hi cap <strong>1</strong> quadrat. Confirma → a₁ = 1.</span>
+            <span class="de-step">4. Ara el rectangle és 2,732 × 1: hi caben <strong>2</strong> quadrats. Confirma → a₂ = 2.</span>
+            <span class="de-step">5. Torna a sortir 1, després 2, després 1, després 2… → √3 = [1; 1, 2, 1, 2, …], període (1,2).</span>
+            <span class="de-step">6. Convergents: 1/1, 2/1, 5/3, 7/4, 19/11, 26/15…</span>
+            <span class="de-step">7. Comprova Pell: 2²−3·1² = 1 ✓ &nbsp;→ (x,y) = (2,1) ja resol x²−3y²=1.</span>
+          </div>
+
+          <h4>8. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Calendaris.</strong> L'any solar dura 365,2422 dies. Quants dies de traspàs cal afegir, i cada quant? És exactament la pregunta «quina és la millor aproximació racional de 0,2422?». La fracció contínua és [0; 4, 7, 1, 3, …] i els seus convergents són 1/4, 7/29, 8/33, 31/128. El primer, 1/4, és el calendari julià: un any de traspàs cada quatre. El tercer, <strong>8/33</strong>, dona un error de només 0,0002 dies per any —millor que el nostre calendari gregorià, que fa servir 97/400 i s'equivoca en 0,0003. El calendari persa, dissenyat per Omar Khayyam al segle XI, usa precisament un cicle de 33 anys.</p>
+          <p><strong>Engranatges.</strong> Christiaan Huygens va construir el 1680 un planetari mecànic i necessitava rodes dentades amb una proporció igual a la dels períodes orbitals dels planetes. No pots fer una roda amb 2,718 dents: has de trobar una fracció amb numerador i denominador enters, prou petits per cabre a la màquina i prou exactes perquè el planetari no es desviï. Huygens va fer servir fraccions contínues, i és un dels primers usos documentats de la tècnica per a un problema d'enginyeria.</p>
+          <p><strong>Música.</strong> Per què l'octava es divideix en 12 semitons i no en 11 o 13? Una quinta justa és una proporció de freqüències de 3/2. Si volem que un cert nombre de semitons iguals doni una quinta, necessitem aproximar log₂(3/2) = 0,58496… per una fracció. La seva fracció contínua dona els convergents 1/2, 3/5, <strong>7/12</strong>, 24/41, 31/53. El 7/12 diu: «7 semitons de 12 fan una quinta» —que és exactament el sistema temperat occidental. I el 31/53 explica per què alguns teòrics han proposat escales de 53 notes: és el següent salt de qualitat.</p>
+          <p><strong>Criptografia.</strong> L'atac de Wiener (1990) contra RSA es basa en fraccions contínues: si la clau privada és massa petita en comparació amb el mòdul, apareix com un dels convergents d'una fracció construïda amb la clau <em>pública</em>, i es recupera en mil·lisegons. És la raó per la qual les implementacions serioses d'RSA imposen una mida mínima a la clau privada.</p>
+
+          <h4>9. Curiositats</h4>
+          <p><strong>El número e té un patró perfecte; π no en té cap.</strong> La fracció contínua de e és [2; 1, 2, 1, 1, 4, 1, 1, 6, 1, 1, 8, 1, 1, 10, …]: després del 2 inicial, els termes van «1, 2k, 1» amb k creixent, per sempre. Euler ho va descobrir el 1737 i li va servir per demostrar que e és irracional (una fracció contínua infinita no pot ser racional). La de π, en canvi, comença [3; 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, …] i <strong>ningú n'ha trobat mai cap patró</strong>. Que un dels dos números més famosos de la matemàtica tingui una estructura cristal·lina i l'altre sembli soroll continua sent un dels contrastos més desconcertants del tema.</p>
+          <p><strong>Gairebé tots els números comparteixen una mateixa mitjana secreta.</strong> Agafa un número real a l'atzar, calcula'n la fracció contínua i fes la mitjana geomètrica dels seus termes. Aleksandr Khinchin va demostrar el 1935 que, per a gairebé tots els números reals, aquesta mitjana tendeix <strong>sempre al mateix valor</strong>: la constant de Khinchin, ≈ 2,6854520. No importa quin número hagis triat. El més divertit és que no se sap si constants tan corrents com π, e o √2 compleixen aquesta propietat que compleix «gairebé tothom»: numèricament sembla que sí, però no hi ha cap demostració.</p>
+          <p><strong>Un de cada dos termes és un 1 (gairebé).</strong> Els termes d'una fracció contínua no surten a l'atzar uniforme: segueixen la distribució de Gauss–Kuzmin, segons la qual la probabilitat que un terme valgui k és log₂(1 + 1/(k²+2k)). Per a k = 1 això dona <strong>41,5%</strong>. Gairebé la meitat dels termes de qualsevol número «típic» són uns.</p>
+          <p><strong>La proporció d'argent.</strong> Si φ = [1;1,1,1,…] és la d'or, √2 − 1 = [0; 2, 2, 2, …] es coneix com la proporció d'argent, i governa el format de paper DIN A4: en tallar un A4 per la meitat en surt un A5 amb <em>exactament</em> les mateixes proporcions, cosa que només pot passar amb la proporció 1:√2.</p>
+          <p><strong>Mil anys d'avantatge.</strong> El matemàtic i astrònom xinès Zu Chongzhi ja usava 355/113 per a π al segle V, i el seu valor va ser la millor aproximació coneguda al món durant prop de <strong>nou-cents anys</strong>. La teoria que explica per què aquesta fracció concreta és tan extraordinàriament bona no va arribar fins al segle XVIII, amb Euler i Lagrange.</p>
+
+          <h4>10. Connexió amb altres àrees</h4>
+          <p>Cap avall, cap a l'aritmètica elemental: ja hem vist que això <em>és</em> l'algorisme d'Euclides, el mateix que es fa servir per calcular màxims comuns divisors a l'escola. La fracció contínua només consisteix a apuntar la informació que l'algorisme d'Euclides llença.</p>
+          <p>Cap amunt, cap a l'àlgebra: el teorema de Lagrange que hem citat al punt 5 té un recíproc, degut a Euler, i junts diuen que <strong>una fracció contínua és periòdica exactament quan el número és una arrel d'una equació de segon grau amb coeficients enters</strong> (un «irracional quadràtic»). Això vol dir que la forma de la fracció contínua detecta el grau algebraic del número. La pregunta natural següent —hi ha un patró equivalent per a arrels cúbiques?— continua oberta avui; ningú sap si la fracció contínua de ∛2 té termes acotats o no.</p>
+          <p>I cap a un lloc inesperat, els sistemes dinàmics: el pas «agafa la part fraccionària i inverteix-la» és una funció, l'anomenada <em>aplicació de Gauss</em>, i estudiar les fraccions contínues equival a estudiar què fa aquesta funció quan s'itera. Des d'aquest punt de vista, els termes aₙ són una mena de trajectòria caòtica, i es pot demostrar (Khinchin) que per a gairebé tots els números reals la mitjana geomètrica dels termes tendeix a una constant universal, ≈ 2,685, independent del número que hagis triat. La mateixa lògica de «itera una regla simple i mira l'estructura que apareix» és la que trobaràs a les càpsules del Joc del caos i del Mètode de Newton.</p>
+
+        </div></div></div>
+      </div>
+    </div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="rect" class="active">Retalla el rectangle</button>
+        <button data-v="pell">L'equació de Pell</button>
+      </div>
+    </div>
+
+    <div class="vista-panel active" id="vistaRectPanel">
+    <div class="controls-row explora-only">
+      <span class="chip-label">Número:</span>
+      <div class="chip-row" id="sourceRow"></div>
+      <button class="btn btn-ghost" id="newExerciseBtn">Nou exercici ↻</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="90">
+          <span class="rs-val" id="repteTimeVal">90s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">90s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap flash-target" id="canvasWrap">
+      <canvas id="rectCanvas"></canvas>
+    </div>
+    <div class="canvas-hint" id="hint">Tria un número per començar.</div>
+
+    <!-- Equivalent per teclat de l'arrossegament. El gest continu sobre el
+         rectangle equival, en el fons, a triar un ENTER (quants quadrats hi
+         caben), així que el control natural és un comptador, no un camp
+         lliure: cada pas afegeix o treu exactament un quadrat. -->
+    <div class="controls-row" id="squareStepper">
+      <span class="chip-label">Quadrats marcats:</span>
+      <button class="btn btn-ghost" id="sqMinus" type="button" aria-label="Treu un quadrat">−</button>
+      <output class="sq-count" id="sqCount" aria-live="polite">0</output>
+      <button class="btn btn-ghost" id="sqPlus" type="button" aria-label="Afegeix un quadrat">+</button>
+    </div>
+
+    <div class="controls-row">
+      <button class="btn btn-primary" id="confirmBtn">Confirma aquest nombre de quadrats ✔</button>
+    </div>
+
+    <div class="step-explain" id="stepExplain">Tria un número per començar. El primer rectangle tindrà per costats el número triat i 1.</div>
+
+    <p class="method-hint" id="methodPanel">A cada pas, arrossega fins on hi càpiguen quadrats sencers del costat curt dins del costat llarg — aquest nombre és el següent terme de la fracció contínua.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Tria un número</div>
+        <div class="readout-def" id="readoutDef">Fes clic en un dels xips de dalt per començar.</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="vista-panel" id="vistaPellPanel">
+      <div class="controls-row">
+        <span class="chip-label">N:</span>
+        <div class="chip-row" id="pellNRow"></div>
+      </div>
+      <div class="pell-display" id="pellDisplay"></div>
+      <div class="step-explain" id="pellNarration"></div>
+    </div>
+  </div>
+
+  <!-- DRETA: referència -->
+  <div class="info-side">
+    <div class="info-title">Fraccions contínues i l'equació de Pell</div>
+
+    <div class="type-card active" id="card-algorisme" data-method="algorisme" style="--t-color:var(--aritmetica)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">L'algorisme</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>a</mi><mn>0</mn></msub><mo>=</mo><mo>⌊</mo><msub><mi>x</mi><mn>0</mn></msub><mo>⌋</mo></math>, <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mn>1</mn></msub><mo>=</mo><mfrac><mn>1</mn><mrow><msub><mi>x</mi><mn>0</mn></msub><mo>−</mo><msub><mi>a</mi><mn>0</mn></msub></mrow></mfrac></math>…</div>
+        <div class="type-desc">Cada terme aₙ és, literalment, quantes vegades el costat curt del rectangle actual hi cap dins del llarg. El que sobra es capgira (es calcula la seva inversa) i esdevé el proper rectangle a mesurar — repetit indefinidament, és exactament l'algorisme d'Euclides que ja coneixes, aquí estès a qualsevol número real.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-convergents" data-method="convergents" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Convergents</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>p</mi><mi>n</mi></msub><mo>=</mo><msub><mi>a</mi><mi>n</mi></msub><msub><mi>p</mi><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>p</mi><mrow><mi>n</mi><mo>−</mo><mn>2</mn></mrow></msub></math></div>
+        <div class="type-desc">Cada vegada que confirmes un terme, aquesta fórmula en deriva una fracció pₙ/qₙ cada cop més ajustada al número real — el «convergent» d'aquell pas. No és una aproximació qualsevol: es pot demostrar que és la millor possible amb un denominador tan petit.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-pell" data-method="pell" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Equació de Pell</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>x</mi><mn>2</mn></msup><mo>−</mo><mi>N</mi><msup><mi>y</mi><mn>2</mn></msup><mo>=</mo><mn>1</mn></math>, amb x,y enters</div>
+        <div class="type-desc">Per a √N, la fracció mai s'acaba, però sí que es repeteix (teorema de Lagrange). El mode Repte et fa trobar (x,y) amb les teves pròpies mans; la pestanya «L'equació de Pell» ho calcula directament per a diversos N —fixa't en com la mida de la solució no té relació amb la mida de N.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> per a un nombre racional p/q, el procés és exactament l'algorisme d'Euclides i sempre acaba. Per a √N, mai s'acaba — però es repeteix, i aquesta repetició és el que fa possible resoldre x²−Ny²=1. A la pestanya «L'equació de Pell», prova N=61: la solució més petita ja té 10 xifres.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/G0LVeo8O" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Representar un racional amb una fracció contínua</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 01 · Aritmètica i Teoria de Nombres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────
+const M_COLOR = cssVar('--aritmetica');
+const TEXT_DARK  = cssVar('--ink', '#1b1e2d');
+const TEXT_MUTED = cssVar('--muted', '#6b6459');
+
+const SQRT_POOL = [2, 3, 5, 6, 7, 8, 10, 11, 12];
+const FRAC_POOL = [
+  { p: 7, q: 5 }, { p: 8, q: 5 }, { p: 7, q: 3 }, { p: 11, q: 4 },
+  { p: 9, q: 7 }, { p: 5, q: 3 }, { p: 13, q: 5 }, { p: 10, q: 3 },
+  { p: 11, q: 7 }, { p: 9, q: 4 }
+];
+const MAX_STEPS_EXPLORA = 10;
+const MAX_TERMS_REPTE = 8;
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const canvas = document.getElementById('rectCanvas');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+const sourceRow = document.getElementById('sourceRow');
+const stepExplain = document.getElementById('stepExplain');
+
+let W, H;
+let src = null;          // { type:'frac'|'sqrt'|'phi', ... }
+let curLong = 1, curShort = 1;
+let terms = [];           // termes confirmats (a0, a1, ...)
+let pPrev1 = 1, pPrev2 = 0, qPrev1 = 0, qPrev2 = 1; // recurrència de convergents: h₋₁=1,h₋₂=0,k₋₁=0,k₋₂=1
+let finished = false;
+let dragging = false, dragVal = 0;
+let rectX0 = 0, rectY0 = 0, scale = 1;
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 90, repteMaxTime = 90, score = 0, streak = 0;
+let repteRoundId = 0;
+
+const resize = setupCanvasResize(canvas, wrap, () => draw());
+
+// ─────────────────────────────────────────────
+//  FONT DEL NÚMERO (frac / sqrt / phi)
+// ─────────────────────────────────────────────
+function getLongShort(s) {
+  if (s.type === 'sqrt') return { long: (Math.sqrt(s.N) + s.m) / s.d, short: 1 };
+  return { long: s.long, short: s.short };
+}
+function advanceSrc(s, a) {
+  if (s.type === 'sqrt') {
+    const mNext = s.d * a - s.m;
+    const dNext = (s.N - mNext * mNext) / s.d;
+    return { type: 'sqrt', N: s.N, a0: s.a0, m: mNext, d: dNext };
+  }
+  const { long, short } = getLongShort(s);
+  const next = { type: s.type, long: short, short: long - a * short };
+  if (s.type === 'frac') { next.p0 = s.p0; next.q0 = s.q0; } // sense això, trueTargetValue() dona NaN a partir del 2n pas
+  return next;
+}
+function trueTargetValue(s) {
+  if (s.type === 'sqrt') return Math.sqrt(s.N);
+  if (s.type === 'frac') return s.p0 / s.q0;
+  return (1 + Math.sqrt(5)) / 2;
+}
+function fmtSide(v) {
+  return Number.isInteger(v) ? String(v) : fmtNum(v, 3);
+}
+
+function pickSource(type, param) {
+  if (type === 'frac') {
+    const { p, q } = param;
+    src = { type: 'frac', long: p, short: q, p0: p, q0: q };
+    if (fracChipBtn) fracChipBtn.textContent = `${p}/${q}`;
+  } else if (type === 'sqrt') {
+    src = { type: 'sqrt', N: param, a0: Math.floor(Math.sqrt(param)), m: 0, d: 1 };
+  } else {
+    src = { type: 'phi', long: (1 + Math.sqrt(5)) / 2, short: 1 };
+  }
+  terms = []; pPrev1 = 1; pPrev2 = 0; qPrev1 = 0; qPrev2 = 1;
+  finished = false; dragVal = 0;
+  const ls = getLongShort(src);
+  curLong = ls.long; curShort = ls.short;
+  document.getElementById('pellCheck') && document.getElementById('pellCheck').remove();
+  if (src.type === 'sqrt') {
+    stepExplain.innerHTML = `Comencem amb <b>√${src.N} ≈ ${fmtSide(curLong)}</b>: el primer rectangle té per costats <b>√${src.N}</b> i <b>1</b>. Arrossega per trobar quants cops hi cap el curt dins el llarg.`;
+  } else if (src.type === 'frac') {
+    stepExplain.innerHTML = `Comencem amb la fracció <b>${src.p0}/${src.q0}</b>: el primer rectangle té per costats <b>${fmtSide(curLong)}</b> i <b>${fmtSide(curShort)}</b> — els dos termes d'aquesta mateixa fracció. Arrossega per trobar quants cops hi cap el curt dins el llarg.`;
+  } else {
+    stepExplain.innerHTML = `Comencem amb el nombre auri <b>φ ≈ ${fmtSide(curLong)}</b>: el primer rectangle té per costats <b>φ</b> i <b>1</b>. Arrossega per trobar quants cops hi cap el curt dins el llarg.`;
+  }
+  updateReadout(); updateHintText(); draw();
+}
+
+// ─────────────────────────────────────────────
+//  XIPS DE SELECCIÓ (Explora)
+// ─────────────────────────────────────────────
+let fracChipBtn = null;
+function buildSourceChips() {
+  sourceRow.innerHTML = '';
+  const addChip = (label, type, param) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = label;
+    b.dataset.type = type;
+    b.addEventListener('click', () => {
+      sourceRow.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      b.classList.add('active');
+      pickSource(type, param);
+    });
+    sourceRow.appendChild(b);
+    return b;
+  };
+  SQRT_POOL.forEach(N => addChip('√' + N, 'sqrt', N));
+  addChip('φ', 'phi', null);
+  // La seva etiqueta mostra sempre la fracció p/q activa (no un genèric "p/q"),
+  // perquè es vegi de seguida amb quina fracció concreta s'està treballant.
+  fracChipBtn = addChip(`${FRAC_POOL[0].p}/${FRAC_POOL[0].q}`, 'frac', FRAC_POOL[0]);
+}
+buildSourceChips();
+
+// ─────────────────────────────────────────────
+//  VISTA 2: L'EQUACIÓ DE PELL, CALCULADA DIRECTAMENT
+//  (BigInt de cap a cap per a la comprovació final: per N=61 la solució
+//  més petita ja té x≈1,77×10⁹, i x² supera Number.MAX_SAFE_INTEGER —amb
+//  aritmètica de Number normal, x²−Ny² acabaria donant un resultat fals
+//  per pèrdua de precisió, no perquè l'algorisme estigui malament.)
+// ─────────────────────────────────────────────
+const PELL_N_POOL = [2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 61];
+
+function periodicCF(N) {
+  const a0 = Math.floor(Math.sqrt(N));
+  let m = 0, d = 1, a = a0;
+  const period = [];
+  const seen = new Set();
+  while (true) {
+    m = d * a - m;
+    d = (N - m * m) / d;
+    a = Math.floor((a0 + m) / d);
+    const key = m + ',' + d;
+    if (seen.has(key)) break;
+    seen.add(key);
+    period.push(a);
+  }
+  return { a0, period };
+}
+function fundamentalPellSolution(N, maxTerms) {
+  maxTerms = maxTerms || 80;
+  const a0 = Math.floor(Math.sqrt(N));
+  const Nb = BigInt(N);
+  let pPrev2 = 1n, pPrev1 = BigInt(a0), qPrev2 = 0n, qPrev1 = 1n;
+  const solves = (p, q) => p * p - Nb * q * q === 1n;
+  if (solves(pPrev1, qPrev1)) return { x: pPrev1, y: qPrev1, steps: 1 };
+  let m = 0, d = 1, a = a0;
+  for (let i = 0; i < maxTerms; i++) {
+    m = d * a - m;
+    d = (N - m * m) / d;
+    a = Math.floor((a0 + m) / d);
+    const ab = BigInt(a);
+    const p = ab * pPrev1 + pPrev2, q = ab * qPrev1 + qPrev2;
+    if (solves(p, q)) return { x: p, y: q, steps: i + 2 };
+    pPrev2 = pPrev1; pPrev1 = p; qPrev2 = qPrev1; qPrev1 = q;
+  }
+  return null;
+}
+// Mateixa recurrència que fundamentalPellSolution, però guardant CADA
+// convergent provat (no només el que finalment funciona) — perquè es pugui
+// mostrar d'on surten exactament els x,y de la solució, en lloc de només
+// donar-los per fets.
+function convergentTrace(N, maxTerms) {
+  maxTerms = maxTerms || 80;
+  const a0 = Math.floor(Math.sqrt(N));
+  const Nb = BigInt(N);
+  let pPrev2 = 1n, pPrev1 = BigInt(a0), qPrev2 = 0n, qPrev1 = 1n;
+  const solves = (p, q) => p * p - Nb * q * q === 1n;
+  const rows = [{ k: 0, a: a0, p: pPrev1, q: qPrev1, ok: solves(pPrev1, qPrev1) }];
+  if (rows[0].ok) return rows;
+  let m = 0, d = 1, a = a0;
+  for (let i = 0; i < maxTerms; i++) {
+    m = d * a - m;
+    d = (N - m * m) / d;
+    a = Math.floor((a0 + m) / d);
+    const ab = BigInt(a);
+    const p = ab * pPrev1 + pPrev2, q = ab * qPrev1 + qPrev2;
+    const ok = solves(p, q);
+    rows.push({ k: i + 1, a, p, q, ok });
+    if (ok) break;
+    pPrev2 = pPrev1; pPrev1 = p; qPrev2 = qPrev1; qPrev1 = q;
+  }
+  return rows;
+}
+function cfNotationHTML(a0, period) {
+  const periodStr = period.join(', ');
+  return `[${a0}; <span class="pell-period">${periodStr}</span>, <span class="pell-period">${periodStr}</span>, …]`;
+}
+
+let currentPellN = 2;
+function buildPellChips() {
+  const row = document.getElementById('pellNRow');
+  row.innerHTML = '';
+  PELL_N_POOL.forEach(N => {
+    const b = document.createElement('button');
+    b.className = 'chip pell-n-chip' + (N === 61 ? ' special' : '');
+    b.textContent = '√' + N + (N === 61 ? ' 😮' : '');
+    b.classList.toggle('active', N === currentPellN);
+    b.addEventListener('click', () => { currentPellN = N; renderPellVista(); highlightPellChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightPellChip() {
+  document.querySelectorAll('#pellNRow .chip').forEach(c => c.classList.toggle('active', c.textContent.replace(' 😮', '') === '√' + currentPellN));
+}
+function renderPellVista() {
+  const N = currentPellN;
+  const { a0, period } = periodicCF(N);
+  const sol = fundamentalPellSolution(N);
+  const x = sol.x, y = sol.y;
+  const check = x * x - BigInt(N) * y * y;
+  const xStr = x.toString(), yStr = y.toString();
+  const trace = convergentTrace(N);
+  const traceRows = trace.map(r => `
+    <tr class="${r.ok ? 'pell-trace-hit' : ''}">
+      <td>${r.k}</td><td>a<sub>${r.k}</sub>=${r.a}</td><td>p<sub>${r.k}</sub>/q<sub>${r.k}</sub> = ${r.p}/${r.q}</td>
+      <td>${r.p}² − ${N}·${r.q}² = ${(r.p * r.p - BigInt(N) * r.q * r.q)}</td>
+      <td>${r.ok ? '✓ 1!' : '✕'}</td>
+    </tr>`).join('');
+  document.getElementById('pellDisplay').innerHTML = `
+    <div class="pell-eq">x² − ${N}y² = 1</div>
+    <div class="pell-cf">√${N} = ${cfNotationHTML(a0, period)}</div>
+    <div class="pell-sol">(x, y) = (${xStr}, ${yStr})</div>
+    <div class="pell-verify">${xStr}² − ${N}·${yStr}² = ${(x * x).toString()} − ${(BigInt(N) * y * y).toString()} = <b>${check.toString()}</b> ${check === 1n ? '✓' : ''}</div>
+    <div class="pell-digits">x té <b>${xStr.length}</b> xifr${xStr.length === 1 ? 'a' : 'es'} · trobat comprovant <b>${sol.steps}</b> convergent${sol.steps === 1 ? '' : 's'} seguits · període de la fracció contínua: <b>${period.length}</b> terme${period.length === 1 ? '' : 's'}</div>
+    <div class="pell-trace-label">D'on surten x=${xStr}, y=${yStr}? Cada terme aₖ de la fracció contínua genera un nou convergent pₖ/qₖ (amb pₖ=aₖpₖ₋₁+pₖ₋₂, qₖ=aₖqₖ₋₁+qₖ₋₂) — es van provant un per un contra x²−${N}y²=1 fins que un hi encaixa:</div>
+    <div class="pell-trace-wrap"><table class="pell-trace"><thead><tr><th>k</th><th>terme</th><th>convergent</th><th>x²−${N}y²</th><th></th></tr></thead><tbody>${traceRows}</tbody></table></div>
+  `;
+  let narr = `El bloc ressaltat es repeteix per sempre —per això √${N} és irracional però la seva fracció contínua és previsible del tot. `;
+  narr += sol.steps <= 4
+    ? `Amb N=${N}, la solució arriba de seguida.`
+    : `Amb N=${N} calen ${sol.steps} convergents seguits —el període té ${period.length} termes, un nombre senar, i per això cal voltar-lo dues vegades sencers abans de trobar el +1 (a la primera volta surt −1 en comptes d'1).`;
+  if (N === 61) narr += ` Aquest és el clàssic exemple de Fermat: cap indici a N=61 fa sospitar una solució de 10 xifres.`;
+  document.getElementById('pellNarration').innerHTML = narr;
+}
+
+function setVista(v) {
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  document.getElementById('vistaRectPanel').classList.toggle('active', v === 'rect');
+  document.getElementById('vistaPellPanel').classList.toggle('active', v === 'pell');
+  if (v === 'pell') { buildPellChips(); renderPellVista(); }
+}
+document.querySelectorAll('#vistaToggle button').forEach(btn => btn.addEventListener('click', () => setVista(btn.dataset.v)));
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function draw() {
+  // El comptador se sincronitza sempre, també quan encara no hi ha número
+  // triat (llavors ha de quedar a 0 i deshabilitat).
+  syncSquareStepper();
+  if (!src) return;
+  W = canvas.width; H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const padX = W * 0.09, padY = H * 0.18;
+  const availW = Math.max(10, W - 2 * padX), availH = Math.max(10, H - 2 * padY);
+  scale = Math.min(availW / curLong, availH / curShort);
+  const rw = curLong * scale, rh = curShort * scale;
+  rectX0 = (W - rw) / 2; rectY0 = (H - rh) / 2 + H * 0.02;
+
+  roundRect(ctx, rectX0, rectY0, rw, rh, 6, hexToRgba(M_COLOR, 0.05), 'rgba(27,30,45,.4)', 1.6);
+
+  if (!finished) {
+    const clampedDrag = clamp(dragVal, 0, curLong);
+    const previewCount = Math.floor(clampedDrag / curShort);
+    for (let i = 0; i < previewCount; i++) {
+      const sx = rectX0 + i * curShort * scale;
+      roundRect(ctx, sx + 1, rectY0 + 1, curShort * scale - 2, rh - 2, 3, hexToRgba(M_COLOR, 0.3), M_COLOR, 1.2);
+    }
+    const mx = rectX0 + clampedDrag * scale;
+    ctx.strokeStyle = M_COLOR; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(mx, rectY0 - 12); ctx.lineTo(mx, rectY0 + rh + 12); ctx.stroke();
+    txt(ctx, String(previewCount), mx, rectY0 - 22, Math.max(13, W * 0.026), M_COLOR, 'center', 700, 'JetBrains Mono');
+  } else {
+    txt(ctx, '✓', rectX0 + rw / 2, rectY0 + rh / 2, Math.max(20, W * 0.05), cssVar('--good'), 'center', 700);
+  }
+
+  let dims = `${fmtSide(curLong)} × ${fmtSide(curShort)}`;
+  if (terms.length === 0) {
+    if (src.type === 'sqrt') dims = `√${src.N} ≈ ${dims}`;
+    else if (src.type === 'frac') dims = `${src.p0}/${src.q0} = ${dims}`;
+    else if (src.type === 'phi') dims = `φ ≈ ${dims}`;
+  }
+  txt(ctx, dims, W / 2, rectY0 + rh + 28, Math.max(11, W * 0.02), TEXT_MUTED, 'center', 600, 'JetBrains Mono');
+  // Nom accessible: el rectangle actual, quants quadrats hi caben segons
+  // l'arrossegament en curs, i els termes ja confirmats.
+  const fitting = Math.floor(dragVal / curShort + 1e-9);
+  describeCanvas(canvas,
+    `Rectangle de ${fmtSide(curLong)} per ${fmtSide(curShort)}. ` +
+    (terms.length ? `Termes confirmats fins ara: ${terms.join(', ')}. ` : 'Encara no has confirmat cap terme. ') +
+    (finished ? 'La fracció contínua ja és completa.'
+              : `Ara mateix hi caben ${fitting} quadrat${fitting === 1 ? '' : 's'} sencer${fitting === 1 ? '' : 's'} de costat ${fmtSide(curShort)}.`));
+}
+
+// ─────────────────────────────────────────────
+//  ARROSSEGAMENT (ratolí + tàctil)
+// ─────────────────────────────────────────────
+function handlePointer(e) {
+  const p = pointerXY(e, canvas);
+  dragVal = clamp((p.x - rectX0) / scale, 0, curLong);
+  draw();
+}
+function onDown(e) {
+  if (!src || finished || (repteMode && repteTimeUp)) return;
+  e.preventDefault();
+  dragging = true;
+  handlePointer(e);
+}
+function onMove(e) { if (dragging) { e.preventDefault(); handlePointer(e); } }
+function onUp() { dragging = false; }
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', onDown, { passive: false });
+canvas.addEventListener('touchmove', onMove, { passive: false });
+canvas.addEventListener('touchend', onUp);
+
+// ─────────────────────────────────────────────
+//  CONFIRMAR TERME
+// ─────────────────────────────────────────────
+function cfNotation() {
+  if (!terms.length) return '[ ]';
+  if (terms.length === 1) return `[${terms[0]}]`;
+  return `[${terms[0]}; ${terms.slice(1).join(', ')}]`;
+}
+
+function onConfirm() {
+  if (!src || finished || (repteMode && repteTimeUp)) return;
+  const trueA = Math.floor(curLong / curShort);
+  const previewCount = Math.floor(clamp(dragVal, 0, curLong) / curShort);
+
+  if (previewCount < trueA) {
+    flash(wrap, 'var(--bad)');
+    hint.textContent = `Encara hi cap almenys un altre quadrat de costat ${fmtSide(curShort)}. Continua arrossegant cap a la dreta.`;
+    if (repteMode) applyPenalty();
+    return;
+  }
+  acceptTerm(trueA);
+}
+document.getElementById('confirmBtn').addEventListener('click', onConfirm);
+
+// ── Comptador de quadrats (equivalent per teclat de l'arrossegament) ──────
+// dragVal segueix sent l'única font de la veritat: el comptador el mou en
+// múltiples exactes de curShort, de manera que les dues vies (dit i teclat)
+// no poden desincronitzar-se ni cal duplicar la lògica de validació.
+function squaresMarked() { return Math.floor(clamp(dragVal, 0, curLong) / curShort + 1e-9); }
+function setSquares(n) {
+  if (!src || finished) return;
+  const maxFit = Math.floor(curLong / curShort + 1e-9);
+  const target = clamp(n, 0, maxFit);
+  dragVal = clamp(target * curShort, 0, curLong);
+  draw();   // draw() ja sincronitza el comptador
+  announce(`${target} quadrat${target === 1 ? '' : 's'} de costat ${fmtSide(curShort)}.`);
+}
+function syncSquareStepper() {
+  const out = document.getElementById('sqCount');
+  if (!out) return;
+  const n = src ? squaresMarked() : 0;
+  out.textContent = String(n);
+  const maxFit = src ? Math.floor(curLong / curShort + 1e-9) : 0;
+  document.getElementById('sqMinus').disabled = !src || finished || n <= 0;
+  document.getElementById('sqPlus').disabled = !src || finished || n >= maxFit;
+}
+document.getElementById('sqMinus').addEventListener('click', () => setSquares(squaresMarked() - 1));
+document.getElementById('sqPlus').addEventListener('click', () => setSquares(squaresMarked() + 1));
+
+function acceptTerm(a) {
+  const prevLong = curLong, prevShort = curShort;
+  const remainder = prevLong - a * prevShort;
+
+  terms.push(a);
+  const p = a * pPrev1 + pPrev2, q = a * qPrev1 + qPrev2;
+  pPrev2 = pPrev1; pPrev1 = p; qPrev2 = qPrev1; qPrev1 = q;
+
+  src = advanceSrc(src, a);
+  const ls = getLongShort(src);
+  curLong = ls.long; curShort = ls.short;
+  dragVal = 0;
+  flash(wrap, M_COLOR);
+
+  if (remainder <= 1e-9) {
+    stepExplain.innerHTML = `${fmtSide(prevShort)} hi cap exactament <b>${a}</b> vegades dins ${fmtSide(prevLong)}, sense que sobri res: la fracció s'acaba aquí. x = ${cfNotation()}, un número racional exacte.`;
+  } else {
+    stepExplain.innerHTML = `${fmtSide(prevShort)} hi cap <b>${a}</b> ${a === 1 ? 'vegada' : 'vegades'} dins ${fmtSide(prevLong)}, i sobra <b>${fmtSide(remainder)}</b> (= ${fmtSide(prevLong)} − ${a}×${fmtSide(prevShort)}). Capgirem aquest sobrant (calculem ${fmtSide(prevShort)}/${fmtSide(remainder)}, la seva inversa) per saber quina proporció toca mesurar ara: per això el rectangle nou és <b>${fmtSide(curLong)} × ${fmtSide(curShort)}</b>.`;
+  }
+
+  const capReached = (src.type === 'frac')
+    ? (curShort <= 1e-9)
+    : (terms.length >= (repteMode ? MAX_TERMS_REPTE : MAX_STEPS_EXPLORA));
+  if (curShort <= 1e-9 || capReached) finished = true;
+
+  updateReadout();
+  updateHintText();
+  draw();
+
+  if (repteMode && src.type === 'sqrt') checkPellSuccess(p, q, src.N);
+}
+
+// ─────────────────────────────────────────────
+//  LECTURA / TEXT
+// ─────────────────────────────────────────────
+function updateHintText() {
+  if (!src) return;
+  if (finished) {
+    hint.textContent = repteMode ? 'Segueix confirmant, o espera la propera ronda.' : "Fet! Prova un altre número o canvia'n el tipus.";
+    return;
+  }
+  if (repteMode && repteTimeUp) { hint.textContent = 'Temps esgotat!'; return; }
+  hint.textContent = `Arrossega fins on hi càpiguen quadrats de costat ${fmtSide(curShort)} dins de ${fmtSide(curLong)}, i confirma.`;
+}
+
+function updateReadout() {
+  if (!terms.length) {
+    if (repteMode && src && src.type === 'sqrt') {
+      // Sense això, l'objectiu (l'equació de Pell) no es veu enlloc fins que
+      // no es confirma el primer terme — aquí es veu des del primer instant.
+      readoutBadge.classList.add('active');
+      readoutNum.textContent = '?';
+      readoutName.textContent = `Objectiu: x² − ${src.N}y² = 1`;
+      readoutDef.textContent = 'Cada terme que confirmis genera un nou convergent (x,y) — retalla per trobar-lo.';
+      return;
+    }
+    readoutBadge.classList.remove('active');
+    readoutNum.textContent = '…';
+    readoutName.textContent = src ? 'Comença!' : 'Tria un número';
+    readoutDef.textContent = 'Arrossega dins el rectangle per trobar el primer terme.';
+    return;
+  }
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = terms[terms.length - 1];
+  readoutName.textContent = cfNotation() + (finished && src.type !== 'frac' ? '…' : '');
+  const p = pPrev1, q = qPrev1;
+  const approx = q !== 0 ? p / q : 0;
+  if (!repteMode) {
+    const target = trueTargetValue(src);
+    readoutDef.textContent = `Convergent: ${p}/${q} ≈ ${fmtNum(approx, 5)}  (valor real ≈ ${fmtNum(target, 5)})`;
+  } else if (src.type === 'sqrt') {
+    const val = p * p - src.N * q * q;
+    readoutDef.textContent = `x² − ${src.N}y² = ${p}² − ${src.N}·${q}² = ${val}`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0;
+  document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1);
+  document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepteRound() {
+  repteRoundId++;
+  const N = SQRT_POOL[Math.floor(Math.random() * SQRT_POOL.length)];
+  wrap.classList.remove('time-up');
+  pickSource('sqrt', N);
+  hint.textContent = `Troba (x,y) tals que x² − ${N}y² = 1 abans que s'acabi el temps!`;
+}
+
+function checkPellSuccess(p, q, N) {
+  const val = p * p - N * q * q;
+  if (val === 1) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 12);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    readoutName.textContent = `Trobat! x² − ${N}y² = 1`;
+    readoutDef.textContent = `(x, y) = (${p}, ${q})`;
+    const snapshot = repteRoundId;
+    setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1400);
+  } else if (terms.length >= MAX_TERMS_REPTE) {
+    // xarxa de seguretat: no hauria de passar amb el pool curat
+    flash(wrap, 'var(--bad)');
+    const snapshot = repteRoundId;
+    setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1200);
+  }
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none';
+  repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+
+function startRepte(seconds) {
+  repteMode = true;
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer();
+      repteTimeUp = true;
+      rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = '';
+  repteBarEl.style.display = '';
+  const activeChip = sourceRow.querySelector('.chip.active') || sourceRow.querySelector('.chip');
+  const type = activeChip ? activeChip.dataset.type : 'sqrt';
+  pickSource(type, type === 'sqrt' ? SQRT_POOL[0] : (type === 'frac' ? FRAC_POOL[0] : null));
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex';
+  repteBarEl.style.display = 'none';
+  setVista('rect'); // el Repte sempre fa servir el rectangle, mai la Vista 2
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+document.getElementById('newExerciseBtn').addEventListener('click', () => {
+  const activeChip = sourceRow.querySelector('.chip.active') || sourceRow.querySelector('.chip');
+  const type = activeChip ? activeChip.dataset.type : 'sqrt';
+  if (type === 'sqrt') {
+    let N = SQRT_POOL[Math.floor(Math.random() * SQRT_POOL.length)];
+    pickSource('sqrt', N);
+  } else if (type === 'frac') {
+    let f = FRAC_POOL[Math.floor(Math.random() * FRAC_POOL.length)];
+    pickSource('frac', f);
+  } else {
+    pickSource('phi', null);
+  }
+});
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  algorisme: "A cada pas, arrossega fins on hi càpiguen quadrats sencers del costat curt dins del costat llarg — aquest nombre és el següent terme de la fracció contínua.",
+  convergents: "Cada vegada que confirmes un terme, es calcula el convergent pₙ/qₙ: la millor aproximació racional possible amb un denominador com el seu.",
+  pell: "En mode Repte, cada convergent es comprova contra x²−Ny²=1. Quan hi encaixa, has trobat una solució real de l'equació de Pell."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-algorisme').addEventListener('click', () => { flash(wrap, M_COLOR); setMethod('algorisme'); });
+document.getElementById('card-convergents').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('convergents'); });
+document.getElementById('card-pell').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('pell'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+sourceRow.querySelector('.chip').classList.add('active');
+pickSource('sqrt', SQRT_POOL[0]);
+resize();
+</script>
+</body>
+</html>

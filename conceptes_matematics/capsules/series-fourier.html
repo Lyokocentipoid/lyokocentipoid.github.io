@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sèries de Fourier · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--calcul); }
+
+    .fourier-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    .fourier-stage { position: relative; width: 100%; max-width: 420px; aspect-ratio: 4/3; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .fourier-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .fourier-spectrum-stage { position: relative; width: 100%; max-width: 420px; height: 110px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .fourier-spectrum-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .step-narration {
+      width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65;
+    }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+
+    .vista-panel { display: none; flex-direction: column; align-items: center; gap: .6rem; width: 100%; }
+    .vista-panel.active { display: flex; }
+
+    .metric-row { display: flex; gap: 1.4rem; flex-wrap: wrap; justify-content: center; font-family: var(--font-mono); font-size: .88rem; }
+    .metric-row .metric { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+    .metric-row .metric .mval { font-weight: 700; font-size: 1.15rem; color: var(--m-color); }
+    .metric-row .metric .mval.bad { color: var(--bad); }
+    .metric-row .metric .mval.good { color: var(--good); }
+    .metric-row .metric .mlbl { font-family: var(--font-body); font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+    .harm-controls { display: flex; align-items: center; gap: .8rem; }
+    .harm-controls .n-badge { font-family: var(--font-mono); font-weight: 700; color: var(--m-color); min-width: 60px; text-align: center; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .3rem .6rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--calcul)">Bloc 04 · Sèries de Fourier</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Sèries de Fourier i el fenomen de Gibbs</h1>
+      <p>Suma harmònics, un a un, i mira una ona amb un salt sortir de la suma de corbes suaus. Després, descobreix que «convergir» no vol dir el mateix de dues maneres diferents alhora: la forma mai s'ajusta del tot just al salt, però l'energia sí que ho fa, completament.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Qualsevol funció periòdica prou raonable es pot escriure com una suma infinita d'harmònics: f(x)=Σ[aₙcos(nx)+bₙsin(nx)]. Cada aₙ, bₙ es calcula amb una integral fixa i diu «quanta quantitat» d'aquella freqüència conté f. Sumant-ne cada cop més (una <strong>sèrie de <a href="https://ca.wikipedia.org/wiki/Joseph_Fourier" target="_blank" rel="noopener">Fourier</a></strong>), la suma parcial s'acosta a f.</p>
+          <p>La velocitat d'aquest acostament no és igual per a tothom: depèn de com de suau és f. Una funció amb un <strong>salt</strong> (discontinuïtat) té coeficients que decauen lentament (com 1/n); una de contínua però amb un «colze» decau més ràpid (com 1/n²). Aquesta relació —suavitat de la funció ↔ velocitat de decaïment de l'espectre— és exactament el que veuràs a la Vista 1.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Descompondre en freqüències és la base de com un equalitzador d'àudio separa greus i aguts, de la compressió d'imatge (JPEG hi treballa a sobre), i de com se solucionen equacions en derivades parcials (calor, ones). El <a href="https://en.wikipedia.org/wiki/Gibbs_phenomenon" target="_blank" rel="noopener">fenomen de Gibbs</a> —descobert intentant explicar per què els aparells de l'època no dibuixaven bé ones quadrades— és un avís important en tots aquests usos: a prop d'un salt, cap nombre de termes ho arregla del tot.</p>
+          <p>Però hi ha una segona resposta, més subtil, sobre si la sèrie «funciona»: el <a href="https://ca.wikipedia.org/wiki/Teorema_de_Parseval" target="_blank" rel="noopener">teorema de Parseval</a> diu que l'energia total de f es reparteix exactament entre els coeficients (Σ(aₙ²+bₙ²) = energia de f), i aquesta suma sí que convergeix al 100%, fins i tot per a la mateixa ona amb el sobrepic que mai desapareix. Els enginyers de senyal usen precisament aquesta convergència en energia; els que dissenyen filtres han de vigilar l'altra.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria una ona: quadrada o dents de serra (totes dues amb un salt) o triangular (contínua, sense salt).</li>
+            <li>«Afegeix el següent harmònic» suma un terme més a la vegada —el mateix N es comparteix entre les 3 vistes.</li>
+            <li><strong>Construcció i espectre:</strong> mira la corba acostar-se a l'ona i, al costat, l'espectre (barres) créixer —fixa't en com de ràpid decreixen les barres.</li>
+            <li><strong>El fenomen de Gibbs:</strong> zoom just al salt; el sobrepic mesurat en directe hauria de quedar-se a prop del 9%, mai baixar a 0 (excepte amb la triangular, que no en té).</li>
+            <li><strong>Energia i Parseval:</strong> el mateix N, però ara mesurant quin % de l'energia total ja tens capturada —aquest sí que arriba al 100%.</li>
+            <li>En Repte: prediu si hi haurà sobrepic, endevina quina ona genera un espectre donat, o prediu el % d'energia capturada.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">La idea de Fourier —que qualsevol forma d'ona es pot construir sumant ones pures— és probablement la que més ha canviat la tecnologia del segle XX: hi és dins de cada MP3, cada JPEG, cada connexió WiFi i cada ressonància magnètica. Però aquesta càpsula no va només d'això. Va d'una cosa més subtil i més interessant: <strong>què vol dir exactament que una suma infinita «funciona»</strong>, i com dues respostes contradictòries poden ser totes dues correctes.</p>
+
+          <h4>1. La idea, i per què va escandalitzar</h4>
+          <p>Joseph Fourier va presentar el 1807 una memòria sobre la propagació de la calor amb una afirmació que als seus contemporanis els va semblar inacceptable: <strong>qualsevol funció periòdica, per irregular que sigui, es pot escriure com una suma d'ones sinusoïdals</strong>.</p>
+          <p>El problema no era tècnic sinó filosòfic. Els sinus i cosinus són funcions llises, infinitament derivables, sense cap cantonada. Com pot una suma d'objectes perfectament suaus produir una funció amb un <strong>salt vertical</strong>? Lagrange, que era al comitè avaluador, s'hi va oposar. La memòria no es va publicar fins al 1822.</p>
+          <p>Fourier tenia raó en l'essencial i els seus crítics tenien raó en el rigor: calia precisar en quin sentit la suma «dona» la funció. Resoldre aquella pregunta va ocupar el segle XIX sencer i va acabar donant lloc a la teoria de la mesura i a l'anàlisi moderna. La càpsula està construïda al voltant d'aquesta tensió.</p>
+
+          <h4>2. Com es troben els coeficients</h4>
+          <p>Escrivim el que volem: f(x) = a₀/2 + Σ [aₙcos(nx) + bₙsin(nx)]. La pregunta és com trobar els coeficients.</p>
+          <p>El truc és una propietat notable de les funcions trigonomètriques anomenada <strong>ortogonalitat</strong>: si multipliques cos(nx) per cos(mx) i n'integres el producte al llarg d'un període complet, el resultat és <strong>zero</strong> sempre que n ≠ m. El mateix per als sinus, i per a qualsevol combinació de sinus amb cosinus.</p>
+          <p>Això vol dir que cada ona és «invisible» per a totes les altres. Així que si multipliques tota l'equació per cos(nx) i integres, <strong>tots els termes s'anul·len excepte el que buscaves</strong>, i en surt directament:</p>
+          <p style="text-align:center;margin:.7rem 0;font-family:var(--font-mono)">aₙ = (1/π)∫ f(x)·cos(nx) dx&nbsp;&nbsp;&nbsp;bₙ = (1/π)∫ f(x)·sin(nx) dx</p>
+          <div class="deep-key">
+            <strong>La imatge que val la pena retenir.</strong> Aquesta operació és <em>exactament</em> la mateixa que projectar un vector sobre un eix de coordenades. Les ones sin(nx) i cos(nx) fan de <strong>base ortogonal</strong> d'un espai de dimensió infinita, i els coeficients de Fourier són les coordenades de f en aquesta base. Tot el que saps de vectors i projeccions es trasllada aquí; l'única diferència és que hi ha infinits eixos.
+          </div>
+
+          <h4>3. Suavitat i velocitat: la primera vista</h4>
+          <p>Hi ha una relació directíssima entre com de suau és una funció i com de ràpid decauen els seus coeficients. És el tema de la primera vista de la càpsula, i es pot enunciar amb precisió:</p>
+          <p style="margin-left:1rem">• Funció amb un <strong>salt</strong> (discontinuïtat) → coeficients ~ <strong>1/n</strong>. Decaïment lent.<br>
+          • Funció contínua però amb un <strong>colze</strong> (derivada discontínua) → coeficients ~ <strong>1/n²</strong>. Molt més ràpid.<br>
+          • Funció infinitament derivable → decaïment més ràpid que qualsevol potència.</p>
+          <p>La raó intuïtiva: per construir un canvi brusc calen freqüències molt altes, i com més brusc, més contribueixen. Una corba suau es pot muntar amb poques ones baixes.</p>
+          <p>Les tres ones de la càpsula ho il·lustren exactament. L'<strong>ona quadrada</strong> té bₙ = 4/(nπ) per a n senar: decaïment 1/n. La <strong>dent de serra</strong>, també amb salt, igual. L'ona <strong>triangular</strong>, que és contínua, té aₙ = −8/(π²n²): decaïment 1/n². A la vista de l'espectre es veu de manera immediata que les barres de la triangular s'esfondren molt més de pressa.</p>
+
+          <h4>4. El fenomen de Gibbs: el 9% que no marxa mai</h4>
+          <p>Ara el fenomen que dona nom a la càpsula. Fes la suma parcial de l'ona quadrada amb 10 harmònics i mira just al costat del salt: la corba <strong>se'n passa</strong>, puja per damunt del valor correcte, i després oscil·la fins a assentar-se.</p>
+          <p>La reacció natural és pensar que amb més termes això s'arreglarà. Prova-ho a la càpsula: posa 50 harmònics, 100, 200. I aquí ve la sorpresa:</p>
+          <div class="deep-key">
+            <strong>El sobrepic no disminueix mai.</strong> Es fa més <em>estret</em> —s'arrapa cada cop més al salt— però la seva <em>alçada</em> tendeix a un valor fix i no nul: aproximadament el <strong>8,95% de la mida del salt</strong>. Amb un milió de termes, encara hi és, igual d'alt.
+          </div>
+          <p>El número exacte no és arbitrari: surt de la integral (2/π)∫₀^π (sin t)/t dt ≈ 1,178979, coneguda com a constant de Wilbraham–Gibbs. El sobrepic és la meitat d'aquest excés respecte d'1, o sigui 8,9490% del salt sencer.</p>
+          <p>La lliçó conceptual és important: <strong>la convergència puntual no implica convergència uniforme</strong>. Per a cada punt x fixat (que no sigui el salt), la sèrie hi convergeix correctament. Però el <em>pitjor error de tot el domini</em> no tendeix a zero, perquè el punt on es produeix va migrant cap al salt a mesura que afegeixes termes. Cada punt s'arregla; el conjunt, no.</p>
+          <p>A la vista de Gibbs, la càpsula mesura el sobrepic en directe mentre puges els harmònics. És l'única manera de convèncer-se'n de veritat: veure el número quedar-se clavat prop del 9% mentre la finestra es va estrenyent.</p>
+
+          <h4>5. Parseval: l'altra resposta, i és la contrària</h4>
+          <p>Ara la tercera vista, i el gir final de la càpsula. Fem una pregunta diferent: en lloc de mirar la <em>forma</em>, mirem l'<strong>energia</strong>.</p>
+          <p>El teorema de Parseval diu que l'energia total de f es reparteix exactament entre els coeficients:</p>
+          <p style="text-align:center;margin:.7rem 0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><mi>π</mi></mfrac><mo>∫</mo><msup><mi>f</mi><mn>2</mn></msup><mo>=</mo><mfrac><msubsup><mi>a</mi><mn>0</mn><mn>2</mn></msubsup><mn>2</mn></mfrac><mo>+</mo><mo>∑</mo><mo>(</mo><msubsup><mi>a</mi><mi>n</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>b</mi><mi>n</mi><mn>2</mn></msubsup><mo>)</mo></math>
+          </p>
+          <p>És, literalment, el <strong>teorema de Pitàgores en dimensió infinita</strong>: la longitud al quadrat del vector és la suma dels quadrats de les seves coordenades. I aquí no hi ha cap sobrepic ni cap anomalia: la sèrie d'energies <strong>convergeix al 100%</strong>.</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: comprovar Parseval per a l'ona quadrada</span>
+            <span class="de-step">L'ona quadrada val +1 o −1, per tant f² = 1 a tot arreu.</span>
+            <span class="de-step">Energia total: (1/π)·∫₋π^π 1 dx = (1/π)·2π = <strong>2</strong></span>
+            <span class="de-step">Els coeficients són bₙ = 4/(nπ) per a n senar, 0 per a n parell.</span>
+            <span class="de-step">Σ bₙ² = (16/π²)·Σ<sub>n senar</sub> 1/n² = (16/π²)·(π²/8) = <strong>2</strong> ✓</span>
+            <span class="de-step">Les dues bandes coincideixen exactament.</span>
+            <span class="de-step">(De passada: això demostra que Σ<sub>n senar</sub> 1/n² = π²/8, un resultat gens obvi.)</span>
+          </div>
+          <div class="deep-key">
+            <strong>La conclusió de la càpsula, i és el seu punt central.</strong> Per a la <em>mateixa</em> ona quadrada:<br>
+            • En termes de <strong>forma</strong> (convergència uniforme): la sèrie <em>no</em> convergeix. Sempre queda un sobrepic del 9%.<br>
+            • En termes d'<strong>energia</strong> (convergència en L²): la sèrie convergeix <em>perfectament</em>, al 100%.<br><br>
+            Cap de les dues afirmacions és falsa. <strong>«Convergir» no és una propietat única: depèn de com mesuris la distància entre la funció i la seva aproximació.</strong> El sobrepic és alt però cada cop més estret, i com que l'energia és una integral, una regió que s'estreny cap a amplada zero hi contribueix cada cop menys.
+          </div>
+          <p>Aquesta és la raó per la qual els enginyers de senyal i els dissenyadors de filtres es preocupen per coses diferents: els primers treballen amb energia i poden ignorar Gibbs; els segons treballen amb forma i l'han de compensar activament.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p><strong>Vista 1 — Construcció i espectre.</strong> Tries una ona i vas afegint harmònics un a un. A dalt veus la suma parcial acostant-se a la forma objectiu; a sota, l'espectre de barres, on cada barra és la magnitud d'un coeficient. El que cal observar és el <em>perfil</em> de les barres: en les ones amb salt baixa lentament, a la triangular s'esfondra.</p>
+          <p><strong>Vista 2 — Gibbs.</strong> Fa zoom just al salt i <strong>mesura el sobrepic en directe</strong>. Puja N i mira el número. Amb la triangular, que no té salt, el sobrepic és 0 —és el control experimental que confirma que el fenomen ve del salt i no de la sèrie en si.</p>
+          <p><strong>Vista 3 — Energia i Parseval.</strong> Mateix N, però mesurant quin percentatge de l'energia total ja tens capturat. Aquest sí que puja cap al 100%.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: veure les dues convergències</span>
+            <span class="de-step">1. Tria l'<strong>ona quadrada</strong>. Vista 1, afegeix 1 harmònic: surt un sinus pelat.</span>
+            <span class="de-step">2. Afegeix-ne fins a 5: ja s'intueix la forma quadrada, amb ondulacions.</span>
+            <span class="de-step">3. Ves a la <strong>Vista 2 (Gibbs)</strong> amb N=5. Apunta el sobrepic mesurat.</span>
+            <span class="de-step">4. Puja a N=20. El sobrepic és <strong>gairebé el mateix</strong>, però més estret.</span>
+            <span class="de-step">5. Puja a N=100. Segueix rondant el 9%. <strong>No baixa.</strong></span>
+            <span class="de-step">6. Ara ves a la <strong>Vista 3 (Energia)</strong> amb els mateixos N.</span>
+            <span class="de-step">7. Amb N=5 ja tens ~93% de l'energia; amb N=20, ~98,7%; amb N=100, &gt;99,7%.</span>
+            <span class="de-step">8. Mateixa ona, mateixos N: un indicador clavat i l'altre pujant cap al 100%.</span>
+            <span class="de-step">9. Repeteix-ho tot amb la <strong>triangular</strong>: el sobrepic és 0 des del principi i l'energia puja molt més de pressa.</span>
+          </div>
+
+          <h4>7. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Compressió d'àudio i imatge.</strong> L'MP3 transforma el so a freqüències, descarta les que l'oïda no percep i guarda la resta. El JPEG fa el mateix amb blocs de 8×8 píxels usant la transformada del cosinus. En tots dos casos, <strong>l'estalvi ve de poder llençar coeficients petits</strong>, cosa que només té sentit si saps que la informació està concentrada en pocs d'ells.</p>
+          <p><strong>I l'artefacte de Gibbs és visible.</strong> Els «halos» o rebots que apareixen al voltant de vores nítides en imatges JPEG molt comprimides —text negre sobre fons blanc, típicament— són literalment el fenomen d'aquesta càpsula. El mateix passa a la ressonància magnètica, on es coneix com a <em>ringing artifact</em> i es compensa amb filtres específics.</p>
+          <p><strong>Telecomunicacions.</strong> El WiFi, el 4G i el 5G fan servir OFDM, que reparteix les dades entre desenes de subportadores ortogonals —exactament la propietat d'ortogonalitat del punt 2, aplicada a l'enginyeria.</p>
+          <p><strong>Ciència i medicina.</strong> La cristal·lografia de raigs X reconstrueix estructures moleculars a partir de patrons de difracció que són, essencialment, transformades de Fourier; així es va determinar l'estructura de l'ADN. La ressonància magnètica mesura directament l'espai de freqüències i el transforma per obtenir la imatge.</p>
+          <p><strong>Equacions en derivades parcials.</strong> És per a això que Fourier ho va inventar: la sèrie converteix l'equació de la calor en infinites equacions ordinàries independents, una per freqüència, cadascuna trivial de resoldre. La mateixa tècnica s'aplica a l'equació d'ona i a l'equació de Schrödinger.</p>
+
+          <h4>8. Curiositats</h4>
+          <p><strong>Gibbs no va ser el primer, ni de bon tros.</strong> El fenomen el va descriure Henry Wilbraham el <strong>1848</strong>, en un article que ningú va llegir. Josiah Willard Gibbs el va redescobrir el 1899 en una carta a la revista <em>Nature</em>, arran d'una discussió sobre una màquina que dibuixava sèries de Fourier —i el nom va quedar. Avui de vegades es diu «fenomen de Wilbraham–Gibbs» per fer justícia.</p>
+          <p><strong>Va sortir d'una màquina que dibuixava malament.</strong> La discussió que va portar Gibbs a escriure venia d'un analitzador harmònic mecànic construït per Michelson (el mateix de l'experiment Michelson–Morley). La màquina dibuixava un rebot al costat dels salts, i tothom pensava que era un defecte mecànic. No ho era: era matemàtica.</p>
+          <p><strong>Gauss tenia la FFT 160 anys abans que Cooley i Tukey.</strong> L'algorisme de la transformada ràpida de Fourier es va publicar el 1965 i va revolucionar el càlcul científic. Anys després es va descobrir que Gauss havia escrit essencialment el mateix algorisme cap al <strong>1805</strong> —abans que Fourier publiqués la seva teoria— en un quadern que no va publicar mai i que estava escrit en un llatí poc habitual.</p>
+          <p><strong>Fourier va ser governador i egiptòleg.</strong> Va acompanyar Napoleó a Egipte, va ser secretari de l'Institut d'Egipte i després prefecte del departament d'Isère, on va supervisar el drenatge de pantans i la construcció de carreteres. La teoria de la calor la va desenvolupar mentre exercia d'administrador.</p>
+          <p><strong>Va morir, probablement, per les seves pròpies teories.</strong> Convençut que la calor era beneficiosa per a la salut, mantenia casa seva sobreescalfada i s'embolicava amb mantes fins i tot a l'estiu. Va morir el 1830. També és seu el primer plantejament conegut del que avui anomenem efecte hivernacle.</p>
+          <p><strong>Hi ha funcions contínues on la sèrie falla del tot.</strong> Du Bois-Reymond va construir el 1876 una funció contínua la sèrie de Fourier de la qual <strong>divergeix</strong> en un punt. Kolmogorov va anar més enllà el 1926 amb una funció integrable la sèrie de la qual divergeix a <em>tot arreu</em>. La pregunta de fins on arribava el desastre va quedar oberta fins que Lennart Carleson va demostrar el 1966 que, per a funcions d'energia finita, la sèrie convergeix gairebé a tot arreu. Li van donar el premi Abel el 2006.</p>
+          <p><strong>Una identitat regalada.</strong> Aplicar Parseval a l'ona quadrada demostra, com a subproducte, que la suma dels inversos dels quadrats senars val π²/8. Fent-ho amb altres ones se n'obtenen d'altres, incloent-hi la famosa Σ1/n² = π²/6 que Euler va resoldre el 1735 i que es coneix com el problema de Basilea.</p>
+
+          <h4>9. Connexió amb altres àrees</h4>
+          <p>Amb el <strong>Pla d'Argand</strong> la relació és profunda: la manera moderna d'escriure les sèries de Fourier no fa servir sinus i cosinus sinó exponencials complexes e^(inx), gràcies a la fórmula d'Euler. Les freqüències de la transformada discreta són exactament les <strong>arrels de la unitat</strong> d'aquella càpsula, i la FFT és, en essència, explotar la seva estructura de grup cíclic.</p>
+          <p>Amb <strong>Camp de pendents</strong>: Fourier va inventar tot això per resoldre una equació diferencial (la de la calor). La tècnica és complementària a la d'allà —en lloc d'integrar numèricament pas a pas, es descompon el problema en peces que es resolen exactament.</p>
+          <p>Amb <strong>Taules de Cayley</strong> hi ha un pont que sorprèn: l'anàlisi de Fourier es generalitza a grups qualssevol (anàlisi harmònica), i les ones sin(nx) i cos(nx) són els «caràcters» del grup de rotacions del cercle. Fer Fourier sobre un grup finit és exactament el que fa la transformada discreta.</p>
+          <p>I amb <strong>Fraccions contínues</strong>, un vincle inesperat: la constant de Khinchin d'aquella càpsula i els resultats de convergència «gairebé a tot arreu» d'aquesta pertanyen a la mateixa família d'idees, on «gairebé tot» té un significat tècnic precís que va sorgir, precisament, dels problemes que les sèries de Fourier van plantejar al segle XIX.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Ona:</span>
+      <div class="chip-row" id="waveRow"></div>
+    </div>
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="shape" class="active">Construcció i espectre</button>
+        <button data-v="gibbs">El fenomen de Gibbs</button>
+        <button data-v="energy">Energia i Parseval</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only">
+      <span class="help-wrap chip-label">
+        <div class="harm-controls">
+          <button class="btn btn-primary" id="nextHarmBtn">+ Següent harmònic</button>
+          <span class="n-badge" id="nBadge">N=0</span>
+          <button class="btn btn-ghost" id="resetHarmBtn">Reinicia</button>
+        </div>
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">N és el nombre d'harmònics sumats fins ara — el mateix N es fa servir a les 3 vistes, així pots comparar-les directament.</span>
+      </span>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap fourier-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA 1: FORMA + ESPECTRE -->
+      <div class="vista-panel active" id="vistaShapePanel">
+        <div class="fourier-stage"><canvas id="shapeCanvas"></canvas></div>
+        <span class="help-wrap chip-label" style="align-self:center;">
+          Espectre (|aₙ| o |bₙ|)
+          <button class="help-btn" type="button">?</button>
+          <span class="help-popup">Cada barra és la mida del coeficient d'aquell harmònic. Les barres transparents mostren els harmònics que encara no has afegit.</span>
+        </span>
+        <div class="fourier-spectrum-stage"><canvas id="spectrumCanvas"></canvas></div>
+        <div class="step-narration" id="shapeNarration"></div>
+      </div>
+
+      <!-- VISTA 2: GIBBS -->
+      <div class="vista-panel" id="vistaGibbsPanel">
+        <div class="fourier-stage"><canvas id="gibbsCanvas"></canvas></div>
+        <div class="metric-row">
+          <div class="metric"><span class="mval" id="overshootVal">—</span><span class="mlbl">sobrepic mesurat</span></div>
+          <div class="metric"><span class="mval" id="overshootTarget">≈8,9%</span><span class="mlbl">límit teòric</span></div>
+        </div>
+        <div class="step-narration" id="gibbsNarration"></div>
+      </div>
+
+      <!-- VISTA 3: ENERGIA -->
+      <div class="vista-panel" id="vistaEnergyPanel">
+        <div class="fourier-stage"><canvas id="energyCanvas"></canvas></div>
+        <div class="metric-row">
+          <div class="metric"><span class="mval good" id="energyVal">—</span><span class="mlbl">energia capturada</span></div>
+          <div class="metric"><span class="mval" id="energyOvershootVal">—</span><span class="mlbl">sobrepic (Vista 2)</span></div>
+        </div>
+        <div class="step-narration" id="energyNarration"></div>
+      </div>
+
+      <!-- REPTE -->
+      <div class="repte-only" id="reptePanel" style="width:100%;flex-direction:column;align-items:center;gap:.7rem;">
+        <div class="fourier-stage" id="repteStage"><canvas id="repteCanvas"></canvas></div>
+        <div class="step-narration" id="repteNarration"></div>
+        <div class="chip-row" id="repteButtonsRow"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" role="status" id="hint">Tria una ona i afegeix-hi harmònics.</div>
+
+    <p class="method-hint" id="methodPanel">f(x)=Σ[aₙcos(nx)+bₙsin(nx)]: sumar-ne més acosta la forma, però prop d'un salt sempre queda un sobrepic d'~8,9% que no desapareix.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">N=0</div>
+        <div class="readout-def" id="readoutDef">Afegeix el primer harmònic.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Freqüències, sobrepics, i energia</div>
+
+    <div class="type-card active" id="card-espectre" data-method="espectre" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Espectre i suavitat</div>
+        <div class="type-range">Salt→<math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><mi>n</mi></mfrac></math> · Colze→<math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mn>1</mn><msup><mi>n</mi><mn>2</mn></msup></mfrac></math></div>
+        <div class="type-desc">A la Vista 1, compara l'espectre de la quadrada (decau lent) amb el de la triangular (decau ràpid): la velocitat de decaïment reflecteix exactament com de suau és la funció.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-gibbs" data-method="gibbs" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Fenomen de Gibbs</div>
+        <div class="type-range">Sobrepic → ~8,9%, mai 0</div>
+        <div class="type-desc">A la Vista 2, per moltíssims harmònics que afegeixis a la quadrada o la serra, el sobrepic just al salt no baixa de ~8,9% —la zona es fa més estreta, no més baixa.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-parseval" data-method="parseval" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Parseval: l'altra convergència</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo>∑</mo><mo>(</mo><msubsup><mi>a</mi><mi>n</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>b</mi><mi>n</mi><mn>2</mn></msubsup><mo>)</mo></math> → energia total</div>
+        <div class="type-desc">A la Vista 3, el % d'energia capturada arriba al 100% per a la mateixa ona que mai perd el sobrepic —«convergir» depèn de quina pregunta facis.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> la triangular no té salt: prova-hi la Vista 2 i veuràs el sobrepic caure cap a 0 de veritat, a diferència de les altres dues.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/wfkks7rf" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Desenvolupament en sèrie de Fourier</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 04 · Càlcul i Anàlisi Matemàtica</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  ONES I COEFICIENTS DE FOURIER (verificats a mà i numèricament)
+// ─────────────────────────────────────────────
+function wrapPi(x) { return ((x + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; }
+const WAVEFORMS = [
+  {
+    key: 'square', label: 'Quadrada',
+    f: x => (wrapPi(x) > 0 ? 1 : -1),
+    coeff: n => ({ a: 0, b: (n % 2 === 1) ? 4 / (n * Math.PI) : 0 }),
+    energy: 2, hasJump: true, jumpX: 0, before: -1, after: 1
+  },
+  {
+    key: 'sawtooth', label: 'Dents de serra',
+    f: x => wrapPi(x) / Math.PI,
+    coeff: n => ({ a: 0, b: 2 * Math.pow(-1, n + 1) / (n * Math.PI) }),
+    energy: 2 / 3, hasJump: true, jumpX: Math.PI, before: 1, after: -1
+  },
+  {
+    key: 'triangle', label: 'Triangular',
+    f: x => (2 / Math.PI) * Math.abs(wrapPi(x)) - 1,
+    coeff: n => ({ a: (n % 2 === 1) ? -8 / (Math.PI * Math.PI * n * n) : 0, b: 0 }),
+    energy: 2 / 3, hasJump: false
+  }
+];
+function nthHarmonicIndex(wf, k) { return wf.key === 'sawtooth' ? k : (2 * k - 1); }
+function partialSum(wf, N, x) {
+  let s = 0;
+  for (let n = 1; n <= N; n++) { const c = wf.coeff(n); s += c.a * Math.cos(n * x) + c.b * Math.sin(n * x); }
+  return s;
+}
+function coeffMag(wf, n) { const c = wf.coeff(n); return Math.hypot(c.a, c.b); }
+function energyCaptured(wf, N) { let e = 0; for (let n = 1; n <= N; n++) { const c = wf.coeff(n); e += c.a * c.a + c.b * c.b; } return e; }
+function measureOvershoot(wf, N) {
+  if (!wf.hasJump || N < 1) return 0;
+  const rising = wf.after > wf.before;
+  let extreme = rising ? -Infinity : Infinity;
+  // La finestra de cerca s'ha d'estrènyer amb N: el pic de Gibbs viu a
+  // ~jumpX+pi/N i té una amplada del mateix ordre, així que amb una finestra
+  // fixa i N gran, la graella de mostreig acaba sent més grossa que el propi
+  // pic i el "troba" malament (verificat: sense això, a N~1000 el sobrepic
+  // mesurat cau erràticament en lloc de convergir cap a ~8,9%).
+  const steps = 500, w = Math.min(Math.PI * 0.6, 6 * Math.PI / N);
+  for (let i = 1; i <= steps; i++) {
+    const x = wf.jumpX + (w * i / steps);
+    const v = partialSum(wf, N, x);
+    extreme = rising ? Math.max(extreme, v) : Math.min(extreme, v);
+  }
+  const jumpSize = Math.abs(wf.after - wf.before);
+  const overshoot = rising ? (extreme - wf.after) / jumpSize : (wf.after - extreme) / jumpSize;
+  return Math.max(0, overshoot);
+}
+
+// ─────────────────────────────────────────────
+//  ESTAT (N compartit entre vistes, com s'ha dissenyat)
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let currentWaveKey = 'square';
+let harmCount = 0;
+let currentVista = 'shape';
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteState = null;
+
+// ─────────────────────────────────────────────
+//  DPI / COORDENADES (mateix patró que Camp de pendents / Pla d'Argand / Newton)
+// ─────────────────────────────────────────────
+function setupHiDPI(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+function currentWave() { return WAVEFORMS.find(w => w.key === currentWaveKey); }
+function maxN() { return nthHarmonicIndex(currentWave(), Math.max(1, harmCount)); }
+
+// ─────────────────────────────────────────────
+//  VISTA 1 — CONSTRUCCIÓ I ESPECTRE
+// ─────────────────────────────────────────────
+function drawShape() {
+  const canvas = document.getElementById('shapeCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const wf = currentWave();
+  const xRange = [-Math.PI, Math.PI];
+  const toPx = (x, y) => ({ px: (x - xRange[0]) / (xRange[1] - xRange[0]) * w, py: h / 2 - y * h * 0.38 });
+  ctx.strokeStyle = 'rgba(27,30,45,.55)'; ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 200; const p = toPx(x, wf.f(x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke(); ctx.setLineDash([]);
+  const N = harmCount > 0 ? maxN() : 0;
+  ctx.strokeStyle = cssVar('--calcul'); ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i <= 300; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 300; const p = toPx(x, partialSum(wf, N, x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke();
+  describeCanvas(canvas,
+    `Ona ${wf.label} dibuixada a ratlles i, a sobre, la seva suma parcial de Fourier amb ${N} harmònic${N === 1 ? '' : 's'}. ` +
+    (wf.hasJump
+      ? 'Aquesta ona té un salt: els coeficients decauen com 1 partit per n, i la suma parcial oscil·la visiblement a prop del salt.'
+      : 'Aquesta ona no té cap salt: els coeficients decauen com 1 partit per n al quadrat, i la suma parcial s\'hi ajusta de pressa.'));
+}
+function drawSpectrum() {
+  const canvas = document.getElementById('spectrumCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const wf = currentWave();
+  const maxBars = 14;
+  const barW = w / maxBars;
+  const maxMag = coeffMag(wf, 1);
+  for (let n = 1; n <= maxBars; n++) {
+    const mag = coeffMag(wf, n);
+    const barH = (mag / maxMag) * (h - 16);
+    const added = harmCount > 0 && n <= maxN();
+    ctx.fillStyle = added ? cssVar('--calcul') : hexToRgba(cssVar('--calcul'), 0.16);
+    ctx.fillRect(n * barW + barW * 0.2, h - barH - 4, barW * 0.6, barH);
+  }
+}
+function updateShapeNarration() {
+  const wf = currentWave(), N = harmCount > 0 ? maxN() : 0;
+  const el = document.getElementById('shapeNarration');
+  if (harmCount === 0) { el.innerHTML = '<span class="sn-title">Encara res</span>Afegeix el primer harmònic per començar.'; readoutBadge.classList.remove('active'); return; }
+  const c = wf.coeff(N);
+  const term = c.b !== 0 ? `${fmtNum(c.b, 3)}·sin(${N}x)` : `${fmtNum(c.a, 3)}·cos(${N}x)`;
+  el.innerHTML = `<span class="sn-title">N=${N}</span>Últim terme afegit: <b>${term}</b> (magnitud ${fmtNum(coeffMag(wf, N), 3)}). ${wf.hasJump ? 'Els coeficients decauen com 1/n — lent, típic d\'un salt.' : 'Els coeficients decauen com 1/n² — molt més ràpid: no hi ha salt.'}`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = 'N=' + N;
+  readoutName.textContent = wf.label;
+  readoutDef.textContent = `Últim coeficient: ${fmtNum(coeffMag(wf, N), 4)}`;
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 2 — GIBBS
+// ─────────────────────────────────────────────
+function drawGibbs() {
+  const canvas = document.getElementById('gibbsCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const wf = currentWave();
+  if (!wf.hasJump) {
+    const xRange = [-Math.PI, Math.PI];
+    const toPx = (x, y) => ({ px: (x - xRange[0]) / (xRange[1] - xRange[0]) * w, py: h / 2 - y * h * 0.38 });
+    const N = harmCount > 0 ? maxN() : 0;
+    ctx.strokeStyle = cssVar('--calcul'); ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i <= 300; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 300; const p = toPx(x, partialSum(wf, N, x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+    ctx.stroke();
+    return;
+  }
+  const zoomW = Math.PI * 0.9;
+  const xRange = [wf.jumpX - zoomW * 0.25, wf.jumpX + zoomW];
+  const toPx = (x, y) => ({ px: (x - xRange[0]) / (xRange[1] - xRange[0]) * w, py: h / 2 - y * h * 0.38 });
+  ctx.strokeStyle = 'rgba(27,30,45,.5)'; ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 200; const p = toPx(x, wf.f(x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke(); ctx.setLineDash([]);
+  const N = harmCount > 0 ? maxN() : 0;
+  ctx.strokeStyle = cssVar('--algebra'); ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i <= 400; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 400; const p = toPx(x, partialSum(wf, N, x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke();
+  const targetLine = toPx(xRange[0], wf.after);
+  ctx.strokeStyle = 'rgba(27,30,45,.3)'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+  ctx.beginPath(); ctx.moveTo(0, targetLine.py); ctx.lineTo(w, targetLine.py); ctx.stroke(); ctx.setLineDash([]);
+}
+function updateGibbsMetrics() {
+  const wf = currentWave(), N = harmCount > 0 ? maxN() : 0;
+  const overshoot = wf.hasJump ? measureOvershoot(wf, N) : 0;
+  document.getElementById('overshootVal').textContent = harmCount === 0 ? '—' : fmtNum(overshoot * 100, 1) + '%';
+  document.getElementById('overshootVal').className = 'mval' + (wf.hasJump && overshoot > 0.05 ? ' bad' : (wf.hasJump ? '' : ' good'));
+  const el = document.getElementById('gibbsNarration');
+  if (harmCount === 0) { el.innerHTML = '<span class="sn-title">Encara res</span>Afegeix harmònics per veure el comportament vora el salt.'; return; }
+  el.innerHTML = wf.hasJump
+    ? `<span class="sn-title">N=${N}</span>Sobrepic mesurat: <b>${fmtNum(overshoot * 100, 1)}%</b> del salt. Segueix afegint harmònics: la zona del sobrepic s'estreny, però la seva alçada relativa no baixa gaire de ~8,9%.`
+    : `<span class="sn-title">N=${N}</span>Sense salt, sense sobrepic persistent: aquí sí que l'aproximació s'ajusta bé arreu, també just a les cantonades.`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = wf.hasJump ? fmtNum(overshoot * 100, 0) + '%' : '0%';
+  readoutName.textContent = 'N=' + N;
+  readoutDef.textContent = wf.hasJump ? 'Sobrepic vora el salt' : 'Sense salt';
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 3 — ENERGIA I PARSEVAL
+// ─────────────────────────────────────────────
+function drawEnergy() {
+  const canvas = document.getElementById('energyCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const wf = currentWave();
+  const maxBars = 14;
+  const barW = (w - 20) / maxBars;
+  let running = 0;
+  for (let n = 1; n <= maxBars; n++) {
+    const c = wf.coeff(n);
+    if (n <= (harmCount > 0 ? maxN() : 0)) running += c.a * c.a + c.b * c.b;
+    const pct = running / wf.energy;
+    const barH = pct * (h - 30);
+    ctx.fillStyle = n <= (harmCount > 0 ? maxN() : 0) ? cssVar('--geometria') : hexToRgba(cssVar('--geometria'), 0.15);
+    ctx.fillRect(10 + n * barW, h - barH - 6, barW * 0.7, barH);
+  }
+  ctx.strokeStyle = 'rgba(27,30,45,.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(10, h - (h - 30) - 6); ctx.lineTo(w - 10, h - (h - 30) - 6); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(27,30,45,.5)'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('100% de l\'energia', 12, h - (h - 30) - 10);
+}
+function updateEnergyMetrics() {
+  const wf = currentWave(), N = harmCount > 0 ? maxN() : 0;
+  const captured = harmCount > 0 ? energyCaptured(wf, N) : 0;
+  const pct = captured / wf.energy * 100;
+  document.getElementById('energyVal').textContent = harmCount === 0 ? '—' : fmtNum(pct, 1) + '%';
+  const ov = wf.hasJump ? measureOvershoot(wf, N) : 0;
+  document.getElementById('energyOvershootVal').textContent = harmCount === 0 ? '—' : (wf.hasJump ? fmtNum(ov * 100, 1) + '%' : '0% (sense salt)');
+  const el = document.getElementById('energyNarration');
+  if (harmCount === 0) { el.innerHTML = '<span class="sn-title">Encara res</span>Afegeix harmònics per veure créixer l\'energia capturada.'; return; }
+  el.innerHTML = `<span class="sn-title">N=${N}</span>Energia capturada: <b>${fmtNum(pct, 1)}%</b> de Σ(aₙ²+bₙ²) = energia total de f (Parseval). ${pct > 99 ? 'Ja pràcticament el 100%' : 'Encara pujant cap al 100%'} —mentre que el sobrepic de la Vista 2 ${wf.hasJump ? 'es manté prop del 9%, sense baixar.' : 'ja és 0 (sense salt).'}`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmtNum(pct, 0) + '%';
+  readoutName.textContent = 'Energia capturada, N=' + N;
+  readoutDef.textContent = 'Teorema de Parseval';
+}
+
+// ─────────────────────────────────────────────
+//  CONTROLS COMPARTITS
+// ─────────────────────────────────────────────
+function buildWaveChips() {
+  const row = document.getElementById('waveRow');
+  row.innerHTML = '';
+  WAVEFORMS.forEach(wfo => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = wfo.label;
+    b.classList.toggle('active', wfo.key === currentWaveKey);
+    b.addEventListener('click', () => { currentWaveKey = wfo.key; harmCount = 0; refreshAll(); highlightWaveChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightWaveChip() { document.querySelectorAll('#waveRow .chip').forEach(c => c.classList.toggle('active', WAVEFORMS.find(f => f.label === c.textContent).key === currentWaveKey)); }
+const MAX_HARM_COUNT = 60; // prou per veure la convergència amb claredat; a partir d'aquí és imperceptible a ull
+function refreshAll() {
+  document.getElementById('nBadge').textContent = 'N=' + (harmCount > 0 ? maxN() : 0);
+  document.getElementById('nextHarmBtn').disabled = harmCount >= MAX_HARM_COUNT;
+  drawShape(); drawSpectrum(); updateShapeNarration();
+  drawGibbs(); updateGibbsMetrics();
+  drawEnergy(); updateEnergyMetrics();
+}
+document.getElementById('nextHarmBtn').addEventListener('click', () => {
+  if (harmCount >= MAX_HARM_COUNT) return;
+  harmCount++; refreshAll();
+});
+document.getElementById('resetHarmBtn').addEventListener('click', () => { harmCount = 0; refreshAll(); });
+
+// ─────────────────────────────────────────────
+//  CANVI DE VISTA
+// ─────────────────────────────────────────────
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  document.getElementById('vistaShapePanel').classList.toggle('active', v === 'shape');
+  document.getElementById('vistaGibbsPanel').classList.toggle('active', v === 'gibbs');
+  document.getElementById('vistaEnergyPanel').classList.toggle('active', v === 'energy');
+  refreshAll();
+  initHelpPopups();
+}
+document.querySelectorAll('#vistaToggle button').forEach(btn => btn.addEventListener('click', () => setVista(btn.dataset.v)));
+window.addEventListener('resize', () => { if (!repteMode) refreshAll(); });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function advanceRepte(delay) { const snapshot = repteRoundId; setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, delay); }
+function buildRepteButtons(labels, onClick) {
+  const row = document.getElementById('repteButtonsRow');
+  row.innerHTML = '';
+  labels.forEach((l, i) => { const b = document.createElement('button'); b.className = i === 0 ? 'btn btn-primary' : 'btn btn-ghost'; b.textContent = l; b.addEventListener('click', () => onClick(i)); row.appendChild(b); });
+}
+function repteDrawWave(wf, N, zoomJump) {
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const xRange = zoomJump ? [wf.jumpX - 0.8, wf.jumpX + 1.6] : [-Math.PI, Math.PI];
+  const toPx = (x, y) => ({ px: (x - xRange[0]) / (xRange[1] - xRange[0]) * w, py: h / 2 - y * h * 0.38 });
+  ctx.strokeStyle = 'rgba(27,30,45,.5)'; ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 200; const p = toPx(x, wf.f(x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = cssVar('--calcul'); ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i <= 300; i++) { const x = xRange[0] + (xRange[1] - xRange[0]) * i / 300; const p = toPx(x, partialSum(wf, N, x)); if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); }
+  ctx.stroke();
+}
+
+function startGibbsRound() {
+  const wf = WAVEFORMS[Math.floor(Math.random() * WAVEFORMS.length)];
+  const N = nthHarmonicIndex(wf, 6 + Math.floor(Math.random() * 4));
+  repteState = { type: 'gibbs', wf, N };
+  repteDrawWave(wf, N, wf.hasJump);
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${wf.label}</span>Amb prou harmònics sumats, aquesta ona té sobrepic persistent (fenomen de Gibbs)?`;
+  buildRepteButtons(['Sí, en té', 'No, no en té'], (i) => submitGibbs(i === 0));
+  hint.textContent = 'Prediu si hi haurà sobrepic persistent.';
+}
+function submitGibbs(claim) {
+  if (repteTimeUp) return;
+  const correct = claim === repteState.wf.hasJump;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — ${repteState.wf.label} ${repteState.wf.hasJump ? 'té un salt, per tant sí.' : 'és contínua, per tant no.'}`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+
+function startSpectrumMatchRound() {
+  const wf = WAVEFORMS[Math.floor(Math.random() * WAVEFORMS.length)];
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const maxBars = 10, barW = (w - 20) / maxBars, maxMag = coeffMag(wf, 1);
+  for (let n = 1; n <= maxBars; n++) {
+    const barH = (coeffMag(wf, n) / maxMag) * (h - 20);
+    ctx.fillStyle = cssVar('--calcul');
+    ctx.fillRect(10 + n * barW, h - barH - 6, barW * 0.6, barH);
+  }
+  repteState = { type: 'spectrum', wf };
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">Quin espectre és aquest?</span>Mira com decreixen les barres i endevina quina ona el genera.`;
+  const opts = [...WAVEFORMS].sort(() => Math.random() - 0.5);
+  buildRepteButtons(opts.map(o => o.label), (i) => submitSpectrum(opts[i].key === wf.key));
+  hint.textContent = 'Relaciona el patró de l\'espectre amb l\'ona correcta.';
+}
+function submitSpectrum(correct) {
+  if (repteTimeUp) return;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — era <b>${repteState.wf.label}</b>.`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+
+function startEnergyRound() {
+  const wf = WAVEFORMS[Math.floor(Math.random() * WAVEFORMS.length)];
+  const k = 2 + Math.floor(Math.random() * 4);
+  const N = nthHarmonicIndex(wf, k);
+  const pct = energyCaptured(wf, N) / wf.energy * 100;
+  repteState = { type: 'energy', wf, N, pct };
+  repteDrawWave(wf, N, false);
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${wf.label}, N=${N}</span>Aproximadament quin % de l'energia total (Parseval) ja tens capturat?`;
+  const opts = [Math.round(pct), Math.round(Math.max(5, pct - 30)), Math.round(Math.min(99, pct + 25)), Math.round(Math.max(2, pct - 55))];
+  const shuffled = opts.map((v, i) => ({ v, correct: i === 0 })).sort(() => Math.random() - 0.5);
+  buildRepteButtons(shuffled.map(o => o.v + '%'), (i) => submitEnergy(shuffled[i].correct));
+  hint.textContent = 'Estima el % d\'energia capturada.';
+}
+function submitEnergy(correct) {
+  if (repteTimeUp) return;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); } else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — el valor real és ${fmtNum(repteState.pct, 1)}%.`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  readoutBadge.classList.remove('active');
+  const r = Math.random();
+  if (r < 0.34) startGibbsRound(); else if (r < 0.67) startSpectrumMatchRound(); else startEnergyRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  setVista(currentVista);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  espectre: "Els coeficients d'una funció amb salt decauen com 1/n; d'una funció contínua però amb colze, com 1/n² — molt més ràpid.",
+  gibbs: "Vora un salt, la suma parcial sempre el sobrepassa un ~8,9% del salt, per molts harmònics que hi sumis.",
+  parseval: "Σ(aₙ²+bₙ²) convergeix al 100% de l'energia total de f, encara que el sobrepic de Gibbs no desaparegui mai."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-espectre').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('espectre'); if (!repteMode) setVista('shape'); });
+document.getElementById('card-gibbs').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('gibbs'); if (!repteMode) setVista('gibbs'); });
+document.getElementById('card-parseval').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('parseval'); if (!repteMode) setVista('energy'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildWaveChips();
+setVista('shape');
+</script>
+</body>
+</html>

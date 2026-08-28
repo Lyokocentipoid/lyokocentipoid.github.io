@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El sedàs i els primers · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--aritmetica); }
+
+    .sieve-wrap { aspect-ratio: auto; padding: 1.1rem; display: flex; flex-direction: column; gap: .9rem; }
+
+    /* ── Graella del sedàs ──
+       Cel·les com a <button>: són el gest central de la càpsula i han de
+       poder-se fer servir amb teclat. La mida s'adapta a N perquè 900
+       números segueixin cabent sense scroll horitzontal. */
+    .sieve-grid { display: grid; gap: 2px; justify-content: center; }
+    .sieve-cell {
+      border: 1px solid var(--border); background: var(--card); border-radius: 4px;
+      font-family: var(--font-mono); font-weight: 600; color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      cursor: default; padding: 0; transition: background var(--tr), color var(--tr), border-color var(--tr);
+    }
+    .sieve-cell.candidate { cursor: pointer; }
+    .sieve-cell.candidate:hover { border-color: var(--m-color); background: color-mix(in srgb, var(--m-color) 12%, var(--card)); }
+    .sieve-cell.prime { background: color-mix(in srgb, var(--good) 20%, transparent); border-color: var(--good); color: var(--good); font-weight: 700; }
+    .sieve-cell.struck { background: transparent; color: color-mix(in srgb, var(--muted) 55%, transparent); border-color: transparent; text-decoration: line-through; }
+    .sieve-cell.striking { background: color-mix(in srgb, var(--bad) 30%, transparent); border-color: var(--bad); color: var(--bad); text-decoration: none; }
+    .sieve-cell.redundant { background: color-mix(in srgb, var(--warn) 22%, transparent); border-color: var(--warn); color: var(--warn); }
+    .sieve-cell.one { color: color-mix(in srgb, var(--muted) 45%, transparent); border-style: dashed; }
+
+    /* ── Barra d'estat del sedàs ── */
+    .sieve-status { display: flex; flex-wrap: wrap; gap: 1.2rem; justify-content: center; font-family: var(--font-mono); font-size: .82rem; }
+    .ss-item { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+    .ss-label { font-family: var(--font-body); font-size: .66rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .ss-value { font-weight: 700; color: var(--m-color); }
+    .ss-value.done { color: var(--good); }
+
+    .sieve-legend { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; font-size: .72rem; color: var(--muted); }
+    .sieve-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .sieve-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; border: 1px solid var(--border); }
+
+    .primes-list { font-family: var(--font-mono); font-size: .78rem; color: var(--ink); text-align: center; line-height: 1.7; max-height: 76px; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: .5rem .7rem; }
+    .primes-list b { color: var(--good); }
+
+    .vista-panel { display: none; flex-direction: column; gap: .8rem; }
+    .vista-panel.active { display: flex; }
+
+    .chart-stage { position: relative; width: 100%; max-width: 460px; margin: 0 auto; aspect-ratio: 1.5; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .chart-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .step-narration {
+      width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65;
+    }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+
+    .repte-panel { display: none; flex-direction: column; align-items: center; gap: .8rem; width: 100%; }
+    .repte-panel.active { display: flex; }
+    .repte-prompt { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; text-align: center; line-height: 1.6; }
+    .repte-prompt b { color: var(--m-color); font-family: var(--font-mono); }
+    .guess-row { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .guess-row input[type=number] { width: 110px; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; font-family: var(--font-mono); font-size: .95rem; text-align: center; background: var(--surface); color: var(--ink); }
+    .yn-row { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
+
+    .result-box { display: none; padding: .7rem .9rem; border-radius: 9px; font-size: .84rem; line-height: 1.6; width: 100%; }
+    .result-box.active { display: block; }
+    .result-box.ok { background: color-mix(in srgb, var(--good) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--good) 32%, transparent); }
+    .result-box.ok b { color: var(--good); }
+    .result-box.no { background: color-mix(in srgb, var(--bad) 8%, var(--card)); border: 1px solid color-mix(in srgb, var(--bad) 28%, transparent); }
+    .result-box.no b { color: var(--bad); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--aritmetica)">Bloc 01 · El sedàs i els primers</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>El sedàs i el ritme dels primers</h1>
+      <p>Tatxa els múltiples de cada primer d'una sola passada, com es fa des de fa 2.200 anys, i mira aparèixer la llista de primers. Després compta'ls: la seva quantitat segueix una llei que ningú va saber demostrar fins al 1896.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Un nombre <strong>primer</strong> és un enter més gran que 1 que només es pot dividir exactament per 1 i per ell mateix. El 7 ho és; el 8 no, perquè 8 = 2·4. Són les <strong>peces indivisibles</strong> de la multiplicació: qualsevol enter es descompon en primers d'una única manera possible (el teorema fonamental de l'aritmètica).</p>
+          <p>El <a href="https://ca.wikipedia.org/wiki/Garbell_d%27Erat%C3%B2stenes" target="_blank" rel="noopener">sedàs d'Eratòstenes</a>, de cap al 240 aC, els troba tots fins a un límit sense haver de comprovar cap divisió: escrius els números, agafes el primer que queda sense tatxar —que per força és primer— i <strong>tatxes tots els seus múltiples</strong>. Repeteixes. El que sobrevisqui és primer.</p>
+          <p>Té dos detalls que la càpsula fa visibles i que sovint passen desapercebuts: en arribar al primer p, els seus múltiples petits <strong>ja estan tatxats</strong> (els de 2p els va tatxar el 2, els de 3p el 3…), de manera que els primers nous comencen a <strong>p²</strong>; i, per la mateixa raó, <strong>pots aturar-te en superar √N</strong>.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Euclides va demostrar cap al 300 aC que els primers són <strong>infinits</strong>. Però el seu repartiment és desconcertant: n'hi ha de molt junts (11 i 13, 17 i 19) i clarianes cada cop més llargues. No hi ha cap fórmula que els generi.</p>
+          <p>I tanmateix, <em>en conjunt</em> segueixen una llei molt precisa. Si π(x) és la quantitat de primers fins a x, el <a href="https://en.wikipedia.org/wiki/Prime_number_theorem" target="_blank" rel="noopener">teorema dels nombres primers</a> diu que π(x) s'assembla cada cop més a x/ln x. A la Vista 2 pots veure les dues corbes acostar-se amb els teus propis primers.</p>
+          <p>És un dels contrastos més bonics de la matemàtica: <strong>impredictibles un a un, previsibles en massa</strong>. I no és només bellesa: tota la criptografia de clau pública que protegeix les connexions d'internet descansa sobre el fet que multiplicar dos primers grans és trivial i desfer el producte és, fins on sabem, inabastable.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria el límit N (100, 400 o 900) amb els xips de dalt.</li>
+            <li><strong>Clica el número més petit que encara no estigui tatxat</strong> —el primer cop serà el 2. Amb un sol clic es tatxen tots els seus múltiples de cop, amb una escombrada.</li>
+            <li>Fixa't en els dos colors de l'escombrada: <strong>vermell</strong> els que es tatxen ara per primer cop, <strong>ambre</strong> els que ja estaven tatxats abans. Els vermells sempre comencen a p².</li>
+            <li>El marcador <strong>√N</strong> de la barra d'estat et diu quan pots parar: en passar-lo, tot el que quedi ja és primer.</li>
+            <li>Vista <strong>«Quants n'hi ha»</strong>: l'escala de π(x) es va construint amb els teus primers, superposada a x/ln x.</li>
+            <li>Vista <strong>«Forats»</strong>: la distància entre primers consecutius, amb els rècords marcats.</li>
+            <li>En Repte hi ha tres tipus de pregunta: estimar π(x), decidir si el sedàs ja ha acabat, i trobar el forat més gran d'un tram.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Els primers són l'objecte més antic i més estudiat de la teoria de nombres, i alhora el que pitjor entenem. Sabem que n'hi ha infinits des de fa 2.300 anys; sabem, amb precisió sorprenent, quants n'hi ha fins a qualsevol límit; i tanmateix no hi ha cap fórmula que els generi, ni sabem respondre preguntes que un nen podria formular. Aquesta càpsula recorre les dues cares: el mètode elemental per trobar-los i la llei estadística que els governa.</p>
+
+          <h4>1. Què és un primer, i per què l'1 no ho és</h4>
+          <p>Un <strong>primer</strong> és un enter més gran que 1 que només es divideix exactament per 1 i per ell mateix. La seva importància ve del <strong>teorema fonamental de l'aritmètica</strong>: tot enter més gran que 1 es descompon en producte de primers <em>d'una única manera</em>, tret de l'ordre. 60 = 2²·3·5, i no hi ha cap altra manera de fer-ho.</p>
+          <p>Els primers són, doncs, els <em>àtoms</em> de la multiplicació, i és per això que apareixen a tot arreu: qualsevol pregunta multiplicativa sobre enters acaba, tard o d'hora, sent una pregunta sobre primers.</p>
+          <div class="deep-aside">
+            <strong>Per què l'1 queda exclòs.</strong> No és un caprici de notació ni una convenció arbitrària: és per <em>salvar la unicitat</em>. Si l'1 fos primer, 6 = 2·3, però també 1·2·3, i 1·1·2·3… La factorització deixaria de ser única i el teorema fonamental s'esfondraria. A la graella de la càpsula, l'1 té una vora discontínua precisament per marcar que no juga: ni és primer ni és compost.
+          </div>
+
+          <h4>2. N'hi ha infinits: la demostració d'Euclides</h4>
+          <p>És una de les demostracions més elegants que existeixen, té 2.300 anys, i cap en un paràgraf.</p>
+          <div class="deep-example">
+            <span class="de-title">Demostració que els primers no s'acaben</span>
+            <span class="de-step">Suposem que n'hi hagués un nombre finit: p₁, p₂, …, p<sub>k</sub>, i cap més.</span>
+            <span class="de-step">Construïm el número N = (p₁ · p₂ · … · p<sub>k</sub>) + 1.</span>
+            <span class="de-step">Dividim N per qualsevol dels primers de la llista: <strong>sempre sobra 1</strong>.</span>
+            <span class="de-step">Per tant cap primer de la llista no divideix N.</span>
+            <span class="de-step">Però N &gt; 1, i tot número més gran que 1 té algun divisor primer.</span>
+            <span class="de-step">Aquest divisor primer <strong>no és a la llista</strong> → contradicció. ∎</span>
+          </div>
+          <p>Un matís que sovint es diu malament: la demostració <em>no</em> afirma que N sigui primer. Sovint no ho és. Amb els cinc primers primers: 2·3·5·7·11 + 1 = 2311, que sí que és primer; però 2·3·5·7·11·13 + 1 = 30031 = 59·509, compost. El que la demostració garanteix és que els <em>seus factors</em> són primers nous, no que N ho sigui.</p>
+
+          <h4>3. El sedàs: trobar-los sense dividir mai</h4>
+          <p>Saber que n'hi ha infinits no ens diu quins són. Per trobar-los tots fins a un límit N, el mètode més antic continua sent dels més eficients: el <strong>sedàs d'Eratòstenes</strong>, del bibliotecari d'Alexandria, cap al 240 aC.</p>
+          <p>La idea inverteix el plantejament natural. En lloc de preguntar-se «és 91 primer?» i posar-se a dividir per 2, 3, 5, 7…, el sedàs <strong>elimina</strong>: si tatxes tots els múltiples de tots els primers, el que sobrevisqui és primer per força. <strong>No es fa ni una sola divisió en tot el procés</strong> —només comptar de p en p, que és sumar.</p>
+          <p>Aquesta diferència és tot el seu poder. Per trobar els 154 primers fins a 900 amb divisions successives caldrien desenes de milers de comprovacions. Amb el sedàs, com pots verificar a la càpsula, calen <strong>deu escombrades</strong>.</p>
+
+          <h4>4. Els dos detalls que la càpsula fa visibles</h4>
+          <p>El sedàs s'explica sovint en tres línies, i en el procés es perden les seves dues propietats més interessants. Totes dues es veuen directament a la graella.</p>
+          <h5>Els múltiples nous comencen a p²</h5>
+          <p>Quan arribes al 5 i n'has de tatxar els múltiples, 10 ja estava tatxat (el va tatxar el 2), 15 també (el 3), 20 també (el 2). El primer múltiple de 5 que encara <strong>no</strong> estava tatxat és el <strong>25 = 5²</strong>.</p>
+          <p>La raó és general: qualsevol múltiple de p menor que p² s'escriu com k·p amb k &lt; p, i per tant té un factor primer més petit que p, que ja el va tatxar abans. A la càpsula, l'escombrada distingeix aquests dos casos amb colors —<strong>vermell</strong> els nous, <strong>ambre</strong> els que ja hi eren— i el comptador et diu quants n'hi ha de cada mena. Amb N=400 i p=19, per exemple, de 20 múltiples només 2 són nous.</p>
+          <h5>Pots parar en superar √N</h5>
+          <p>Aquesta és una conseqüència directa de l'anterior, i és el que fa que el sedàs sigui tan barat. Si p &gt; √N, aleshores p² &gt; N, i el primer múltiple nou ja cauria fora de la graella: l'escombrada no tatxaria res.</p>
+          <div class="deep-key">
+            <strong>Dit d'una altra manera:</strong> si n ≤ N és compost, n = a·b amb a,b &gt; 1. Si tots dos factors fossin majors que √N, el producte superaria N. Per tant <strong>tot compost té un factor primer menor o igual que √N</strong>, i ja l'haurà tatxat. En superar √N, tot el que quedi sense tatxar és primer, i <strong>ja no cal clicar més</strong>.
+          </div>
+          <p>Amb N = 900, √900 = 30, i el darrer primer útil és el 29. Per això a la càpsula el sedàs s'acaba després de deu clics. La barra d'estat mostra √N permanentment, i el Repte té un tipus de ronda dedicat precisament a aquesta decisió.</p>
+
+          <h4>5. Comptar-los: la funció π(x)</h4>
+          <p>Un cop tens la llista, la pregunta natural canvia: no <em>quins</em> són, sinó <strong>quants</strong> n'hi ha. Definim π(x) com la quantitat de primers menors o iguals que x. π(10) = 4, π(100) = 25, π(1000) = 168.</p>
+          <p>Mirant la graella no s'hi veu cap ordre: hi ha zones denses (entre 1 i 20 n'hi ha 8) i clarianes. Però si dibuixes π(x) com una escala —un graó per cada primer, que és exactament el que fa la Vista 2 de la càpsula— apareix una corba sorprenentment suau.</p>
+          <p>Gauss, cap al 1792 i amb <strong>quinze anys</strong>, es dedicava a comptar primers en taules per entretenir-se. Va notar que la densitat de primers prop d'un número x era aproximadament <strong>1/ln x</strong>, i d'aquí que π(x) hagi de créixer com x/ln x. No ho va publicar ni ho va demostrar; ho va anotar al marge d'una taula de logaritmes.</p>
+          <div class="deep-example">
+            <span class="de-title">Comprovació de la densitat 1/ln x</span>
+            <span class="de-step">Comptem quants primers hi ha entre 990.000 i 1.000.000 (una franja de 10.000 números).</span>
+            <span class="de-step">Resultat real: <strong>721 primers</strong> → densitat 0,0721</span>
+            <span class="de-step">Predicció 1/ln(10⁶) = 1/13,8155 = <strong>0,0724</strong></span>
+            <span class="de-step">Encerta a la tercera xifra decimal.</span>
+          </div>
+
+          <h4>6. El teorema dels nombres primers</h4>
+          <p>L'enunciat és que la raó entre π(x) i x/ln x tendeix a 1 quan x creix. Es va trigar <strong>un segle</strong> a demostrar-ho: Hadamard i de la Vallée Poussin ho van aconseguir el 1896, independentment i gairebé alhora, fent servir eines d'anàlisi complexa que Riemann havia introduït el 1859.</p>
+          <p>La convergència és real però lenta, i això es pot veure a la càpsula:</p>
+          <div class="deep-table-wrap"><table class="deep-table">
+            <thead><tr><th>x</th><th>π(x)</th><th>x/ln x</th><th>raó</th></tr></thead>
+            <tbody>
+              <tr><td>100</td><td>25</td><td>22</td><td>1,151</td></tr>
+              <tr><td>1.000</td><td>168</td><td>145</td><td>1,161</td></tr>
+              <tr><td>10.000</td><td>1.229</td><td>1.086</td><td>1,132</td></tr>
+              <tr><td>100.000</td><td>9.592</td><td>8.686</td><td>1,104</td></tr>
+              <tr><td>1.000.000</td><td>78.498</td><td>72.382</td><td>1,084</td></tr>
+            </tbody>
+          </table></div>
+          <p>La raó baixa, però amb una calma exasperant. Per a x = 10⁶ l'error encara és del 8%.</p>
+          <div class="deep-aside">
+            <strong>Hi ha una aproximació molt millor.</strong> Gauss també va proposar la <em>integral logarítmica</em> li(x) = ∫₂ˣ dt/ln t, que en lloc d'aplicar la densitat mitjana l'acumula punt a punt. La diferència és brutal: per a x = 10⁶, x/ln x s'equivoca en <strong>6.116</strong> primers, mentre que li(x) dona 78.627 i s'equivoca en <strong>129</strong>. Gairebé cinquanta vegades millor. La càpsula fa servir x/ln x perquè és calculable mentalment, però li(x) és el que fan servir de veritat els especialistes.
+          </div>
+
+          <h4>7. Els forats, i el que encara no se sap</h4>
+          <p>La tercera vista mira l'altra cara: la distància entre primers consecutius. I aquí l'ordre desapareix del tot.</p>
+          <p><strong>Els bessons.</strong> Parelles amb forat 2: 3–5, 5–7, 11–13, 17–19, 29–31, 41–43… En surten fins on s'ha mirat, i sembla que no s'acabin mai. Però <strong>ningú ha estat capaç de demostrar que n'hi ha infinits</strong>. La conjectura dels primers bessons és un dels problemes oberts més antics i famosos.</p>
+          <p>El 2013 hi va haver un avenç espectacular d'un matemàtic desconegut, Yitang Zhang, que treballava en una situació acadèmica precària: va demostrar que hi ha infinites parelles de primers separades per <strong>menys de 70 milions</strong>. No és 2, però va ser el primer resultat finit de tots. Un esforç col·laboratiu posterior va baixar aquesta cota fins a 246.</p>
+          <p><strong>Les clarianes.</strong> A l'altre extrem, els forats poden ser tan grans com es vulgui: la successió n!+2, n!+3, …, n!+n està formada tota per compostos, i té llargada n−1. <strong>Existeixen buits de mil milions de números sense cap primer.</strong> De mitjana, però, el forat prop de x creix només com ln x — molt a poc a poc.</p>
+          <p>A la càpsula, els rècords de forat es marquen en vermell. Fins a 900, els rècords apareixen després del 2, 3, 7, 23, 89, 113, 523 i 887, amb forats de 1, 2, 4, 6, 8, 14, 18 i 20 respectivament.</p>
+
+          <h4>8. Què fem a l'element interactiu</h4>
+          <p><strong>Vista «El sedàs».</strong> Cliques el número més petit que quedi sense tatxar —el sistema només et deixa clicar aquest, perquè és l'únic moviment vàlid de l'algorisme— i, amb un sol gest, s'escombren tots els seus múltiples. Els colors distingeixen els nous dels ja tatxats, i la narració et diu els números exactes. La barra d'estat porta el compte i mostra √N.</p>
+          <p>El botó «Acaba'l tot» completa el sedàs de cop, útil quan ja has entès el mecanisme i vols anar a les altres vistes o provar un N més gran.</p>
+          <p><strong>Vista «Quants n'hi ha».</strong> L'escala de π(x) es va construint <em>amb els primers que tu has confirmat</em>, superposada a x/ln x. Fins que no acabes el sedàs, l'escala està incompleta —això és deliberat: la corba és el resultat de la teva feina, no una imatge pregravada.</p>
+          <p><strong>Vista «Forats».</strong> Cada barra és la distància fins al primer següent. Verd els bessons, vermell els rècords.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu</span>
+            <span class="de-step">1. Posa N = 100 i clica el <strong>2</strong>. Es tatxen 49 múltiples, tots nous, començant per 4 = 2².</span>
+            <span class="de-step">2. Clica el <strong>3</strong>. Ara de 32 múltiples només 16 són nous, i comencen a 9 = 3². La resta ja eren parells.</span>
+            <span class="de-step">3. Clica el <strong>5</strong>. Els nous comencen a 25 = 5²: només 25, 35, 55, 65, 85, 95.</span>
+            <span class="de-step">4. Clica el <strong>7</strong>. Els nous comencen a 49 = 7²: només 49 i 77.</span>
+            <span class="de-step">5. Mira l'estat: <strong>complet ✓</strong>. El proper candidat seria l'11, i 11² = 121 &gt; 100.</span>
+            <span class="de-step">6. Quatre clics han bastat per als <strong>25 primers</strong> fins a 100.</span>
+            <span class="de-step">7. Ves a «Quants n'hi ha»: π(100) = 25 contra x/ln x = 21,7. Un 15% per sota.</span>
+            <span class="de-step">8. Repeteix amb N = 900: calen 10 clics (fins al 29) per als 154 primers.</span>
+          </div>
+
+          <h4>9. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Criptografia.</strong> És l'aplicació dominant. RSA es basa en una asimetria brutal: multiplicar dos primers de 300 xifres és instantani; recuperar-los a partir del producte és, fins on sabem, inabastable. Tota la seguretat de les connexions HTTPS, les signatures digitals i bona part de la banca en línia hi descansa. Val la pena notar la ironia: <strong>la seguretat depèn del fet que no sabem factoritzar bé</strong>, no de cap teorema demostrat.</p>
+          <p><strong>Generació de claus.</strong> Per construir una clau RSA cal <em>trobar</em> primers enormes. No es fa amb el sedàs (impossible a aquesta escala) sinó amb tests probabilístics com Miller–Rabin, que declaren un número primer amb probabilitat d'error controlable. El teorema dels nombres primers és el que garanteix que la cerca acabarà: prop de 2²⁰⁴⁸, aproximadament 1 de cada 1.420 números senars és primer.</p>
+          <p><strong>Funcions de dispersió i estructures de dades.</strong> Les taules de hash fan servir mides primeres per repartir millor les claus i reduir col·lisions. Molts generadors de nombres pseudoaleatoris tenen períodes que són primers de Mersenne —el Mersenne Twister, el més usat, té període 2¹⁹⁹³⁷−1.</p>
+          <p><strong>Biologia.</strong> Les cigales dels gèneres <em>Magicicada</em> emergeixen en cicles de <strong>13 o 17 anys</strong>, tots dos primers. La hipòtesi més acceptada és que un cicle primer minimitza les coincidències amb els cicles dels depredadors: un cicle de 12 anys coincidiria amb depredadors de període 2, 3, 4 i 6.</p>
+          <p><strong>Codis correctors i senyals.</strong> Els codis Reed–Solomon i bona part de la teoria de cossos finits depenen de primers. I en la recerca d'intel·ligència extraterrestre, una seqüència de primers s'ha proposat repetidament com a senyal inequívocament artificial, perquè no hi ha cap procés físic conegut que la generi.</p>
+
+          <h4>10. Curiositats</h4>
+          <p><strong>Eratòstenes també va mesurar la Terra.</strong> El mateix home que va inventar aquest sedàs va calcular la circumferència terrestre comparant l'ombra del migdia a Alexandria i a Siena, i li va sortir amb un error de potser un 2%. Era bibliotecari en cap d'Alexandria i els seus contemporanis el motejaven «Beta», perquè el consideraven el segon millor en tot. En diverses coses era el primer.</p>
+          <p><strong>Gauss ho va conjecturar als 15 anys i no ho va dir a ningú.</strong> L'anotació sobre la densitat 1/ln x va aparèixer en una taula de logaritmes seva, i no es va conèixer fins després de la seva mort, en una carta de 1849. Legendre va publicar una conjectura equivalent el 1798, sense saber-ho.</p>
+          <p><strong>La demostració «elemental» va provocar una batalla.</strong> Es creia que el teorema dels primers <em>necessitava</em> anàlisi complexa. El 1949, Paul Erdős i Atle Selberg en van trobar una demostració elemental (sense variable complexa). La disputa sobre a qui corresponia el mèrit va ser amarga i va enterbolir la relació entre tots dos per sempre; Selberg va rebre la medalla Fields el 1950.</p>
+          <p><strong>Una funció aparentment innocent val un milió de dòlars.</strong> Riemann va relacionar el 1859 la distribució dels primers amb els zeros d'una funció complexa, ζ(s). La <strong>hipòtesi de Riemann</strong> afirma que tots els zeros no trivials tenen part real 1/2, i equival a dir que l'error de li(x) com a estimació de π(x) és el més petit possible. És un dels set problemes del mil·lenni de l'institut Clay, amb un milió de dòlars de premi. Segueix oberta des de fa 165 anys.</p>
+          <p><strong>Hi ha un número on l'aproximació es gira, i ningú l'ha vist.</strong> Per a tot x que s'ha calculat mai, li(x) &gt; π(x). Littlewood va demostrar el 1914 que això <strong>es capgira infinites vegades</strong>. El primer punt on passa es coneix com el número de Skewes, i les cotes conegudes el situen prop de 10³¹⁶ — molt més enllà del que cap ordinador podrà comprovar mai. És un exemple espectacular de per què l'evidència numèrica no és una demostració.</p>
+          <p><strong>El primer més gran conegut supera els 41 milions de xifres.</strong> És un primer de Mersenne, de la forma 2ᵖ−1, trobat pel projecte distribuït GIMPS amb ordinadors de voluntaris. Imprimit a mida de llibre normal, ocuparia més de deu mil pàgines.</p>
+          <p><strong>Els primers formen progressions aritmètiques tan llargues com es vulgui.</strong> Ben Green i Terence Tao ho van demostrar el 2004: per a qualsevol k, existeixen k primers igualment espaiats. Per exemple, 5, 11, 17, 23, 29 són cinc primers separats de 6 en 6. El teorema garanteix que n'hi ha de mil termes, tot i que ningú n'ha trobat mai cap de tan llarga.</p>
+          <p><strong>L'espiral d'Ulam.</strong> El 1963, avorrit en una conferència, Stanisław Ulam va anar escrivint números en espiral en un paper i va marcar-ne els primers. Van aparèixer <strong>diagonals</strong> clarament visibles, que corresponen a polinomis quadràtics especialment rics en primers com n²+n+41 (que dona primers per a n = 0 fins a 39). Ningú sap explicar del tot per què.</p>
+
+          <h4>11. Connexió amb altres àrees</h4>
+          <p>Aquesta càpsula és la base del bloc. <strong>Reciprocitat quadràtica</strong> pren dos primers senars i pregunta com es relacionen entre ells; aquí veus d'on surten aquests primers i com de rars són. <strong>Fraccions contínues</strong> treballa amb √N per a N no quadrat perfecte, i la periodicitat que hi apareix depèn de l'estructura multiplicativa que els primers determinen.</p>
+          <p>Cap a l'àlgebra, el teorema de Lagrange de <strong>Taules de Cayley</strong> té una conseqüència directa aquí: si un grup té ordre primer, els únics subgrups possibles són el trivial i ell mateix, i per tant ha de ser cíclic. <strong>Hi ha exactament un grup de cada ordre primer</strong>, cosa que fa dels primers també els àtoms de la teoria de grups finits.</p>
+          <p>I cap a l'anàlisi, la connexió és la més profunda de totes. La funció zeta de Riemann s'escriu alhora com una suma sobre <em>tots</em> els enters i com un producte sobre <em>tots</em> els primers (el producte d'Euler). Aquesta doble identitat és el pont pel qual les eines contínues del càlcul —les mateixes famílies d'idees que trobaràs a <strong>Sèries de Fourier</strong> i al <strong>Pla d'Argand</strong>— entren a respondre preguntes sobre enters. El teorema dels nombres primers es va demostrar, precisament, travessant aquest pont.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="sieve" class="active">El sedàs</button>
+        <button data-v="count">Quants n'hi ha</button>
+        <button data-v="gaps">Forats</button>
+      </div>
+    </div>
+    <div class="controls-row explora-only" id="sieveControls">
+      <span class="help-wrap chip-label">
+        Límit N:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Com més gran és N, més clar es veu el patró de π(x) — però la graella també és més gran. Amb 900 n'hi ha 154 de primers.</span>
+      </span>
+      <div class="chip-row" id="nRow"></div>
+      <button class="btn btn-ghost" id="resetBtn">Recomença ↻</button>
+      <button class="btn btn-ghost" id="autoBtn">Acaba'l tot ⏩</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap sieve-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA 1: EL SEDÀS -->
+      <div class="vista-panel active" id="vistaSievePanel">
+        <div class="sieve-status" id="sieveStatus"></div>
+        <div class="sieve-grid" id="sieveGrid"></div>
+        <div class="sieve-legend">
+          <span><i style="background:color-mix(in srgb,var(--good) 20%,transparent);border-color:var(--good)"></i> primer confirmat</span>
+          <span><i style="background:color-mix(in srgb,var(--bad) 30%,transparent);border-color:var(--bad)"></i> es tatxa ara</span>
+          <span><i style="background:color-mix(in srgb,var(--warn) 22%,transparent);border-color:var(--warn)"></i> ja estava tatxat</span>
+        </div>
+        <div class="primes-list" id="primesList"></div>
+        <div class="step-narration" id="sieveNarration"><span class="sn-title">Encara res</span>Clica el <b>2</b>: és el menor número sense tatxar, i per tant primer.</div>
+      </div>
+
+      <!-- VISTA 2: RECOMPTE -->
+      <div class="vista-panel" id="vistaCountPanel">
+        <div class="chart-stage"><canvas id="countCanvas"></canvas></div>
+        <div class="step-narration" id="countNarration"></div>
+      </div>
+
+      <!-- VISTA 3: FORATS -->
+      <div class="vista-panel" id="vistaGapsPanel">
+        <div class="chart-stage"><canvas id="gapsCanvas"></canvas></div>
+        <div class="step-narration" id="gapsNarration"></div>
+      </div>
+
+      <!-- REPTE -->
+      <div class="repte-panel" id="reptePanel">
+        <div class="repte-prompt" id="reptePrompt"></div>
+        <div class="guess-row" id="guessRow">
+          <input type="number" id="guessInput" inputmode="numeric" placeholder="la teva estimació">
+          <button class="btn btn-primary" id="submitGuessBtn">Comprova ✔</button>
+        </div>
+        <div class="yn-row" id="ynRow" style="display:none;">
+          <button class="btn btn-primary" id="yesBtn">✔ Sí</button>
+          <button class="btn btn-ghost" id="noBtn">✕ No</button>
+        </div>
+        <div class="result-box" id="repteResult"></div>
+      </div>
+
+    </div>
+    <div class="canvas-hint" id="hint">Clica el número més petit que encara no estigui tatxat.</div>
+
+    <p class="method-hint" id="methodPanel">Clica el menor no tatxat: és primer. Tatxa'n tots els múltiples. Els nous comencen a p², i pots parar en superar √N.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">El sedàs</div>
+        <div class="readout-def" id="readoutDef">Comença clicant el 2.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Primers: trobar-los i comptar-los</div>
+
+    <div class="type-card active" id="card-sedas" data-method="sedas" style="--t-color:var(--aritmetica)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">El sedàs</div>
+        <div class="type-range">tatxa els múltiples des de p²</div>
+        <div class="type-desc">No comprova divisions: elimina. Els múltiples de p menors que p² ja els va tatxar un primer més petit, així que l'escombrada útil sempre comença al quadrat.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-arrel" data-method="arrel" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La regla de l'arrel</div>
+        <div class="type-range">n compost ⟹ té un factor ≤ √n</div>
+        <div class="type-desc">Si n = a·b amb tots dos factors majors que √n, el producte superaria n. Per tant un dels dos hi cap per sota, i en superar √N el sedàs ja no pot tatxar res de nou.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-pnt" data-method="pnt" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Teorema dels primers</div>
+        <div class="type-range"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>π</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>∼</mo><mfrac><mi>x</mi><mrow><mi>ln</mi><mi>x</mi></mrow></mfrac></math></div>
+        <div class="type-desc">Individualment impredictibles, col·lectivament regulars: la proporció de primers prop de x és aproximadament 1/ln x. Demostrat el 1896, cent anys després que Gauss ho conjecturés als 15 anys.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> el sedàs no divideix mai. Aquesta és tota la seva gràcia: substitueix milions de comprovacions per unes quantes escombrades. Amb N=900 només cal clicar 2, 3, 5, 7, 11, 13, 17, 19, 23 i 29 — deu números — per trobar-ne els 154 primers.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/E97eqjWb" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>El sedàs d'Eratòstenes en 3D</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 01 · Aritmètica i Teoria de Nombres</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// Canvas conscient del DPR, en coordenades CSS (mateixa convenció que la
+// resta de càpsules amb gràfiques: el dibuix treballa en píxels CSS, no de
+// dispositiu). No confondre amb el conveni de pointerXY, que sí que retorna
+// píxels de dispositiu — aquí no hi ha interacció de punter sobre canvas.
+function setupHiDPI(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+// ─────────────────────────────────────────────
+//  NUCLI ARITMÈTIC
+// ─────────────────────────────────────────────
+// state[k]: 0 = intacte · 1 = tatxat (compost) · 2 = primer confirmat
+const N_CHOICES = [100, 400, 900];
+let N = 400;
+let state = null;
+let primesFound = [];
+let sweeping = false;
+
+function resetSieve() {
+  cancelSweep();
+  state = new Uint8Array(N + 1);
+  primesFound = [];
+  state[0] = 1; state[1] = 1;   // 0 i 1 no entren al joc
+  // La narració del pas també és estat: si no es reinicia aquí, cada camí de
+  // reinici (botó, canvi de N, init) hauria de recordar-se'n per separat.
+  const sn = document.getElementById('sieveNarration');
+  if (sn) sn.innerHTML = `<span class="sn-title">Encara res</span>Clica el <b>2</b>: és el menor número sense tatxar, i per tant primer.`;
+}
+
+// El menor número que encara no s'ha tatxat ni confirmat: el proper primer.
+function nextCandidate() {
+  for (let k = 2; k <= N; k++) if (state[k] === 0) return k;
+  return null;
+}
+function sieveComplete() {
+  const c = nextCandidate();
+  return c === null || c * c > N;
+}
+// Referència exacta, per validar el que construeix l'usuari.
+function primesUpTo(n) {
+  const s = new Uint8Array(n + 1);
+  const out = [];
+  for (let i = 2; i <= n; i++) {
+    if (!s[i]) { out.push(i); for (let j = i * i; j <= n; j += i) s[j] = 1; }
+  }
+  return out;
+}
+const PRIMES_CACHE = {};
+function primesFor(n) { return PRIMES_CACHE[n] || (PRIMES_CACHE[n] = primesUpTo(n)); }
+function piOf(x) { const p = primesFor(Math.max(x, 2)); let c = 0; for (const q of p) { if (q <= x) c++; else break; } return c; }
+
+// ─────────────────────────────────────────────
+//  GRAELLA
+// ─────────────────────────────────────────────
+const grid = document.getElementById('sieveGrid');
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+function gridCols() { return N === 100 ? 10 : N === 400 ? 20 : 30; }
+function cellPx() { return N === 100 ? 30 : N === 400 ? 24 : 19; }
+
+function buildGrid() {
+  grid.innerHTML = '';
+  const cols = gridCols(), px = cellPx();
+  grid.style.gridTemplateColumns = `repeat(${cols}, ${px}px)`;
+  grid.setAttribute('role', 'group');
+  grid.setAttribute('aria-label', `Graella dels números de l'1 al ${N} per sedassar`);
+  for (let k = 1; k <= N; k++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'sieve-cell';
+    b.dataset.n = k;
+    b.textContent = k;
+    b.style.width = px + 'px'; b.style.height = px + 'px';
+    b.style.fontSize = (N === 900 ? .54 : N === 400 ? .62 : .74) + 'rem';
+    grid.appendChild(b);
+  }
+  paintGrid();
+}
+// Delegat: les cel·les canvien d'estat sense tornar a construir la graella,
+// així que decidir si una cel·la és clicable s'ha de fer en el moment del clic.
+grid.addEventListener('click', e => {
+  const btn = e.target.closest('.sieve-cell');
+  if (!btn || repteMode) return;
+  onCellClick(+btn.dataset.n);
+});
+
+function paintGrid() {
+  const cand = nextCandidate();
+  const rootN = Math.sqrt(N);
+  for (const b of grid.children) {
+    const k = +b.dataset.n;
+    b.className = 'sieve-cell';
+    if (k === 1) { b.classList.add('one'); b.setAttribute('aria-label', "L'1 no és primer ni compost"); b.disabled = true; continue; }
+    if (state[k] === 2) { b.classList.add('prime'); b.setAttribute('aria-label', `${k}, primer confirmat`); b.disabled = true; }
+    else if (state[k] === 1) { b.classList.add('struck'); b.setAttribute('aria-label', `${k}, tatxat: és compost`); b.disabled = true; }
+    else if (k === cand) {
+      b.classList.add('candidate'); b.disabled = false;
+      b.setAttribute('aria-label', `${k}: és el menor sense tatxar, i per tant primer. Activa'l per tatxar-ne tots els múltiples.`);
+    } else {
+      b.disabled = true;
+      b.setAttribute('aria-label', `${k}, encara sense tatxar. Primer cal sedassar amb ${cand}.`);
+    }
+  }
+  updateStatus();
+  updatePrimesList();
+  updateReadout();
+}
+
+function updateStatus() {
+  const cand = nextCandidate();
+  const rootN = Math.sqrt(N);
+  const done = sieveComplete();
+  document.getElementById('sieveStatus').innerHTML = `
+    <div class="ss-item"><span class="ss-label">Primers trobats</span><span class="ss-value">${primesFound.length}</span></div>
+    <div class="ss-item"><span class="ss-label">Proper a clicar</span><span class="ss-value">${done ? '—' : cand}</span></div>
+    <div class="ss-item"><span class="ss-label">√${N}</span><span class="ss-value">${fmtNum(rootN, 1)}</span></div>
+    <div class="ss-item"><span class="ss-label">Estat</span><span class="ss-value ${done ? 'done' : ''}">${done ? 'complet ✓' : 'en marxa'}</span></div>`;
+}
+function updatePrimesList() {
+  const el = document.getElementById('primesList');
+  if (!primesFound.length) { el.textContent = 'Encara no has confirmat cap primer. Clica el 2 per començar.'; return; }
+  const all = [];
+  for (let k = 2; k <= N; k++) if (state[k] === 2) all.push(k);
+  const survivors = [];
+  for (let k = 2; k <= N; k++) if (state[k] === 0) survivors.push(k);
+  el.innerHTML = `<b>${all.join(', ')}</b>` +
+    (sieveComplete() && survivors.length ? `, <b>${survivors.join(', ')}</b> <span style="color:var(--muted)">(supervivents: ja no cal tatxar-ne cap més)</span>` : '');
+}
+
+// ─────────────────────────────────────────────
+//  L'ESCOMBRADA
+// ─────────────────────────────────────────────
+// Un sol gest tatxa TOTS els múltiples de p. Es distingeixen els que es
+// tatxen ara per primer cop (vermell) dels que ja hi eren (ambre): és el
+// que fa visible per què els nous comencen sempre a p².
+// L'ANIMACIÓ NO GOVERNA L'ESTAT.
+// Primera versió: l'estat s'aplicava al final de l'escombrada. Això feia que,
+// mentre durava, la graella estigués en un estat intermedi (cel·les encara
+// disabled) i els clics es perdien — i un reinici a mig camí deixava un
+// finish() pendent que tatxava caselles de la graella nova.
+// Ara el model és: l'estat s'aplica SEMPRE de manera immediata i síncrona, i
+// l'escombrada és només una capa visual per damunt que no gateja res.
+let sweepTimer = null;
+function cancelSweep() {
+  if (sweepTimer) { clearInterval(sweepTimer); sweepTimer = null; }
+  sweeping = false;
+  // Treu qualsevol resta visual de l'escombrada anterior.
+  grid.querySelectorAll('.striking, .redundant').forEach(el => el.classList.remove('striking', 'redundant'));
+}
+function onCellClick(p) {
+  if (state[p] !== 0) return;
+  cancelSweep();
+
+  // --- 1. Estat: tot d'una, abans de qualsevol animació ---
+  state[p] = 2;
+  primesFound.push(p);
+  const targets = [];
+  for (let m = 2 * p; m <= N; m += p) targets.push({ m, wasStruck: state[m] === 1 });
+  targets.forEach(t => { state[t.m] = 1; });
+
+  const nous = targets.filter(t => !t.wasStruck).length;
+  const jaHi = targets.length - nous;
+  const firstNew = targets.find(t => !t.wasStruck);
+  const rootN = Math.sqrt(N);
+
+  // --- 2. Lectura: també immediata ---
+  paintGrid();
+  let msg = `<span class="sn-title">Has sedassat amb ${p}</span>`;
+  msg += `${targets.length} múltiple${targets.length === 1 ? '' : 's'} de ${p} dins de ${N}. `;
+  if (jaHi) msg += `<b>${jaHi}</b> ja estaven tatxats per primers més petits, i només <b>${nous}</b> ${nous === 1 ? 'és nou' : 'són nous'}`;
+  else msg += `${targets.length === 1 ? 'És nou' : `Tots <b>${nous}</b> són nous`}`;
+  if (firstNew) msg += `, començant per ${firstNew.m}${firstNew.m === p * p ? ` = ${p}²` : ''}`;
+  msg += '. ';
+  if (p > rootN) msg += `Com que ${p} > √${N} = ${fmtNum(rootN, 1)}, aquesta escombrada no ha tatxat res de nou: <b>el sedàs ja estava acabat</b>.`;
+  else if (sieveComplete()) msg += `Amb això, tot el que queda sense tatxar ja és primer: <b>el sedàs s'ha acabat</b>.`;
+  else msg += `El proper a clicar és el <b>${nextCandidate()}</b>.`;
+  document.getElementById('sieveNarration').innerHTML = msg;
+  hint.innerHTML = sieveComplete()
+    ? `Sedàs complet: ${countPrimes()} primers fins a ${N}. Ves a «Quants n'hi ha».`
+    : `Ara clica el ${nextCandidate()}.`;
+  announce(`${p} és primer. Tatxats ${nous} múltiples nous${jaHi ? `, ${jaHi} ja hi eren` : ''}.${sieveComplete() ? ' El sedàs ja és complet.' : ` El proper a clicar és ${nextCandidate()}.`}`);
+  drawCount(); drawGaps();
+
+  // --- 3. Animació: purament decorativa, es pot interrompre sense conseqüències ---
+  if (prefersReducedMotion() || !targets.length) return;
+  sweeping = true;
+  let i = 0;
+  const perTick = Math.max(1, Math.ceil(targets.length / 24));
+  sweepTimer = setInterval(() => {
+    for (let k = 0; k < perTick && i < targets.length; k++, i++) {
+      const cell = grid.children[targets[i].m - 1];
+      if (cell) cell.classList.add(targets[i].wasStruck ? 'redundant' : 'striking');
+    }
+    if (i >= targets.length) {
+      clearInterval(sweepTimer);
+      // Pausa curta perquè es vegi el contrast vermell/ambre, i després es
+      // retira la capa visual deixant el pintat definitiu que ja hi havia.
+      sweepTimer = setTimeout(cancelSweep, 320);
+    }
+  }, 28);
+}
+function countPrimes() { let c = 0; for (let k = 2; k <= N; k++) if (state[k] !== 1) c++; return c; }
+
+document.getElementById('autoBtn').addEventListener('click', () => {
+  if (repteMode) return;
+  cancelSweep();
+  let guard = 0;
+  while (!sieveComplete() && guard++ < 200) {
+    const p = nextCandidate();
+    state[p] = 2; primesFound.push(p);
+    for (let m = 2 * p; m <= N; m += p) state[m] = 1;
+  }
+  paintGrid(); drawCount(); drawGaps();
+  hint.textContent = `Sedàs complet: ${countPrimes()} primers fins a ${N}.`;
+  document.getElementById('sieveNarration').innerHTML =
+    `<span class="sn-title">Sedàs completat</span>Ha calgut sedassar amb <b>${primesFound.join(', ')}</b> — només ` +
+    `<b>${primesFound.length}</b> escombrades per trobar els <b>${countPrimes()}</b> primers fins a ${N}. ` +
+    `L'última útil és la del major primer ≤ √${N} = ${fmtNum(Math.sqrt(N), 1)}.`;
+  announce(`Sedàs completat automàticament: ${countPrimes()} primers fins a ${N}.`);
+});
+document.getElementById('resetBtn').addEventListener('click', () => { resetSieve(); buildGrid(); drawCount(); drawGaps(); hint.textContent = 'Clica el número més petit que encara no estigui tatxat.'; });
+
+function buildNChips() {
+  const row = document.getElementById('nRow');
+  row.innerHTML = '';
+  N_CHOICES.forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (n === N ? ' active' : '');
+    b.textContent = n;
+    b.addEventListener('click', () => { N = n; resetSieve(); buildGrid(); buildNChips(); drawCount(); drawGaps(); });
+    row.appendChild(b);
+  });
+}
+
+function updateReadout() {
+  readoutBadge.classList.add('active');
+  const found = primesFound.length;
+  if (!found) {
+    readoutNum.textContent = '…';
+    readoutName.textContent = 'Sedàs sense començar';
+    readoutDef.textContent = `Clica el 2 per tatxar-ne els múltiples dins de ${N}.`;
+    return;
+  }
+  readoutNum.textContent = countPrimes();
+  readoutName.textContent = sieveComplete() ? `${countPrimes()} primers fins a ${N}` : `${countPrimes()} supervivents`;
+  readoutDef.textContent = sieveComplete()
+    ? `Sedassat amb ${primesFound.join(', ')} — ${primesFound.length} escombrades.`
+    : `Has sedassat amb ${primesFound.join(', ')}. Encara en falten.`;
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 2: π(x) CONTRA x/ln x
+// ─────────────────────────────────────────────
+function drawCount() {
+  const canvas = document.getElementById('countCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const padL = 42, padB = 26, padT = 14, padR = 12;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const known = sieveComplete();
+  const real = primesFor(N);
+  const maxY = Math.max(8, real.length * 1.05);
+  const X = x => padL + (x / N) * plotW;
+  const Y = y => padT + plotH - (y / maxY) * plotH;
+
+  ctx.strokeStyle = 'rgba(27,30,45,.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke();
+  txt(ctx, 'x', padL + plotW - 6, padT + plotH + 15, 10, cssVar('--muted'), 'right', 600, 'Inter');
+  txt(ctx, 'π(x)', padL - 6, padT + 6, 10, cssVar('--muted'), 'right', 600, 'Inter');
+
+  // x / ln x
+  ctx.strokeStyle = cssVar('--muted'); ctx.lineWidth = 1.6; ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  for (let x = 2; x <= N; x += Math.max(1, Math.floor(N / 260))) {
+    const y = x / Math.log(x);
+    const p = { px: X(x), py: Y(y) };
+    if (x === 2) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // escala de π(x), només amb els primers ja CONFIRMATS pel sedàs de l'usuari
+  const shown = [];
+  for (let k = 2; k <= N; k++) if (state[k] === 2 || (known && state[k] === 0)) shown.push(k);
+  ctx.strokeStyle = cssVar('--m-color'); ctx.lineWidth = 2;
+  ctx.beginPath();
+  let c = 0; ctx.moveTo(X(0), Y(0));
+  shown.forEach(p => { ctx.lineTo(X(p), Y(c)); c++; ctx.lineTo(X(p), Y(c)); });
+  ctx.lineTo(X(N), Y(c));
+  ctx.stroke();
+
+  txt(ctx, 'x / ln x', padL + plotW - 8, padT + 12, 10, cssVar('--muted'), 'right', 600, 'Inter');
+  txt(ctx, 'π(x)', padL + plotW - 8, padT + 26, 10, cssVar('--m-color'), 'right', 700, 'Inter');
+
+  const piN = real.length, approx = N / Math.log(N);
+  describeCanvas(canvas, `Gràfica de π(x), el recompte de primers, com una escala que puja, comparada amb la corba x dividit per logaritme de x. Fins a ${N} hi ha ${piN} primers, i x/ln x en prediu ${Math.round(approx)}.`);
+
+  const el = document.getElementById('countNarration');
+  if (!sieveComplete()) {
+    el.innerHTML = `<span class="sn-title">Escala en construcció</span>Cada primer que confirmes afegeix un graó. Acaba el sedàs per comparar-la amb x/ln x.`;
+  } else {
+    el.innerHTML = `<span class="sn-title">π(${N}) = ${piN}</span>` +
+      `L'estimació x/ln x dona <b>${fmtNum(approx, 1)}</b>, un <b>${fmtNum(100 * (piN / approx - 1), 1)}%</b> per sota del valor real. ` +
+      `Aquesta diferència relativa <strong>es va reduint</strong> a mesura que x creix: és el teorema dels nombres primers. ` +
+      `A x = 10⁶ la raó ja només és 1,08, i tendeix a 1 (molt a poc a poc).`;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 3: FORATS
+// ─────────────────────────────────────────────
+function gapsData(n) {
+  const p = primesFor(n), out = [];
+  for (let i = 0; i + 1 < p.length; i++) out.push({ from: p[i], to: p[i + 1], gap: p[i + 1] - p[i] });
+  return out;
+}
+function drawGaps() {
+  const canvas = document.getElementById('gapsCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const padL = 34, padB = 26, padT = 14, padR = 10;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const gaps = gapsData(N);
+  const maxG = Math.max(...gaps.map(g => g.gap));
+  const bw = Math.max(1, plotW / gaps.length);
+
+  ctx.strokeStyle = 'rgba(27,30,45,.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH); ctx.stroke();
+
+  let record = 0;
+  gaps.forEach((g, i) => {
+    const bh = (g.gap / maxG) * plotH;
+    const isRecord = g.gap > record;
+    if (isRecord) record = g.gap;
+    ctx.fillStyle = isRecord ? cssVar('--bad') : (g.gap === 2 ? cssVar('--good') : hexToRgba('#0b7b86', .45));
+    ctx.fillRect(padL + i * bw, padT + plotH - bh, Math.max(1, bw - .5), bh);
+  });
+  txt(ctx, `forat màxim: ${maxG}`, padL + plotW - 6, padT + 12, 10, cssVar('--bad'), 'right', 700, 'Inter');
+  txt(ctx, 'bessons (forat 2)', padL + plotW - 6, padT + 26, 10, cssVar('--good'), 'right', 700, 'Inter');
+
+  const twins = gaps.filter(g => g.gap === 2);
+  describeCanvas(canvas, `Diagrama de barres dels forats entre primers consecutius fins a ${N}. El forat més gran és de ${maxG}, i hi ha ${twins.length} parelles de primers bessons.`);
+
+  const records = [];
+  let r = 0; gaps.forEach(g => { if (g.gap > r) { r = g.gap; records.push(g); } });
+  document.getElementById('gapsNarration').innerHTML =
+    `<span class="sn-title">Forats fins a ${N}</span>` +
+    `<b>${twins.length}</b> parelles de <strong>bessons</strong> (forat 2): ${twins.slice(0, 6).map(t => `${t.from}–${t.to}`).join(', ')}${twins.length > 6 ? '…' : ''}. ` +
+    `El forat més gran és de <b>${maxG}</b>, després del ${records[records.length - 1].from}. ` +
+    `Els forats creixen de mitjana com ln x, però <strong>mai deixen d'aparèixer parelles de bessons</strong> fins on s'ha pogut mirar —si són infinites, ningú ho sap.`;
+}
+
+// ─────────────────────────────────────────────
+//  VISTES
+// ─────────────────────────────────────────────
+let currentVista = 'sieve';
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  setPressedGroup(document.querySelectorAll('#vistaToggle button'), b => b.dataset.v === v);
+  document.getElementById('vistaSievePanel').classList.toggle('active', v === 'sieve');
+  document.getElementById('vistaCountPanel').classList.toggle('active', v === 'count');
+  document.getElementById('vistaGapsPanel').classList.toggle('active', v === 'gaps');
+  document.getElementById('sieveControls').style.display = repteMode ? 'none' : 'flex';
+  if (v === 'count') { drawCount(); hint.textContent = "L'escala puja un graó per cada primer."; }
+  if (v === 'gaps') { drawGaps(); hint.textContent = 'Cada barra és la distància fins al primer següent.'; }
+  if (v === 'sieve') hint.textContent = sieveComplete() ? `Sedàs complet: ${countPrimes()} primers fins a ${N}.` : 'Clica el número més petit que encara no estigui tatxat.';
+}
+document.querySelectorAll('#vistaToggle button').forEach(b => b.addEventListener('click', () => setVista(b.dataset.v)));
+window.addEventListener('resize', () => { if (currentVista === 'count') drawCount(); if (currentVista === 'gaps') drawGaps(); });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let round = null;
+
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function scheduleNext(delay) {
+  const snap = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snap) startRepteRound(); }, delay);
+}
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+const PI_POOL = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000];
+const ROUND_TYPES = ['pi', 'stop', 'gap'];
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  const box = document.getElementById('repteResult');
+  box.className = 'result-box';
+  const type = ROUND_TYPES[Math.floor(Math.random() * ROUND_TYPES.length)];
+  const guessRow = document.getElementById('guessRow');
+  const ynRow = document.getElementById('ynRow');
+  document.getElementById('guessInput').value = '';
+
+  if (type === 'pi') {
+    const x = PI_POOL[Math.floor(Math.random() * PI_POOL.length)];
+    round = { type, x, answer: piOf(x), approx: x / Math.log(x) };
+    guessRow.style.display = 'flex'; ynRow.style.display = 'none';
+    document.getElementById('reptePrompt').innerHTML =
+      `Quants primers hi ha fins a <b>${x}</b>?<br><span style="font-size:.8rem;font-weight:400;color:var(--muted)">Estima-ho amb x/ln x — s'accepta un 20% d'error.</span>`;
+    hint.textContent = 'Fes servir x/ln x per estimar-ho.';
+  } else if (type === 'stop') {
+    // Donat un límit i l'últim primer sedassat, ja hem acabat?
+    const lim = [100, 200, 400, 600, 900][randInt(0, 4)];
+    const ps = primesFor(Math.ceil(Math.sqrt(lim)) + 12);
+    const p = ps[randInt(0, Math.min(ps.length - 1, 5))];
+    round = { type, lim, p, answer: p * p > lim };
+    guessRow.style.display = 'none'; ynRow.style.display = 'flex';
+    document.getElementById('reptePrompt').innerHTML =
+      `Sedassem fins a <b>${lim}</b> i acabem de tatxar els múltiples de <b>${p}</b>.<br>Ja podem parar?`;
+    hint.textContent = 'Recorda la regla de √N.';
+  } else {
+    const lim = [100, 200, 400, 900][randInt(0, 3)];
+    const gs = gapsData(lim);
+    round = { type, lim, answer: Math.max(...gs.map(g => g.gap)) };
+    guessRow.style.display = 'flex'; ynRow.style.display = 'none';
+    document.getElementById('reptePrompt').innerHTML =
+      `Entre els primers fins a <b>${lim}</b>, quin és el <b>forat més gran</b> entre dos consecutius?`;
+    hint.textContent = 'El forat és la diferència entre dos primers consecutius.';
+  }
+}
+
+function resolveRound(correct, explanation) {
+  const box = document.getElementById('repteResult');
+  box.classList.add('active');
+  if (correct) { award(10); flash(wrap, 'var(--good)'); box.className = 'result-box active ok'; }
+  else { applyPenalty(); flash(wrap, 'var(--bad)'); box.className = 'result-box active no'; }
+  box.innerHTML = explanation;
+  announce(box.textContent);
+  scheduleNext(correct ? 1600 : 2400);
+}
+
+document.getElementById('submitGuessBtn').addEventListener('click', () => {
+  if (!round || repteTimeUp || round.type === 'stop') return;
+  const g = parseFloat(document.getElementById('guessInput').value);
+  if (!isFinite(g)) { hint.textContent = 'Escriu un número abans de comprovar.'; return; }
+  if (round.type === 'pi') {
+    const ok = Math.abs(g - round.answer) <= 0.20 * round.answer;
+    resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — π(${round.x}) = <b>${round.answer}</b>. ` +
+      `L'estimació x/ln x dona ${fmtNum(round.approx, 1)} (un ${fmtNum(100 * (round.answer / round.approx - 1), 1)}% per sota del real). La teva: ${fmtNum(g, 0)}.`);
+  } else {
+    const ok = Math.round(g) === round.answer;
+    resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — el forat més gran fins a ${round.lim} és de <b>${round.answer}</b>.`);
+  }
+});
+function answerStop(claim) {
+  if (!round || repteTimeUp || round.type !== 'stop') return;
+  const ok = claim === round.answer;
+  const rootLim = Math.sqrt(round.lim);
+  resolveRound(ok, `<b>${ok ? '✔ Correcte' : '✕ No hi és'}</b> — √${round.lim} = ${fmtNum(rootLim, 1)} i ${round.p}² = ${round.p * round.p}. ` +
+    (round.answer
+      ? `Com que ${round.p}² = ${round.p * round.p} &gt; ${round.lim}, qualsevol múltiple nou cauria fora de la graella: <b>ja es pot parar</b>.`
+      : `Com que ${round.p}² = ${round.p * round.p} ≤ ${round.lim}, encara queden múltiples per tatxar: <b>cal continuar</b>.`));
+}
+document.getElementById('yesBtn').addEventListener('click', () => answerStop(true));
+document.getElementById('noBtn').addEventListener('click', () => answerStop(false));
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  document.querySelectorAll('.vista-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('reptePanel').classList.add('active');
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+      announce(`Temps esgotat. Puntuació final: ${score} punts.`, true);
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer(); round = null;
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte');
+  wrap.classList.remove('time-up');
+  // Reset dels estils inline posats per JS, o queden per sobre del CSS.
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('reptePanel').classList.remove('active');
+  document.getElementById('repteResult').className = 'result-box';
+  setVista('sieve');
+  paintGrid();
+});
+btnRepte.addEventListener('click', () => {
+  cancelSweep();
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+  document.querySelectorAll('.vista-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('sieveControls').style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  sedas: "Clica el menor no tatxat: és primer. Tatxa'n tots els múltiples. Els nous comencen a p², i pots parar en superar √N.",
+  arrel: "Si n és compost, té per força un factor menor o igual que √n. Per això el sedàs s'atura en superar √N.",
+  pnt: "π(x) ~ x/ln x: la proporció de primers prop de x és aproximadament 1/ln x. La raó tendeix a 1, però molt a poc a poc."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-sedas').addEventListener('click', () => { flash(wrap, cssVar('--aritmetica')); setMethod('sedas'); if (!repteMode) setVista('sieve'); });
+document.getElementById('card-arrel').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('arrel'); });
+document.getElementById('card-pnt').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('pnt'); if (!repteMode) setVista('count'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+resetSieve();
+buildNChips();
+buildGrid();
+setVista('sieve');
+drawCount();
+drawGaps();
+</script>
+</body>
+</html>

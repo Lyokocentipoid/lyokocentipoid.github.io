@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nusos i tricolorabilitat · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--geometria); }
+
+    .knot-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .8rem; }
+    .knot-stage { position: relative; width: 100%; max-width: 380px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .knot-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+
+    .color-legend { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; font-size: .76rem; color: var(--muted); }
+    .color-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+    .color-legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+    .knot-verdict { font-family: var(--font-display); font-weight: 700; font-size: .95rem; text-align: center; min-height: 1.3em; }
+    .knot-verdict.good { color: var(--good); }
+    .knot-verdict.bad { color: var(--bad); }
+    .knot-verdict.pending { color: var(--muted); }
+
+    .predict-panel { display: none; flex-direction: column; align-items: center; gap: .8rem; width: 100%; }
+    .predict-panel.active { display: flex; }
+    .arc-controls { display: flex; flex-direction: column; align-items: center; gap: .4rem; width: 100%; }
+    .arc-chip { font-family: var(--font-mono); font-size: .78rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--geometria)">Bloc 03 · Nusos i tricolorabilitat</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Nusos i tricolorabilitat</h1>
+      <p>Acoloreix cada tros del diagrama amb 3 colors seguint una única regla a cada encreuament. Si ho aconsegueixes amb més d'un color, acabes de demostrar —amb tot rigor— que allò és un nus real, no un embolic que es pugui desfer.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Un diagrama de nus té <strong>arcs</strong> (trossos entre dos punts on el fil passa per sota) i <strong>encreuaments</strong> (on un arc passa per sobre de dos altres). Una <strong>3-coloració</strong> assigna un de 3 colors a cada arc de manera que, a <em>cada</em> encreuament, els 3 arcs que hi participen siguin <strong>tots del mateix color</strong> o <strong>tots de colors diferents</strong> —mai exactament 2 iguals i 1 diferent.</p>
+          <p>Pintar-ho tot d'un sol color sempre funciona (la coloració «trivial»): amb 1 sol color, «tots iguals» és automàtic a tot arreu. La pregunta real és si el nus és <strong>tricolorable</strong>: si existeix, a més, alguna coloració amb <em>almenys 2 colors</em>. El nus trivial (un simple llaç, sense embolicar) mai ho és. Si en trobes una de no trivial, has demostrat que el nus és genuïnament diferent del trivial.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>La tricolorabilitat és un <strong>invariant</strong>: es manté igual per molt que deformis el diagrama amb <a href="https://en.wikipedia.org/wiki/Reidemeister_move" target="_blank" rel="noopener">moviments de Reidemeister</a> (les úniques 3 maneres de canviar un diagrama sense canviar el nus real que hi ha per sota). Per això «trobar una 3-coloració no trivial» és una demostració completa que el <a href="https://en.wikipedia.org/wiki/Trefoil_knot" target="_blank" rel="noopener">trèvol (trefoil)</a> és un nus de veritat: cap manipulació del dibuix la pot desfer.</p>
+          <p>Però vigila amb la direcció del raonament: si <em>no</em> trobes cap coloració no trivial, això <strong>no demostra</strong> que sigui el nus trivial. El <a href="https://en.wikipedia.org/wiki/Figure-eight_knot_(mathematics)" target="_blank" rel="noopener">vuit invertit (figure-eight)</a> està genuïnament nuat —no es pot desfer— i tot i així no admet cap 3-coloració no trivial. La tricolorabilitat prova «sí, és un nus» quan la trobes; quan no la trobes, simplement no et diu res (calen altres invariants, com el <a href="https://en.wikipedia.org/wiki/Alexander_polynomial" target="_blank" rel="noopener">polinomi d'Alexander</a>, per anar més enllà).</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li>Tria un diagrama: el nus trivial, el trèvol o el vuit invertit.</li>
+            <li>Clica els punts marcats sobre el dibuix (un per arc) per fer-los passar per blanc → color 1 → color 2 → color 3 → blanc.</li>
+            <li>Cada encreuament es marca ✓ o ✗ en directe, en el moment que els seus 3 arcs ja tenen color assignat.</li>
+            <li>«Afegeix un bucle» aplica un moviment de Reidemeister I real: parteix un arc en dos i n'afegeix un de nou en forma de llaç. Qualsevol coloració que ja tinguessis es manté vàlida sola.</li>
+            <li>En Repte: prediu si el diagrama mostrat és tricolorable abans de veure'n la coloració.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Com demostres que un nus està realment nuat? És a dir, que no és simplement un embolic que es desfaria sol si estiressis prou. La pregunta sembla trivial i no ho és gens: no pots provar totes les maneres de manipular la corda, perquè n'hi ha infinites. Aquesta càpsula ensenya la solució, que és una de les idees més elegants de la topologia: en lloc de manipular el nus, busca una propietat que <em>cap</em> manipulació pugui canviar, i comprova-la.</p>
+
+          <h4>1. Què és un nus, per a un matemàtic</h4>
+          <p>Primer cal precisar de què parlem, perquè el nus matemàtic no és exactament el de la sabata. Un <strong>nus</strong> és una corba tancada dins l'espai tridimensional, sense extrems lliures i sense autointerseccions. Els extrems units són essencials: si el nus tingués caps solts, sempre el podries desfer estirant, i tot plegat seria avorrit.</p>
+          <p>Dos nusos es consideren <strong>el mateix</strong> si pots deformar-ne un fins a l'altre movent la corda per l'espai sense tallar-la ni fer-la passar a través d'ella mateixa. Aquesta relació d'equivalència és el que fa el problema difícil: dos dibuixos completament diferents poden ser el mateix nus.</p>
+          <p>El nus més simple és el <strong>nus trivial</strong>: una circumferència, sense cap encreuament. La pregunta central de la teoria de nusos, en la seva forma més senzilla, és: <em>donat un embolic qualsevol, és el nus trivial disfressat o no?</em></p>
+          <div class="deep-aside">
+            <strong>Per què no n'hi ha prou amb «provar-ho».</strong> Si estires una corda i no la desfàs, no has demostrat res: potser només no has trobat la seqüència correcta de moviments. Hi ha diagrames del nus trivial amb desenes d'encreuaments que requereixen <em>augmentar</em> el nombre d'encreuaments abans de poder-los reduir — és a dir, semblen anar a pitjor abans d'anar a millor. Provar per força bruta no és una estratègia viable, i per això calen invariants.
+          </div>
+
+          <h4>2. Diagrames i els tres moviments de Reidemeister</h4>
+          <p>Treballar en tres dimensions és incòmode, així que es projecta el nus sobre un pla i s'apunta, a cada encreuament, quin tram passa per sobre. Això és un <strong>diagrama</strong>.</p>
+          <p>El problema evident és que un mateix nus té infinits diagrames possibles. Aquí entra el resultat que ho fa tot possible, degut a Kurt Reidemeister (1927): <strong>dos diagrames representen el mateix nus si i només si es pot passar de l'un a l'altre amb una successió de només tres moviments locals</strong>:</p>
+          <p style="margin-left:1rem"><strong>R1</strong> — afegir o treure un bucle simple (una torsió) en un tram.<br>
+          <strong>R2</strong> — lliscar un tram per sobre d'un altre, creant o eliminant dos encreuaments alhora.<br>
+          <strong>R3</strong> — lliscar un tram a través d'un encreuament d'altres dos.</p>
+          <p>Aquest teorema converteix un problema geomètric infinit en un problema combinatori finit: <strong>per demostrar que alguna cosa és un invariant de nusos, n'hi ha prou de comprovar que els tres moviments no la canvien</strong>. Res més. Aquesta reducció és el que fa que la teoria de nusos moderna sigui possible.</p>
+
+          <h4>3. La regla dels tres colors</h4>
+          <p>Un diagrama es divideix en <strong>arcs</strong>: els trams de corda que van d'un punt on el fil passa per sota fins al següent. El trèvol clàssic en té tres.</p>
+          <p>Una <strong>3-coloració</strong> consisteix a assignar un de tres colors a cada arc de manera que, a <em>cada</em> encreuament, els tres arcs que hi participen (el que passa per sobre i els dos trossos del que passa per sota) siguin:</p>
+          <p style="margin-left:1rem"><strong>o bé tots tres del mateix color, o bé tots tres de colors diferents.</strong><br>Mai exactament dos iguals i un de diferent.</p>
+          <p>Pintar-ho tot d'un sol color sempre funciona: amb un color, «tots iguals» es compleix automàticament a tot arreu. Aquesta és la coloració <strong>trivial</strong>, i no informa de res. La pregunta real és:</p>
+          <div class="deep-key">
+            Un nus és <strong>tricolorable</strong> si admet alguna 3-coloració que faci servir <strong>almenys dos colors</strong>.
+          </div>
+
+          <h4>4. Per què és un invariant: la comprovació</h4>
+          <p>Aquí és on cal fer la feina. Cal veure que si un diagrama admet una coloració vàlida no trivial, el diagrama transformat per qualsevol moviment de Reidemeister també.</p>
+          <h5>Moviment R1 (afegir un bucle)</h5>
+          <p>En afegir una torsió, un arc es parteix en dos i apareix un encreuament nou on <em>els tres arcs implicats són només dos trossos del mateix arc original i ell mateix</em>. Si els pintes tots del color que ja tenia l'arc original, la condició «tots iguals» es compleix, i la resta del diagrama no s'ha tocat. La coloració sobreviu. <strong>Això és exactament el que fa el botó «Afegeix un bucle» de la càpsula</strong>: pots comprovar en directe que la coloració que ja tenies continua sent vàlida.</p>
+          <h5>Moviment R2 (lliscar un tram per sobre d'un altre)</h5>
+          <p>Apareixen dos encreuaments nous i un arc queda partit. Es comprova, cas per cas, que sempre hi ha una manera d'acolorir el tros nou que satisfà les dues condicions, i que és única. Cap coloració es perd ni se'n guanya cap.</p>
+          <h5>Moviment R3 (lliscar a través d'un encreuament)</h5>
+          <p>És el més laboriós però també el més interessant: els arcs implicats es reorganitzen però el nombre d'encreuaments no canvia, i es comprova que hi ha una correspondència exacta entre coloracions abans i després.</p>
+          <p>Un cop fetes les tres comprovacions, el resultat és sòlid: <strong>el nombre de 3-coloracions d'un diagrama és el mateix per a tots els diagrames del mateix nus</strong>. És una propietat del nus, no del dibuix.</p>
+
+          <h4>5. Què demostra i què no demostra</h4>
+          <p>Ara l'aplicació. El nus trivial té un sol arc i cap encreuament: l'única coloració possible és pintar-lo d'un color. <strong>El nus trivial no és tricolorable.</strong></p>
+          <p>El trèvol, en canvi, sí que ho és: pinta els seus tres arcs de tres colors diferents i comprova cada encreuament — a tots tres hi conflueixen els tres colors, que és una de les dues situacions permeses.</p>
+          <p>I com que la tricolorabilitat és un invariant, i el trèvol en té i el nus trivial no, <strong>el trèvol no pot ser el nus trivial disfressat</strong>. Aquesta és una demostració completa i rigorosa, obtinguda pintant tres trossos de corda.</p>
+          <div class="deep-key">
+            <strong>Però compte amb la direcció del raonament.</strong> Si <em>no</em> trobes cap coloració no trivial, això <strong>no demostra</strong> que sigui el nus trivial. El contraexemple és a la mateixa càpsula: el <strong>vuit invertit</strong> (figure-eight) està genuïnament nuat —no es pot desfer de cap manera— i tanmateix <em>no</em> admet cap 3-coloració no trivial.<br><br>
+            La tricolorabilitat prova «sí, és un nus» quan la trobes. Quan no la trobes, no diu res.
+          </div>
+          <p>Aquesta asimetria no és un defecte d'aquest invariant concret: és la situació habitual amb els invariants, i la trobaràs idèntica al <strong>Trencaclosques del 15</strong> (l'invariant demostra la impossibilitat, no la possibilitat) i a <strong>Característica d'Euler</strong> (el tor i l'ampolla de Klein tenen la mateixa χ i no són el mateix). Un invariant és una eina per <em>distingir</em>, mai per <em>identificar</em>.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p><strong>Els tres diagrames.</strong> Tens el nus trivial, el trèvol i el vuit invertit. No estan triats a l'atzar: són exactament els tres casos que necessites per entendre l'abast de l'eina —un que no és nus, un que la tricolorabilitat detecta, i un que està nuat però se li escapa.</p>
+          <p><strong>Acolorir.</strong> Cliques els punts marcats sobre el dibuix (un per arc) i el color va rotant: blanc → color 1 → color 2 → color 3 → blanc. També pots fer-ho amb els botons «Arc 1, Arc 2…», que fan exactament el mateix i mostren l'estat en text.</p>
+          <p><strong>La comprovació en directe.</strong> Cada encreuament es marca ✓ o ✗ en el moment que els seus tres arcs ja tenen color. No cal esperar a acabar per saber si vas bé.</p>
+          <p><strong>«Afegeix un bucle».</strong> Aplica un moviment R1 real: parteix un arc i n'afegeix un de nou en forma de llaç. El diagrama canvia, els arcs augmenten, i <strong>la teva coloració segueix sent vàlida</strong>. Aquesta és la demostració de la invariància, feta amb el dit.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: demostrar que el trèvol està nuat</span>
+            <span class="de-step">1. Tria el <strong>nus trivial</strong>. Té 1 arc. Acoloreix-lo. Només hi ha una opció: un color.</span>
+            <span class="de-step">2. Conclusió: el nus trivial <strong>no és tricolorable</strong>. Cap coloració amb 2+ colors és possible.</span>
+            <span class="de-step">3. Tria el <strong>trèvol</strong>. Té 3 arcs i 3 encreuaments.</span>
+            <span class="de-step">4. Pinta l'arc 1 de granat, l'arc 2 de verd i l'arc 3 de violeta.</span>
+            <span class="de-step">5. Mira els tres encreuaments: a tots hi conflueixen els <strong>tres colors diferents</strong> → tots ✓.</span>
+            <span class="de-step">6. Has trobat una coloració vàlida amb 3 colors → el trèvol <strong>és tricolorable</strong>.</span>
+            <span class="de-step">7. Com que el trivial no ho és i la propietat és invariant → <strong>el trèvol no és el nus trivial</strong>. Demostrat.</span>
+            <span class="de-step">8. Ara prem <strong>«Afegeix un bucle»</strong>: el diagrama es complica, però la coloració continua valent.</span>
+            <span class="de-step">9. Finalment, tria el <strong>vuit invertit</strong> i prova totes les combinacions: no en trobaràs cap de no trivial, tot i que està nuat.</span>
+          </div>
+
+          <h4>7. Un invariant amb estructura amagada</h4>
+          <p>Val la pena anar un pas més enllà, perquè la tricolorabilitat no és un truc aïllat.</p>
+          <p>La condició «tots iguals o tots diferents» es pot reformular aritmèticament. Numera els colors 0, 1, 2 i mira-los com a elements de l'aritmètica mòdul 3. Aleshores la condició de cada encreuament és exactament:</p>
+          <p style="text-align:center;margin:.6rem 0;font-family:var(--font-mono)">(arc de sota 1) + (arc de sota 2) ≡ 2 × (arc de sobre) &nbsp;(mod 3)</p>
+          <p>Comprova-ho: si tots tres són iguals a c, dona c+c = 2c ✓. Si són 0, 1, 2 en algun ordre, la suma dels dos de sota més el doble del de sobre sempre quadra mòdul 3 ✓.</p>
+          <p>Això converteix el problema d'acolorir en un <strong>sistema d'equacions lineals mòdul 3</strong>. I d'aquí en surt una conseqüència elegant: com que el conjunt de solucions d'un sistema lineal és un espai vectorial, <strong>el nombre de 3-coloracions és sempre una potència de 3</strong>. El nus trivial en té 3 (només les trivials); el trèvol en té 9.</p>
+          <p>I un cop ho veus així, la generalització és immediata: per què només 3 colors? Es pot fer amb n colors i l'aritmètica mòdul n. Això són les <strong>n-coloracions de Fox</strong>, i donen una família sencera d'invariants, cadascun capaç de detectar nusos que els altres no veuen. El vuit invertit, que se'ns escapa amb 3 colors, <strong>sí</strong> que es detecta amb 5.</p>
+
+          <h4>8. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Biologia molecular.</strong> L'ADN dins d'una cèl·lula està enrotllat i sovint nuat de veritat. Perquè es pugui replicar, cal desfer-lo, i les cèl·lules tenen enzims dedicats a fer-ho: les <strong>topoisomerases</strong>, que tallen la cadena, la fan passar per un altre tram i la tornen a soldar. Els biòlegs fan servir invariants de nusos per identificar quins nusos apareixen i deduir-ne com actua l'enzim. Diversos antibiòtics i fàrmacs contra el càncer funcionen precisament bloquejant topoisomerases.</p>
+          <p><strong>Química.</strong> Des dels anys 80 s'han sintetitzat molècules que són literalment nusos, i el 2016 el Nobel de Química va reconèixer el treball sobre màquines moleculars que inclou aquesta línia. La forma nuada canvia les propietats físiques de la molècula.</p>
+          <p><strong>Física teòrica.</strong> La teoria de nusos va tenir un renaixement espectacular als anys 80 quan Edward Witten va connectar el polinomi de Jones amb la teoria quàntica de camps. També reapareix en els mateixos <em>anyons</em> que trobaràs a la càpsula del Constructor de Trenes: la computació quàntica topològica és, essencialment, teoria de nusos aplicada.</p>
+          <p><strong>Verificació i complexitat.</strong> Determinar si un diagrama representa el nus trivial (el «problema del desnuament») està en NP i també en co-NP, però <strong>no se sap si es pot resoldre en temps polinòmic</strong>. És un dels problemes oberts destacats a la frontera entre topologia i informàtica teòrica.</p>
+
+          <h4>9. Curiositats</h4>
+          <p><strong>Tot va començar amb una teoria física equivocada.</strong> El 1867, Lord Kelvin va proposar que els àtoms eren nusos de vòrtexs en l'èter, i que els diferents elements químics corresponien a nusos diferents. La teoria era falsa, però va motivar el seu col·lega Peter Guthrie Tait a passar-se anys tabulant nusos a mà, creant la primera taula sistemàtica. Quan la teoria de l'èter va caure, les taules van quedar — i van fundar una disciplina.</p>
+          <p><strong>La parella de Perko: un error que va durar 75 anys.</strong> A les taules clàssiques hi havia dues entrades de 10 encreuaments considerades nusos diferents. El 1974, l'advocat i matemàtic aficionat Kenneth Perko, treballant a casa seva, va demostrar que <strong>eren el mateix nus</strong> manipulant-ne una còpia física. Van estar catalogats com a diferents durant tres quarts de segle. Va caldre renumerar les taules.</p>
+          <p><strong>El nombre de nusos creix salvatgement.</strong> Amb 10 encreuaments n'hi ha 165; amb 16, ja n'hi ha 1.701.936. La tabulació completa fins a 16 encreuaments es va acabar el 1998 amb ajuda d'ordinadors.</p>
+          <p><strong>El trèvol té dues versions que no són la mateixa.</strong> El trèvol dretà i l'esquerrà són imatges especulars i <strong>no es poden deformar l'un en l'altre</strong>. La tricolorabilitat no els distingeix (tots dos són tricolorables); calen invariants més fins, com el polinomi de Jones, que sí que ho fa. És un bon recordatori de la jerarquia d'invariants.</p>
+          <p><strong>Els cordons de les sabates i els cables dels auriculars.</strong> Hi ha estudis experimentals publicats sobre per què els cables es nuen sols dins la butxaca. La resposta curta: amb prou agitació, la probabilitat de formar un nus creix molt de pressa amb la longitud, i els nusos formats són majoritàriament els mateixos que apareixen a les taules de Tait.</p>
+          <p><strong>Reidemeister va publicar-ho el mateix any que Alexander i Briggs.</strong> Els tres moviments es coneixen com «de Reidemeister» (1927), però James Alexander i Garland Briggs van arribar al mateix resultat independentment i gairebé alhora. És un dels casos de descobriment simultani més nets de la topologia.</p>
+
+          <h4>10. Connexió amb altres àrees</h4>
+          <p>La connexió més directa és amb el <strong>Constructor de Trenes</strong>, i és literal: pel teorema d'Alexander, tot nus s'obté tancant una trena, i el trèvol d'aquesta càpsula és exactament el tancament de σ₁³. Els moviments de Reidemeister d'aquí són els parents geomètrics de les relacions d'Artin d'allà —de fet, el moviment R3 <em>és</em> la relació de trena σᵢσᵢ₊₁σᵢ = σᵢ₊₁σᵢσᵢ₊₁ vista com a deformació.</p>
+          <p>Amb <strong>Característica d'Euler</strong> comparteix el bloc temàtic i la lògica: buscar quantitats que sobrevisquin a la deformació. Allà és un número que compta forats; aquí, un nombre de coloracions.</p>
+          <p>I amb el <strong>Trencaclosques del 15</strong> comparteix l'estratègia sencera de demostració per invariant, incloent-hi la mateixa limitació: serveix per dir «impossible», no per dir «possible».</p>
+          <p>Finalment, la reformulació del punt 7 —el sistema d'equacions mòdul 3— connecta amb l'aritmètica modular de <strong>Reciprocitat quadràtica</strong>. Que un problema sobre cordes a l'espai es redueixi a àlgebra lineal sobre els enters mòdul 3 és, en si mateix, un bon exemple de com viatgen les idees entre àrees.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Diagrama:</span>
+      <div class="chip-row" id="knotRow"></div>
+      <button class="btn btn-ghost" id="loopBtn">+ Afegeix un bucle</button>
+      <button class="btn btn-ghost" id="undoLoopBtn" style="display:none;">Desfés el bucle</button>
+      <button class="btn btn-ghost" id="resetColorsBtn">Neteja els colors</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="90">
+          <span class="rs-val" id="repteTimeVal">90s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">90s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap knot-wrap flash-target" id="canvasWrap">
+      <div class="color-legend explora-only">
+        <span><i style="background:#a02545"></i> color 1</span>
+        <span><i style="background:#1a7a52"></i> color 2</span>
+        <span><i style="background:#5c3aa8"></i> color 3</span>
+      </div>
+      <div class="knot-stage"><canvas id="knotCanvas"></canvas></div>
+
+      <!-- Controls equivalents al clic sobre el dibuix. El canvas només es pot
+           fer servir amb ratolí o dit: aquests botons fan exactament el mateix
+           (cicle blanc → color 1 → 2 → 3) i es poden fer servir amb teclat.
+           No són una còpia degradada: mostren el color actual de cada arc en
+           text, cosa que el dibuix sol no fa. -->
+      <div class="arc-controls explora-only" id="arcControls">
+        <span class="chip-label">O bé, arc per arc:</span>
+        <div class="chip-row" id="arcButtons"></div>
+      </div>
+      <div class="knot-verdict pending" id="knotVerdict">Acoloreix cada arc per veure el veredicte.</div>
+
+      <div class="predict-panel" id="predictPanel">
+        <span class="chip-label">És tricolorable aquest diagrama (admet una 3-coloració amb més d'1 color)?</span>
+        <div class="chip-row">
+          <button class="btn btn-primary" id="predictYesBtn">Sí, ho és</button>
+          <button class="btn btn-ghost" id="predictNoBtn">No, no ho és</button>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Clica els punts marcats per acolorir cada arc.</div>
+
+    <p class="method-hint" id="methodPanel">A cada encreuament, els 3 arcs que hi conflueixen han de ser tots iguals o tots diferents — mai exactament 2 iguals.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Tria un diagrama</div>
+        <div class="readout-def" id="readoutDef">Comença acolorint un arc.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Nusos, invariants i Reidemeister</div>
+
+    <div class="type-card active" id="card-coloracio" data-method="coloracio" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">La regla de 3-coloració</div>
+        <div class="type-range">Tots iguals o tots diferents</div>
+        <div class="type-desc">Cada punt clicable és un arc. En acolorir-los tots, cada encreuament comprova en directe si els seus 3 arcs compleixen la regla —✓ si sí, ✗ si no.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-invariant" data-method="invariant" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Un invariant real</div>
+        <div class="type-range">Tricolorable ⇒ nuat de debò</div>
+        <div class="type-desc">«Afegeix un bucle» deforma el diagrama (Reidemeister I) sense canviar el nus. Torna a intentar la mateixa coloració: encara hi val, perquè els dos trossos nous d'un bucle simple estan obligats a tenir sempre el mateix color.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-limits" data-method="limits" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Els límits de la prova</div>
+        <div class="type-range">Trèvol: sí · Vuit invertit: no</div>
+        <div class="type-desc">Compara els dos: el trèvol admet 6 coloracions no trivials, el vuit invertit cap ni una —tot i estar genuïnament nuat. No trobar-ne no demostra res.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Pont amb Constructor de Trenes:</strong> aquest mateix trèvol és exactament el que s'obté tancant els extrems de la trena σ₁³ —tres creuaments seguits del mateix generador.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 03 · Geometria i Topologia</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  DIAGRAMES DE NUSOS
+//  Trèvol i vuit invertit calculats a partir de corbes paramètriques reals
+//  (autointerseccions trobades numèricament, sobre/sota alternat per ordre de
+//  pas), i verificats per força bruta: trèvol admet 9 3-coloracions (3
+//  trivials + 6 no trivials), vuit invertit només les 3 trivials — coincideix
+//  exactament amb la teoria coneguda d'aquests dos nusos.
+// ─────────────────────────────────────────────
+const KNOT_DIAGRAMS = {
+  unknot: {
+    arcs: [ { pts: Array.from({length:48}, (_,i) => { const a=i/48*2*Math.PI; return [0.75*Math.sin(a), -0.75*Math.cos(a)]; }), mid: [0, 0.75] } ],
+    crossings: []
+  },
+  trefoil: {
+    arcs: [
+      {pts:[[-0.2121,0.2828],[-0.2586,0.2158],[-0.3005,0.1455],[-0.3374,0.0726],[-0.3691,-0.0023],[-0.3953,-0.0786],[-0.4158,-0.1557],[-0.4305,-0.2329],[-0.4393,-0.3096],[-0.4424,-0.385],[-0.4396,-0.4586],[-0.4311,-0.5298],[-0.4172,-0.5978],[-0.3979,-0.6621],[-0.3738,-0.7222],[-0.3449,-0.7775],[-0.3119,-0.8275],[-0.275,-0.8718],[-0.2347,-0.91],[-0.1917,-0.9418],[-0.1462,-0.9669],[-0.0991,-0.9851],[-0.0507,-0.9961],[-0.0017,-1.0],[0.0473,-0.9966],[0.0957,-0.9861],[0.143,-0.9684],[0.1885,-0.9438],[0.2318,-0.9125],[0.2723,-0.8747],[0.3094,-0.8308],[0.3428,-0.7812],[0.3719,-0.7263],[0.3964,-0.6665],[0.416,-0.6025],[0.4303,-0.5347]], mid:[-0.2553,-0.8917]},
+      {pts:[[0.3505,0.0436],[0.3156,0.1173],[0.2756,0.1886],[0.231,0.2569],[0.1819,0.3217],[0.1288,0.3824],[0.0723,0.4386],[0.0128,0.4898],[-0.0491,0.5357],[-0.1129,0.5759],[-0.178,0.6102],[-0.2438,0.6384],[-0.3097,0.6602],[-0.3749,0.6757],[-0.439,0.6847],[-0.5012,0.6874],[-0.561,0.6837],[-0.6178,0.6739],[-0.6709,0.6581],[-0.7199,0.6367],[-0.7643,0.6099],[-0.8036,0.5781],[-0.8373,0.5418],[-0.8651,0.5013],[-0.8867,0.4573],[-0.9018,0.4101],[-0.9101,0.3603],[-0.9116,0.3086],[-0.9061,0.2555],[-0.8936,0.2017],[-0.8742,0.1476],[-0.848,0.0939],[-0.815,0.0412],[-0.7756,-0.0098],[-0.73,-0.0588],[-0.6785,-0.1051]], mid:[-0.6448,0.6667]},
+      {pts:[[-0.1383,-0.3253],[-0.057,-0.332],[0.0247,-0.3331],[0.1062,-0.3286],[0.1869,-0.3186],[0.266,-0.3031],[0.3429,-0.2823],[0.4171,-0.2564],[0.4878,-0.2258],[0.5546,-0.1907],[0.6169,-0.1515],[0.6743,-0.1086],[0.7262,-0.0626],[0.7722,-0.0138],[0.8122,0.0371],[0.8456,0.0897],[0.8724,0.1433],[0.8924,0.1974],[0.9054,0.2513],[0.9114,0.3045],[0.9105,0.3563],[0.9027,0.4062],[0.8881,0.4536],[0.8671,0.498],[0.8397,0.5387],[0.8065,0.5754],[0.7676,0.6076],[0.7236,0.6348],[0.675,0.6566],[0.6221,0.6728],[0.5656,0.6831],[0.506,0.6873],[0.444,0.6852],[0.3801,0.6766],[0.3149,0.6617],[0.249,0.6403]], mid:[0.8998,0.2244]}
+    ],
+    crossings: [
+      {pt:[0.433,-0.2501], underIn:0, underOut:1, overArc:2},
+      {pt:[0.0,0.4999], underIn:2, underOut:0, overArc:1},
+      {pt:[-0.433,-0.2501], underIn:1, underOut:2, overArc:0}
+    ]
+  },
+  figure8: {
+    arcs: [
+      {pts:[[-0.3894,-0.1743],[-0.3537,-0.2079],[-0.3167,-0.2366],[-0.2788,-0.2609],[-0.2406,-0.2809],[-0.2023,-0.2972],[-0.1643,-0.31],[-0.1266,-0.3197],[-0.0892,-0.3267],[-0.0521,-0.3311],[-0.0153,-0.3332],[0.0216,-0.333],[0.0585,-0.3305],[0.0956,-0.3257],[0.133,-0.3183],[0.1708,-0.308],[0.2089,-0.2946],[0.2471,-0.2778],[0.2853,-0.257],[0.3231,-0.2321],[0.3599,-0.2025],[0.3953,-0.1681],[0.4285,-0.1287],[0.4588,-0.0841],[0.4854,-0.0345],[0.5073,0.02],[0.5238,0.0791],[0.5338,0.1422],[0.5367,0.2086],[0.5315,0.2775],[0.5178,0.3478],[0.495,0.4186],[0.4627,0.4883],[0.4209,0.5559],[0.3695,0.6198],[0.309,0.6786]], mid:[0.2662,-0.2679]},
+      {pts:[[-0.3706,0.8277],[-0.4678,0.796],[-0.5616,0.7516],[-0.6503,0.6949],[-0.7319,0.6268],[-0.8051,0.5482],[-0.8683,0.4602],[-0.9202,0.3643],[-0.9598,0.2621],[-0.9862,0.1553],[-0.999,0.0458],[-0.9978,-0.0646],[-0.9826,-0.1738],[-0.9539,-0.2799],[-0.9122,-0.3812],[-0.8583,-0.4759],[-0.7933,-0.5623],[-0.7186,-0.6393],[-0.6356,-0.7054],[-0.546,-0.76],[-0.4514,-0.8023],[-0.3538,-0.8319],[-0.2548,-0.8487],[-0.1564,-0.8528],[-0.06,-0.8448],[0.0326,-0.8252],[0.12,-0.7948],[0.201,-0.7548],[0.2745,-0.7063],[0.3396,-0.6506],[0.3958,-0.5892],[0.4425,-0.5233],[0.4797,-0.4545],[0.5073,-0.3841],[0.5256,-0.3134],[0.5351,-0.2436]], mid:[-0.678,-0.6738]},
+      {pts:[[0.3894,0.1743],[0.3537,0.2079],[0.3167,0.2366],[0.2788,0.2609],[0.2406,0.2809],[0.2023,0.2972],[0.1643,0.31],[0.1266,0.3197],[0.0892,0.3267],[0.0521,0.3311],[0.0153,0.3332],[-0.0216,0.333],[-0.0585,0.3305],[-0.0956,0.3257],[-0.133,0.3183],[-0.1708,0.308],[-0.2089,0.2946],[-0.2471,0.2778],[-0.2853,0.257],[-0.3231,0.2321],[-0.3599,0.2025],[-0.3953,0.1681],[-0.4285,0.1287],[-0.4588,0.0841],[-0.4854,0.0345],[-0.5073,-0.02],[-0.5238,-0.0791],[-0.5338,-0.1422],[-0.5367,-0.2086],[-0.5315,-0.2775],[-0.5178,-0.3478],[-0.495,-0.4186],[-0.4627,-0.4883],[-0.4209,-0.5559],[-0.3695,-0.6198],[-0.309,-0.6786]], mid:[-0.2662,0.2679]},
+      {pts:[[0.3706,-0.8277],[0.4678,-0.796],[0.5616,-0.7516],[0.6503,-0.6949],[0.7319,-0.6268],[0.8051,-0.5482],[0.8683,-0.4602],[0.9202,-0.3643],[0.9598,-0.2621],[0.9862,-0.1553],[0.999,-0.0458],[0.9978,0.0646],[0.9826,0.1738],[0.9539,0.2799],[0.9122,0.3812],[0.8583,0.4759],[0.7933,0.5623],[0.7186,0.6393],[0.6356,0.7054],[0.546,0.76],[0.4514,0.8023],[0.3538,0.8319],[0.2548,0.8487],[0.1564,0.8528],[0.06,0.8448],[-0.0326,0.8252],[-0.12,0.7948],[-0.201,0.7548],[-0.2745,0.7063],[-0.3396,0.6506],[-0.3958,0.5892],[-0.4425,0.5233],[-0.4797,0.4545],[-0.5073,0.3841],[-0.5256,0.3134],[-0.5351,0.2436]], mid:[0.678,0.6738]}
+    ],
+    crossings: [
+      {pt:[-0.0,0.8335], underIn:0, underOut:1, overArc:3},
+      {pt:[-0.5001,-0.0], underIn:3, underOut:0, overArc:2},
+      {pt:[0.5001,-0.0], underIn:1, underOut:2, overArc:0},
+      {pt:[0.0,-0.8335], underIn:2, underOut:3, overArc:1}
+    ]
+  }
+};
+const KNOT_META = {
+  unknot: { name: 'Nus trivial', tricolorable: false },
+  trefoil: { name: 'Trèvol (trefoil)', tricolorable: true },
+  figure8: { name: 'Vuit invertit (figure-eight)', tricolorable: false }
+};
+const ARC_COLORS = [null, '#a02545', '#1a7a52', '#5c3aa8'];
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let currentKey = 'trefoil';
+let diagram = null;         // working copy (arcs/crossings), may include an added loop
+let hasLoop = false;
+let arcColorState = [];     // index per arc -> 0..3
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 90, repteMaxTime = 90, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteAnswer = null;
+
+// ─────────────────────────────────────────────
+//  SELECCIÓ DE DIAGRAMA
+// ─────────────────────────────────────────────
+function buildKnotChips() {
+  const row = document.getElementById('knotRow');
+  row.innerHTML = '';
+  Object.keys(KNOT_META).forEach(key => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = KNOT_META[key].name;
+    b.classList.toggle('active', key === currentKey);
+    b.addEventListener('click', () => { setKnot(key); highlightKnotChip(key); });
+    row.appendChild(b);
+  });
+}
+function highlightKnotChip(key) { document.querySelectorAll('#knotRow .chip').forEach(c => c.classList.toggle('active', c.textContent === KNOT_META[key].name)); }
+function cloneDiagram(key) { return JSON.parse(JSON.stringify(KNOT_DIAGRAMS[key])); }
+function setKnot(key) {
+  currentKey = key;
+  diagram = cloneDiagram(key);
+  hasLoop = false;
+  arcColorState = diagram.arcs.map(() => 0);
+  document.getElementById('undoLoopBtn').style.display = 'none';
+  refreshAll();
+  hint.textContent = 'Clica els punts marcats per acolorir cada arc.';
+}
+
+// ─────────────────────────────────────────────
+//  MOVIMENT DE REIDEMEISTER I (afegeix un bucle simple a l'arc 0)
+// ─────────────────────────────────────────────
+function addLoop() {
+  if (hasLoop) return;
+  const arc0 = diagram.arcs[0];
+  const mid = Math.floor(arc0.pts.length / 2);
+  const P = arc0.pts[mid];
+  const Pn = arc0.pts[Math.min(mid + 1, arc0.pts.length - 1)];
+  const tangent = { x: Pn[0] - P[0], y: Pn[1] - P[1] };
+  const tlen = Math.hypot(tangent.x, tangent.y) || 1;
+  const nx = -tangent.y / tlen, ny = tangent.x / tlen;
+  const R = 0.09;
+  const cx = P[0] + nx * R, cy = P[1] + ny * R;
+  const loopPts = [];
+  const steps = 26;
+  for (let i = 0; i <= steps; i++) {
+    const a = -Math.PI / 2 + (i / steps) * 2 * Math.PI;
+    loopPts.push([cx + R * Math.cos(a), cy + R * Math.sin(a)]);
+  }
+  // arc "A" = original start .. mid, then all the way around the loop, back near P (this is the OVER + under-terminated arc)
+  const arcA = { pts: arc0.pts.slice(0, mid + 1).concat(loopPts), mid: arc0.pts[Math.floor(mid / 2)] };
+  // arc "B" = rest of the original arc after the twist point
+  const arcB = { pts: arc0.pts.slice(mid), mid: arc0.pts[Math.min(mid + Math.floor((arc0.pts.length - mid) / 2), arc0.pts.length - 1)] };
+  const newCrossing = { pt: P, underIn: 0, underOut: diagram.arcs.length, overArc: 0 };
+
+  // shift crossing arc-indices that referenced arc0 as overArc in the middle (none besides itself needed here since arc0 kept index 0)
+  diagram.arcs[0] = arcA;
+  diagram.arcs.push(arcB);
+  diagram.crossings.push(newCrossing);
+
+  const oldColor = arcColorState[0];
+  arcColorState.push(oldColor); // arcB inherits arc0's color — a simple twist forces both halves to match
+  hasLoop = true;
+  document.getElementById('undoLoopBtn').style.display = 'inline-flex';
+  refreshAll();
+  hint.textContent = 'Bucle afegit (Reidemeister I): un arc nou, un encreuament nou — la coloració que ja tenies encara hi val.';
+}
+function undoLoop() { setKnot(currentKey); }
+document.getElementById('loopBtn').addEventListener('click', addLoop);
+document.getElementById('undoLoopBtn').addEventListener('click', undoLoop);
+document.getElementById('resetColorsBtn').addEventListener('click', () => { arcColorState = diagram.arcs.map(() => 0); refreshAll(); });
+
+// ─────────────────────────────────────────────
+//  DIBUIX
+// ─────────────────────────────────────────────
+function drawOn(canvas, dgm, colors, showColors) {
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = rect.height, cx = w / 2, cy = h / 2, scale = Math.min(w, h) / 2 * 0.86;
+  ctx.clearRect(0, 0, w, h);
+  const toXY = p => ({ x: cx + p[0] * scale, y: cy + p[1] * scale });
+
+  dgm.arcs.forEach((arc, i) => {
+    ctx.beginPath();
+    arc.pts.forEach((p, k) => { const xy = toXY(p); if (k === 0) ctx.moveTo(xy.x, xy.y); else ctx.lineTo(xy.x, xy.y); });
+    ctx.strokeStyle = showColors && colors && colors[i] ? ARC_COLORS[colors[i]] : 'rgba(27,30,45,.55)';
+    ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.stroke();
+  });
+
+  if (showColors) {
+    dgm.arcs.forEach((arc, i) => {
+      const xy = toXY(arc.mid);
+      ctx.beginPath(); ctx.arc(xy.x, xy.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = colors[i] ? ARC_COLORS[colors[i]] : cssVar('--surface');
+      ctx.fill();
+      ctx.lineWidth = 1.6; ctx.strokeStyle = 'rgba(27,30,45,.5)'; ctx.stroke();
+    });
+    dgm.crossings.forEach(c => {
+      const xy = toXY(c.pt);
+      const a = colors[c.underIn], b = colors[c.underOut], o = colors[c.overArc];
+      let sym = '', col = 'rgba(27,30,45,.35)';
+      if (a && b && o) {
+        const set = new Set([a, b, o]);
+        const ok = set.size === 1 || set.size === 3;
+        sym = ok ? '✓' : '✗'; col = ok ? cssVar('--good') : cssVar('--bad');
+      }
+      if (sym) { txt(ctx, sym, xy.x, xy.y - 16, 15, col, 'center', 700); }
+    });
+  }
+}
+// Noms dels colors per al text alternatiu: el dibuix distingeix els arcs
+// NOMÉS pel color, així que sense aquesta descripció la interacció sencera és
+// invisible per a qui fa servir un lector de pantalla (i, de retruc, també
+// per a qui no distingeix bé els tres colors).
+const ARC_COLOR_NAMES = ['sense color', 'granat', 'verd', 'violeta'];
+function knotCanvasDescription() {
+  if (!diagram) return 'Diagrama de nus.';
+  const perArc = arcColorState.map((c, i) => `arc ${i + 1}: ${ARC_COLOR_NAMES[c] || 'sense color'}`).join('; ');
+  const res = evaluateColoring(diagram, arcColorState);
+  let estat;
+  if (res.state === 'pending') estat = `${arcColorState.filter(c => c > 0).length} de ${arcColorState.length} arcs acolorits.`;
+  else if (!res.allValid) estat = `Coloració no vàlida: ${res.badCount} encreuament${res.badCount === 1 ? '' : 's'} incompleix la regla.`;
+  else if (res.distinct === 1) estat = 'Coloració vàlida però trivial: un sol color.';
+  else estat = `Coloració vàlida i no trivial, amb ${res.distinct} colors: el nus és tricolorable.`;
+  return `Diagrama del nus ${KNOT_META[currentKey].name}, amb ${diagram.arcs.length} arcs i ${diagram.crossings.length} encreuaments. ${estat} Colors actuals — ${perArc}.`;
+}
+function draw() {
+  drawOn(document.getElementById('knotCanvas'), diagram, arcColorState, true);
+  describeCanvas(document.getElementById('knotCanvas'), knotCanvasDescription());
+}
+window.addEventListener('resize', draw);
+
+// ─────────────────────────────────────────────
+//  INTERACCIÓ: clicar un arc
+// ─────────────────────────────────────────────
+const knotCanvas = document.getElementById('knotCanvas');
+knotCanvas.addEventListener('click', (e) => {
+  if (repteMode) return;
+  const rect = knotCanvas.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  const cx = rect.width / 2, cy = rect.height / 2, scale = Math.min(rect.width, rect.height) / 2 * 0.86;
+  let bestI = -1, bestD = 16;
+  diagram.arcs.forEach((arc, i) => {
+    const x = cx + arc.mid[0] * scale, y = cy + arc.mid[1] * scale;
+    const d = Math.hypot(px - x, py - y);
+    if (d < bestD) { bestD = d; bestI = i; }
+  });
+  if (bestI >= 0) {
+    arcColorState[bestI] = (arcColorState[bestI] + 1) % 4;
+    refreshAll();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  VEREDICTE / LECTURA
+// ─────────────────────────────────────────────
+function evaluateColoring(dgm, colors) {
+  const allColored = colors.every(c => c > 0);
+  if (!allColored) return { state: 'pending' };
+  let allValid = true, badCount = 0;
+  dgm.crossings.forEach(c => {
+    const set = new Set([colors[c.underIn], colors[c.underOut], colors[c.overArc]]);
+    if (!(set.size === 1 || set.size === 3)) { allValid = false; badCount++; }
+  });
+  const distinct = new Set(colors).size;
+  return { state: 'done', allValid, distinct, badCount };
+}
+function updateVerdict() {
+  const res = evaluateColoring(diagram, arcColorState);
+  const el = document.getElementById('knotVerdict');
+  if (res.state === 'pending') {
+    el.className = 'knot-verdict pending';
+    el.textContent = 'Acoloreix cada arc per veure el veredicte.';
+    readoutBadge.classList.add('active');
+    readoutNum.textContent = arcColorState.filter(c => c > 0).length + '/' + arcColorState.length;
+    readoutName.textContent = KNOT_META[currentKey].name;
+    readoutDef.textContent = 'Arcs acolorits fins ara.';
+    return;
+  }
+  if (!res.allValid) {
+    el.className = 'knot-verdict bad';
+    el.textContent = `✗ No és una coloració vàlida: ${res.badCount} encreuament${res.badCount === 1 ? '' : 's'} incompleix la regla.`;
+    readoutNum.textContent = '✗'; readoutName.textContent = 'No vàlida'; readoutDef.textContent = 'Revisa els encreuaments marcats en vermell.';
+  } else if (res.distinct === 1) {
+    el.className = 'knot-verdict pending';
+    el.textContent = 'Vàlida, però és la coloració trivial (1 sol color). Prova amb més d\'un color.';
+    readoutNum.textContent = '1'; readoutName.textContent = 'Coloració trivial'; readoutDef.textContent = 'No demostra res per si sola — busca\'n una amb ≥2 colors.';
+  } else {
+    el.className = 'knot-verdict good';
+    el.textContent = `✓ Tricolorable! Coloració vàlida amb ${res.distinct} colors — acabes de demostrar que és un nus real.`;
+    readoutNum.textContent = '✓'; readoutName.textContent = 'Tricolorable'; readoutDef.textContent = `${KNOT_META[currentKey].name}: coloració no trivial trobada.`;
+  }
+  readoutBadge.classList.add('active');
+}
+// ── Controls d'arc accessibles amb teclat ────────────────────────────────
+// Cada botó fa el mateix cicle de colors que clicar el punt de l'arc sobre el
+// dibuix. Es reconstrueixen quan canvia el diagrama (perquè el nombre d'arcs
+// canvia) i només es repinten quan ja existeixen, per no destruir el focus
+// mentre l'alumne els fa servir amb el teclat.
+function buildArcButtons() {
+  const row = document.getElementById('arcButtons');
+  row.innerHTML = '';
+  diagram.arcs.forEach((_, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip arc-chip';
+    b.dataset.arc = i;
+    b.addEventListener('click', () => {
+      arcColorState[i] = (arcColorState[i] + 1) % 4;
+      refreshAll();
+      announce(`Arc ${i + 1}: ${ARC_COLOR_NAMES[arcColorState[i]]}.`);
+    });
+    row.appendChild(b);
+  });
+  paintArcButtons();
+}
+function paintArcButtons() {
+  document.querySelectorAll('#arcButtons .arc-chip').forEach(b => {
+    const i = +b.dataset.arc, c = arcColorState[i];
+    b.textContent = `Arc ${i + 1}: ${ARC_COLOR_NAMES[c]}`;
+    b.style.borderColor = c ? ARC_COLORS[c] : '';
+    b.style.color = c ? ARC_COLORS[c] : '';
+    b.setAttribute('aria-label', `Arc ${i + 1}, ara ${ARC_COLOR_NAMES[c]}. Activa'l per canviar-li el color.`);
+  });
+}
+// Es reconstrueixen només quan el nombre d'arcs ha canviat (canvi de nus,
+// afegir/desfer un bucle). Repintar sense reconstruir manté viu el focus del
+// teclat, que és justament el que aquests botons han de servir.
+function syncArcButtons() {
+  const row = document.getElementById('arcButtons');
+  if (!row || !diagram) return;
+  if (row.children.length !== diagram.arcs.length) buildArcButtons();
+  else paintArcButtons();
+}
+function refreshAll() { draw(); updateVerdict(); syncArcButtons(); }
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  const keys = Object.keys(KNOT_META);
+  currentKey = keys[Math.floor(Math.random() * keys.length)];
+  diagram = cloneDiagram(currentKey);
+  hasLoop = false;
+  arcColorState = diagram.arcs.map(() => 0);
+  repteAnswer = KNOT_META[currentKey].tricolorable;
+  draw();
+  document.getElementById('knotVerdict').className = 'knot-verdict pending';
+  document.getElementById('knotVerdict').textContent = KNOT_META[currentKey].name;
+  document.getElementById('predictPanel').classList.add('active');
+  readoutBadge.classList.remove('active');
+  hint.textContent = 'Mira el diagrama i prediu si és tricolorable.';
+}
+function submitPredict(claim) {
+  if (repteTimeUp) return;
+  document.getElementById('predictPanel').classList.remove('active');
+  const correct = claim === repteAnswer;
+  // reveal: color it fully if tricolorable, or just state it's not
+  if (repteAnswer) {
+    const key = currentKey === 'trefoil' ? [0, 1, 2] : null; // only trefoil among our 3 has a nontrivial coloring
+    if (key) arcColorState = key.map(v => v + 1);
+  }
+  draw();
+  const el = document.getElementById('knotVerdict');
+  if (correct) {
+    score += 10; streak++;
+    document.getElementById('rpScore').textContent = score;
+    document.getElementById('rpStreak').textContent = streak;
+    timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+    document.getElementById('rpTime').textContent = timeLeft + 's';
+    flash(wrap, 'var(--good)');
+    el.className = 'knot-verdict good';
+    el.textContent = `✔ Correcte — ${KNOT_META[currentKey].name} ${repteAnswer ? 'és' : 'no és'} tricolorable.`;
+  } else {
+    applyPenalty(); flash(wrap, 'var(--bad)');
+    el.className = 'knot-verdict bad';
+    el.textContent = `✕ ${KNOT_META[currentKey].name} ${repteAnswer ? 'sí és' : 'no és'} tricolorable.`;
+  }
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, 1700);
+}
+document.getElementById('predictYesBtn').addEventListener('click', () => submitPredict(true));
+document.getElementById('predictNoBtn').addEventListener('click', () => submitPredict(false));
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      document.getElementById('predictPanel').classList.remove('active');
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  document.getElementById('predictPanel').classList.remove('active');
+  setKnot('trefoil'); highlightKnotChip('trefoil');
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  coloracio: "A cada encreuament, els 3 arcs que hi participen han de ser tots iguals o tots diferents — mai exactament 2 iguals.",
+  invariant: "La tricolorabilitat no canvia sota moviments de Reidemeister: és una propietat del nus, no del dibuix concret.",
+  limits: "Trobar una coloració no trivial demostra que el nus és real. No trobar-ne no demostra que sigui trivial."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-coloracio').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('coloracio'); });
+document.getElementById('card-invariant').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('invariant'); });
+document.getElementById('card-limits').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('limits'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildKnotChips();
+setKnot('trefoil');
+</script>
+</body>
+</html>

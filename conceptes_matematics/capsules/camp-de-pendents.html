@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camp de pendents · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    body { display: flex; flex-direction: column; }
+    :root { --m-color: var(--calcul); }
+
+    .field-wrap { aspect-ratio: auto; padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+    /* Controls equivalents al clic sobre el camp (accessibles amb teclat) */
+    .point-controls { display: flex; flex-direction: column; gap: .4rem; align-items: center; width: 100%; margin-top: .6rem; }
+    .point-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: center; }
+    .point-row label { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); }
+    .point-row input[type=number] {
+      width: 76px; border: 1px solid var(--border); border-radius: 8px; padding: .35rem .5rem;
+      font-family: var(--font-mono); font-size: .82rem; background: var(--surface); color: var(--ink);
+    }
+    .field-stage { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .field-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+
+    .step-narration {
+      width: 100%; background: color-mix(in srgb, var(--m-color) 7%, var(--surface)); border: 1px solid var(--border);
+      border-radius: 10px; padding: .7rem .9rem; font-size: .84rem; color: var(--ink); line-height: 1.65;
+    }
+    .step-narration b { color: var(--m-color); font-family: var(--font-mono); }
+    .step-narration .sn-title { font-weight: 700; color: var(--m-color); font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .25rem; }
+
+    .vista-panel { display: none; flex-direction: column; align-items: center; gap: .75rem; width: 100%; }
+    .vista-panel.active { display: flex; }
+
+    .rs-inline { display: flex; align-items: center; gap: .6rem; }
+    .rs-inline input[type=range] { flex: 1; min-width: 100px; }
+    .rs-inline .rs-val { font-family: var(--font-mono); font-weight: 700; color: var(--m-color); min-width: 40px; text-align: right; }
+
+    .phase-legend { display: flex; gap: 1.1rem; flex-wrap: wrap; justify-content: center; font-size: .74rem; color: var(--muted); }
+    .phase-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+    .phase-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+
+    .repte-classify-row { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <div class="nav-right">
+    <span class="capsula-label" style="--b-color:var(--calcul)">Bloc 04 · Camp de pendents</span>
+    <a href="../capsules.html" class="nav-back">← Totes les càpsules</a>
+  </div>
+</nav>
+
+<div class="main-layout">
+
+  <!-- ESQUERRA -->
+  <div class="canvas-side">
+    <div class="canvas-header">
+      <h1>Camp de pendents i equacions diferencials</h1>
+      <p>Un camp de pendents et diu, a cada punt, cap a on «vol anar» una solució. Segueix-lo, compara com de bé el segueixen dos mètodes diferents, mira on s'estabilitzen les solucions a llarg termini, i descobreix l'única situació on seguir-lo no basta per saber quina solució és la teva.</p>
+    </div>
+
+    <div class="explain-section">
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Què és?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>Una equació diferencial y'=f(x,y) no et dona y directament: et diu, a cada punt (x,y), quin <strong>pendent</strong> ha de tenir la corba solució que hi passa. Dibuixar aquest pendent com un traç curt a cada punt d'una graella és el <a href="https://en.wikipedia.org/wiki/Slope_field" target="_blank" rel="noopener">camp de pendents</a>. Una solució és, simplement, una corba que en tot moment és tangent al traç que li toca.</p>
+          <p>Per trobar-la numèricament sense fórmula tancada, es fa <strong>integració pas a pas</strong>: des d'un punt conegut, avances una micona seguint el pendent actual, recalcules el pendent al nou punt, i repeteixes. El <a href="https://en.wikipedia.org/wiki/Euler_method" target="_blank" rel="noopener">mètode d'Euler</a> ho fa de la manera més ingènua (un sol càlcul per pas); el de <a href="https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods" target="_blank" rel="noopener"><strong>Runge-Kutta d'ordre 4</strong></a> combina 4 càlculs per pas per quedar-se molt més a prop de la corba real amb el mateix nombre de passos.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Per a què serveix?</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <p>La majoria d'equacions diferencials del món real —clima, epidèmies, circuits, mecànica orbital— no tenen fórmula tancada: s'han de resoldre pas a pas, i la diferència entre un mètode ingenu i un de bo és la diferència entre una simulació que s'allunya de la realitat en poques passes i una que s'hi manté a prop hores de càlcul.</p>
+          <p>Per a equacions «autònomes» (que no depenen explícitament de x), sovint no interessa la corba exacta sinó cap a on tendeix a llarg termini: si una població tendeix a estabilitzar-se en un valor o a col·lapsar és una pregunta d'<strong>estabilitat</strong>, no de trajectòria exacta. I hi ha un límit teòric important: el <a href="https://en.wikipedia.org/wiki/Picard%E2%80%93Lindel%C3%B6f_theorem" target="_blank" rel="noopener">teorema de Picard-Lindelöf</a> garanteix una única solució per punt sempre que f sigui prou «ben educada» —però quan no ho és, la unicitat pot trencar-se de veritat, no només en teoria.</p>
+        </div></div></div>
+      </div>
+      <div class="explain-box">
+        <button class="explain-summary" type="button"><span>Com fer servir l'element interactiu</span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+          <ol>
+            <li><strong>Traça de solucions:</strong> tria y'=f(x,y), clica al camp per deixar-hi caure un punt i veure la corba (pots deixar-ne diversos: mai es creuen). Activa «Euler vs Runge-Kutta» per veure com Euler s'allunya de la corba real amb passos grans.</li>
+            <li><strong>Equilibris i estabilitat:</strong> tria una equació autònoma, mira la línia de fase (equilibris marcats, fletxes de flux) i deixa-hi caure punts per veure'ls convergir o allunyar-se'n.</li>
+            <li><strong>Quan falla la unicitat:</strong> amb l'equació especial d'aquesta vista, clica sobre y=0 i mira aparèixer diverses solucions vàlides pel mateix punt; clica fora de y=0 i la unicitat torna.</li>
+            <li>Cada control té un botó «?» amb una explicació curta si et quedes encallat.</li>
+            <li>En Repte: prediu unicitat, estabilitat, o el següent pas d'una traça — alternant a l'atzar.</li>
+          </ol>
+        </div></div></div>
+      </div>
+    
+      <div class="explain-box explain-deep">
+        <button class="explain-summary" type="button"><span>Explicació completa<em class="deep-badge">Lectura al detall</em></span><span class="explain-icon">+</span></button>
+        <div class="explain-collapse"><div class="explain-body"><div class="explain-body-inner">
+
+<p class="deep-lead">Gairebé totes les equacions diferencials que descriuen el món real no es poden resoldre amb una fórmula. Això no és una limitació temporal per manca d'enginy: és la situació normal. Aquesta càpsula ensenya què es fa quan no hi ha fórmula —mirar el problema geomètricament, integrar-lo pas a pas— i on són els límits: quan un mètode numèric et menteix, i quan la teoria mateixa deixa de garantir-te una única resposta.</p>
+
+          <h4>1. El canvi de pregunta</h4>
+          <p>Una equació diferencial com y′ = f(x,y) no et diu quant val y. Et diu una cosa aparentment més modesta: <strong>a cada punt del pla, quin pendent ha de tenir la corba solució que hi passi</strong>.</p>
+          <p>Sembla poca informació, però n'és molta. Si a cada punt saps cap a on has d'anar, pots començar en qualsevol lloc i deixar-te portar. La solució és, literalment, <strong>una corba que en tot moment va en la direcció que li marquen</strong>.</p>
+          <p>Dibuixar aquest pendent com un traç curt a cada punt d'una graella dona el <strong>camp de pendents</strong>, i té una virtut pedagògica enorme: converteix una equació en una imatge. Abans de calcular res, ja pots veure de quina forma seran les solucions, on creixen, on s'aplanen i cap a on tendeixen.</p>
+          <div class="deep-key">
+            <strong>El canvi mental important.</strong> A l'escola, «resoldre una equació» vol dir aïllar la incògnita. Aquí no hi ha res a aïllar: la incògnita és una <em>funció sencera</em>, i el que et donen és una regla local. Passar de pensar en números a pensar en camps de direccions és el salt conceptual d'aquesta càpsula.
+          </div>
+
+          <h4>2. Integrar pas a pas: el mètode d'Euler</h4>
+          <p>La idea més ingènua possible per seguir el camp és també la primera que va tenir algú (Euler, segle XVIII): si sé on soc i quin pendent hi ha, avanço una micona en línia recta seguint aquell pendent, i torno a mirar.</p>
+          <p style="text-align:center;margin:.7rem 0">
+            <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>y</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>y</mi><mi>n</mi></msub><mo>+</mo><mi>h</mi><mo>·</mo><mi>f</mi><mo>(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>,</mo><msub><mi>y</mi><mi>n</mi></msub><mo>)</mo></math>
+          </p>
+          <p>El problema és evident quan hi penses: <strong>el pendent només és exacte al punt de partida</strong>. Un cop t'has mogut, la corba real ja s'ha corbat i tu has seguit recte. L'error de cada pas és petit, però s'acumula, i s'acumula sempre <em>en el mateix sentit</em> si la corba té concavitat constant.</p>
+          <p>Quantitativament: l'error de cada pas és de l'ordre de h², però com que fas ~1/h passos per recórrer una distància fixa, l'<strong>error total és de l'ordre de h</strong>. Es diu que Euler és un mètode <em>d'ordre 1</em>. Vol dir que si redueixes el pas a la meitat, l'error es redueix a la meitat. Per guanyar tres xifres decimals cal fer mil vegades més passos.</p>
+
+          <h4>3. Runge–Kutta: la mateixa idea, mirant abans de saltar</h4>
+          <p>La millora, deguda a Carl Runge (1895) i Wilhelm Kutta (1901), és sorprenentment intuïtiva: <strong>en lloc de fiar-se del pendent inicial, mira'n uns quants dins de l'interval i fes-ne una mitjana ponderada</strong>.</p>
+          <div class="deep-example">
+            <span class="de-title">Els quatre tempteigs de RK4</span>
+            <span class="de-step"><strong>k₁</strong> = f(xₙ, yₙ) &nbsp;→ el pendent al principi (això és el que fa Euler)</span>
+            <span class="de-step"><strong>k₂</strong> = f(xₙ + h/2, yₙ + h·k₁/2) &nbsp;→ el pendent al mig, arribant-hi amb k₁</span>
+            <span class="de-step"><strong>k₃</strong> = f(xₙ + h/2, yₙ + h·k₂/2) &nbsp;→ el pendent al mig un altre cop, però ara amb la millor estimació k₂</span>
+            <span class="de-step"><strong>k₄</strong> = f(xₙ + h, yₙ + h·k₃) &nbsp;→ el pendent al final</span>
+            <span class="de-step">I es combinen donant el doble de pes als dos del mig:</span>
+            <span class="de-step">&nbsp;&nbsp;yₙ₊₁ = yₙ + (h/6)(k₁ + 2k₂ + 2k₃ + k₄)</span>
+          </div>
+          <p>Els pesos 1, 2, 2, 1 dividits per 6 no són arbitraris: són exactament els que fan que el desenvolupament de Taylor del resultat coincideixi amb el de la solució real fins al terme h⁴. Per això l'error total és de l'ordre de <strong>h⁴</strong> — mètode d'<em>ordre 4</em>.</p>
+          <div class="deep-key">
+            <strong>Què vol dir «ordre 4» a la pràctica.</strong> Si redueixes el pas a la meitat, l'error d'Euler es divideix per 2; el de RK4 es divideix per <strong>16</strong>. Amb h=0,1, Euler pot tenir un error del 5% i RK4 del 0,0001%. RK4 fa 4 avaluacions per pas en lloc d'una, o sigui que costa 4 vegades més per pas — i tanmateix guanya per un marge abismal. Aquesta és la raó per la qual RK4 continua sent, més d'un segle després, el mètode per defecte de mig món científic.
+          </div>
+          <p>A la càpsula pots comprovar-ho tu mateix: activa «Euler vs Runge-Kutta», puja el pas h al màxim, i mira com la corba vermella discontínua (Euler) se separa visiblement de la blava contínua (RK4) partint <em>del mateix punt i amb el mateix nombre de passes</em>.</p>
+
+          <h4>4. Quan la teoria et garanteix una única resposta (i quan no)</h4>
+          <p>Hi ha un fet que es dona per descomptat i que no és gratuït: <strong>per cada punt hi passa una sola solució</strong>. És el que fa que les corbes de la Vista 1 mai es creuin —cadascuna té el seu «carril».</p>
+          <p>Això ho garanteix el <strong>teorema de Picard–Lindelöf</strong>, però amb una condició: f ha de ser prou «ben educada» en el sentit de Lipschitz, cosa que en la pràctica vol dir que la seva derivada respecte de y no pot fer-se infinita.</p>
+          <p>I quan la condició falla, la unicitat <em>es trenca de veritat</em>. La tercera vista de la càpsula ho ensenya amb un exemple concret i verificable:</p>
+          <div class="deep-example">
+            <span class="de-title">Exemple: l'equació y′ = 3y^(2/3)</span>
+            <span class="de-step">Solució 1: <strong>y ≡ 0</strong> (la funció constant zero). Comprovació: y′ = 0, i 3·0^(2/3) = 0 ✓</span>
+            <span class="de-step">Solució 2: <strong>y = (x − c)³</strong> per a qualsevol c. Comprovació:</span>
+            <span class="de-step">&nbsp;&nbsp;y′ = 3(x−c)²</span>
+            <span class="de-step">&nbsp;&nbsp;3·y^(2/3) = 3·((x−c)³)^(2/3) = 3(x−c)² ✓ &nbsp;— dona el mateix</span>
+            <span class="de-step">Totes dues passen pel punt (c, 0). <strong>Infinites solucions pel mateix punt.</strong></span>
+            <span class="de-step">Per què falla? La derivada de 3y^(2/3) respecte de y és 2y^(−1/3), que <strong>es fa infinita quan y → 0</strong>.</span>
+          </div>
+          <p>A la càpsula, si cliques sobre la línia y=0 veuràs aparèixer diverses corbes vàlides des del mateix punt; si cliques fora, la unicitat torna i només en surt una. No és un error del programa: és el teorema fallant exactament allà on ha de fallar.</p>
+
+          <h4>5. Equacions autònomes: quan només importa on s'acaba</h4>
+          <p>Una equació és <strong>autònoma</strong> si f no depèn explícitament de x, sinó només de y: y′ = f(y). Això vol dir que la regla és la mateixa en tot moment, i té una conseqüència pràctica enorme.</p>
+          <p>Com que el pendent només depèn de l'alçada, tota la informació cap en <strong>una sola línia vertical</strong> —la línia de fase— en lloc d'un pla sencer. Els punts on f(y) = 0 són els <strong>equilibris</strong>: allà el pendent és zero i la solució es queda quieta per sempre.</p>
+          <p>I la pregunta interessant no és quina corba surt, sinó si aquests equilibris són <strong>estables</strong>:</p>
+          <p style="margin-left:1rem">• Si f és positiva just a sota i negativa just a sobre, el flux hi apunta des dels dos costats → equilibri <strong>estable</strong> (atractor).<br>
+          • Si passa el contrari, qualsevol desviació creix → equilibri <strong>inestable</strong> (repulsor).<br>
+          • Si f té el mateix signe als dos costats → <strong>semiestable</strong>: atreu per una banda i repel per l'altra.</p>
+          <p>Amb l'equació logística y′ = 0,8·y·(1−y/3), per exemple, y=0 és inestable i y=3 és estable: qualsevol població que comenci per sobre de zero acaba tendint a 3, que és la capacitat de càrrega del sistema. <strong>Aquest tipus de conclusió no requereix resoldre res</strong>: s'obté mirant només els signes.</p>
+
+          <h4>6. Què fem a l'element interactiu</h4>
+          <p><strong>Vista 1 — Traça de solucions.</strong> Tries y′=f(x,y) i cliques al camp (o escrius les coordenades) per deixar-hi caure un punt. Es dibuixa la corba solució que hi passa. Pots deixar-ne diversos i comprovar que <strong>mai es creuen</strong>. El toggle «Euler vs Runge-Kutta» traça les dues corbes des del mateix punt i amb el mateix h, perquè la diferència es vegi directament.</p>
+          <p><strong>Vista 2 — Equilibris i estabilitat.</strong> Tria una equació autònoma i mira'n la línia de fase, amb els equilibris marcats i fletxes indicant el flux. Deixa-hi caure punts i mira'ls convergir o fugir.</p>
+          <p><strong>Vista 3 — Quan falla la unicitat.</strong> L'equació especial del punt 4, amb el comportament degenerat sobre y=0.</p>
+          <div class="deep-example">
+            <span class="de-title">Resolució amb l'element interactiu: mesurar l'error d'Euler</span>
+            <span class="de-step">1. Vista 1, equació <strong>y′ = y</strong>. La solució exacta que passa per (0,1) és y = eˣ.</span>
+            <span class="de-step">2. Escriu x₀ = 0, y₀ = 1 als camps i prem «Traça-hi una solució».</span>
+            <span class="de-step">3. Activa <strong>«Euler vs Runge-Kutta»</strong> i puja el pas h a 0,60.</span>
+            <span class="de-step">4. Mira on és cada corba a x = 1. La solució exacta hi val e ≈ 2,718.</span>
+            <span class="de-step">5. Euler amb h=0,6 fa uns dos passos i es queda clarament <strong>per sota</strong>: subestima sistemàticament.</span>
+            <span class="de-step">6. Per què per sota? Perquè eˣ és convexa: la tangent sempre queda per dessota de la corba.</span>
+            <span class="de-step">7. Baixa h a 0,05 i mira les dues corbes acostar-se fins a ser indistingibles.</span>
+            <span class="de-step">8. Prova ara <strong>y′ = −xy</strong>, on les solucions són campanes de Gauss, i repeteix.</span>
+          </div>
+
+          <h4>7. Aparicions fora de les matemàtiques</h4>
+          <p><strong>Predicció meteorològica.</strong> Els models atmosfèrics són sistemes d'equacions diferencials integrats numèricament sobre graelles de milions de punts. Lewis Fry Richardson ho va intentar a mà el 1922 —li va costar sis setmanes calcular una predicció de sis hores, i va sortir malament— i va estimar que caldrien 64.000 persones calculant alhora per anar més ràpid que el temps real. Avui ho fan superordinadors, amb els descendents directes d'aquests mètodes.</p>
+          <p><strong>Mecànica orbital.</strong> Les trajectòries de sondes i satèl·lits es calculen integrant numèricament. En missions llargues es fan servir <em>integradors simplèctics</em>, variants dissenyades perquè l'error no faci derivar l'energia del sistema al cap de milions de passos —un problema que RK4 sí que té a llarg termini.</p>
+          <p><strong>Epidemiologia.</strong> Els models SIR i els seus derivats, que van omplir els diaris el 2020, són sistemes d'equacions diferencials. Els «equilibris» i la seva estabilitat són exactament el que determina si un brot s'apaga o esclata.</p>
+          <p><strong>Circuits i control.</strong> Tot simulador de circuits (SPICE i companyia) integra equacions diferencials. Els sistemes de control —des del regulador d'un termòstat fins al pilot automàtic— es dissenyen analitzant l'estabilitat dels equilibris, exactament com a la Vista 2.</p>
+          <p><strong>Farmacologia.</strong> Els models farmacocinètics que determinen dosis i intervals són equacions diferencials sobre les concentracions als compartiments del cos.</p>
+
+          <h4>8. Curiositats</h4>
+          <p><strong>El caos va néixer d'un error d'arrodoniment.</strong> El 1961, Edward Lorenz va reintroduir dades a mig càlcul d'un model meteorològic escrivint 0,506 en lloc del 0,506127 que la màquina tenia guardat. La predicció resultant es va apartar completament de l'original. D'aquella diferència de mil·lèsimes en va sortir la teoria del caos i l'«efecte papallona». La sensibilitat a les condicions inicials no era un error del càlcul: era una propietat de l'equació.</p>
+          <p><strong>Hi ha equacions on el pas ha de ser absurdament petit.</strong> S'anomenen <em>rígides</em> (stiff), i apareixen quan el sistema té processos amb escales de temps molt diferents (per exemple, reaccions químiques ràpides i lentes alhora). Amb un mètode explícit com RK4 caldria un h tan petit que el càlcul seria inviable; s'han de fer servir mètodes implícits. Detectar que una equació és rígida és una part important de l'ofici.</p>
+          <p><strong>Euler el va publicar el 1768 i encara s'ensenya.</strong> No perquè sigui bo —no ho és— sinó perquè és el nucli conceptual de tots els altres. Tots els mètodes d'un pas són, en el fons, «Euler però mirant millor».</p>
+          <p><strong>Kutta va publicar el mètode amb 34 anys i és per això que se'l recorda.</strong> Wilhelm Kutta és més conegut, en aerodinàmica, per la condició de Kutta i el teorema de Kutta–Jukovski sobre sustentació. Va fer dues contribucions independents i importants a camps diferents.</p>
+          <p><strong>Els camps de pendents es dibuixaven a mà.</strong> Abans dels ordinadors, traçar un camp de pendents era un exercici estàndard de llapis i regle a les classes d'equacions diferencials, i seguir-ne una corba a ull era una manera legítima d'obtenir una solució aproximada. La imatge que la càpsula genera en mil·lisegons era feina d'una tarda.</p>
+          <p><strong>Que les corbes no es creuin té una lectura física.</strong> Si dues solucions es creuessin, al punt de creuament el sistema hauria de «triar» cap on va, i el futur no estaria determinat pel present. La unicitat de Picard–Lindelöf és, en aquest sentit, la formulació matemàtica del determinisme.</p>
+
+          <h4>9. Connexió amb altres àrees</h4>
+          <p>Amb el <strong>Mètode de Newton</strong> comparteix la naturalesa profunda: tots dos són mètodes iteratius que troben respostes que cap fórmula pot donar, i tots dos tenen un «ordre de convergència» que en mesura l'eficiència. Newton és quadràtic; RK4 és d'ordre 4. Aquesta manera de comparar algorismes és el nucli de l'anàlisi numèrica.</p>
+          <p>Amb el <strong>Joc del caos</strong> comparteix la idea d'iterar una regla i estudiar el comportament límit —allà l'atractor és una figura fractal, aquí és un punt d'equilibri— i, amb l'anècdota de Lorenz, la mateixa família de fenòmens caòtics.</p>
+          <p>I amb la <strong>Teoria de Galois</strong> hi ha un paral·lelisme que val la pena notar: allà es demostra que no hi ha fórmula amb radicals per a la quíntica, i la sortida és calcular numèricament. Aquí passa el mateix a una escala molt més gran: la immensa majoria d'equacions diferencials no tenen solució tancada, i tota la disciplina existeix precisament per això. De fet hi ha una teoria de Galois diferencial que decideix exactament quines sí que en tenen.</p>
+
+        </div></div></div>
+      </div>
+</div>
+
+    <div class="mode-toggle">
+      <button id="btnExplora" class="active">🔍 Explora</button>
+      <button id="btnRepte">🏆 Repte</button>
+    </div>
+
+    <div class="controls-row explora-only">
+      <span class="chip-label">Vista:</span>
+      <div class="mode-toggle" id="vistaToggle">
+        <button data-v="trace" class="active">Traça de solucions</button>
+        <button data-v="phase">Equilibris i estabilitat</button>
+        <button data-v="unique">Quan falla la unicitat</button>
+      </div>
+    </div>
+
+    <!-- ══ VISTA 1: TRAÇA ══ -->
+    <div class="controls-row explora-only vista1-only">
+      <span class="help-wrap chip-label">
+        Equació:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Cada opció és una equació y'=f(x,y) diferent amb solució exacta coneguda (útil per comparar mètodes). El camp de traços mostra f a cada punt.</span>
+      </span>
+      <div class="chip-row" id="fieldRow"></div>
+      <button class="btn btn-ghost" id="clearCurvesBtn">Neteja les corbes</button>
+    </div>
+    <div class="controls-row explora-only vista1-only">
+      <span class="help-wrap chip-label">
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;"><input type="checkbox" id="compareToggle"> Euler vs Runge-Kutta</label>
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">Amb això actiu, cada clic traça <b>totes dues</b> corbes des del mateix punt i el mateix pas h: la vermella discontínua (Euler) i la blava contínua (Runge-Kutta 4). Redueix h amb el lliscador i mira com Euler s'hi acosta.</span>
+      </span>
+      <div class="rs-inline" id="stepSizeRow" style="display:none;">
+        <span class="chip-label" style="white-space:nowrap;">pas h:</span>
+        <input type="range" id="stepSizeSlider" min="0.05" max="0.6" step="0.05" value="0.3">
+        <span class="rs-val" id="stepSizeVal">0.30</span>
+      </div>
+    </div>
+
+    <!-- ══ VISTA 2: FASE ══ -->
+    <div class="controls-row explora-only vista2-only" style="display:none;">
+      <span class="help-wrap chip-label">
+        Equació autònoma:
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">«Autònoma» vol dir que f només depèn de y, no de x — per això té sentit parlar d'un únic equilibri fix en comptes d'una corba que evoluciona amb x.</span>
+      </span>
+      <div class="chip-row" id="autoRow"></div>
+      <button class="btn btn-ghost" id="clearPhaseBtn">Neteja els punts</button>
+    </div>
+
+    <!-- ══ VISTA 3: UNICITAT ══ -->
+    <div class="controls-row explora-only vista3-only" style="display:none;">
+      <span class="help-wrap chip-label">
+        y' = 3·y^(2/3)
+        <button class="help-btn" type="button">?</button>
+        <span class="help-popup">y≡0 i y=(x−c)³ són totes dues solucions exactes d'aquesta equació (comprova-ho: la derivada de (x−c)³ és 3(x−c)², i 3·y^(2/3) amb y=(x−c)³ dona exactament el mateix). Totes dues passen pel punt (c,0).</span>
+      </span>
+      <button class="btn btn-ghost" id="clearUniqueBtn">Neteja</button>
+    </div>
+
+    <div class="repte-only" id="repteSetup">
+      <div class="repte-setup">
+        <span class="rs-label">Tria la durada del repte:</span>
+        <div class="rs-row">
+          <input type="range" id="repteTimeSlider" min="30" max="300" step="5" value="120">
+          <span class="rs-val" id="repteTimeVal">120s</span>
+        </div>
+        <button class="btn btn-primary" id="repteStartBtn" style="align-self:flex-start">▶ Comença el repte</button>
+      </div>
+    </div>
+    <div class="repte-bar repte-only" id="repteBar">
+      <div class="rp-item"><span class="rp-label">Temps</span><span class="rp-value" id="rpTime">120s</span></div>
+      <div class="rp-item"><span class="rp-label">Puntuació</span><span class="rp-value good" id="rpScore">0</span></div>
+      <div class="rp-item"><span class="rp-label">Ratxa</span><span class="rp-value" id="rpStreak">0</span></div>
+      <button class="btn btn-ghost" id="rpNewRound" style="margin-left:auto">Nova ronda ↻</button>
+    </div>
+
+    <div class="canvas-wrap field-wrap flash-target" id="canvasWrap">
+
+      <!-- VISTA 1 -->
+      <div class="vista-panel active" id="vista1Panel">
+        <div class="field-stage"><canvas id="traceCanvas"></canvas></div>
+
+        <!-- Equivalent per teclat de «clicar un punt del camp». Permet, a
+             més, triar condicions inicials exactes (x₀=0, y₀=1) en lloc
+             d'aproximar-les amb el ratolí. -->
+        <div class="point-controls">
+          <span class="chip-label">O indica el punt de partida:</span>
+          <div class="point-row">
+            <label for="traceX0">x₀</label><input type="number" id="traceX0" step="0.25" value="0" inputmode="decimal">
+            <label for="traceY0">y₀</label><input type="number" id="traceY0" step="0.25" value="1" inputmode="decimal">
+            <button class="btn btn-ghost" id="traceAddBtn">Traça-hi una solució</button>
+          </div>
+        </div>
+        <div class="step-narration" id="traceNarration"><span class="sn-title">Encara res</span>Clica qualsevol punt del camp (o fes servir els camps de sota) per començar a traçar-hi una solució.</div>
+      </div>
+
+      <!-- VISTA 2 -->
+      <div class="vista-panel" id="vista2Panel">
+        <div class="field-stage"><canvas id="phaseCanvas"></canvas></div>
+        <div class="phase-legend">
+          <span><i style="background:var(--good)"></i> equilibri estable</span>
+          <span><i style="background:var(--bad)"></i> equilibri inestable</span>
+        </div>
+        <div class="step-narration" id="phaseNarration"><span class="sn-title">Encara res</span>Clica sobre la línia de fase per deixar-hi caure un punt i veure cap a on flueix.</div>
+      </div>
+
+      <!-- VISTA 3 -->
+      <div class="vista-panel" id="vista3Panel">
+        <div class="field-stage"><canvas id="uniqueCanvas"></canvas></div>
+        <div class="step-narration" id="uniqueNarration"><span class="sn-title">Encara res</span>Clica sobre la línia y=0 per veure diverses solucions a la vegada, o fora seu per veure'n només una.</div>
+      </div>
+
+      <!-- REPTE: classificació -->
+      <div class="repte-only" id="repteClassifyPanel" style="width:100%;flex-direction:column;align-items:center;gap:.7rem;">
+        <div class="field-stage"><canvas id="repteCanvas"></canvas></div>
+        <div class="step-narration" id="repteNarration"></div>
+        <div class="repte-classify-row" id="repteButtonsRow"></div>
+      </div>
+    </div>
+    <div class="canvas-hint" id="hint">Tria una vista i clica al dibuix per començar.</div>
+
+    <p class="method-hint" id="methodPanel">y'=f(x,y): el pendent de la solució a cada punt. Seguir-lo pas a pas (Euler o Runge-Kutta) traça la corba; els zeros de f(y) en donen els equilibris.</p>
+
+    <div class="readout-badge flash-target" id="readoutBadge">
+      <div class="readout-num" id="readoutNum">…</div>
+      <div class="readout-info">
+        <div class="readout-name" id="readoutName">Cap punt encara</div>
+        <div class="readout-def" id="readoutDef">Clica al camp per començar.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRETA -->
+  <div class="info-side">
+    <div class="info-title">Equacions diferencials, pas a pas</div>
+
+    <div class="type-card active" id="card-traca" data-method="traca" style="--t-color:var(--calcul)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Traçar una solució</div>
+        <div class="type-range">RK4: <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>y</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>y</mi><mi>n</mi></msub><mo>+</mo><mfrac><mi>h</mi><mn>6</mn></mfrac><mo>(</mo><msub><mi>k</mi><mn>1</mn></msub><mo>+</mo><mn>2</mn><msub><mi>k</mi><mn>2</mn></msub><mo>+</mo><mn>2</mn><msub><mi>k</mi><mn>3</mn></msub><mo>+</mo><msub><mi>k</mi><mn>4</mn></msub><mo>)</mo></math></div>
+        <div class="type-desc">Cada clic al camp inicia aquest càlcul, pas a pas, en totes dues direccions. Amb el toggle actiu, compara-ho amb el pas ingenu d'Euler (yₙ₊₁=yₙ+h·f) sobre el mateix punt.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-estabilitat" data-method="estabilitat" style="--t-color:var(--geometria)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Equilibris i estabilitat</div>
+        <div class="type-range">f(y)=0, signe de f a cada costat</div>
+        <div class="type-desc">Un equilibri és estable si f canvia de + a − en travessar-lo (les solucions properes hi convergeixen) i inestable si és al revés. La línia de fase de la Vista 2 ho mostra amb fletxes de flux.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-unicitat" data-method="unicitat" style="--t-color:var(--algebra)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">Unicitat (i quan falla)</div>
+        <div class="type-range">Picard-Lindelöf</div>
+        <div class="type-desc">A la Vista 1, cap corba mai en creua una altra: la unicitat garanteix «carrils» que no es toquen. A la Vista 3, sobre y=0, aquesta garantia es trenca de veritat.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="note-box">
+      <strong>💡 Recorda:</strong> a la Vista 1, si actives «Euler vs Runge-Kutta» i puges h fins al màxim, Euler pot desviar-se prou com per acabar en un punt visiblement diferent —amb el mateix punt de partida i les mateixes passes.
+    </div>
+    <a class="geogebra-link" href="https://www.geogebra.org/m/qu9k8eyy" target="_blank" rel="noopener">
+      <span class="gg-icon">🧮</span> Practica a GeoGebra: <strong>Camps de direccions i famílies de solucions</strong>
+      <span class="gg-arrow">↗</span>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques · Bloc 04 · Càlcul i Anàlisi Matemàtica</span>
+  <span>Diego Valiño · 2026</span>
+</footer>
+
+<script src="../assets/hero-anim.js"></script>
+<script src="../assets/a11y.js"></script>
+<script src="../assets/canvas-helpers.js"></script>
+<script src="../assets/explain-accordion.js"></script>
+<script src="../assets/help-popup.js"></script>
+<script>
+initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+
+// ─────────────────────────────────────────────
+//  MOTOR NUMÈRIC (compartit per les 3 vistes)
+// ─────────────────────────────────────────────
+function rk4Step(f, x, y, h) {
+  const k1 = f(x, y);
+  const k2 = f(x + h / 2, y + h * k1 / 2);
+  const k3 = f(x + h / 2, y + h * k2 / 2);
+  const k4 = f(x + h, y + h * k3);
+  return { x: x + h, y: y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4) };
+}
+function eulerStep(f, x, y, h) { return { x: x + h, y: y + h * f(x, y) }; }
+function traceOneDir(f, stepFn, x0, y0, h, maxSteps, xMin, xMax, yLimit) {
+  const pts = [{ x: x0, y: y0 }];
+  let x = x0, y = y0;
+  for (let i = 0; i < maxSteps; i++) {
+    const s = stepFn(f, x, y, h);
+    if (!isFinite(s.y) || Math.abs(s.y) > yLimit || s.x > xMax || s.x < xMin) break;
+    pts.push(s); x = s.x; y = s.y;
+  }
+  return pts;
+}
+function fullTrace(f, stepFn, x0, y0, h, xMin, xMax, yLimit) {
+  const fwd = traceOneDir(f, stepFn, x0, y0, h, 400, xMin, xMax, yLimit);
+  const bwd = traceOneDir(f, stepFn, x0, y0, -h, 400, xMin, xMax, yLimit);
+  return bwd.slice(1).reverse().concat(fwd);
+}
+
+// ─────────────────────────────────────────────
+//  DADES: equacions
+// ─────────────────────────────────────────────
+const FIELD_POOL = [
+  { key: 'exp', label: "y' = y", name: 'Creixement exponencial', f: (x, y) => y },
+  { key: 'lin', label: "y' = x − y", name: 'Lineal, convergeix a y=x−1', f: (x, y) => x - y },
+  { key: 'gauss', label: "y' = −xy", name: 'Gaussiana', f: (x, y) => -x * y }
+];
+const AUTO_POOL = [
+  { key: 'logistic', label: 'Logístic', name: "y' = 0.8·y·(1−y/3)", f: (y) => 0.8 * y * (1 - y / 3), eqs: [0, 3] },
+  { key: 'quad', label: 'y²−1', name: "y' = y² − 1", f: (y) => y * y - 1, eqs: [-1, 1] },
+  { key: 'cubic', label: 'y−y³', name: "y' = y − y³", f: (y) => y - y * y * y, eqs: [-1, 0, 1] }
+];
+const UNIQUE_F = (x, y) => 3 * Math.pow(Math.cbrt(y), 2);
+
+const X_RANGE = [-3, 3], Y_RANGE = [-3, 3];
+
+// ─────────────────────────────────────────────
+//  ESTAT
+// ─────────────────────────────────────────────
+const wrap = document.getElementById('canvasWrap');
+const hint = document.getElementById('hint');
+const readoutBadge = document.getElementById('readoutBadge');
+const readoutNum = document.getElementById('readoutNum');
+const readoutName = document.getElementById('readoutName');
+const readoutDef = document.getElementById('readoutDef');
+
+let currentVista = 'trace';
+let currentFieldKey = 'exp';
+let currentAutoKey = 'logistic';
+let compareOn = false, stepH = 0.3;
+let traceCurves = [];   // {rk4:[pts], euler:[pts]|null}
+let phasePoints = [];   // {y0, path:[{t,y}]}
+let uniquePoints = [];  // {x0, curves:[[pts],...]}
+
+let repteMode = false, repteTimeUp = false;
+let timer = null, timeLeft = 120, repteMaxTime = 120, score = 0, streak = 0;
+let repteRoundId = 0;
+let repteRoundType = 'unique';
+let repteState = null;
+
+// ─────────────────────────────────────────────
+//  COORDENADES (compartides, escala fixa X_RANGE/Y_RANGE)
+// ─────────────────────────────────────────────
+function makeXY(rectW, rectH) {
+  const sx = rectW / (X_RANGE[1] - X_RANGE[0]);
+  const sy = rectH / (Y_RANGE[1] - Y_RANGE[0]);
+  return {
+    toPx: (x, y) => ({ px: (x - X_RANGE[0]) * sx, py: rectH - (y - Y_RANGE[0]) * sy }),
+    toXY: (px, py) => ({ x: X_RANGE[0] + px / sx, y: Y_RANGE[0] + (rectH - py) / sy })
+  };
+}
+function setupHiDPI(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+function drawAxes(ctx, w, h, xy) {
+  ctx.strokeStyle = 'rgba(27,30,45,.25)'; ctx.lineWidth = 1;
+  const o = xy.toPx(0, 0);
+  ctx.beginPath(); ctx.moveTo(0, o.py); ctx.lineTo(w, o.py); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(o.px, 0); ctx.lineTo(o.px, h); ctx.stroke();
+}
+function strokePath(ctx, pts, xy, color, width, dash) {
+  if (pts.length < 2) return;
+  ctx.setLineDash(dash || []);
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  pts.forEach((p, i) => { const px = xy.toPx(p.x, p.y); if (i === 0) ctx.moveTo(px.px, px.py); else ctx.lineTo(px.px, px.py); });
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ─────────────────────────────────────────────
+//  VISTA 1 — TRAÇA DE SOLUCIONS
+// ─────────────────────────────────────────────
+function buildFieldChips() {
+  const row = document.getElementById('fieldRow');
+  row.innerHTML = '';
+  FIELD_POOL.forEach(fo => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = fo.label;
+    b.classList.toggle('active', fo.key === currentFieldKey);
+    b.addEventListener('click', () => { currentFieldKey = fo.key; traceCurves = []; drawTrace(); highlightFieldChip(); updateTraceNarration(null); });
+    row.appendChild(b);
+  });
+}
+function highlightFieldChip() { document.querySelectorAll('#fieldRow .chip').forEach(c => c.classList.toggle('active', FIELD_POOL.find(f => f.label === c.textContent).key === currentFieldKey)); }
+function currentField() { return FIELD_POOL.find(f => f.key === currentFieldKey); }
+
+function drawTrace() {
+  const canvas = document.getElementById('traceCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawAxes(ctx, w, h, xy);
+  const f = currentField().f;
+  const nx = 16, ny = 16;
+  ctx.strokeStyle = 'rgba(27,30,45,.4)'; ctx.lineWidth = 1.2;
+  for (let i = 0; i <= nx; i++) for (let j = 0; j <= ny; j++) {
+    const x = X_RANGE[0] + (i / nx) * (X_RANGE[1] - X_RANGE[0]);
+    const y = Y_RANGE[0] + (j / ny) * (Y_RANGE[1] - Y_RANGE[0]);
+    const slope = f(x, y);
+    const ang = Math.atan(slope);
+    const len = 8;
+    const cx = xy.toPx(x, y);
+    const dx = Math.cos(ang) * len, dy = -Math.sin(ang) * len;
+    ctx.beginPath(); ctx.moveTo(cx.px - dx, cx.py - dy); ctx.lineTo(cx.px + dx, cx.py + dy); ctx.stroke();
+  }
+  traceCurves.forEach(c => {
+    if (c.euler) strokePath(ctx, c.euler, xy, cssVar('--bad'), 2, [5, 4]);
+    strokePath(ctx, c.rk4, xy, cssVar('--calcul'), 2.4);
+    const p0 = xy.toPx(c.x0, c.y0);
+    ctx.beginPath(); ctx.arc(p0.px, p0.py, 4, 0, Math.PI * 2); ctx.fillStyle = cssVar('--calcul'); ctx.fill();
+  });
+  describeCanvas(canvas,
+    `Camp de pendents de ${currentField().label}: petits traços que marquen el pendent de la solució a cada punt. ` +
+    (traceCurves.length
+      ? `${traceCurves.length} solució${traceCurves.length === 1 ? '' : 'ns'} traçada${traceCurves.length === 1 ? '' : 'es'}, ` +
+        `des de ${traceCurves.map(c => `(${fmtNum(c.x0, 2)}, ${fmtNum(c.y0, 2)})`).join(' i ')}. ` +
+        (compareOn ? `Es comparen Runge-Kutta d'ordre 4 (línia contínua) i Euler (línia discontínua) amb pas h = ${fmtNum(stepH, 2)}.` : '')
+      : 'Encara no hi ha cap solució traçada: clica un punt del camp per començar-ne una.'));
+}
+function onTraceClick(e) {
+  const canvas = document.getElementById('traceCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const xy = makeXY(rect.width, rect.height);
+  const p = xy.toXY(e.clientX - rect.left, e.clientY - rect.top);
+  addTraceCurve(p.x, p.y);
+}
+function addTraceCurve(x0, y0) {
+  const f = currentField().f;
+  const rk4pts = fullTrace(f, rk4Step, x0, y0, compareOn ? stepH : 0.08, X_RANGE[0], X_RANGE[1], Y_RANGE[1] * 3);
+  let eulerpts = null;
+  if (compareOn) eulerpts = fullTrace(f, eulerStep, x0, y0, stepH, X_RANGE[0], X_RANGE[1], Y_RANGE[1] * 3);
+  traceCurves.push({ x0, y0, rk4: rk4pts, euler: eulerpts });
+  drawTrace();
+  updateTraceNarration({ x0, y0, slope: f(x0, y0), eulerpts, rk4pts });
+}
+function updateTraceNarration(info) {
+  const el = document.getElementById('traceNarration');
+  if (!info) { el.innerHTML = '<span class="sn-title">Encara res</span>Clica qualsevol punt del camp per començar a traçar-hi una solució.'; readoutBadge.classList.remove('active'); readoutNum.textContent = '…'; readoutName.textContent = 'Cap punt encara'; readoutDef.textContent = 'Clica al camp per començar.'; return; }
+  let txt = `Al punt (${fmtNum(info.x0, 2)}, ${fmtNum(info.y0, 2)}) el pendent val f=<b>${fmtNum(info.slope, 3)}</b>: la corba surt d'aquí seguint aquest angle en totes dues direccions.`;
+  if (info.eulerpts) {
+    const endRk = info.rk4pts[info.rk4pts.length - 1], endEu = info.eulerpts[info.eulerpts.length - 1];
+    const diff = Math.abs(endRk.y - endEu.y);
+    txt += ` Amb pas h=${stepH.toFixed(2)}, Euler i Runge-Kutta acaben separats per <b>${fmtNum(diff, 3)}</b> en y al final del recorregut visible.`;
+  }
+  el.innerHTML = '<span class="sn-title">Últim clic</span>' + txt;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = fmtNum(info.slope, 2);
+  readoutName.textContent = `pendent a (${fmtNum(info.x0, 1)}, ${fmtNum(info.y0, 1)})`;
+  readoutDef.textContent = currentField().name;
+}
+document.getElementById('traceCanvas').addEventListener('click', onTraceClick);
+// Via de teclat: mateixa funció que fa servir el clic (addTraceCurve), amb
+// els valors acotats al camp visible perquè la corba no neixi fora de pantalla.
+document.getElementById('traceAddBtn').addEventListener('click', () => {
+  const x0 = clamp(parseFloat(document.getElementById('traceX0').value) || 0, X_RANGE[0], X_RANGE[1]);
+  const y0 = clamp(parseFloat(document.getElementById('traceY0').value) || 0, Y_RANGE[0], Y_RANGE[1]);
+  addTraceCurve(x0, y0);
+  announce(`Solució traçada des de x igual a ${fmtNum(x0, 2)}, y igual a ${fmtNum(y0, 2)}.`);
+});
+document.getElementById('clearCurvesBtn').addEventListener('click', () => { traceCurves = []; drawTrace(); updateTraceNarration(null); });
+document.getElementById('compareToggle').addEventListener('change', (e) => {
+  compareOn = e.target.checked;
+  document.getElementById('stepSizeRow').style.display = compareOn ? 'flex' : 'none';
+});
+document.getElementById('stepSizeSlider').addEventListener('input', (e) => {
+  stepH = parseFloat(e.target.value);
+  document.getElementById('stepSizeVal').textContent = stepH.toFixed(2);
+});
+
+// ─────────────────────────────────────────────
+//  VISTA 2 — EQUILIBRIS I ESTABILITAT
+// ─────────────────────────────────────────────
+function buildAutoChips() {
+  const row = document.getElementById('autoRow');
+  row.innerHTML = '';
+  AUTO_POOL.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = a.label;
+    b.classList.toggle('active', a.key === currentAutoKey);
+    b.addEventListener('click', () => { currentAutoKey = a.key; phasePoints = []; drawPhase(); updatePhaseNarration(null); highlightAutoChip(); });
+    row.appendChild(b);
+  });
+}
+function highlightAutoChip() { document.querySelectorAll('#autoRow .chip').forEach(c => c.classList.toggle('active', AUTO_POOL.find(a => a.label === c.textContent).key === currentAutoKey)); }
+function currentAuto() { return AUTO_POOL.find(a => a.key === currentAutoKey); }
+function eqStability(f, eq) {
+  const eps = 0.01;
+  const before = f(eq - eps), after = f(eq + eps);
+  if (before > 0 && after < 0) return 'stable';
+  if (before < 0 && after > 0) return 'unstable';
+  return 'semi';
+}
+function drawPhase() {
+  const canvas = document.getElementById('phaseCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const a = currentAuto();
+  const yToPy = (y) => h - ((y - Y_RANGE[0]) / (Y_RANGE[1] - Y_RANGE[0])) * h;
+  const lineX = w / 2;
+  ctx.strokeStyle = 'rgba(27,30,45,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(lineX, 10); ctx.lineTo(lineX, h - 10); ctx.stroke();
+
+  const eqs = [...a.eqs].sort((x, y) => x - y);
+  const bounds = [Y_RANGE[0], ...eqs, Y_RANGE[1]];
+  for (let i = 0; i < bounds.length - 1; i++) {
+    const mid = (bounds[i] + bounds[i + 1]) / 2;
+    const dir = a.f(mid) > 0 ? 1 : -1;
+    const py1 = yToPy(bounds[i] + 0.15), py2 = yToPy(bounds[i + 1] - 0.15);
+    if (Math.abs(py2 - py1) < 10) continue;
+    const arrowY = dir > 0 ? Math.min(py1, py2) + 6 : Math.max(py1, py2) - 6;
+    ctx.fillStyle = cssVar('--calcul'); ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(dir > 0 ? '↑' : '↓', lineX + 16, (py1 + py2) / 2);
+  }
+  eqs.forEach(eq => {
+    const py = yToPy(eq);
+    const st = eqStability(a.f, eq);
+    ctx.beginPath(); ctx.arc(lineX, py, 6, 0, Math.PI * 2);
+    ctx.fillStyle = st === 'stable' ? cssVar('--good') : (st === 'unstable' ? cssVar('--bad') : cssVar('--muted'));
+    ctx.fill();
+    ctx.fillStyle = 'rgba(27,30,45,.6)'; ctx.font = '11px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('y=' + eq, lineX + 26, py + 4);
+  });
+  phasePoints.forEach(p => {
+    const py = yToPy(p.path[p.path.length - 1].y);
+    ctx.beginPath(); ctx.arc(lineX - 20, py, 5, 0, Math.PI * 2); ctx.fillStyle = cssVar('--algebra'); ctx.fill();
+  });
+}
+function onPhaseClick(e) {
+  const canvas = document.getElementById('phaseCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const py = e.clientY - rect.top;
+  const y0 = Y_RANGE[0] + ((rect.height - py) / rect.height) * (Y_RANGE[1] - Y_RANGE[0]);
+  const a = currentAuto();
+  const f2 = (x, y) => a.f(y);
+  const path1D = fullTrace(f2, rk4Step, 0, y0, 0.08, -8, 8, 12).map(p => ({ t: p.x, y: p.y }));
+  const endY = path1D[path1D.length - 1].y;
+  const nearestEq = a.eqs.reduce((best, e) => Math.abs(e - endY) < Math.abs(best - endY) ? e : best, a.eqs[0]);
+  phasePoints.push({ y0, path: path1D });
+  drawPhase();
+  const st = eqStability(a.f, a.eqs.reduce((best, e) => Math.abs(e - y0) < Math.abs(best - y0) ? e : best, a.eqs[0]));
+  const nearest0 = a.eqs.reduce((best, e) => Math.abs(e - y0) < Math.abs(best - y0) ? e : best, a.eqs[0]);
+  const el = document.getElementById('phaseNarration');
+  el.innerHTML = `<span class="sn-title">Últim clic</span>Des de y=${fmtNum(y0, 2)}, el punt més proper és l'equilibri y=${nearest0} (<b>${st === 'stable' ? 'estable' : st === 'unstable' ? 'inestable' : 'semiestable'}</b>). Seguint el flux (y'=f(y)=${fmtNum(a.f(y0), 3)} en aquest punt), el punt s'ha mogut fins a y≈${fmtNum(endY, 2)}.`;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = st === 'stable' ? '✓' : st === 'unstable' ? '✗' : '~';
+  readoutName.textContent = `y₀=${fmtNum(y0, 2)} → y≈${fmtNum(endY, 2)}`;
+  readoutDef.textContent = a.name;
+}
+document.getElementById('phaseCanvas').addEventListener('click', onPhaseClick);
+document.getElementById('clearPhaseBtn').addEventListener('click', () => { phasePoints = []; drawPhase(); document.getElementById('phaseNarration').innerHTML = '<span class="sn-title">Encara res</span>Clica sobre la línia de fase per deixar-hi caure un punt i veure cap a on flueix.'; });
+
+// ─────────────────────────────────────────────
+//  VISTA 3 — QUAN FALLA LA UNICITAT
+// ─────────────────────────────────────────────
+function drawUnique() {
+  const canvas = document.getElementById('uniqueCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawAxes(ctx, w, h, xy);
+  strokePath(ctx, [{ x: X_RANGE[0], y: 0 }, { x: X_RANGE[1], y: 0 }], xy, cssVar('--muted'), 1.5, [3, 3]);
+  const palette = [cssVar('--calcul'), cssVar('--algebra'), cssVar('--geometria')];
+  uniquePoints.forEach(up => {
+    up.curves.forEach((c, i) => strokePath(ctx, c, xy, palette[i % palette.length], 2.2));
+    const p0 = xy.toPx(up.x0, up.y0);
+    ctx.beginPath(); ctx.arc(p0.px, p0.py, 4, 0, Math.PI * 2); ctx.fillStyle = 'rgba(27,30,45,.7)'; ctx.fill();
+  });
+}
+function cubicThrough(c, xMin, xMax) {
+  const pts = [];
+  for (let i = 0; i <= 60; i++) { const x = xMin + (xMax - xMin) * i / 60; pts.push({ x, y: Math.pow(x - c, 3) }); }
+  return pts;
+}
+function onUniqueClick(e) {
+  const canvas = document.getElementById('uniqueCanvas');
+  const rect = canvas.getBoundingClientRect();
+  const xy = makeXY(rect.width, rect.height);
+  const p = xy.toXY(e.clientX - rect.left, e.clientY - rect.top);
+  const onAxis = Math.abs(p.y) < 0.12;
+  let curves, txt;
+  if (onAxis) {
+    const c = p.x;
+    const splicedPts = [];
+    for (let x = X_RANGE[0]; x <= X_RANGE[1]; x += (X_RANGE[1] - X_RANGE[0]) / 80) splicedPts.push({ x, y: x < c ? 0 : Math.pow(x - c, 3) });
+    curves = [[{ x: X_RANGE[0], y: 0 }, { x: X_RANGE[1], y: 0 }], cubicThrough(c, X_RANGE[0], X_RANGE[1]), splicedPts];
+    txt = `Has clicat sobre y=0 (x=${fmtNum(c, 2)}). Aquí hi conviuen almenys <b>3</b> solucions vàlides pel mateix punt: y≡0, y=(x−${fmtNum(c, 2)})³, i fins i tot una combinada (0 fins a x=${fmtNum(c, 2)}, després (x−${fmtNum(c, 2)})³). Cap regla les distingeix: totes compleixen l'equació.`;
+  } else {
+    curves = [fullTrace(UNIQUE_F, rk4Step, p.x, p.y, 0.06, X_RANGE[0], X_RANGE[1], Y_RANGE[1] * 3)];
+    txt = `Has clicat fora de y=0, a (${fmtNum(p.x, 2)}, ${fmtNum(p.y, 2)}). Aquí la unicitat es manté: només hi ha <b>una</b> solució passant per aquest punt concret.`;
+  }
+  uniquePoints.push({ x0: p.x, y0: p.y, curves });
+  drawUnique();
+  document.getElementById('uniqueNarration').innerHTML = '<span class="sn-title">Últim clic</span>' + txt;
+  readoutBadge.classList.add('active');
+  readoutNum.textContent = onAxis ? '∞' : '1';
+  readoutName.textContent = onAxis ? 'Unicitat trencada' : 'Unicitat vàlida';
+  readoutDef.textContent = `Punt clicat: (${fmtNum(p.x, 2)}, ${fmtNum(p.y, 2)})`;
+}
+document.getElementById('uniqueCanvas').addEventListener('click', onUniqueClick);
+document.getElementById('clearUniqueBtn').addEventListener('click', () => { uniquePoints = []; drawUnique(); document.getElementById('uniqueNarration').innerHTML = '<span class="sn-title">Encara res</span>Clica sobre la línia y=0 per veure diverses solucions a la vegada, o fora seu per veure\'n només una.'; });
+
+// ─────────────────────────────────────────────
+//  CANVI DE VISTA
+// ─────────────────────────────────────────────
+function setVista(v) {
+  currentVista = v;
+  document.querySelectorAll('#vistaToggle button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  document.querySelectorAll('.vista-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('vista1Panel').classList.toggle('active', v === 'trace');
+  document.getElementById('vista2Panel').classList.toggle('active', v === 'phase');
+  document.getElementById('vista3Panel').classList.toggle('active', v === 'unique');
+  document.querySelectorAll('.vista1-only').forEach(el => el.style.display = v === 'trace' ? 'flex' : 'none');
+  document.querySelectorAll('.vista2-only').forEach(el => el.style.display = v === 'phase' ? 'flex' : 'none');
+  document.querySelectorAll('.vista3-only').forEach(el => el.style.display = v === 'unique' ? 'flex' : 'none');
+  if (v === 'trace') { drawTrace(); hint.textContent = 'Clica al camp per traçar-hi una solució.'; }
+  if (v === 'phase') { drawPhase(); hint.textContent = 'Clica sobre la línia de fase.'; }
+  if (v === 'unique') { drawUnique(); hint.textContent = 'Clica sobre y=0, o fora seu.'; }
+  initHelpPopups();
+}
+document.querySelectorAll('#vistaToggle button').forEach(btn => btn.addEventListener('click', () => setVista(btn.dataset.v)));
+window.addEventListener('resize', () => { drawTrace(); drawPhase(); drawUnique(); });
+
+// ─────────────────────────────────────────────
+//  REPTE
+// ─────────────────────────────────────────────
+function applyPenalty() {
+  streak = 0; document.getElementById('rpStreak').textContent = streak;
+  score = Math.max(0, score - 1); document.getElementById('rpScore').textContent = score;
+  timeLeft = Math.max(0, timeLeft - 3); document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+function award(pts) {
+  score += pts; streak++;
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  timeLeft = Math.min(repteMaxTime, timeLeft + 8);
+  document.getElementById('rpTime').textContent = timeLeft + 's';
+}
+function repteDraw(fn) {
+  const canvas = document.getElementById('repteCanvas');
+  const { ctx, w, h } = setupHiDPI(canvas);
+  const xy = makeXY(w, h);
+  ctx.clearRect(0, 0, w, h);
+  drawAxes(ctx, w, h, xy);
+  fn(ctx, w, h, xy);
+}
+function advanceRepte(delay) {
+  const snapshot = repteRoundId;
+  setTimeout(() => { if (timer && repteRoundId === snapshot) startRepteRound(); }, delay);
+}
+
+function startUniqueRound() {
+  const onAxis = Math.random() < 0.5;
+  const x0 = X_RANGE[0] + Math.random() * (X_RANGE[1] - X_RANGE[0]);
+  const y0 = onAxis ? 0 : (Y_RANGE[0] + Math.random() * (Y_RANGE[1] - Y_RANGE[0]));
+  repteState = { type: 'unique', onAxis, x0, y0: onAxis ? 0 : y0 };
+  repteDraw((ctx, w, h, xy) => {
+    strokePath(ctx, [{ x: X_RANGE[0], y: 0 }, { x: X_RANGE[1], y: 0 }], xy, cssVar('--muted'), 1.5, [3, 3]);
+    const p0 = xy.toPx(x0, repteState.y0);
+    ctx.beginPath(); ctx.arc(p0.px, p0.py, 6, 0, Math.PI * 2); ctx.fillStyle = cssVar('--calcul'); ctx.fill();
+  });
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">y' = 3·y^(2/3)</span>Aquest punt, ¿té 1 sola solució o més d'una?`;
+  buildRepteButtons(['1 sola solució', 'Més d\'una'], (i) => submitUnique(i === 1));
+  hint.textContent = 'Prediu la unicitat en aquest punt.';
+}
+function submitUnique(claim) {
+  if (repteTimeUp) return;
+  const correct = claim === repteState.onAxis;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); }
+  else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — aquest punt té <b>${repteState.onAxis ? 'més d\'una solució' : '1 sola solució'}</b>.`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+
+function startStabilityRound() {
+  const a = AUTO_POOL[Math.floor(Math.random() * AUTO_POOL.length)];
+  const eq = a.eqs[Math.floor(Math.random() * a.eqs.length)];
+  const st = eqStability(a.f, eq);
+  repteState = { type: 'stability', a, eq, st };
+  repteDraw((ctx, w, h, xy) => {
+    const lineX = w / 2;
+    ctx.strokeStyle = 'rgba(27,30,45,.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(lineX, 10); ctx.lineTo(lineX, h - 10); ctx.stroke();
+    const py = xy.toPx(0, eq).py;
+    ctx.beginPath(); ctx.arc(lineX, py, 7, 0, Math.PI * 2); ctx.fillStyle = cssVar('--muted'); ctx.fill();
+    ctx.fillStyle = 'rgba(27,30,45,.6)'; ctx.font = '12px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('y=' + eq, lineX + 22, py + 4);
+  });
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${a.name}</span>L'equilibri y=${eq}: és estable o inestable?`;
+  buildRepteButtons(['Estable', 'Inestable'], (i) => submitStability(i === 0 ? 'stable' : 'unstable'));
+  hint.textContent = 'Prediu l\'estabilitat abans de veure-ho animat.';
+}
+function submitStability(claim) {
+  if (repteTimeUp) return;
+  const correct = claim === repteState.st || (repteState.st === 'semi');
+  if (correct) { award(10); flash(wrap, 'var(--good)'); }
+  else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  const stName = repteState.st === 'stable' ? 'estable' : repteState.st === 'unstable' ? 'inestable' : 'semiestable';
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Correcte' : '✕ Incorrecte'} — y=${repteState.eq} és <b>${stName}</b>.`;
+  advanceRepte(correct ? 1200 : 1700);
+}
+
+function startStepRound() {
+  const fo = FIELD_POOL[Math.floor(Math.random() * FIELD_POOL.length)];
+  const x0 = -1.5 + Math.random() * 1.5, y0 = -0.8 + Math.random() * 1.6;
+  const h = 0.5;
+  const done = fullTrace(fo.f, rk4Step, x0, y0, h, X_RANGE[0], x0, Y_RANGE[1] * 3).slice(0, 3);
+  const last = done[done.length - 1] || { x: x0, y: y0 };
+  const next = rk4Step(fo.f, last.x, last.y, h);
+  repteState = { type: 'step', fo, done, next };
+  repteDraw((ctx, w, h2, xy) => {
+    const f = fo.f;
+    for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
+      const x = X_RANGE[0] + (i / 12) * (X_RANGE[1] - X_RANGE[0]);
+      const y = Y_RANGE[0] + (j / 12) * (Y_RANGE[1] - Y_RANGE[0]);
+      const ang = Math.atan(f(x, y)); const len = 7;
+      const cx = xy.toPx(x, y);
+      ctx.strokeStyle = 'rgba(27,30,45,.28)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx.px - Math.cos(ang) * len, cx.py + Math.sin(ang) * len); ctx.lineTo(cx.px + Math.cos(ang) * len, cx.py - Math.sin(ang) * len); ctx.stroke();
+    }
+    strokePath(ctx, done, xy, cssVar('--calcul'), 2.4);
+    const pl = xy.toPx(last.x, last.y);
+    ctx.beginPath(); ctx.arc(pl.px, pl.py, 5, 0, Math.PI * 2); ctx.fillStyle = cssVar('--calcul'); ctx.fill();
+  });
+  document.getElementById('repteNarration').innerHTML = `<span class="sn-title">${fo.label}</span>La corba arriba fins al punt marcat. Clica on creus que caurà el <b>següent</b> pas (h=${h}).`;
+  document.getElementById('repteButtonsRow').innerHTML = '';
+  const canvas = document.getElementById('repteCanvas');
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const xy = makeXY(rect.width, rect.height);
+    const guess = xy.toXY(e.clientX - rect.left, e.clientY - rect.top);
+    submitStep(guess);
+  };
+  hint.textContent = 'Clica sobre el camp on creus que caurà el punt següent.';
+}
+function submitStep(guess) {
+  if (repteTimeUp || !repteState) return;
+  const canvas = document.getElementById('repteCanvas');
+  canvas.onclick = null;
+  const dist = Math.hypot(guess.x - repteState.next.x, guess.y - repteState.next.y);
+  const tol = 0.5;
+  const correct = dist <= tol;
+  if (correct) { award(10); flash(wrap, 'var(--good)'); }
+  else { applyPenalty(); flash(wrap, 'var(--bad)'); }
+  document.getElementById('repteNarration').innerHTML += `<br>${correct ? '✔ Prou a prop' : '✕ Massa lluny'} — el pas real anava a (${fmtNum(repteState.next.x, 2)}, ${fmtNum(repteState.next.y, 2)}), tu vas triar (${fmtNum(guess.x, 2)}, ${fmtNum(guess.y, 2)}).`;
+  advanceRepte(correct ? 1300 : 1900);
+}
+
+function buildRepteButtons(labels, onClick) {
+  const row = document.getElementById('repteButtonsRow');
+  row.innerHTML = '';
+  labels.forEach((l, i) => {
+    const b = document.createElement('button');
+    b.className = i === 0 ? 'btn btn-primary' : 'btn btn-ghost';
+    b.textContent = l;
+    b.addEventListener('click', () => onClick(i));
+    row.appendChild(b);
+  });
+}
+function startRepteRound() {
+  repteRoundId++;
+  wrap.classList.remove('time-up');
+  const r = Math.random();
+  repteRoundType = r < 0.34 ? 'unique' : (r < 0.67 ? 'stability' : 'step');
+  readoutBadge.classList.remove('active');
+  if (repteRoundType === 'unique') startUniqueRound();
+  else if (repteRoundType === 'stability') startStabilityRound();
+  else startStepRound();
+}
+
+const btnExplora = document.getElementById('btnExplora');
+const btnRepte = document.getElementById('btnRepte');
+const repteSetupEl = document.getElementById('repteSetup');
+const repteBarEl = document.getElementById('repteBar');
+const repteTimeSlider = document.getElementById('repteTimeSlider');
+const repteTimeVal = document.getElementById('repteTimeVal');
+repteTimeSlider.addEventListener('input', () => { repteTimeVal.textContent = repteTimeSlider.value + 's'; });
+document.getElementById('repteStartBtn').addEventListener('click', () => {
+  repteSetupEl.style.display = 'none'; repteBarEl.style.display = 'flex';
+  startRepte(parseInt(repteTimeSlider.value, 10));
+});
+function startRepte(seconds) {
+  repteMode = true; document.body.classList.add('mode-repte');
+  score = 0; streak = 0; timeLeft = seconds; repteMaxTime = seconds; repteTimeUp = false;
+  wrap.classList.remove('time-up');
+  const rpTime = document.getElementById('rpTime');
+  rpTime.classList.remove('time-low');
+  document.getElementById('rpScore').textContent = score;
+  document.getElementById('rpStreak').textContent = streak;
+  rpTime.textContent = timeLeft + 's';
+  startRepteRound();
+  stopTimer();
+  timer = setInterval(() => {
+    timeLeft--;
+    rpTime.textContent = Math.max(0, timeLeft) + 's';
+    rpTime.classList.toggle('time-low', timeLeft > 0 && timeLeft <= 10);
+    if (timeLeft <= 0) {
+      stopTimer(); repteTimeUp = true; rpTime.classList.remove('time-low');
+      wrap.classList.add('time-up');
+      document.getElementById('repteCanvas').onclick = null;
+      readoutBadge.classList.add('active');
+      readoutName.textContent = 'Temps esgotat!';
+      readoutDef.textContent = `Puntuació final: ${score} punts.`;
+      readoutNum.textContent = score;
+      hint.textContent = 'Temps esgotat!';
+    }
+  }, 1000);
+}
+btnExplora.addEventListener('click', () => {
+  repteMode = false; stopTimer();
+  document.getElementById('repteCanvas').onclick = null;
+  btnExplora.classList.add('active'); btnRepte.classList.remove('active');
+  document.body.classList.remove('mode-repte'); document.body.classList.add('mode-explora');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = ''; repteBarEl.style.display = '';
+  setVista(currentVista);
+});
+btnRepte.addEventListener('click', () => {
+  btnRepte.classList.add('active'); btnExplora.classList.remove('active');
+  document.body.classList.remove('mode-explora'); document.body.classList.add('mode-repte');
+  wrap.classList.remove('time-up');
+  repteSetupEl.style.display = 'flex'; repteBarEl.style.display = 'none';
+});
+document.getElementById('rpNewRound').addEventListener('click', startRepteRound);
+
+// ─────────────────────────────────────────────
+//  TARGETES DE REFERÈNCIA
+// ─────────────────────────────────────────────
+const METHOD_TEXT = {
+  traca: "Cada clic traça y'=f(x,y) amb Runge-Kutta 4 (i, si actives el toggle, també amb Euler per comparar).",
+  estabilitat: "Un equilibri és estable si les solucions properes hi convergeixen, inestable si se n'allunyen — es llegeix del signe de f a cada costat.",
+  unicitat: "Fora de y=0 (en aquesta equació especial), la solució és única. Sobre y=0, no ho és: n'hi ha infinites."
+};
+const methodPanel = document.getElementById('methodPanel');
+function setMethod(m) {
+  document.querySelectorAll('.type-card[data-method]').forEach(c => c.classList.toggle('active', c.dataset.method === m));
+  methodPanel.textContent = METHOD_TEXT[m];
+}
+document.getElementById('card-traca').addEventListener('click', () => { flash(wrap, cssVar('--calcul')); setMethod('traca'); if (!repteMode) setVista('trace'); });
+document.getElementById('card-estabilitat').addEventListener('click', () => { flash(wrap, cssVar('--geometria')); setMethod('estabilitat'); if (!repteMode) setVista('phase'); });
+document.getElementById('card-unicitat').addEventListener('click', () => { flash(wrap, cssVar('--algebra')); setMethod('unicitat'); if (!repteMode) setVista('unique'); });
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.body.classList.add('mode-explora');
+buildFieldChips();
+buildAutoChips();
+setVista('trace');
+</script>
+</body>
+</html>
