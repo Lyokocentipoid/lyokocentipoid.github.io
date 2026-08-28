@@ -31,6 +31,65 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+
+/* ── ACCESSIBILITAT: base ──────────────────────────────────────────────────
+   .sr-only  → contingut només per a lectors de pantalla (regions aria-live,
+               etiquetes de context). Tècnica estàndard: 1px retallat, mai
+               display:none, perquè display:none també l'amaga a l'AT.        */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Enllaç «salta al contingut»: invisible fins que rep el focus per teclat. */
+.skip-link {
+  position: absolute; top: 0; left: 0; z-index: 999;
+  transform: translateY(-120%);
+  background: var(--ink); color: #fff;
+  padding: .7rem 1.2rem; border-radius: 0 0 var(--radius-sm) 0;
+  font-weight: 600; font-size: .88rem; text-decoration: none;
+  transition: transform var(--tr);
+}
+.skip-link:focus { transform: translateY(0); }
+
+/* Anell de focus coherent i sempre visible per a qualsevol element operable,
+   inclosos els <canvas> que ara són focusables amb tabindex="0". */
+:focus-visible {
+  outline: 3px solid var(--m-color, var(--petrol));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+canvas:focus-visible {
+  outline: 3px solid var(--m-color, var(--petrol));
+  outline-offset: 2px;
+}
+
+/* ── MOVIMENT REDUÏT ──────────────────────────────────────────────────────
+   Respecta la preferència del sistema. Les animacions de canvas es governen
+   des de JS (A11y.animDuration); aquí es neutralitzen les de CSS.           */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── NOTACIÓ MATEMÀTICA (KaTeX) ───────────────────────────────────────────
+   .math hereta mida i color del context, de manera que una fórmula dins
+   .type-range es veu igual de gran que el text que substitueix. Si KaTeX no
+   arriba a carregar, el contingut Unicode original es queda tal qual i
+   .no-katex li aplica la tipografia monoespaiada perquè segueixi llegint-se
+   com una fórmula.                                                          */
+.math { display: inline-block; line-height: 1.2; }
+.math .katex { font-size: 1.06em; }
+.no-katex .math { font-family: var(--font-mono); }
+/* Les fórmules llargues no han de desbordar mai en horitzontal: en pantalla
+   petita es permet desplaçament dins de la pròpia fórmula. */
+.math[data-display] { display: block; overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: .15rem 0; }
 body {
   background: var(--bg);
   color: var(--ink);
