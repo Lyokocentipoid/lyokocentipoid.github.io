@@ -154,8 +154,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Potència de potència</div>
-        <div class="type-range">(aᵐ)ⁿ = aᵐ·ⁿ</div>
-        <div class="type-desc">Elevar una potència a un altre exponent: es multipliquen els exponents. Prova-ho arrossegant peces més avall.</div>
+        <div class="type-range"><span class="math" data-tex="(a^m)^n = a^{m \cdot n}" data-say="a elevat a m, tot elevat a n, és igual a a elevat a m per n">(aᵐ)ⁿ = a^(m·n)</span></div>
+        <div class="type-desc">Elevar una potència a un altre exponent: es <strong>multipliquen</strong> els exponents. Compte: el producte m·n va sencer a l'exponent. Prova-ho arrossegant peces més avall.</div>
       </div>
     </div>
 
@@ -163,7 +163,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Producte, mateixa base</div>
-        <div class="type-range">aᵐ · aⁿ = aᵐ⁺ⁿ</div>
+        <div class="type-range"><span class="math" data-tex="a^m \cdot a^n = a^{m+n}" data-say="a elevat a m per a elevat a n és igual a a elevat a m més n">aᵐ · aⁿ = aᵐ⁺ⁿ</span></div>
         <div class="type-desc">Multiplicar potències amb la mateixa base: se sumen els exponents. Prova-ho arrossegant peces més avall.</div>
       </div>
     </div>
@@ -172,8 +172,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Exponent 0</div>
-        <div class="type-range">a⁰ = 1</div>
-        <div class="type-desc">Qualsevol base (no nul·la) elevada a 0 val 1: és el producte buit, sense factors.</div>
+        <div class="type-range"><span class="math" data-tex="a^0 = 1 \quad (a \neq 0)" data-say="a elevat a zero és igual a 1, sempre que a no sigui zero">a⁰ = 1 (a ≠ 0)</span></div>
+        <div class="type-desc">Qualsevol base <strong>no nul·la</strong> elevada a 0 val 1: és el producte buit, sense cap factor. Es dedueix de la regla del quocient: aⁿ ÷ aⁿ = aⁿ⁻ⁿ = a⁰, i alhora val 1.</div>
       </div>
     </div>
 
@@ -181,14 +181,16 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Exponent 1</div>
-        <div class="type-range">a¹ = a</div>
+        <div class="type-range"><span class="math" data-tex="a^1 = a" data-say="a elevat a u és igual a a">a¹ = a</span></div>
         <div class="type-desc">Elevat a 1, un número queda igual: només hi ha un factor.</div>
       </div>
     </div>
 
     <div class="divider"></div>
     <div class="note-box">
-      <strong>💡 Recorda:</strong> una potència aⁿ és una multiplicació repetida de la base «a» per ella mateixa, «n» vegades. L'exponent compta els factors, no el resultat.
+      <strong>💡 Recorda:</strong> una potència <span class="math" data-tex="a^n" data-say="a elevat a n">aⁿ</span> és una multiplicació repetida de la base <em>a</em> per ella mateixa, <em>n</em> vegades:
+      <span class="math" data-tex="a^n = \underbrace{a \cdot a \cdots a}_{n\ \text{factors}}" data-say="a elevat a n és igual a a per a per a, n factors">aⁿ = a·a·…·a (n factors)</span>.
+      L'exponent <strong>compta els factors</strong>, no el resultat: <span class="math" data-tex="2^5" data-say="dos elevat a cinc">2⁵</span> vol dir cinc dosos multiplicats, no «2 per 5».
     </div>
 
     <a class="geogebra-link" href="https://www.geogebra.org/m/czydxjej" target="_blank" rel="noopener">
@@ -204,6 +206,8 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
@@ -252,6 +256,10 @@ const chipCanvasA = document.getElementById('chipCanvasA');
 const chipCanvasB = document.getElementById('chipCanvasB');
 const chipCtxA = chipCanvasA.getContext('2d');
 const chipCtxB = chipCanvasB.getContext('2d');
+// Les dues fitxes de potència que es fusionen per demostrar les propietats
+// també han de ser llegibles per a un lector de pantalla.
+A11y.describeCanvas(chipCanvasA, 'Primera fitxa de potència, arrossegable per combinar-la amb la segona.');
+A11y.describeCanvas(chipCanvasB, 'Segona fitxa de potència, arrossegable per combinar-la amb la primera.');
 
 const MIN_BASE = 2, MAX_BASE = 6, MAX_EXP = 10;
 
@@ -363,7 +371,9 @@ function renderShape(rctx, rW, rH, b, e, opts) {
     const cell = Math.min(figW, figH) * 0.34;
     roundRectOn(rctx, cx - cell / 2, cyFig - cell / 2, cell, cell, 12, accentSoft, accentStroke);
     ctextOn(rctx, cx, cyFig, '1', TEXT_DARK, cell * 0.42, 'center', 'middle', true);
-    if (!compact) ctextOn(rctx, cx, cyFig + cell / 2 + rH * 0.055, `${b}⁰ = 1 · cap factor`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
+    // Guió, no punt volat: «2⁰ = 1 · cap factor» es llegeix com una
+    // multiplicació per «cap factor», que no vol dir res.
+    if (!compact) ctextOn(rctx, cx, cyFig + cell / 2 + rH * 0.055, `${b}⁰ = 1 — cap factor`, TEXT_MUTED, Math.max(14, rW * 0.023), 'center', 'top');
 
   } else if (e === 1) {
     const n = b;
@@ -692,6 +702,23 @@ window.addEventListener('mouseup', onDialEnd);
 canvas.addEventListener('touchstart', onDialStart, { passive: false });
 canvas.addEventListener('touchmove', onDialMove, { passive: false });
 canvas.addEventListener('touchend', onDialEnd);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onDialEnd);
+
+/* Accessibilitat: el dial d'exponent només responia a arrossegament. Com que
+   l'exponent és el valor central de la càpsula i està acotat a 0..MAX_EXP,
+   s'exposa com a slider. El valuetext dona la lectura completa (base, exponent
+   i resultat) perquè no calgui veure la figura per seguir l'exercici. */
+A11y.makeCanvasSlider(canvas, {
+  label: "Figura de la potència. Fes servir les fletxes per canviar l'exponent.",
+  describedBy: 'hint',
+  min: 0, max: MAX_EXP, step: 1,
+  get: () => exponent,
+  set: (v) => { exitDemo(); markInteracted(); setExponent(v); },
+  text: (v) => `${base} elevat a ${v} és igual a ${Math.pow(base, v)}.`
+});
 window.addEventListener('resize', () => { resize(); resizeChips(); });
 
 // ─────────────────────────────────────────────
@@ -766,6 +793,7 @@ window.addEventListener('mouseup', onChipEnd);
 chipB.addEventListener('touchstart', onChipStart, { passive: false });
 window.addEventListener('touchmove', onChipMove, { passive: false });
 window.addEventListener('touchend', onChipEnd);
+window.addEventListener('touchcancel', onChipEnd);
 
 function completeMerge(rectA, natRectB) {
   const finalDx = (rectA.left + rectA.width / 2) - (natRectB.left + natRectB.width / 2);

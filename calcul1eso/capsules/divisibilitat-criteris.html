@@ -103,7 +103,7 @@
         <button class="chip" data-d="10">10</button>
         <button class="chip" data-d="11">11</button>
       </div>
-      <span class="chip-label">Sense criteri:</span>
+      <span class="chip-label">Per divisió directa:</span>
       <div class="chip-row" id="huntPicker">
         <button class="chip chip-hunt" data-d="7">7</button>
         <button class="chip chip-hunt" data-d="8">8</button>
@@ -183,7 +183,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 3</div>
-        <div class="type-range">Suma de xifres ÷ 3</div>
+        <div class="type-range">Suma de xifres: múltiple de 3</div>
         <div class="type-desc">La suma de totes les xifres és múltiple de 3.</div>
       </div>
     </div>
@@ -192,7 +192,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 4</div>
-        <div class="type-range">2 últimes xifres ÷ 4</div>
+        <div class="type-range">2 últimes xifres: múltiple de 4</div>
         <div class="type-desc">El número format per les dues últimes xifres és múltiple de 4.</div>
       </div>
     </div>
@@ -210,7 +210,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 6</div>
-        <div class="type-range">Parell i ÷ 3 alhora</div>
+        <div class="type-range">Parell i múltiple de 3 alhora</div>
         <div class="type-desc">Ha de complir el criteri del 2 (parell) i el del 3 (suma de xifres) a la vegada.</div>
       </div>
     </div>
@@ -219,7 +219,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 9</div>
-        <div class="type-range">Suma de xifres ÷ 9</div>
+        <div class="type-range">Suma de xifres: múltiple de 9</div>
         <div class="type-desc">La suma de totes les xifres és múltiple de 9.</div>
       </div>
     </div>
@@ -237,20 +237,20 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple d'11</div>
-        <div class="type-range">Suma alternada ÷ 11</div>
+        <div class="type-range">Suma alternada: múltiple d'11</div>
         <div class="type-desc">Sumant les xifres alternant + i − des de la dreta, el resultat és múltiple d'11.</div>
       </div>
     </div>
 
     <div class="divider"></div>
-    <div class="info-title">Sense criteri (per divisió directa)</div>
+    <div class="info-title">Per composició o per divisió directa</div>
 
     <div class="type-card" id="card-7" data-d="7" style="--t-color:var(--muted)">
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 7</div>
         <div class="type-range">Sense drecera senzilla</div>
-        <div class="type-desc">Es comprova dividint directament: no hi ha cap truc prou senzill per al 7.</div>
+        <div class="type-desc">7 és primer i no es pot descompondre, i el seu criteri de xifres és molt més enrevessat que els altres. Aquí es comprova dividint directament.</div>
       </div>
     </div>
 
@@ -258,8 +258,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 8</div>
-        <div class="type-range">Sense drecera senzilla</div>
-        <div class="type-desc">Es comprova dividint directament: el criteri de les 3 últimes xifres és massa complex per ara.</div>
+        <div class="type-range">3 últimes xifres: múltiple de 8</div>
+        <div class="type-desc">Funciona igual que el criteri del 4, però mirant tres xifres en lloc de dues (perquè 1.000 és múltiple de 8). Aquí es comprova dividint, però el criteri existeix.</div>
       </div>
     </div>
 
@@ -267,8 +267,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 12</div>
-        <div class="type-range">Sense drecera senzilla</div>
-        <div class="type-desc">Es comprova dividint directament (encara que combina els criteris del 4 i el 3).</div>
+        <div class="type-range">Múltiple de 4 <em>i</em> de 3</div>
+        <div class="type-desc">12 = 4 × 3, i 4 i 3 no comparteixen cap factor: per això n'hi ha prou de complir els dos criteris alhora.</div>
       </div>
     </div>
 
@@ -276,14 +276,17 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Múltiple de 15</div>
-        <div class="type-range">Sense drecera senzilla</div>
-        <div class="type-desc">Es comprova dividint directament (encara que combina els criteris del 3 i el 5).</div>
+        <div class="type-range">Múltiple de 3 <em>i</em> de 5</div>
+        <div class="type-desc">15 = 3 × 5, i 3 i 5 no comparteixen cap factor: es compleixen els dos criteris a la vegada.</div>
       </div>
     </div>
 
     <div class="divider"></div>
     <div class="note-box">
-      <strong>💡 Recorda:</strong> Si un número és múltiple de 9, també ho és de 3; si ho és de 4, també ho és de 2. Un cop comprovat, un número es tenyeix de verd (múltiple) o vermell (no múltiple) a la graella. Per al 7, 8, 12 i 15 no hi ha drecera — es comprova dividint. I si vols saber TOTS els divisors d'un número, prova la pestanya «🧩 Troba els divisors».
+      <strong>💡 Recorda:</strong> Si un número és múltiple de 9, també ho és de 3; si ho és de 4, també ho és de 2.
+      <br><br><strong>Criteris compostos.</strong> Si un divisor es pot escriure com a producte de dos números que <strong>no comparteixen cap factor</strong>, n'hi ha prou de complir els dos criteris alhora: 6 = 2×3, 12 = 4×3, 15 = 3×5.
+      <br><em>Compte, la condició és imprescindible:</em> 12 també és 2×6, però 2 i 6 <strong>sí</strong> que comparteixen el factor 2 — i 18 és múltiple de 2 i de 6 sense ser-ho de 12. Els dos trossos han de ser primers entre ells.
+      <br><br>Un cop comprovat, un número es tenyeix de verd (múltiple) o vermell (no múltiple) a la graella. I si vols saber TOTS els divisors d'un número, prova la pestanya «🧩 Troba els divisors».
     </div>
 
     <a class="geogebra-link" href="https://www.geogebra.org/m/fn7tw3m9" target="_blank" rel="noopener">
@@ -299,9 +302,16 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// El llenç no es redueix a un sol valor continu, així que no pot ser un
+// slider; però ha de deixar de ser mut per als lectors de pantalla.
+A11y.describeCanvas(document.getElementById('gridCanvas'),
+  'Graella de números. Cada número es tenyeix de verd si és múltiple del divisor triat, o de vermell si no ho és. Els xips de divisor de sobre són accessibles amb teclat.');
 
 // ─────────────────────────────────────────────
 //  TOKENS DE TEXT (llegits dels tokens compartits, com a potencies.html)
@@ -355,14 +365,14 @@ const CRITERI = {
   3:  { rule: 'Un número és múltiple de 3 si la suma de les seves xifres és múltiple de 3.' },
   4:  { rule: 'Un número és múltiple de 4 si el número format per les seves DUES últimes xifres és múltiple de 4.' },
   5:  { rule: 'Un número és múltiple de 5 si acaba en 0 o 5.' },
-  6:  { rule: 'Un número és múltiple de 6 si ho és alhora de 2 (parell) i de 3 (suma de xifres ÷ 3).' },
+  6:  { rule: 'Un número és múltiple de 6 si ho és alhora de 2 (parell) i de 3 (suma de xifres múltiple de 3).' },
   9:  { rule: 'Un número és múltiple de 9 si la suma de les seves xifres és múltiple de 9.' },
   10: { rule: 'Un número és múltiple de 10 si acaba en 0.' },
   11: { rule: "Un número és múltiple d'11 si la suma alternada de les xifres (des de la dreta: +,−,+,−...) és múltiple d'11." },
-  7:  { rule: 'No hi ha un criteri senzill per al 7 a 1r ESO: es comprova dividint directament.' },
-  8:  { rule: 'No hi ha un criteri senzill per al 8 a 1r ESO: es comprova dividint directament.' },
-  12: { rule: 'No hi ha un criteri senzill per al 12 a 1r ESO: es comprova dividint directament.' },
-  15: { rule: 'No hi ha un criteri senzill per al 15 a 1r ESO: es comprova dividint directament.' }
+  7:  { rule: 'El 7 és primer i no es pot descompondre en dos factors més senzills; el seu criteri de xifres és molt enrevessat. Aquí es comprova dividint directament.' },
+  8:  { rule: 'Un número és múltiple de 8 si ho és el número format per les seves TRES últimes xifres (igual que el criteri del 4, però amb una xifra més). Aquí es comprova dividint directament.' },
+  12: { rule: 'Un número és múltiple de 12 si ho és alhora de 4 i de 3, perquè 12 = 4 × 3 i aquests dos factors no en comparteixen cap. Aquí es comprova dividint directament.' },
+  15: { rule: 'Un número és múltiple de 15 si ho és alhora de 3 i de 5, perquè 15 = 3 × 5 i aquests dos factors no en comparteixen cap. Aquí es comprova dividint directament.' }
 };
 
 const DIVISOR_STYLE = {

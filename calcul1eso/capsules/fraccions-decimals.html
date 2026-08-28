@@ -155,14 +155,27 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">1/3</div>
-        <div class="type-range">= 0,3333…</div>
-        <div class="type-desc">Un terç: decimal periòdic infinit.</div>
+        <div class="type-range">= <span class="math" data-tex="0,\overline{3}" data-say="zero coma període tres">0,333…</span></div>
+        <div class="type-desc">Un terç: periòdic <strong>pur</strong>. La barra marca el període: el 3 es repeteix sense parar, des de just després de la coma.</div>
+      </div>
+    </div>
+
+    <div class="type-card" id="card-1-6" style="--t-color:var(--amber)">
+      <div class="type-mini-canvas"></div>
+      <div class="type-info">
+        <div class="type-name">1/6</div>
+        <div class="type-range">= <span class="math" data-tex="0,1\overline{6}" data-say="zero coma u, període sis">0,1666…</span></div>
+        <div class="type-desc">Un sisè: periòdic <strong>mixt</strong>. L'1 apareix una sola vegada (anteperíode) i només després comença a repetir-se el 6.</div>
       </div>
     </div>
 
     <div class="divider"></div>
     <div class="note-box">
-      <strong>💡 Recorda:</strong> Una fracció és una divisió amagada: numerador ÷ denominador (com a «La divisió»). Si el denominador només té els factors 2 i 5, el decimal és exacte; si no, és periòdic (com 1/3 = 0,333…).
+      <strong>💡 Recorda:</strong> Una fracció és una divisió amagada: numerador ÷ denominador (com a «La divisió»). Per saber quin tipus de decimal donarà, primer <strong>simplifica-la</strong> i mira els factors del denominador:
+      <br>· Només 2 i/o 5 → <strong>decimal exacte</strong> (1/8 = 0,125). La divisió s'acaba.
+      <br>· Cap 2 ni 5 → <strong>periòdic pur</strong> (<span class="math" data-tex="1/3 = 0,\overline{3}" data-say="un terç igual a zero coma període tres">1/3 = 0,3̄</span>). Es repeteix des de la coma.
+      <br>· Barreja de tots dos → <strong>periòdic mixt</strong> (<span class="math" data-tex="1/6 = 0,1\overline{6}" data-say="un sisè igual a zero coma u, període sis">1/6 = 0,16̄</span>). Hi ha xifres que no es repeteixen abans del període.
+      <br><em>Compte:</em> cal simplificar abans! 2/6 sembla mixt, però 2/6 = 1/3 i és <strong>pur</strong>.
     </div>
 
     <a class="geogebra-link" href="https://www.geogebra.org/m/xw8n86sb" target="_blank" rel="noopener">
@@ -178,6 +191,8 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
@@ -240,24 +255,83 @@ function numOf() { return num; }
 // ─────────────────────────────────────────────
 //  MATEMÀTIQUES
 // ─────────────────────────────────────────────
-function fractionToDecimalString(n, den, maxDigits = 6) {
-  if (n === 0) return '0';
-  const intPart = Math.floor(n / den);
-  let rem = n % den;
-  if (rem === 0) return String(intPart);
-  let s = intPart + ',';
-  let digits = '';
-  const seen = new Map();
-  for (let i = 0; i < maxDigits; i++) {
-    if (seen.has(rem)) { return s + digits + '…'; }
-    seen.set(rem, i);
+function gcdInt(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+
+/* Anàlisi completa del decimal d'una fracció.
+ *
+ * PER QUÈ ES REDUEIX PRIMER: la classificació (exacte / periòdic pur /
+ * periòdic mixt) depèn del denominador de la fracció IRREDUCTIBLE, no del
+ * que hi ha escrit. Exemple real d'aquesta càpsula: 2/6 sembla mixt perquè
+ * 6 = 2·3 conté un 2, però 2/6 = 1/3 = 0,3̄ és periòdic PUR. Sense reduir,
+ * la classificació seria incorrecta en tots els casos com aquest.
+ *
+ * Retorna { kind, intPart, ante, period }:
+ *   kind   → 'exacte' | 'pur' | 'mixt'
+ *   ante   → xifres decimals abans del període (l'anteperíode)
+ *   period → xifres que es repeteixen indefinidament ('' si és exacte)
+ *
+ * L'algorisme és la divisió llarga amb memòria de residus: quan un residu
+ * es repeteix, tot el bloc de xifres generat des de la primera aparició
+ * es tornarà a repetir per sempre. Això no és una aproximació: identifica
+ * el període exacte i complet.
+ */
+function decimalAnalysis(n, den) {
+  const g = gcdInt(n, den) || 1;
+  const N = n / g, D = den / g;
+
+  const intPart = Math.trunc(N / D);
+  let rem = N % D;
+  if (rem === 0) return { kind: 'exacte', intPart, ante: '', period: '' };
+
+  const seen = new Map();   // residu → posició de la xifra que genera
+  const digits = [];
+  let pos = 0;
+
+  while (rem !== 0 && !seen.has(rem)) {
+    seen.set(rem, pos);
     rem *= 10;
-    const d = Math.floor(rem / den);
-    digits += d;
-    rem = rem % den;
-    if (rem === 0) return s + digits;
+    digits.push(Math.floor(rem / D));
+    rem %= D;
+    pos++;
   }
-  return s + digits + '…';
+
+  if (rem === 0) {
+    return { kind: 'exacte', intPart, ante: digits.join(''), period: '' };
+  }
+
+  const start = seen.get(rem);
+  const ante = digits.slice(0, start).join('');
+  const period = digits.slice(start).join('');
+  return { kind: ante === '' ? 'pur' : 'mixt', intPart, ante, period };
+}
+
+/* Cadena Unicode llegible (per al canvas i com a text alternatiu).
+ * El període es marca repetint-lo un cop i tancant amb «…», que és el
+ * conveni escrit habitual quan no es pot dibuixar el vincle superior. */
+function fractionToDecimalString(n, den) {
+  const a = decimalAnalysis(n, den);
+  if (a.kind === 'exacte') {
+    return a.ante ? `${a.intPart},${a.ante}` : String(a.intPart);
+  }
+  // Es mostra el període dues vegades perquè el patró sigui inequívoc:
+  // «0,3…» no deixava veure que el 3 es repeteix; «0,33…» sí.
+  return `${a.intPart},${a.ante}${a.period}${a.period}…`;
+}
+
+/* Font LaTeX amb el vincle (barra superior) sobre el període — la notació
+ * formal correcta: 1/3 = 0,3̄ · 1/12 = 0,08̄3̄ · 1/7 = 0,142857̄ */
+function decimalToTex(n, den) {
+  const a = decimalAnalysis(n, den);
+  if (a.kind === 'exacte') {
+    return a.ante ? `${a.intPart}{,}${a.ante}` : String(a.intPart);
+  }
+  return `${a.intPart}{,}${a.ante}\\overline{${a.period}}`;
+}
+
+function decimalKindLabel(kind) {
+  return kind === 'exacte' ? 'decimal exacte'
+       : kind === 'pur'    ? 'decimal periòdic pur'
+       :                     'decimal periòdic mixt';
 }
 
 // Construeix el model complet de la divisió llarga (numerador ÷ D) per al tauler visual.
@@ -311,7 +385,11 @@ function stepCaption(idx) {
     text = `Baixem un 0: ${steps[idx - 1].remainder} passa a ${st.prefix}. ${D} cap ${st.qDigit} vegada(es) en ${st.prefix} (perquè ${st.qDigit}×${D}=${st.product}), i sobren ${st.remainder}.`;
   }
   if (idx === steps.length - 1 && !divLayout.terminating) {
-    text += ` El decimal no s'acaba: es repeteix (per això ho tallem amb …).`;
+    // El residu ha tornat a aparèixer: a partir d'aquí la divisió repetiria
+    // exactament les mateixes xifres. Això és el que fa que el decimal sigui
+    // periòdic, i val la pena dir-ho amb el motiu, no només amb els punts.
+    const a = decimalAnalysis(numOf(), D);
+    text += ` Fixa't que el residu ${st.remainder} ja havia sortit abans: a partir d'aquí les xifres es repetirien igual, indefinidament. Per això el període és ${a.period}.`;
   }
   return text;
 }
@@ -646,7 +724,12 @@ function label(x, y, text, color) {
 function pointerXY(e) {
   const rect = canvas.getBoundingClientRect();
   const dpr = devicePixelRatio || 1;
-  const t = e.touches ? e.touches[0] : e;
+  // A «touchend»/«touchcancel» la llista e.touches ja és BUIDA (el dit ja no
+  // hi és): les coordenades només viuen a changedTouches. Sense aquesta
+  // branca, e.touches[0] seria undefined i llegir-ne clientX petaria.
+  const t = (e.touches && e.touches.length) ? e.touches[0]
+          : (e.changedTouches && e.changedTouches.length) ? e.changedTouches[0]
+          : e;
   return { x: (t.clientX - rect.left) * dpr, y: (t.clientY - rect.top) * dpr };
 }
 
@@ -698,23 +781,60 @@ function onEnd() { dragging = false; }
 
 canvas.addEventListener('mousedown', onStart);
 canvas.addEventListener('mousemove', onMove);
-window.addEventListener('mouseup', onEnd);
 canvas.addEventListener('touchstart', onStart, { passive: false });
 canvas.addEventListener('touchmove', onMove, { passive: false });
-canvas.addEventListener('touchend', onEnd);
+// Cobreix mouseup, touchend, touchcancel, pointercancel i pèrdua de focus:
+// abans, un gest interromput pel sistema en tauleta deixava dragging=true
+// per sempre i el cercle seguia el dit sense prémer.
+A11y.bindGestureEnd(canvas, onEnd);
 window.addEventListener('resize', resize);
+
+/* ── Accessibilitat del llenç ──────────────────────────────────────────────
+   El cercle de porcions és el cor de la càpsula i abans era completament
+   inoperable sense ratolí. Ara és un control amb semàntica de slider: el
+   valor és el numerador, i les fletxes hi afegeixen o en treuen porcions. */
+// max és un getter perquè el denominador canvia en viu amb els xips 2..12;
+// si fos un valor fix, aria-valuemax quedaria desincronitzat.
+const canvasSlider = A11y.makeCanvasSlider(canvas, {
+  label: 'Cercle de fraccions. Fes servir les fletxes per canviar quantes porcions estan omplertes.',
+  describedBy: 'hint',
+  min: 0,
+  get max() { return D; },
+  step: 1,
+  get: () => num,
+  set: (v) => { num = v; afterNumChange(); },
+  text: (v) => `${v} de ${D} porcions omplertes. Fracció ${v}/${D}.`
+});
 
 // ─────────────────────────────────────────────
 //  POLS AMBRE que lliga les porcions sobrants del cercle amb la resta numèrica
 // ─────────────────────────────────────────────
 let pieFlashUntil = 0;
+let pieFlashRunning = false;   // guarda de reentrada
+let pieFlashRaf = null;
+
+/* Sense la guarda, cada crida a triggerPieFlash() engegava un bucle rAF NOU:
+ * N clics ràpids a «Pas següent» = N bucles concurrents cridant draw() a
+ * cada fotograma. Ara només n'hi ha un, i només s'allarga la seva durada. */
 function triggerPieFlash() {
-  pieFlashUntil = performance.now() + 750;
-  requestAnimationFrame(pieFlashTick);
+  pieFlashUntil = performance.now() + A11y.animDuration(750);
+  if (pieFlashRunning) return;
+  pieFlashRunning = true;
+  pieFlashRaf = requestAnimationFrame(pieFlashTick);
 }
 function pieFlashTick() {
   draw();
-  if (performance.now() < pieFlashUntil) requestAnimationFrame(pieFlashTick);
+  if (performance.now() < pieFlashUntil) {
+    pieFlashRaf = requestAnimationFrame(pieFlashTick);
+  } else {
+    pieFlashRunning = false;
+    pieFlashRaf = null;
+    draw();   // fotograma final net, sense el ressalt
+  }
+}
+function stopPieFlash() {
+  if (pieFlashRaf !== null) cancelAnimationFrame(pieFlashRaf);
+  pieFlashRaf = null; pieFlashRunning = false; pieFlashUntil = 0;
 }
 
 // ─────────────────────────────────────────────
@@ -740,9 +860,30 @@ function updateReadout() {
     readoutName.textContent = `Pas ${stepIndex + 1} de ${divLayout.steps.length}`;
     readoutDef.textContent = stepCaption(stepIndex);
   } else {
+    const a = decimalAnalysis(n, D);
     const dec = fractionToDecimalString(n, D);
-    readoutName.textContent = `${n}/${D} = ${dec}`;
-    readoutDef.textContent = stepCaption(stepIndex);
+    // El resultat final es renderitza amb el vincle real sobre el període:
+    // 1/12 = 0,08̄3̄ en comptes de l'ambigu «0,083…».
+    readoutName.innerHTML = '';
+    readoutName.appendChild(document.createTextNode(`${n}/${D} = `));
+    readoutName.appendChild(MathFmt.span(
+      decimalToTex(n, D), dec,
+      a.kind === 'exacte'
+        ? `${n} dividit per ${D} és igual a ${dec}`
+        : `${n} dividit per ${D} és igual a ${a.intPart} coma ${a.ante ? a.ante + ' ' : ''}període ${a.period.split('').join(' ')}`
+    ));
+    MathFmt.render(readoutName);
+
+    let def = stepCaption(stepIndex);
+    if (a.kind === 'exacte') {
+      def += ` És un decimal exacte: la divisió s'acaba, no sobra res.`;
+    } else if (a.kind === 'pur') {
+      def += ` És un decimal periòdic pur: el període (${a.period}) comença just després de la coma i es repeteix per sempre.`;
+    } else {
+      def += ` És un decimal periòdic mixt: primer hi ha l'anteperíode (${a.ante}), que no es repeteix, i després el període (${a.period}), que sí.`;
+    }
+    readoutDef.textContent = def;
+    A11y.announce(`${n} entre ${D} és igual a ${dec}. ${decimalKindLabel(a.kind)}.`);
   }
 }
 
@@ -788,6 +929,7 @@ document.getElementById('card-1-5').addEventListener('click',  () => loadFractio
 document.getElementById('card-1-10').addEventListener('click', () => loadFraction(1, 10, 'var(--plum)'));
 document.getElementById('card-3-4').addEventListener('click',  () => loadFraction(3, 4, 'var(--terracotta)'));
 document.getElementById('card-1-3').addEventListener('click',  () => loadFraction(1, 3, 'var(--petrol)'));
+document.getElementById('card-1-6').addEventListener('click',  () => loadFraction(1, 6, 'var(--amber)'));
 
 // ─────────────────────────────────────────────
 //  DENOMINADOR: xips de salt directe 2..12 (en lloc de step ±1)
@@ -808,6 +950,9 @@ function syncChips() {
   document.querySelectorAll('.denom-chips button[data-denom]').forEach(b => {
     b.classList.toggle('active', parseInt(b.dataset.denom, 10) === D);
   });
+  // El denominador acaba de canviar: aria-valuemax i aria-valuetext del llenç
+  // han de reflectir el nou total de porcions.
+  if (typeof canvasSlider !== 'undefined' && canvasSlider) canvasSlider.sync();
 }
 document.querySelectorAll('.denom-chips').forEach(row => {
   row.addEventListener('click', e => {

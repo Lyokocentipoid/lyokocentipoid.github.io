@@ -157,7 +157,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">2 · Potències i arrels</div>
-        <div class="type-range">xⁿ · √x</div>
+        <div class="type-range"><span class="math" data-tex="x^n \quad \sqrt{x}" data-say="ics elevat a ena, i arrel quadrada d'ics">xⁿ  √x</span></div>
         <div class="type-desc">Exponents i arrels, abans de multiplicar, dividir, sumar o restar.</div>
       </div>
     </div>
@@ -198,9 +198,16 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// El llenç no es redueix a un sol valor continu, així que no pot ser un
+// slider; però ha de deixar de ser mut per als lectors de pantalla.
+A11y.describeCanvas(document.getElementById('jerCanvas'),
+  "Expressió aritmètica. Cada operació es col·lapsa en el seu resultat quan la resols en l'ordre correcte de prioritat.");
 
 // ─────────────────────────────────────────────
 //  DOM

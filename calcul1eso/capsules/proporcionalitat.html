@@ -156,7 +156,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Escalador de factor</div>
-        <div class="type-range">y = k · x</div>
+        <div class="type-range"><span class="math" data-tex="y = k \cdot x" data-say="i grega igual a ka per ics">y = k · x</span></div>
         <div class="type-desc">Un factor multiplicador ×k escala alhora les persones i la quantitat d'ingredient: si el factor és ×3, totes dues xifres queden multiplicades per 3. Troba el factor que fa arribar al nombre de persones objectiu.</div>
       </div>
     </div>
@@ -165,7 +165,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Balança de braços</div>
-        <div class="type-range">pes × distància = k</div>
+        <div class="type-range"><span class="math" data-tex="\text{pes} \times \text{dist\`ancia} = k" data-say="pes per distància igual a ka">pes × distància = k</span></div>
         <div class="type-desc">Un pes fix en un braç i una distància que tu controles a l'altre: quan pes × distància coincideix amb la constant, la balança s'anivella.</div>
       </div>
     </div>
@@ -183,8 +183,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Regla de tres</div>
-        <div class="type-range">a/b = c/x</div>
-        <div class="type-desc">Per trobar un valor que falta: multiplica en creu i divideix. Directa: x=(b·c)/a. Inversa: x=(a·b)/c.</div>
+        <div class="type-range"><span class="math" data-tex="\tfrac{a}{b} = \tfrac{c}{x} \;\text{o}\; a\,b = c\,x" data-say="a partit per b igual a c partit per x, o bé a per b igual a c per x">a/b = c/x  o  a·b = c·x</span></div>
+        <div class="type-desc"><strong>No és la mateixa equació en els dos casos.</strong> Directa: es manté el <em>quocient</em>, <span class="math" data-tex="\tfrac{a}{b}=\tfrac{c}{x} \Rightarrow x=\tfrac{b \cdot c}{a}" data-say="a partit per b igual a c partit per x, per tant x igual a b per c partit per a">a/b=c/x ⟹ x=(b·c)/a</span>. Inversa: es manté el <em>producte</em>, <span class="math" data-tex="a \cdot b = c \cdot x \Rightarrow x=\tfrac{a \cdot b}{c}" data-say="a per b igual a c per x, per tant x igual a a per b partit per c">a·b=c·x ⟹ x=(a·b)/c</span>.</div>
       </div>
     </div>
 
@@ -206,6 +206,8 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
@@ -249,6 +251,11 @@ const readoutName  = document.getElementById('readoutName');
 const readoutDef   = document.getElementById('readoutDef');
 
 let W, H;
+
+// Referència al control accessible del llenç. Es declara aquí (i no on
+// s'assigna) perquè newExplora() ja crida syncPropSlider() durant l'inici:
+// amb `const` més avall, la comprovació cauria a la zona morta temporal.
+let propSlider = null;
 
 function flash(el, color) {
   el.style.setProperty('--flash-color', color);
@@ -695,6 +702,7 @@ function newExplora() {
   refreshExPanel();
   draw();
   updateReadout();
+  syncPropSlider();   // el submode pot haver canviat: rang i lectura ARIA nous
 }
 function setRelType(t) {
   relType = t;
@@ -784,6 +792,12 @@ window.addEventListener('mouseup', onCanvasUp);
 canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
 canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
 canvas.addEventListener('touchend', onCanvasUp);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onCanvasUp);
+
+
 
 // ─────────────────────────────────────────────
 //  TARGETES DE REFERÈNCIA
@@ -841,6 +855,7 @@ function newRepteRound() {
     : `Arrossega la plataforma fins anivellar la balança i després escriu ${rpState.lc.art} ${rpState.lc.timeUnit} exactes.`;
   draw();
   updateReadout();
+  syncPropSlider();   // nova ronda: el control pot governar una altra magnitud
   rpAnswerInput.focus();
 }
 
@@ -955,6 +970,53 @@ btnRepte.addEventListener('click', () => {
 // ─────────────────────────────────────────────
 newExplora();
 resize();
+
+/* Accessibilitat: els dos submodes tenen un control continu diferent —
+   el factor ×k (directa) i la distància de la plataforma (inversa). Com que
+   comparteixen llenç, el slider consulta l'estat viu per saber què governa.
+   El factor es mou de mig en mig, igual que els ticks de la pista. */
+propSlider = A11y.makeCanvasSlider(canvas, {
+  label: 'Llenç de proporcionalitat. Fes servir les fletxes per ajustar el control.',
+  describedBy: 'hint',
+  get min() { const st = currentState(); return st && st.type === 'directa' ? FACTOR_GRID[0] : 0.5; },
+  get max() {
+    const st = currentState();
+    return st && st.type === 'directa' ? FACTOR_GRID[FACTOR_GRID.length - 1] : (st ? st.maxHoresScale : 10);
+  },
+  get step() { const st = currentState(); return st && st.type === 'directa' ? 0.5 : 0.5; },
+  get: () => {
+    const st = currentState();
+    if (!st) return 0;
+    return st.type === 'directa' ? st.factor : Math.round(st.d * 2) / 2;
+  },
+  set: (v) => {
+    const st = currentState();
+    if (!st || st.revealed) return;
+    if (st.type === 'directa') {
+      // Reaprofitem la lògica de snap/auto-emplenat de l'arrossegament real
+      // convertint el valor a la coordenada X equivalent de la pista.
+      if (!factorGeom) { draw(); }
+      if (!factorGeom) return;
+      const g = factorGeom;
+      const t = (v - g.minF) / (g.maxF - g.minF);
+      applyFactorDrag(st, g.trackX0 + t * (g.trackX1 - g.trackX0));
+    } else {
+      st.d = v;
+      st.angle = leverAngle(st.workers, st.d, st.k);
+      draw();
+      updateLeverHint(st);
+    }
+  },
+  text: (v) => {
+    const st = currentState();
+    if (!st) return '';
+    if (st.type === 'directa') {
+      return `Factor per ${fmt(v)}. ${st.x0} persones passen a ${fmt(st.x0 * v)}, i ${fmt(st.y0)} ${st.rc.unit} passen a ${fmt(st.y0 * v)}.`;
+    }
+    return `${fmt1(v)} ${st.lc.timeUnit}. Amb ${st.workers} ${st.lc.workerLabel}, el producte és ${fmt(st.workers * v)} i ha de valer ${fmt(st.k)}.`;
+  }
+});
+function syncPropSlider() { if (propSlider) propSlider.sync(); }
 </script>
 </body>
 </html>

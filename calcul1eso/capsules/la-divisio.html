@@ -218,9 +218,16 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// El llenç no es redueix a un sol valor continu, així que no pot ser un
+// slider; però ha de deixar de ser mut per als lectors de pantalla.
+A11y.describeCanvas(document.getElementById('divCanvas'),
+  'Clau de la divisió: dividend, divisor, quocient i residu es van construint xifra a xifra. Els controls de sota fan servir botons accessibles amb teclat.');
 
 // ─────────────────────────────────────────────
 //  PALETA (derivada de --petrol/--amber/--sage/--terracotta/--plum actuals)
@@ -723,6 +730,10 @@ window.addEventListener('mouseup', onEnd);
 canvas.addEventListener('touchstart', onStart, { passive: false });
 canvas.addEventListener('touchmove', onMove, { passive: false });
 canvas.addEventListener('touchend', onEnd);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onEnd);
 window.addEventListener('resize', resize);
 
 // "Reparteix una ronda": afegeix UNA bola a CADA cistella alhora (1 clic ~= 1 volta completa)

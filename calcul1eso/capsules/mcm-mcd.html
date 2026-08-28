@@ -220,9 +220,16 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// El llenç no es redueix a un sol valor continu, així que no pot ser un
+// slider; però ha de deixar de ser mut per als lectors de pantalla.
+A11y.describeCanvas(document.getElementById('mcmCanvas'),
+  'Escala de divisions successives: a cada fila es divideixen A i B pel primer que has triat, fins que tots dos arriben a 1. Els xips de primer són accessibles amb teclat.');
 
 // ─────────────────────────────────────────────
 //  CONSTANTS

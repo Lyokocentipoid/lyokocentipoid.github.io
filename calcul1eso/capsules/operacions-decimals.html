@@ -209,9 +209,16 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// El llenç no es redueix a un sol valor continu, així que no pot ser un
+// slider; però ha de deixar de ser mut per als lectors de pantalla.
+A11y.describeCanvas(document.getElementById('opsCanvas'),
+  'Operació amb decimals en columnes, amb les comes alineades en vertical.');
 
 // ─────────────────────────────────────────────
 //  ESTAT
@@ -902,6 +909,10 @@ window.addEventListener('mouseup', onCanvasUp);
 canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
 canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
 canvas.addEventListener('touchend', onCanvasUp);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onCanvasUp);
 window.addEventListener('resize', resize);
 
 // ─────────────────────────────────────────────

@@ -192,7 +192,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Signes iguals se sumen</div>
-        <div class="type-range">(−3) + (−2) = −5</div>
+        <div class="type-range"><span class="math" data-tex="(-3) + (-2) = -5" data-say="menys tres més menys dos és igual a menys cinc">(−3) + (−2) = −5</span></div>
         <div class="type-desc">Se sumen els valors absoluts i es manté el signe comú.</div>
       </div>
     </div>
@@ -201,7 +201,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Signes diferents es resten</div>
-        <div class="type-range">5 + (−8) = −3</div>
+        <div class="type-range"><span class="math" data-tex="5 + (-8) = -3" data-say="cinc més menys vuit és igual a menys tres">5 + (−8) = −3</span></div>
         <div class="type-desc">Es resten els valors absoluts i queda el signe del que té més valor absolut.</div>
       </div>
     </div>
@@ -210,8 +210,8 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">L'oposat d'un número</div>
-        <div class="type-range">Op(4) = −4</div>
-        <div class="type-desc">Mateixa distància a zero, a l'altre costat de la recta.</div>
+        <div class="type-range"><span class="math" data-tex="-(+4) = -4" data-say="l'oposat de més quatre és menys quatre">−(+4) = −4</span></div>
+        <div class="type-desc">Mateixa distància a zero, a l'altre costat de la recta. L'oposat s'escriu amb un signe menys davant, <span class="math" data-tex="-a" data-say="menys a">−a</span>: sumar un número i el seu oposat sempre dona 0.</div>
       </div>
     </div>
 
@@ -219,7 +219,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Valor absolut</div>
-        <div class="type-range">|−6| = 6</div>
+        <div class="type-range"><span class="math" data-tex="\lvert -6 \rvert = 6" data-say="valor absolut de menys sis és igual a sis">|−6| = 6</span></div>
         <div class="type-desc">La distància des de zero fins al número, sempre positiva.</div>
       </div>
     </div>
@@ -228,7 +228,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Restar un negatiu</div>
-        <div class="type-range">5 − (−3) = 8</div>
+        <div class="type-range"><span class="math" data-tex="5 - (-3) = 5 + 3 = 8" data-say="cinc menys menys tres és igual a cinc més tres, és igual a vuit">5 − (−3) = 5 + 3 = 8</span></div>
         <div class="type-desc">Restar un negatiu equival a sumar el seu oposat (positiu).</div>
       </div>
     </div>
@@ -251,6 +251,8 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
@@ -590,6 +592,30 @@ window.addEventListener('mouseup', onPointerUp);
 canvas.addEventListener('touchstart', onPointerDown, { passive:false });
 canvas.addEventListener('touchmove', onPointerMove, { passive:false });
 canvas.addEventListener('touchend', onPointerUp);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onPointerUp);
+
+/* Accessibilitat: el punt de la recta numèrica és la interacció principal i
+   només responia a arrossegament. El valuetext inclou el signe i el valor
+   absolut, que és justament el que la càpsula vol ensenyar. */
+A11y.makeCanvasSlider(canvas, {
+  label: 'Recta numèrica. Fes servir les fletxes per moure el punt.',
+  describedBy: 'hint',
+  get min() { return -lineRange; },
+  get max() { return lineRange; },
+  step: 1,
+  get: () => curValue,
+  set: (v) => {
+    if (repteMode || pointAnim) return;
+    curValue = v; lastCombine = null;
+    if (!hasInteracted) { hasInteracted = true; hint.classList.add('hidden'); }
+    draw(); updateReadout();
+  },
+  text: (v) => v === 0 ? 'Zero. Valor absolut 0.'
+             : `${v < 0 ? 'Menys' : 'Més'} ${Math.abs(v)}. Valor absolut ${Math.abs(v)}, a ${Math.abs(v)} unitats del zero.`
+});
 window.addEventListener('resize', resize);
 
 document.getElementById('btnCenter').addEventListener('click', () => {
@@ -856,6 +882,7 @@ function startChipDrag(e) {
     document.removeEventListener('mouseup', up);
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
+    document.removeEventListener('touchcancel', up);
     tileEl.classList.remove('dragging');
     tileEl.style.position = ''; tileEl.style.left = ''; tileEl.style.top = '';
     tileEl.style.width = ''; tileEl.style.zIndex = '';
@@ -870,6 +897,7 @@ function startChipDrag(e) {
   document.addEventListener('mouseup', up);
   document.addEventListener('touchmove', move, { passive:false });
   document.addEventListener('touchend', up);
+  document.addEventListener('touchcancel', up);
 }
 combineChipEl.addEventListener('mousedown', startChipDrag);
 combineChipEl.addEventListener('touchstart', startChipDrag, { passive:false });
@@ -1035,6 +1063,7 @@ function startTileDrag(e, tileEl, tile) {
     document.removeEventListener('mouseup', up);
     document.removeEventListener('touchmove', move);
     document.removeEventListener('touchend', up);
+    document.removeEventListener('touchcancel', up);
     tileEl.classList.remove('dragging');
     tileEl.style.position = ''; tileEl.style.left = ''; tileEl.style.top = '';
     tileEl.style.width = ''; tileEl.style.zIndex = '';
@@ -1049,6 +1078,7 @@ function startTileDrag(e, tileEl, tile) {
   document.addEventListener('mouseup', up);
   document.addEventListener('touchmove', move, { passive:false });
   document.addEventListener('touchend', up);
+  document.addEventListener('touchcancel', up);
 }
 
 // Calcula el resultat d'arrossegar `tile` des del valor `from`. Les divisions que no

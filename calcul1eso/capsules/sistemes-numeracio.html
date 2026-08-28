@@ -342,7 +342,7 @@
       <div class="info-title">Binari · potències de 2</div>
       <div class="type-card" data-jump="bin" data-bit="128" style="--t-color:var(--sage)">
         <div class="type-mini-canvas"></div>
-        <div class="type-info"><div class="type-name">128</div><div class="type-range">2⁷ · bit més significatiu</div><div class="type-desc">El bit més a l'esquerra dels 8.</div></div>
+        <div class="type-info"><div class="type-name">128</div><div class="type-range">2⁷ — bit més significatiu</div><div class="type-desc">El bit més a l'esquerra dels 8.</div></div>
       </div>
       <div class="type-card" data-jump="bin" data-bit="64" style="--t-color:var(--sage)">
         <div class="type-mini-canvas"></div>
@@ -370,7 +370,7 @@
       </div>
       <div class="type-card" data-jump="bin" data-bit="1" style="--t-color:var(--sage)">
         <div class="type-mini-canvas"></div>
-        <div class="type-info"><div class="type-name">1</div><div class="type-range">2⁰ · bit menys significatiu</div><div class="type-desc">El bit més a la dreta dels 8.</div></div>
+        <div class="type-info"><div class="type-name">1</div><div class="type-range">2⁰ — bit menys significatiu</div><div class="type-desc">El bit més a la dreta dels 8.</div></div>
       </div>
     </div>
 
@@ -392,9 +392,23 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
+
+// Aquesta càpsula té tres llenços independents (un per sub-pestanya). Cap
+// no es redueix a un sol valor continu, però tots han de deixar de ser muts.
+A11y.describeCanvas(document.getElementById('canvasB10'),
+  'Columnes de valor posicional en base 10: unitats, desenes, centenes i següents. ' +
+  'Cada columna val deu vegades la de la seva dreta. Els controls de sota són accessibles amb teclat.');
+A11y.describeCanvas(document.getElementById('canvasRoman'),
+  'Numeral romà format amb els símbols I, V, X, L, C, D i M. ' +
+  'A diferència del sistema posicional, aquí el valor de cada símbol no depèn de la posició.');
+A11y.describeCanvas(document.getElementById('canvasBin'),
+  'Vuit bits en base 2, amb els seus valors posicionals de 128 fins a 1. ' +
+  'Cada bit val el doble que el de la seva dreta.');
 
 // ─────────────────────────────────────────────
 //  UTILITATS COMPARTIDES

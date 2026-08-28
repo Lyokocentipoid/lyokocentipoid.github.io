@@ -203,7 +203,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Descompte d'un preu</div>
-        <div class="type-range">Preu final = N × (1 − X/100)</div>
+        <div class="type-range"><span class="math" data-tex="P_{\text{final}} = N \cdot \left(1 - \tfrac{X}{100}\right)" data-say="preu final igual a ena per, obre parèntesi, u menys ics partit per cent, tanca parèntesi">Preu final = N × (1 − X/100)</span></div>
         <div class="type-desc">Un descompte del X% es resta del preu original. Prova-ho arrossegant el dial de «Rebaixes».</div>
       </div>
     </div>
@@ -212,7 +212,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">De part i total a percentatge</div>
-        <div class="type-range">% = part/total × 100</div>
+        <div class="type-range"><span class="math" data-tex="\% = \frac{\text{part}}{\text{total}} \cdot 100" data-say="percentatge igual a part partit per total, per cent">% = (part/total) × 100</span></div>
         <div class="type-desc">Divideix la part pel total i multiplica per 100. Prova-ho arrossegant la barra al «Dipòsit».</div>
       </div>
     </div>
@@ -230,7 +230,7 @@
       <div class="type-mini-canvas"></div>
       <div class="type-info">
         <div class="type-name">Augments i descomptes</div>
-        <div class="type-range">+20% = ×1,20 · −20% = ×0,80</div>
+        <div class="type-range"><span class="math" data-tex="+20\% \rightarrow \times 1{,}20 \qquad -20\% \rightarrow \times 0{,}80" data-say="més vint per cent equival a multiplicar per u coma vint; menys vint per cent equival a multiplicar per zero coma vuitanta">+20% → ×1,20   −20% → ×0,80</span></div>
         <div class="type-desc">Un augment del 20% multiplica per 1,20; un descompte del 20% (com al dial de Rebaixes) multiplica per 0,80.</div>
       </div>
     </div>
@@ -253,6 +253,8 @@
   <span>Diego Valiño · 2026</span>
 </footer>
 
+<script src="../assets/a11y.js"></script>
+<script src="../assets/mathfmt.js"></script>
 <script src="../assets/hero-anim.js"></script>
 <script>
 initHeroAnim(document.getElementById('navHero'), { size: 34 });
@@ -866,6 +868,7 @@ function refreshViewUI() {
   refreshAnswerPanels();
   if (view === 'rebaixes') { updateRebaixesReadout(); updateRebaixesHint(); }
   else { updateDepositReadout(); updateDepositHint(); }
+  syncPctSlider();
 }
 function switchView(newView) {
   view = newView;
@@ -952,6 +955,39 @@ window.addEventListener('mouseup', onCanvasUp);
 canvas.addEventListener('touchstart', onCanvasDown, { passive: false });
 canvas.addEventListener('touchmove', onCanvasMove, { passive: false });
 canvas.addEventListener('touchend', onCanvasUp);
+// touchcancel: en tauleta, un gest interromput pel sistema (notificació,
+// gest de vora, rebuig de palmell) dispara touchcancel i MAI touchend.
+// Sense aquesta línia l'estat d'arrossegament quedava encallat per sempre.
+canvas.addEventListener('touchcancel', onCanvasUp);
+
+/* Accessibilitat: la càpsula té DOS controls continus segons la sub-vista
+   (el dial de descompte i la barra del dipòsit). En comptes de dos llenços,
+   n'hi ha un de sol, així que el slider ha de canviar de significat segons
+   la vista activa — per això min/max/get/set consulten l'estat en viu. */
+function pctSliderIsDeposit() {
+  return (repteMode && repteRoundType === 'diposit') || (!repteMode && view === 'diposit');
+}
+const pctSlider = A11y.makeCanvasSlider(canvas, {
+  label: 'Llenç de percentatges. Fes servir les fletxes per ajustar el valor.',
+  describedBy: 'hint',
+  get min() { return pctSliderIsDeposit() ? DEPOSIT_MIN_PCT : 0; },
+  get max() { return pctSliderIsDeposit() ? DEPOSIT_MAX_PCT : 100; },
+  step: 1, bigStep: 10,
+  get: () => pctSliderIsDeposit()
+      ? (repteMode ? rDepositMyPercent : depositMyPercent)
+      : (repteMode ? rDialX : dialX),
+  set: (v) => { pctSliderIsDeposit() ? setDepositMyPercent(v) : setDialValue(v); },
+  text: (v) => {
+    if (pctSliderIsDeposit()) return `El teu càlcul: ${v} per cent.`;
+    const n = repteMode ? rN : N;
+    return `Descompte del ${v} per cent. Preu final ${fmtNum(finalPrice(n, v))} euros.`;
+  }
+});
+// La vista i el tipus de ronda canvien el SIGNIFICAT del control (dial de
+// descompte ↔ barra del dipòsit). syncPctSlider() es crida explícitament des
+// de refreshViewUI() i startRepteRound(); si no, els atributs ARIA quedarien
+// descrivint el control anterior.
+function syncPctSlider() { if (pctSlider) pctSlider.sync(); }
 
 // ─────────────────────────────────────────────
 //  TARGETES DE REFERÈNCIA
@@ -1062,6 +1098,7 @@ function startRepteRound() {
   }
   draw();
   refreshAnswerPanels();
+  syncPctSlider();
 }
 
 function triggerTimeUp() {
