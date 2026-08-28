@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitxes · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Inici</a></li>
+    <li><a href="capsules.html">Càpsules</a></li>
+    <li><a href="fitxes.html" class="active">Fitxes</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="page-header-text">
+      <div class="breadcrumb">
+        <a href="index.html">Inici</a> <span>›</span> <span class="cur">Fitxes</span>
+      </div>
+      <h1>Fitxes de <em>conceptes</em></h1>
+      <p>Una fitxa de referència i pràctica per a cada càpsula, organitzada pel mateix bloc temàtic. El disseny detallat de les fitxes es definirà quan les primeres càpsules estiguin acabades; de moment, aquest és l'índex de què hi haurà.</p>
+    </div>
+    <div class="page-header-visual">
+      <div class="page-hero-canvas-wrap">
+        <canvas class="page-hero-canvas" id="pageHero"></canvas>
+      </div>
+      <p class="hero-canvas-caption" id="pageHeroCaption"></p>
+    </div>
+  </div>
+</div>
+
+<main class="content">
+
+  <section class="bloc-section" style="--b-color: var(--aritmetica)">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 01</span>
+      <span class="bloc-title">Aritmètica i Teoria de Nombres</span>
+      <span class="bloc-desc">Nombres primers, aritmètica modular i funcions aritmètiques</span>
+    </div>
+    <div class="fitxa-list">
+      <div class="fitxa-row soon">
+        <div class="fitxa-row-tag-col"><span class="fitxa-tag">Sense càpsules</span></div>
+        <div class="fitxa-row-content">
+          <h4>Encara no hi ha fitxes en aquest bloc</h4>
+          <p>Apareixeran quan es publiquin les primeres càpsules d'aquest bloc.</p>
+        </div>
+        <div class="fitxa-row-end"><span class="fitxa-status">Pròximament</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc-section" style="--b-color: var(--algebra)">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 02</span>
+      <span class="bloc-title">Àlgebra i Combinatòria</span>
+      <span class="bloc-desc">Estructures algebraiques, combinatòria, grafs i trenes</span>
+    </div>
+    <div class="fitxa-list">
+      <div class="fitxa-row soon">
+        <div class="fitxa-row-tag-col"><span class="fitxa-tag">Sense càpsules</span></div>
+        <div class="fitxa-row-content">
+          <h4>Encara no hi ha fitxes en aquest bloc</h4>
+          <p>Apareixeran quan es publiquin les primeres càpsules d'aquest bloc.</p>
+        </div>
+        <div class="fitxa-row-end"><span class="fitxa-status">Pròximament</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc-section" style="--b-color: var(--geometria)">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 03</span>
+      <span class="bloc-title">Geometria i Topologia</span>
+      <span class="bloc-desc">Geometria no euclidiana, topologia i simetries</span>
+    </div>
+    <div class="fitxa-list">
+      <div class="fitxa-row soon">
+        <div class="fitxa-row-tag-col"><span class="fitxa-tag">Sense càpsules</span></div>
+        <div class="fitxa-row-content">
+          <h4>Encara no hi ha fitxes en aquest bloc</h4>
+          <p>Apareixeran quan es publiquin les primeres càpsules d'aquest bloc.</p>
+        </div>
+        <div class="fitxa-row-end"><span class="fitxa-status">Pròximament</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc-section" style="--b-color: var(--calcul)">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 04</span>
+      <span class="bloc-title">Càlcul i Anàlisi Matemàtica</span>
+      <span class="bloc-desc">Límits, sèries, equacions diferencials i anàlisi complexa</span>
+    </div>
+    <div class="fitxa-list">
+      <div class="fitxa-row soon">
+        <div class="fitxa-row-tag-col"><span class="fitxa-tag">Sense càpsules</span></div>
+        <div class="fitxa-row-content">
+          <h4>Encara no hi ha fitxes en aquest bloc</h4>
+          <p>Apareixeran quan es publiquin les primeres càpsules d'aquest bloc.</p>
+        </div>
+        <div class="fitxa-row-end"><span class="fitxa-status">Pròximament</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+  <span>diegovalino.tic@gmail.com</span>
+</footer>
+
+<script src="assets/hero-anim.js"></script>
+<script src="assets/a11y.js"></script>
+<script>
+  initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+  initHeroAnim(document.getElementById('pageHero'), { size: 150, captionEl: document.getElementById('pageHeroCaption') });
+  hideCanvasFromA11y(document.getElementById('pageHero'));
+</script>
+</body>
+</html>

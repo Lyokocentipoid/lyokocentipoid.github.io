@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Càpsules · Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <canvas class="nav-hero-mini" id="navHero"></canvas>
+    Càpsules Avançades
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html">Inici</a></li>
+    <li><a href="capsules.html" class="active">Càpsules</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="page-header-text">
+      <div class="breadcrumb">
+        <a href="index.html">Inici</a> <span>›</span> <span class="cur">Càpsules</span>
+      </div>
+      <h1>Càpsules de <em>teoria</em></h1>
+      <p>Conceptes de matemàtiques explicats de forma visual i interactiva, organitzats en quatre blocs temàtics. Cada càpsula combina un element interactiu amb explicacions de profunditat creixent, des d'un resum breu fins a una lectura al detall.</p>
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-num">16</span><span class="stat-label">Càpsules publicades</span></div>
+        <div class="stat"><span class="stat-num" style="color:var(--gold)">4</span><span class="stat-label">Blocs temàtics</span></div>
+      </div>
+    </div>
+    <div class="page-header-visual">
+      <div class="page-hero-canvas-wrap">
+        <canvas class="page-hero-canvas" id="pageHero"></canvas>
+      </div>
+      <p class="hero-canvas-caption" id="pageHeroCaption"></p>
+    </div>
+  </div>
+</div>
+
+<main class="content">
+
+  <!-- BLOC 01 -->
+  <section class="bloc reveal" id="bloc-01" style="--b-color: var(--aritmetica)">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 01</span>
+      <span class="bloc-title">Aritmètica i Teoria de Nombres</span>
+      <span class="bloc-count">5 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/sedas-primers.html" class="capsula" style="--b-color:var(--aritmetica)">
+        <div class="capsula-icon">🔢</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de nombres</span><span class="capsula-status available">Disponible</span></div>
+        <h3>El sedàs i el ritme dels primers</h3>
+        <p>Tatxa els múltiples de cada primer d'una sola passada, com fa 2.200 anys, i després compta'ls: la seva quantitat segueix una llei que va costar un segle demostrar.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/teorema-xines-residu.html" class="capsula" style="--b-color:var(--aritmetica)">
+        <div class="capsula-icon">⚙️</div>
+        <div class="capsula-meta"><span class="capsula-tag">Aritmètica modular</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Rellotges que encaixen</h3>
+        <p>Gira rodes dentades de 3, 5 i 7 dents fins que les tres marques s'alineïn. Aquell únic moment resol un enigma xinès del segle IV — i és el que fa RSA quatre vegades més ràpid.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/fraccions-continues.html" class="capsula" style="--b-color:var(--aritmetica)">
+        <div class="capsula-icon">🔁</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de nombres</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Fraccions contínues</h3>
+        <p>Retalla el quadrat més gran possible d'un rectangle, un cop i un altre. Per a √N, el patró que es repeteix resol l'equació de Pell.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/reciprocitat-quadratica.html" class="capsula" style="--b-color:var(--aritmetica)">
+        <div class="capsula-icon">🔃</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de nombres</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Reciprocitat quadràtica</h3>
+        <p>Construeix taules de residus quadràtics elevant al quadrat tu mateix, i descobreix per què Gauss l'anomenava el seu teorema auri.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/fermat-rsa.html" class="capsula" style="--b-color:var(--aritmetica)">
+        <div class="capsula-icon">🔐</div>
+        <div class="capsula-meta"><span class="capsula-tag">Criptografia</span><span class="capsula-status available">Disponible</span></div>
+        <h3>De Fermat a RSA</h3>
+        <p>Troba tu mateix, omplint una taula de potències, el patró que Fermat va anotar el 1640 — i construeix-hi a sobre un sistema de clau pública sencer, amb el qual xifraràs una paraula.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- BLOC 02 -->
+  <section class="bloc reveal" id="bloc-02" style="--b-color: var(--algebra); transition-delay:.1s">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 02</span>
+      <span class="bloc-title">Àlgebra i Combinatòria</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+
+      <a href="capsules/taules-cayley.html" class="capsula" style="--b-color:var(--algebra)">
+        <div class="capsula-icon">🔲</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de grups</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Taules de Cayley</h3>
+        <p>Construeix la taula d'un grup casella a casella, troba'n els subgrups i comprova si dos grups del mateix ordre són, de fet, el mateix grup.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/trencaclosques-15.html" class="capsula" style="--b-color:var(--algebra)">
+        <div class="capsula-icon">🧮</div>
+        <div class="capsula-meta"><span class="capsula-tag">Permutacions</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Trencaclosques del 15 i paritat</h3>
+        <p>Juga-hi i mira com el comptador de paritat mai s'equivoca, moviment rere moviment — i descobreix per què certes graelles no tenen solució, per molt que s'hi barregin.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+
+      <a href="capsules/constructor-trenes.html" class="capsula" style="--b-color:var(--algebra)">
+        <div class="capsula-icon">🧵</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de grups</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Constructor de Trenes</h3>
+        <p>Composa creuaments del grup de trenes d'Artin i comprova, pas a pas, quan dues seqüències ben diferents són en realitat la mateixa trena.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/teoria-galois.html" class="capsula" style="--b-color:var(--algebra)">
+        <div class="capsula-icon">🌀</div>
+        <div class="capsula-meta"><span class="capsula-tag">Teoria de grups</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Teoria de Galois — un tast</h3>
+        <p>Descobreix quines permutacions de les arrels de tres polinomis de grau 4 respecten totes les relacions racionals: el grup de Galois, en viu.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- BLOC 03 -->
+  <section class="bloc reveal" id="bloc-03" style="--b-color: var(--geometria); transition-delay:.2s">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 03</span>
+      <span class="bloc-title">Geometria i Topologia</span>
+      <span class="bloc-count">3 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+      <a href="capsules/caracteristica-euler.html" class="capsula" style="--b-color:var(--geometria)">
+        <div class="capsula-icon">🧊</div>
+        <div class="capsula-meta"><span class="capsula-tag">Topologia</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Característica d'Euler i poliedres</h3>
+        <p>Combina la fórmula d'Euler amb el recompte d'arestes per demostrar que només existeixen 5 sòlids platònics — mai un sisè — i per què un tor i una ampolla de Klein comparteixen χ=0.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/joc-del-caos.html" class="capsula" style="--b-color:var(--geometria)">
+        <div class="capsula-icon">🎲</div>
+        <div class="capsula-meta"><span class="capsula-tag">Fractals</span><span class="capsula-status available">Disponible</span></div>
+        <h3>El joc del caos</h3>
+        <p>Salts a l'atzar cap als vèrtexs d'un polígon conflueixen sempre en el mateix atractor fractal, sigui quin sigui el punt de partida.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/nusos-tricolorabilitat.html" class="capsula" style="--b-color:var(--geometria)">
+        <div class="capsula-icon">🪢</div>
+        <div class="capsula-meta"><span class="capsula-tag">Topologia</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Nusos i tricolorabilitat</h3>
+        <p>Acoloreix un diagrama amb 3 colors seguint una regla senzilla: si ho aconsegueixes amb més d'un color, has demostrat que el nus és real.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- BLOC 04 -->
+  <section class="bloc reveal" id="bloc-04" style="--b-color: var(--calcul); transition-delay:.3s">
+    <div class="bloc-header">
+      <span class="bloc-tag">Bloc 04</span>
+      <span class="bloc-title">Càlcul i Anàlisi Matemàtica</span>
+      <span class="bloc-count">4 càpsules</span>
+    </div>
+    <div class="capsules-grid">
+      <a href="capsules/camp-de-pendents.html" class="capsula" style="--b-color:var(--calcul)">
+        <div class="capsula-icon">📈</div>
+        <div class="capsula-meta"><span class="capsula-tag">Equacions diferencials</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Camp de pendents i equacions diferencials</h3>
+        <p>Traça solucions, descobreix on s'estabilitzen a llarg termini, i troba l'única situació on seguir el pendent no basta per saber quina és la teva.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/pla-argand.html" class="capsula" style="--b-color:var(--calcul)">
+        <div class="capsula-icon">🌀</div>
+        <div class="capsula-meta"><span class="capsula-tag">Nombres complexos</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Pla d'Argand: multiplicar és girar</h3>
+        <p>Arrossega dos nombres complexos i veu com el seu producte apareix sol al lloc correcte; després, troba totes les arrels d'un número, una a una.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/metode-newton.html" class="capsula" style="--b-color:var(--calcul)">
+        <div class="capsula-icon">🌌</div>
+        <div class="capsula-meta"><span class="capsula-tag">Anàlisi numèrica</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Mètode de Newton i el seu fractal</h3>
+        <p>Fes saltar la tangent cap a l'arrel i descobreix el fractal amagat quan el mètode s'aplica al pla complex.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+      <a href="capsules/series-fourier.html" class="capsula" style="--b-color:var(--calcul)">
+        <div class="capsula-icon">〰️</div>
+        <div class="capsula-meta"><span class="capsula-tag">Anàlisi de Fourier</span><span class="capsula-status available">Disponible</span></div>
+        <h3>Sèries de Fourier i el fenomen de Gibbs</h3>
+        <p>Suma harmònics i mira el sobrepic prop d'un salt no desaparèixer mai —mentre que, en un altre sentit ben precís (Parseval), la sèrie sí que convergeix del tot.</p>
+        <span class="capsula-arrow">↗</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+  <span>diegovalino.tic@gmail.com</span>
+</footer>
+
+<script src="assets/hero-anim.js"></script>
+<script src="assets/a11y.js"></script>
+<script>
+  initHeroAnim(document.getElementById('navHero'), { size: 34 });
+hideCanvasFromA11y(document.getElementById('navHero'));
+  initHeroAnim(document.getElementById('pageHero'), { size: 150, captionEl: document.getElementById('pageHeroCaption') });
+  hideCanvasFromA11y(document.getElementById('pageHero'));
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

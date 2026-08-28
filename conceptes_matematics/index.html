@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Càpsules Avançades de Matemàtiques</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<!-- Fons decoratiu: paper quadriculat + glifs matemàtics -->
+<div class="calc-bg">
+  <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g stroke="#1b1e2d" stroke-width=".5" fill="none">
+      <line x1="0" y1="100" x2="1400" y2="100"/><line x1="0" y1="200" x2="1400" y2="200"/>
+      <line x1="0" y1="300" x2="1400" y2="300"/><line x1="0" y1="400" x2="1400" y2="400"/>
+      <line x1="0" y1="500" x2="1400" y2="500"/><line x1="0" y1="600" x2="1400" y2="600"/>
+      <line x1="0" y1="700" x2="1400" y2="700"/><line x1="0" y1="800" x2="1400" y2="800"/>
+      <line x1="100" y1="0" x2="100" y2="900"/><line x1="200" y1="0" x2="200" y2="900"/>
+      <line x1="300" y1="0" x2="300" y2="900"/><line x1="400" y1="0" x2="400" y2="900"/>
+      <line x1="500" y1="0" x2="500" y2="900"/><line x1="600" y1="0" x2="600" y2="900"/>
+      <line x1="700" y1="0" x2="700" y2="900"/><line x1="800" y1="0" x2="800" y2="900"/>
+      <line x1="900" y1="0" x2="900" y2="900"/><line x1="1000" y1="0" x2="1000" y2="900"/>
+      <line x1="1100" y1="0" x2="1100" y2="900"/><line x1="1200" y1="0" x2="1200" y2="900"/>
+      <line x1="1300" y1="0" x2="1300" y2="900"/>
+    </g>
+    <g font-family="'Source Serif 4', serif" font-weight="700" fill="#0b7b86">
+      <text x="120" y="230" font-size="150">∮</text>
+      <text x="1150" y="200" font-size="120" fill="#a9700f">π</text>
+      <text x="1080" y="720" font-size="140" fill="#a02545">∂</text>
+      <text x="180" y="720" font-size="110" fill="#5c3aa8">∀</text>
+      <text x="650" y="480" font-size="130" fill="#1a7a52">ℝ</text>
+    </g>
+  </svg>
+</div>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span class="dot"></span>Càpsules Avançades</a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Inici</a></li>
+    <li><a href="capsules.html">Càpsules</a></li>
+    <li><a href="fitxes.html">Fitxes</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-tag">Matemàtiques · Nivell avançat</span>
+      <h1>
+        Matemàtiques <span class="ac-algebra">pures</span><br>
+        fetes <span class="ac-geometria">visuals</span><br>
+        i <span class="ac-calcul">interactives</span>
+      </h1>
+      <p>Càpsules interactives per estudiar conceptes de matemàtiques de nivell universitari i d'aficionat: teoria de nombres, àlgebra, topologia i anàlisi, treballats amb eines que es manipulen, no només es llegeixen.</p>
+      <div class="hero-actions">
+        <a href="#blocs" class="btn btn-primary">Explora els blocs →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-canvas">
+        <canvas id="heroCanvasFull"></canvas>
+      </div>
+      <p class="hero-canvas-caption" id="heroCanvasCaption"></p>
+    </div>
+  </section>
+
+  <section id="seccions">
+    <div class="container">
+      <div class="reveal">
+        <h2 class="section-title">Dos formats, un mateix objectiu</h2>
+        <p class="section-sub">Eines interactives per entendre un concepte manipulant-lo, i fitxes de referència per repassar-lo després.</p>
+      </div>
+      <div class="seccions-grid">
+
+        <a href="capsules.html" class="seccio-card reveal" data-s="capsules">
+          <span class="seccio-badge">✦ Interactiu</span>
+          <h3>Càpsules de teoria</h3>
+          <p>Representacions visuals i interactives de conceptes avançats. Manipula estructures, prova casos i entén el perquè, no només el resultat.</p>
+        </a>
+
+        <a href="fitxes.html" class="seccio-card reveal" data-s="fitxes" style="transition-delay:.1s">
+          <span class="seccio-badge">✎ Referència</span>
+          <h3>Fitxes de conceptes</h3>
+          <p>Un resum i pràctica per a cada càpsula: definicions, propietats clau i notació, a mà per consultar-los quan calgui.</p>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="blocs">
+    <div class="container">
+      <div class="reveal">
+        <p style="color:var(--muted);font-family:'Source Serif 4',serif;font-weight:700;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem;">Contingut del projecte</p>
+        <h2 class="section-title">Quatre blocs temàtics</h2>
+        <p class="section-sub">El projecte anirà creixent bloc a bloc: no hi ha un nombre fix de càpsules, sinó un recull que s'amplia amb el temps. Clica un bloc per veure les seves càpsules.</p>
+      </div>
+      <div class="blocs-grid">
+
+        <a href="capsules.html#bloc-01" class="bloc-card reveal" data-color="aritmetica" style="transition-delay:.1s">
+          <div class="bloc-icon">🧮</div>
+          <p class="bloc-num">Bloc 01</p>
+          <h3>Aritmètica i Teoria de Nombres</h3>
+          <ul>
+            <li>Nombres primers i factorització</li>
+            <li>Aritmètica modular</li>
+            <li>Funcions aritmètiques (φ, σ, τ)</li>
+            <li>Fraccions contínues</li>
+          </ul>
+        </a>
+
+        <a href="capsules.html#bloc-02" class="bloc-card reveal" data-color="algebra" style="transition-delay:.2s">
+          <div class="bloc-icon">🧩</div>
+          <p class="bloc-num">Bloc 02</p>
+          <h3>Àlgebra i Combinatòria</h3>
+          <ul>
+            <li>Estructures algebraiques (grups, anells)</li>
+            <li>Combinatòria enumerativa</li>
+            <li>Grafs i xarxes</li>
+            <li>Teoria de nusos i trenes</li>
+          </ul>
+        </a>
+
+        <a href="capsules.html#bloc-03" class="bloc-card reveal" data-color="geometria" style="transition-delay:.3s">
+          <div class="bloc-icon">📐</div>
+          <p class="bloc-num">Bloc 03</p>
+          <h3>Geometria i Topologia</h3>
+          <ul>
+            <li>Geometria no euclidiana</li>
+            <li>Topologia de superfícies</li>
+            <li>Transformacions i simetries</li>
+            <li>Geometria fractal</li>
+          </ul>
+        </a>
+
+        <a href="capsules.html#bloc-04" class="bloc-card reveal" data-color="calcul" style="transition-delay:.4s">
+          <div class="bloc-icon">📈</div>
+          <p class="bloc-num">Bloc 04</p>
+          <h3>Càlcul i Anàlisi Matemàtica</h3>
+          <ul>
+            <li>Límits i continuïtat</li>
+            <li>Sèries infinites</li>
+            <li>Equacions diferencials</li>
+            <li>Anàlisi complexa</li>
+          </ul>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Càpsules Avançades de Matemàtiques</span>
+  <span>Diego Valiño · 2026</span>
+  <span>diegovalino.tic@gmail.com</span>
+</footer>
+
+<script src="assets/hero-anim.js"></script>
+<script src="assets/a11y.js"></script>
+<script>
+  initHeroAnim(document.getElementById('heroCanvasFull'), { size: 320, captionEl: document.getElementById('heroCanvasCaption') });
+  // decoratiu: la llegenda de sota ja en dona la versió textual
+  hideCanvasFromA11y(document.getElementById('heroCanvasFull'));
+
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  reveals.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
