@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloc 04 · Càlcul i Anàlisi Matemàtica · Fitxa de síntesi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Bloc 04 · Càlcul i Anàlisi — paper i tinta del web, amb el granat
+         del bloc (#a02545) com a color d'accent de la llibreta. */
+      --paper:  #fffdf9;
+      --paper2: #f6f2e7;
+      --grid:   rgba(160,37,69,0.14);
+      --margin: #e0a5b4;
+      --ink:    #1b1e2d;
+      --ink2:   #282c44;
+      --red:    #b23b3b;
+      --green:  #1f8a5f;
+      --blue:   #a02545;
+      --pencil: #6b6459;
+      --hole:   #e1d8c3;
+      --radius: 4px;
+      --shadow: 4px 4px 0px rgba(80,60,40,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #d8cfc4;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(140,120,100,0.12) 31px, rgba(140,120,100,0.12) 32px),
+        repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(140,120,100,0.08) 31px, rgba(140,120,100,0.08) 32px);
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--ink);
+      padding: 2rem 1rem 5rem;
+    }
+
+    .page-wrap { max-width: 820px; margin: 0 auto; position: relative; }
+
+    /* ── BACK TAB (link to fitxes) ── */
+    .back-tab {
+      position: absolute; top: -10px; left: 6px; z-index: 6;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: var(--paper2); color: var(--blue);
+      border: 1.5px dashed var(--pencil); border-radius: var(--radius);
+      font-family: 'Source Serif 4', Georgia, serif; font-weight: 700; font-size: 0.95rem;
+      padding: 0.25rem 0.8rem; text-decoration: none;
+      transform: rotate(-3deg); box-shadow: 2px 2px 0 rgba(80,60,40,0.15);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+    }
+    .back-tab:hover {
+      transform: rotate(-3deg) translate(-1px,-2px);
+      box-shadow: 3px 4px 0 rgba(80,60,40,0.2);
+      color: var(--red);
+    }
+
+    /* ── PAPER SHEET ── */
+    .paper-sheet {
+      background: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px),
+        repeating-linear-gradient(90deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px),
+        linear-gradient(90deg, transparent 59px, var(--margin) 59px, var(--margin) 61px, transparent 61px);
+      border-radius: 2px;
+      box-shadow: 3px 3px 0 #c4b9aa, 6px 6px 0 #b8aa99, 9px 9px 0 rgba(100,80,60,0.1);
+      padding: 2rem 2.5rem 2.5rem 4.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .paper-sheet::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 40px;
+      background: repeating-linear-gradient(to bottom, transparent, transparent 48px, var(--hole) 48px, var(--hole) 68px);
+      z-index: 2;
+    }
+    .paper-sheet::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3rem;
+      background: linear-gradient(to bottom, rgba(200,190,175,0.3), transparent);
+    }
+    .holes {
+      position: absolute; left: 13px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: space-around;
+      padding: 40px 0; z-index: 3; pointer-events: none;
+    }
+    .hole {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #d8cfc4; border: 2px solid #bfb3a4;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* ── NAME SCREEN ── */
+    #nameScreen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 3rem 1rem 2rem;
+      animation: fadeIn 0.5s ease;
+    }
+    .name-card {
+      background: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px);
+      border: 2.5px solid var(--ink2);
+      border-radius: 4px; padding: 2.5rem 2.5rem 2rem;
+      max-width: 420px; width: 100%;
+      box-shadow: 6px 6px 0 rgba(50,40,30,0.25);
+      transform: rotate(-0.5deg);
+      text-align: center;
+    }
+    .name-title {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 2rem; font-weight: 700;
+      color: var(--ink); margin-bottom: 0.3rem;
+    }
+    .name-subtitle {
+      font-family: 'Inter', -apple-system, sans-serif; font-size: 0.9rem;
+      color: var(--pencil); margin-bottom: 1.8rem; line-height: 1.5;
+    }
+    .name-label {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700;
+      color: var(--blue); text-align: left; display: block; margin-bottom: 0.4rem;
+    }
+    #playerNameInput {
+      width: 100%; background: transparent; border: none;
+      border-bottom: 2.5px solid var(--ink); outline: none;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.4rem; font-weight: 600;
+      color: var(--ink); padding: 0.3rem 0.4rem; text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    #playerNameInput::placeholder { color: #c8bfb0; font-size: 1.2rem; }
+    #playerNameInput:focus { border-bottom-color: var(--blue); }
+    #startBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; font-weight: 700;
+      background: var(--blue); color: #fff; border: none;
+      padding: 0.7rem 2.2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    #startBtn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(80,60,40,0.2); }
+
+    /* ── MAIN CONTENT ── */
+    #mainContent { display: none; }
+    #mainContent.show { display: block; animation: fadeIn 0.4s ease; }
+
+    /* ── HEADER ── */
+    .nb-header {
+      position: relative; margin-bottom: 2rem; padding-bottom: 1rem;
+      border-bottom: 2.5px solid var(--margin);
+      animation: fadeIn 0.5s ease both;
+    }
+    .nb-subject {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.85rem; font-weight: 700;
+      color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.3rem;
+    }
+    .nb-title {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 700; line-height: 1; color: var(--ink);
+    }
+    .nb-title span { color: var(--blue); }
+    .nb-student {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 600;
+      color: var(--pencil); margin-top: 0.3rem;
+    }
+    .nb-student em { color: var(--ink); font-style: normal; font-weight: 700; }
+    .nb-subtitle {
+      font-family: 'Inter', -apple-system, sans-serif; font-size: 0.9rem;
+      color: var(--pencil); margin-top: 0.2rem;
+    }
+
+    /* ── STAMP ── */
+    .stamp {
+      position: absolute; top: 0; right: 0;
+      width: 90px; height: 90px;
+      border: 3px solid var(--red); border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--red); transform: rotate(12deg);
+      font-family: 'Source Serif 4', Georgia, serif; font-weight: 700;
+      opacity: 0.75; line-height: 1.1;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .stamp-label { font-size: 0.6rem; margin-bottom: 1px; }
+    .stamp-score { display: flex; align-items: baseline; gap: 1px; }
+    .stamp-num   { font-size: 2.4rem; font-weight: 700; line-height: 1; transition: all 0.3s ease; }
+    .stamp-denom { font-size: 1rem; font-weight: 700; opacity: 0.7; }
+    @keyframes stampBump { 0%{transform:rotate(12deg) scale(1)} 40%{transform:rotate(10deg) scale(1.25)} 100%{transform:rotate(12deg) scale(1)} }
+    .stamp.bump { animation: stampBump 0.4s ease; }
+
+    /* ── PROGRESS DOTS ── */
+    .progress-box {
+      background: var(--paper2); border: 1.5px dashed var(--pencil);
+      border-radius: var(--radius); padding: 0.8rem 1rem;
+      margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;
+      animation: fadeIn 0.5s 0.1s ease both;
+    }
+    .progress-label {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.9rem; font-weight: 700;
+      color: var(--pencil); white-space: nowrap; min-width: 90px;
+    }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+    .dot-ball {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: transparent; border: 2px solid #bfb3a4;
+      transition: all 0.3s ease; position: relative;
+    }
+    .dot-ball.done {
+      background: var(--green); border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(26,122,74,0.2);
+    }
+    .dot-ball.done::after {
+      content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #fff; font-weight: 700;
+    }
+    .dot-ball.pop { animation: popDot 0.35s ease; }
+    #progressCount {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      color: var(--blue); white-space: nowrap;
+    }
+
+    /* ── INSTRUCTIONS ── */
+    .instructions-box {
+      background: #fff9e6; border: 1.5px solid #f0d070;
+      border-left: 4px solid #e8a820; border-radius: var(--radius);
+      padding: 0.9rem 1.1rem; margin-bottom: 1.8rem;
+      font-size: 0.93rem; color: #6a5a30; line-height: 1.6;
+      animation: fadeIn 0.5s 0.15s ease both;
+    }
+    .instructions-box strong { color: #8a6020; }
+
+    /* ── ROUND LABEL ── */
+    #roundLabel {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      color: var(--pencil); margin-bottom: 0.8rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    #roundLabel::before { content: '→'; color: var(--red); font-size: 1.2rem; }
+
+    /* ── CARDS ── */
+    .exercises { display: flex; flex-direction: column; gap: 1.6rem; }
+    .card {
+      position: relative; background: transparent;
+      border-left: 3px solid var(--blue);
+      padding: 1rem 1.2rem 1rem 1.4rem;
+      transition: border-color 0.3s;
+    }
+    .card.correct { border-left-color: var(--green); }
+    .card.wrong   { border-left-color: var(--red); }
+
+    .card-num {
+      position: absolute; top: -6px; left: -14px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.85rem; font-weight: 700;
+      box-shadow: var(--shadow); transition: background 0.3s;
+    }
+    .card.correct .card-num { background: var(--green); }
+    .card.wrong   .card-num { background: var(--red); }
+
+    .card-tag {
+      display: inline-block; font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--blue);
+      border-bottom: 2px dotted currentColor;
+      margin-bottom: 0.6rem; padding-bottom: 1px;
+    }
+    .card.wrong   .card-tag { color: var(--red); }
+    .card.correct .card-tag { color: var(--green); }
+    .card-difficulty { float: right; font-size: 0.75rem; color: #c8a030; margin-top: 1px; }
+
+    .sentence {
+      font-family: 'Inter', -apple-system, sans-serif; font-size: 1.05rem;
+      line-height: 1.9; color: var(--ink); margin-bottom: 0.5rem;
+    }
+
+    /* context block for problems */
+    .problem-ctx {
+      font-family: 'Inter', -apple-system, sans-serif; font-size: 0.93rem;
+      color: #4a3f6b; background: rgba(26,74,138,0.06);
+      border-left: 3px solid var(--blue); border-radius: 0 4px 4px 0;
+      padding: 0.5rem 0.8rem; margin-bottom: 0.7rem; line-height: 1.6;
+    }
+
+    input[type="text"] {
+      display: inline-block; width: 76px;
+      background: transparent; border: none;
+      border-bottom: 2.5px solid var(--ink);
+      color: var(--blue); font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.1rem; font-weight: 600; text-align: center;
+      padding: 0.1rem 0.3rem; outline: none;
+      transition: border-color 0.2s; vertical-align: baseline;
+    }
+    input[type="text"]::placeholder { color: #bfb3a4; font-size: 1rem; }
+    input[type="text"]:focus { border-bottom-color: var(--blue); }
+    input.correct-input { border-bottom-color: var(--green); color: var(--green); }
+    input.wrong-input   { border-bottom-color: var(--red);   color: var(--red);   }
+    input:disabled { opacity: 0.85; cursor: default; }
+
+    .hint {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.95rem; font-weight: 600;
+      color: var(--pencil); background: rgba(180,160,120,0.08);
+      border: 1.5px dashed var(--pencil); border-radius: var(--radius);
+      padding: 0; margin-top: 0.5rem;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+    }
+    .hint.visible { max-height: 160px; opacity: 1; padding: 0.45rem 0.8rem; }
+    .hint::before { content: '📝 '; }
+
+    .feedback {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700;
+      margin-top: 0.5rem; min-height: 1.4rem;
+      opacity: 0; transform: translateY(4px);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok   { color: var(--green); }
+    .feedback.err  { color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn-row { margin-top: 2rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; }
+
+    #checkBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.2rem; font-weight: 700;
+      background: var(--blue); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: var(--shadow);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+    #checkBtn::before { content: '✏️ '; }
+    #checkBtn:hover  { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(80,60,40,0.2); }
+    #checkBtn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(80,60,40,0.15); }
+    #checkBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: var(--shadow); }
+
+    #retryBtn {
+      display: none; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      background: transparent; color: var(--pencil);
+      border: 2px dashed var(--pencil); padding: 0.55rem 1.6rem;
+      border-radius: var(--radius); cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #retryBtn::before { content: '↺ '; }
+    #retryBtn:hover { color: var(--red); border-color: var(--red); }
+
+    #scoreBox {
+      margin-top: 1rem; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      opacity: 0; transform: translateY(8px); transition: opacity 0.35s, transform 0.35s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 2rem; color: var(--blue); display: block; line-height: 1; }
+    #scoreBox .score-msg { color: var(--pencil); font-size: 1rem; }
+
+    /* ── CELEBRATION ── */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(50,40,30,0.75);
+      justify-content: center; align-items: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.3s ease; }
+    .celeb-paper {
+      background: var(--paper);
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, var(--grid) 31px, var(--grid) 32px);
+      border: 3px solid var(--ink2); border-radius: 4px;
+      padding: 2rem 2.5rem 2rem; max-width: 420px; width: 90%;
+      text-align: center; box-shadow: 8px 8px 0 rgba(50,40,30,0.35);
+      transform: rotate(-1.5deg); position: relative;
+    }
+    .celeb-paper::before {
+      content: '⭐'; position: absolute; top: -18px; left: 50%;
+      transform: translateX(-50%); font-size: 2.2rem;
+    }
+    .celeb-name   { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 600; color: var(--pencil); margin-bottom: 0.2rem; }
+    .celeb-title  { font-family: 'Source Serif 4', Georgia, serif; font-size: 2.2rem; font-weight: 700; color: var(--ink); margin-bottom: 0.3rem; }
+    .celeb-stamp  {
+      display: inline-block; border: 3px solid var(--red); border-radius: 4px;
+      color: var(--red); font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.5rem; font-weight: 700;
+      padding: 0.2rem 1rem; margin: 0.6rem 0 0.4rem;
+      transform: rotate(-3deg);
+    }
+    .celeb-score-note { font-family: 'Inter', -apple-system, sans-serif; font-size: 0.82rem; color: var(--pencil); margin-bottom: 0.2rem; }
+    .celeb-score-note.bonus { color: var(--green); font-weight: 700; }
+    .celeb-sub    { font-family: 'Inter', -apple-system, sans-serif; font-size: 0.92rem; color: var(--pencil); margin: 0.8rem 0 1.3rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+      transition: transform 0.12s;
+    }
+    #celebCloseBtn:hover { transform: translate(-1px,-1px); }
+
+    /* ── CONFETTI ── */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* ── FINAL SCREEN ── */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeIn 0.6s ease; }
+    .final-wrap {
+      display: inline-block; background: var(--paper);
+      border: 3px solid var(--ink); border-radius: 4px;
+      padding: 3rem 3rem 2.5rem;
+      box-shadow: 8px 8px 0 rgba(50,40,30,0.3); transform: rotate(0.5deg);
+    }
+    .final-name  { font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 600; color: var(--pencil); margin-bottom: 0.5rem; }
+    .final-grade {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 4.5rem; font-weight: 700;
+      color: var(--red); line-height: 1;
+      border: 4px solid var(--red); border-radius: 50%;
+      width: 110px; height: 110px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 0.8rem; transform: rotate(-5deg);
+    }
+    .final-grade .grade-num   { font-size: 3.2rem; line-height: 1; }
+    .final-grade .grade-denom { font-size: 1rem; opacity: 0.6; line-height: 1; }
+    .final-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 2rem; font-weight: 700; color: var(--ink); }
+    .final-sub   { font-family: 'Inter', -apple-system, sans-serif; font-size: 0.95rem; color: var(--pencil); margin: 0.5rem 0 1.5rem; line-height: 1.6; }
+    .final-note  { font-family: 'Source Serif 4', Georgia, serif; font-size: 0.85rem; color: var(--pencil); margin-bottom: 1.2rem; font-style: italic; }
+    #reloadBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--ink); color: #fff; border: none;
+      padding: 0.65rem 2rem; border-radius: var(--radius);
+      cursor: pointer; box-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+    }
+    #reloadBtn:hover { background: var(--blue); }
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+    @keyframes slideIn   { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes popDot    { 0%{transform:scale(1)} 50%{transform:scale(1.5)} 100%{transform:scale(1)} }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .stamp {
+        position: static;
+        width: 64px; height: 64px;
+        margin: 0.8rem auto 0;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Celebration overlay -->
+<div id="celebration">
+  <div class="celeb-paper">
+    <div class="celeb-name" id="celebName"></div>
+    <div class="celeb-title">Molt bé! 🎉</div>
+    <div class="celeb-stamp">3 / 3 ✓</div>
+    <div class="celeb-score-note bonus" id="celebScoreNote"></div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Seguim →</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <a href="../fitxes.html" class="back-tab">← Fitxes</a>
+
+  <!-- ── NAME SCREEN ── -->
+  <div id="nameScreen">
+    <div class="name-card">
+      <div class="name-title">📈 Càlcul i Anàlisi</div>
+      <div class="name-subtitle">Bloc 04 · Fitxa de síntesi<br>Equacions diferencials, complexos, Newton i Fourier</div>
+      <label class="name-label" for="playerNameInput">✏️ Escriu el teu nom per començar:</label>
+      <input type="text" id="playerNameInput" placeholder="El teu nom aquí…" maxlength="30" autocomplete="off">
+      <button id="startBtn" onclick="startGame()">Comencem! →</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="mainContent">
+  <div class="paper-sheet">
+
+    <div class="holes">
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+      <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="nb-header">
+      <div class="nb-subject">Bloc 04 · Fitxa de síntesi</div>
+      <div class="nb-title">Càlcul i <span>Anàlisi Matemàtica</span></div>
+      <div class="nb-student">Alumne/a: <em id="headerName"></em></div>
+      <div class="nb-subtitle">Camps de pendents, pla d'Argand, mètode de Newton i sèries de Fourier</div>
+      <div class="stamp">
+        <div class="stamp-label">Nota</div>
+        <div class="stamp-score">
+          <div class="stamp-num" id="stampNum">0</div>
+          <div class="stamp-denom">/30</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress-box">
+      <div class="progress-label">Exercicis ✓</div>
+      <div id="dotsGrid"></div>
+      <div id="progressCount">0 / 30</div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions-box">
+      💡 Omple els buits i fes clic a <strong>"Comprova"</strong>. Si t'equivoques apareixerà una pista, però <strong>la resposta no et serà donada</strong>. Cada pregunta encertada a la primera suma <strong>1 punt</strong>. Pots reintentar les que has fallat sense perdre els encerts!
+    </div>
+
+    <!-- Round + exercises -->
+    <div id="roundLabel"></div>
+    <div class="exercises" id="exercises"></div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button id="checkBtn" onclick="checkAnswers()">Comprova respostes</button>
+      <div id="scoreBox">
+        <span class="score-num" id="scoreNum"></span>
+        <span class="score-msg" id="scoreMsg"></span>
+      </div>
+      <button id="retryBtn" onclick="retryRound()">Torna-ho a intentar</button>
+    </div>
+
+    <!-- Final screen -->
+    <div id="finalScreen">
+      <div class="final-wrap">
+        <div class="final-name" id="finalName"></div>
+        <div class="final-grade">
+          <div class="grade-num" id="finalGradeNum">—</div>
+          <div class="grade-denom">/ 30</div>
+        </div>
+        <div class="final-title" id="finalTitle">Excel·lent!</div>
+        <div class="final-sub" id="finalSub"></div>
+        <div class="final-note">* Cada pregunta encertada a la primera suma 1 punt. Màxim: 30 punts.</div>
+        <button id="reloadBtn" onclick="location.reload()">Tornar a començar</button>
+      </div>
+    </div>
+
+  </div><!-- /paper-sheet -->
+  </div><!-- /mainContent -->
+
+</div><!-- /page-wrap -->
+
+<script>
+
+// ═══════════════════════════════════════════════════════════════
+// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = 'Avançat_Mat_Bloc4';
+
+const _startTime = Date.now();
+const _primeres_respostes = {};
+
+function _registrarPrimeraResposta(idxGlobal, valor, correcta) {
+  if (!(idxGlobal in _primeres_respostes)) {
+    _primeres_respostes[idxGlobal] = { valor, correcta };
+  }
+}
+
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({ length: total }, (_, i) => {
+    const r = _primeres_respostes[i];
+    if (!r) return '';
+    return (r.correcta ? '✓ ' : '✗ ') + r.valor;
+  });
+  const payload = {
+    fitxa:              FITXA_NOM,
+    timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
+    nom:                nom,
+    puntuacio:          puntuacio,
+    total:              total,
+    minuts:             Math.round((Date.now() - _startTime) / 60000),
+    primeres_respostes: respostes,
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis de síntesi  ·  Bloc 04 · Càlcul i Anàlisi Matemàtica
+//   s[]  → string = text pla | ['x'] = negreta | '_' = input
+//   ctx  → (opcional) text de context del problema (string)
+//   stars: 1=★  2=★★  3=★★★
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ── Camp de pendents ────────────────────────────────────────
+  {
+    tag:"El camp", stars:1,
+    s:['Una equació y\' = f(x,y) dona el pendent a cada punt. Allà on f val 0, el segment del camp és horitzontal: el seu pendent val ','_','.'],
+    answers:[0],
+    hint:"Una recta horitzontal no puja gens."
+  },
+  {
+    tag:"Equilibris", stars:1,
+    s:['L\'equació logística ',['y\' = y(1−y)'],' té equilibris allà on el pendent és nul: n\'hi ha ','_','.'],
+    answers:[2],
+    hint:"Resol y(1−y) = 0: un factor per cada solució."
+  },
+  {
+    tag:"Equilibris", stars:2,
+    s:['L\'equació ',['y\' = y² − 1'],' té ','_',' equilibris.'],
+    answers:[2],
+    hint:"y² − 1 = 0 vol dir y² = 1, i això té dues solucions: +1 i −1."
+  },
+  {
+    tag:"Equilibris", stars:2,
+    s:['L\'equació ',['y\' = y − y³'],' es factoritza com y(1−y)(1+y), i té ','_',' equilibris.'],
+    answers:[3],
+    hint:"Un per cada factor: y = 0, y = 1 i y = −1."
+  },
+  {
+    tag:"Mètode d'Euler", stars:2,
+    ctx:"Apliquem el mètode d'Euler a y' = y amb pas h = 1, començant a y₀ = 2.",
+    s:['El primer pas dona y₁ = y₀ + h·f(y₀) = ','_','.'],
+    answers:[4],
+    hint:"Substitueix: 2 + 1·2."
+  },
+  {
+    tag:"Runge–Kutta", stars:1,
+    s:['El mètode RK4 mira el pendent ','_',' vegades per pas abans de decidir on saltar, en lloc d\'una sola com Euler.'],
+    answers:[4],
+    hint:"El 4 del nom RK4 ho diu."
+  },
+  {
+    tag:"Unicitat", stars:3,
+    ctx:"L'equació y' = y^(1/3) amb y(0) = 0 incompleix una hipòtesi de Picard–Lindelöf.",
+    s:['Per l\'origen hi passa més d\'una solució: com a mínim ','_','.'],
+    answers:[2],
+    hint:"La funció constant y ≡ 0 n'és una. I n'hi ha una altra que se'n separa: y = (2x/3)^(3/2)."
+  },
+
+  // ── Pla d'Argand ────────────────────────────────────────────
+  {
+    tag:"Mòdul", stars:1,
+    s:['El mòdul del complex ',['3 + 4i'],' val ','_','.'],
+    answers:[5],
+    hint:"És la hipotenusa: l'arrel de 3² + 4²."
+  },
+  {
+    tag:"Multiplicar és girar", stars:1,
+    s:['En multiplicar dos complexos, els mòduls es multipliquen. Si |z₁| = 2 i |z₂| = 3, aleshores |z₁z₂| = ','_','.'],
+    answers:[6],
+    hint:"Multiplica els dos mòduls."
+  },
+  {
+    tag:"Multiplicar és girar", stars:1,
+    s:['Els arguments, en canvi, se sumen. Si arg z₁ = 30° i arg z₂ = 40°, l\'argument del producte és ','_','°.'],
+    answers:[70],
+    hint:"Suma els dos angles."
+  },
+  {
+    tag:"La unitat imaginària", stars:2,
+    s:['Multiplicar per i és girar 90°. Fer-ho dues vegades gira 180°, i per això i² = ','_','.'],
+    answers:[-1],
+    hint:"Girar mitja volta el número 1 el porta a l'altre costat de l'origen. Escriu-hi el signe menys."
+  },
+  {
+    tag:"Arrels n-èsimes", stars:1,
+    s:['Tot complex no nul té exactament n arrels n-èsimes. Per a n = 5 n\'hi ha ','_','.'],
+    answers:[5],
+    hint:"L'enunciat ja ho diu: exactament n."
+  },
+  {
+    tag:"Arrels n-èsimes", stars:2,
+    s:['Les arrels n-èsimes es reparteixen regularment per la circumferència. Amb n = 6, entre dues consecutives hi ha ','_','°.'],
+    answers:[60],
+    hint:"Reparteix 360° entre les 6 arrels."
+  },
+  {
+    tag:"Arrels n-èsimes", stars:2,
+    s:['El mòdul de les arrels cúbiques de 8 val ','_',', perquè es pren l\'arrel cúbica del mòdul.'],
+    answers:[2],
+    hint:"Quin número elevat al cub fa 8?"
+  },
+  {
+    tag:"Arrels de la unitat", stars:3,
+    s:['Les quatre arrels quartes de la unitat són 1, i, −1 i −i. D\'aquestes, ','_',' són reals.'],
+    answers:[2],
+    hint:"Descarta les que porten una i."
+  },
+
+  // ── Mètode de Newton ────────────────────────────────────────
+  {
+    tag:"Quan falla", stars:1,
+    s:['Si f\'(xₙ) = 0 la tangent és horitzontal, i talla l\'eix x en ','_',' punts: el mètode s\'atura.'],
+    answers:[0],
+    hint:"Una recta horitzontal que no estigui damunt l'eix no el toca mai."
+  },
+  {
+    tag:"Convergència quadràtica", stars:1,
+    s:['A cada pas es dobla el nombre de xifres correctes. Si en tens 3, al pas següent en tindràs unes ','_','.'],
+    answers:[6],
+    hint:"Doblar vol dir multiplicar per 2."
+  },
+  {
+    tag:"Convergència quadràtica", stars:2,
+    s:['Començant amb 1 xifra correcta, després de 3 passos en tindràs unes ','_','.'],
+    answers:[8],
+    hint:"Ves doblant: 1, després 2, després 4…"
+  },
+  {
+    tag:"El pla complex", stars:1,
+    s:['L\'equació ',['z³ − 1 = 0'],' té ','_',' arrels al pla complex.'],
+    answers:[3],
+    hint:"El teorema fonamental de l'àlgebra: tantes arrels com el grau."
+  },
+  {
+    tag:"Conques d'atracció", stars:2,
+    s:['Cada arrel «reclama» una regió del pla, així que el fractal de Newton de z³ − 1 té ','_',' conques d\'atracció.'],
+    answers:[3],
+    hint:"Una per arrel."
+  },
+  {
+    tag:"Conques d'atracció", stars:2,
+    s:['Amb ',['z⁴ − 1 = 0'],' hi ha ','_',' arrels i, per tant, altres tantes conques.'],
+    answers:[4],
+    hint:"Tantes com indica el grau del polinomi."
+  },
+  {
+    tag:"Quan falla", stars:3,
+    s:['Si just al punt de partida f\'(x₀) = 0, el mètode troba ','_',' solucions: no pot ni fer el primer pas.'],
+    answers:[0],
+    hint:"Sense tall amb l'eix, no hi ha cap punt següent on saltar."
+  },
+
+  // ── Sèries de Fourier ───────────────────────────────────────
+  {
+    tag:"Harmònics", stars:1,
+    s:['Els harmònics tenen freqüències múltiples de la fonamental. El tercer harmònic hi vibra ','_',' vegades més ràpid.'],
+    answers:[3],
+    hint:"El número d'ordre de l'harmònic és el mateix multiplicador."
+  },
+  {
+    tag:"Fenomen de Gibbs", stars:1,
+    s:['A prop d\'un salt, la sèrie el sobrepassa sempre en aproximadament un ','_','% de l\'alçada del salt.'],
+    answers:[9],
+    hint:"És just per sota del 9%: 8,95%, que arrodonit dona aquesta xifra."
+  },
+  {
+    tag:"Espectre i suavitat", stars:2,
+    s:['Els coeficients d\'una ona amb un salt decauen com 1/n, és a dir amb exponent ','_','.'],
+    answers:[1],
+    hint:"Mira l'exponent que hi ha al denominador: 1/n¹."
+  },
+  {
+    tag:"Espectre i suavitat", stars:2,
+    s:['Si en lloc d\'un salt hi ha només un colze, els coeficients decauen més de pressa: com 1/n elevat a ','_','.'],
+    answers:[2],
+    hint:"Com més suau és la funció, més ràpid cauen: el següent exponent enter."
+  },
+  {
+    tag:"Ona quadrada", stars:2,
+    s:['L\'ona quadrada només té harmònics senars. Entre l\'1 i el 10 n\'hi ha ','_','.'],
+    answers:[5],
+    hint:"Compta'ls: 1, 3, 5, 7 i 9."
+  },
+  {
+    tag:"Parseval", stars:2,
+    s:['En el sentit de Parseval la sèrie sí que convergeix del tot: l\'error d\'energia tendeix a ','_',' a mesura que hi afegeixes termes.'],
+    answers:[0],
+    hint:"«Convergir del tot» vol dir que l'error desapareix."
+  },
+  {
+    tag:"Fenomen de Gibbs", stars:3,
+    s:['El sobrepic no s\'apaga mai, però s\'estreny: la seva amplada tendeix a ','_',' mentre l\'alçada es manté.'],
+    answers:[0],
+    hint:"S'aprima fins a desaparèixer com a amplada, tot i que el pic segueix sent-hi."
+  },
+  {
+    tag:"Història", stars:2,
+    s:['Wilbraham va descriure el fenomen el 1848 i Gibbs el va redescobrir el 1899: ','_',' anys després.'],
+    answers:[51],
+    hint:"Resta els dos anys."
+  }
+
+];
+
+const TOTAL = 30, PER = 3;
+let order = [], solved = 0, score = 0, roundIdx = 0;
+let currentEx = [], checked = false;
+let canScore = [true, true, true];
+let locked   = [false, false, false];
+let playerName = '';
+const STARS = ['', '★', '★★', '★★★'];
+
+// ═══════════════════════════════════════════════════════════════
+// NOM I INICI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('playerNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+function startGame() {
+  const raw = document.getElementById('playerNameInput').value.trim();
+  playerName = raw || 'Alumne/a';
+  document.getElementById('nameScreen').style.display = 'none';
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('headerName').textContent = playerName;
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i = TOTAL - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  buildDots();
+  loadRound(0, false);
+}
+
+function buildDots() {
+  const g = document.getElementById('dotsGrid');
+  g.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-ball'; d.id = 'dot' + i;
+    g.appendChild(d);
+  }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved + ' / ' + TOTAL;
+  document.getElementById('stampNum').textContent = score;
+}
+
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el = document.getElementById('dot' + gi);
+      if (!el) return;
+      el.classList.add('done', 'pop');
+      el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+    }, delay * 180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+function loadRound(ri, animate) {
+  checked  = false;
+  canScore = [true, true, true];
+  locked   = [false, false, false];
+  roundIdx = ri;
+
+  const start = ri * PER;
+  currentEx = order.slice(start, start + PER).map(i => BANK[i]);
+
+  document.getElementById('roundLabel').textContent =
+    'Repte ' + (ri + 1) + ' de ' + (TOTAL / PER);
+
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent = '';
+  document.getElementById('scoreMsg').textContent = '';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  document.getElementById('checkBtn').style.display = '';
+
+  const container = document.getElementById('exercises');
+
+  function renderCards() {
+    container.innerHTML = '';
+    currentEx.forEach((ex, i) => {
+      const card = document.createElement('div');
+      card.className = 'card'; card.id = 'card' + i;
+
+      let inputCount = 0;
+      let sentHTML = '';
+      ex.s.forEach(part => {
+        if (part === '_') {
+          const fid = 'ans_' + i + '_' + inputCount;
+          sentHTML += '<input type="text" id="' + fid +
+            '" placeholder="···" aria-label="Resposta" autocomplete="off" maxlength="12">';
+          inputCount++;
+        } else if (Array.isArray(part)) {
+          sentHTML += '<strong>' + part[0] + '</strong>';
+        } else {
+          sentHTML += part;
+        }
+      });
+
+      const ctxHTML = ex.ctx
+        ? '<div class="problem-ctx">' + ex.ctx + '</div>'
+        : '';
+
+      card.innerHTML =
+        '<div class="card-num">' + (i + 1) + '</div>' +
+        '<div class="card-tag">' + ex.tag +
+          '<span class="card-difficulty">' + (STARS[ex.stars || 1]) + '</span>' +
+        '</div>' +
+        ctxHTML +
+        '<div class="sentence">' + sentHTML + '</div>' +
+        '<div class="hint" id="hint' + i + '">' + ex.hint + '</div>' +
+        '<div class="feedback" id="fb' + i + '"></div>';
+
+      container.appendChild(card);
+
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(50px)';
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+      }, 60 + i * 90);
+    });
+
+    // Enter key navigation across all inputs in order
+    const allInputIds = [];
+    currentEx.forEach((ex, i) => {
+      const count = ex.answers.length;
+      for (let j = 0; j < count; j++) allInputIds.push('ans_' + i + '_' + j);
+    });
+    allInputIds.forEach((fid, idx) => {
+      const el = document.getElementById(fid);
+      if (!el) return;
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          if (idx + 1 < allInputIds.length) {
+            document.getElementById(allInputIds[idx + 1])?.focus();
+          } else {
+            checkAnswers();
+          }
+        }
+      });
+    });
+
+    setTimeout(() => {
+      const f = document.getElementById('ans_0_0');
+      if (f && !locked[0]) f.focus();
+    }, 350);
+  }
+
+  if (animate && container.children.length > 0) {
+    Array.from(container.children).forEach((card, i) => {
+      card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+      card.style.transitionDelay = (i * 50) + 'ms';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(-55px)';
+    });
+    setTimeout(renderCards, 340);
+  } else {
+    renderCards();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVA
+// ═══════════════════════════════════════════════════════════════
+// Accepta el menys tipogràfic (−, U+2212) i variants: és el signe que surt
+// als enunciats, i si l'alumne el copia parseFloat donaria NaN, de manera que
+// una resposta correcta es marcaria com a camp buit.
+function _normalitzaNumero(s) {
+  return String(s)
+    .replace(/[\u2212\u2013\u2014\u2012]/g, '-')
+    .replace(/^\s*\+/, '')
+    .replace(',', '.')
+    .replace(/\s/g, '');
+}
+
+function checkAnswers() {
+  if (checked) return;
+  const TOL = 0.5;
+  let okThisAttempt = 0;
+  let scoreGained   = 0;
+  let allDone       = true;
+
+  currentEx.forEach((ex, i) => {
+    if (locked[i]) { okThisAttempt++; return; }
+
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const hint = document.getElementById('hint' + i);
+    const idxGlobal = roundIdx * PER + i;
+
+    const answers = ex.answers; // always an array
+    const nFields = answers.length;
+
+    // Collect all field values
+    const vals = [];
+    let hasEmpty = false;
+    for (let j = 0; j < nFields; j++) {
+      const inp = document.getElementById('ans_' + i + '_' + j);
+      if (!inp) continue;
+      const raw = _normalitzaNumero(inp.value);
+      if (raw === '') { hasEmpty = true; vals.push(NaN); }
+      else vals.push(parseFloat(raw));
+    }
+
+    if (hasEmpty || vals.some(isNaN)) {
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ Omple tots els camps.';
+      hint.classList.add('visible');
+      allDone = false;
+      canScore[i] = false;
+      // Mark individual wrong inputs
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (inp && isNaN(vals[j])) inp.classList.add('wrong-input');
+      }
+      // Register first attempt
+      _registrarPrimeraResposta(idxGlobal, vals.map(v => isNaN(v) ? '' : v).join(','), false);
+      return;
+    }
+
+    // Check all fields
+    const allCorrect = answers.every((ans, j) => Math.abs(vals[j] - ans) <= TOL);
+    _registrarPrimeraResposta(idxGlobal, vals.join(','), allCorrect);
+
+    if (allCorrect) {
+      okThisAttempt++;
+      locked[i] = true;
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (inp) {
+          inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+          inp.disabled = true;
+        }
+      }
+      card.classList.add('correct'); card.classList.remove('wrong');
+      fb.className = 'feedback ok show';
+      const bonus = canScore[i] ? ' (+1 punt)' : '';
+      fb.textContent = '✓ Correcte!' + bonus;
+      hint.classList.remove('visible');
+      if (canScore[i]) scoreGained++;
+    } else {
+      allDone = false;
+      canScore[i] = false;
+      for (let j = 0; j < nFields; j++) {
+        const inp = document.getElementById('ans_' + i + '_' + j);
+        if (!inp) continue;
+        const ok = Math.abs(vals[j] - answers[j]) <= TOL;
+        inp.classList.toggle('wrong-input', !ok);
+        inp.classList.toggle('correct-input', ok);
+      }
+      card.classList.add('wrong'); card.classList.remove('correct');
+      fb.className = 'feedback err show';
+      fb.textContent = nFields > 1
+        ? '✗ Algun camp no és correcte. Revisa la pista!'
+        : '✗ No és correcte. Revisa la pista!';
+      hint.classList.add('visible');
+    }
+  });
+
+  if (scoreGained > 0) {
+    score += scoreGained;
+    updateCount();
+    const stamp = document.querySelector('.stamp');
+    stamp.classList.remove('bump');
+    void stamp.offsetWidth;
+    stamp.classList.add('bump');
+    stamp.addEventListener('animationend', () => stamp.classList.remove('bump'), { once: true });
+  }
+
+  const pendents = PER - okThisAttempt;
+  let msg = '';
+  if (allDone) {
+    msg = 'Perfecte! Totes encertades! 🏆';
+  } else if (pendents === 1) {
+    msg = 'Queda 1 per corregir. Torna-ho a provar! 💪';
+  } else {
+    msg = 'Queden ' + pendents + ' per corregir. Revisa les pistes! 💪';
+  }
+  document.getElementById('scoreNum').textContent = okThisAttempt + ' / ' + PER;
+  document.getElementById('scoreMsg').textContent = msg;
+  document.getElementById('scoreBox').classList.add('show');
+
+  if (allDone) {
+    checked = true;
+    document.getElementById('checkBtn').disabled = true;
+    for (let i = 0; i < PER; i++) {
+      const h = document.getElementById('hint' + i);
+      if (h) h.classList.remove('visible');
+    }
+    const dotStart = roundIdx * PER;
+    markDots(order.slice(dotStart, dotStart + PER));
+    solved += PER;
+    updateCount();
+    const isLast = (roundIdx + 1) * PER >= TOTAL;
+    if (isLast) setTimeout(showFinal, 800);
+    else         setTimeout(showCelebration, 500);
+  } else {
+    document.getElementById('retryBtn').style.display = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RETRY
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for (let i = 0; i < PER; i++) {
+    if (locked[i]) continue;
+    const ex   = currentEx[i];
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const nFields = ex.answers.length;
+    for (let j = 0; j < nFields; j++) {
+      const inp = document.getElementById('ans_' + i + '_' + j);
+      if (inp) { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    }
+    if (card) card.classList.remove('correct', 'wrong');
+    if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  checked = false;
+  for (let i = 0; i < PER; i++) {
+    if (!locked[i]) { document.getElementById('ans_' + i + '_0').focus(); break; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebName').textContent = playerName + ',';
+  document.getElementById('celebSub').textContent =
+    'Repte ' + (roundIdx + 1) + ' superat! Prepara\'t per al repte ' + (roundIdx + 2) + '.';
+  const noteEl = document.getElementById('celebScoreNote');
+  noteEl.textContent = 'Nota acumulada: ' + score + ' / 30';
+  noteEl.className = 'celeb-score-note bonus';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti();
+  loadRound(roundIdx + 1, true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FINAL
+// ═══════════════════════════════════════════════════════════════
+function showFinal() {
+  document.getElementById('exercises').style.display  = 'none';
+  document.getElementById('roundLabel').style.display = 'none';
+  document.querySelector('.btn-row').style.display    = 'none';
+  document.getElementById('finalName').textContent     = playerName;
+  document.getElementById('finalGradeNum').textContent = score;
+
+  const titles = [
+    [0,  9,  'Segueix practicant!',     'No t\'amoïnis, la pràctica fa la perfecció. Torna a intentar-ho!'],
+    [10, 18, 'Bé, però pots millorar!', 'Has superat molts reptes. Amb una mica més d\'esforç arribaràs al màxim!'],
+    [19, 26, 'Notable!',                'Molt bon treball, ' + playerName + '! Quasi ho tens tot dominat.'],
+    [27, 30, 'Excel·lent! 🏅',          'Increïble, ' + playerName + '! Domines la divisió, la divisibilitat i el MCM/MCD!'],
+  ];
+  const [,, title, sub] = titles.find(([mn, mx]) => score >= mn && score <= mx) || titles[3];
+  document.getElementById('finalTitle').textContent = title;
+  document.getElementById('finalSub').textContent   = sub;
+  document.getElementById('finalScreen').classList.add('show');
+  _enviarRegistre(playerName, score, TOTAL);
+  launchConfetti();
+  setTimeout(stopConfetti, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('confettiCanvas');
+const ctx    = canvas.getContext('2d');
+let particles = [], confettiAF = null;
+function launchConfetti() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  particles = Array.from({ length: 90 }, makeP);
+  if (confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop() { drawConfetti(); confettiAF = requestAnimationFrame(loop); })();
+}
+function stopConfetti() {
+  if (confettiAF) { cancelAnimationFrame(confettiAF); confettiAF = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('show');
+}
+function makeP() {
+  const c = ['#a02545','#0b7b86','#1f8a5f','#a9700f','#5c3aa8','#de5f80'];
+  return {
+    x: Math.random() * window.innerWidth, y: Math.random() * -200,
+    w: 8 + Math.random() * 8, h: 4 + Math.random() * 5,
+    color: c[Math.floor(Math.random() * c.length)],
+    speed: 2 + Math.random() * 4, angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2, drift: (Math.random() - 0.5) * 1.5,
+  };
+}
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+    if (p.y > canvas.height) Object.assign(p, makeP(), { y: -20 });
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+}
+</script>
+</body>
+</html>

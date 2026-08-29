@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloc 01 · Aritmètica i Teoria de Nombres · Fitxa de síntesi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Bloc 01 · Aritmètica — variant lluminosa del teal del web (#0b7b86),
+         pujada de lluminositat per funcionar sobre fons fosc. */
+      --bg: #0d1a1e; --card: #14282e;
+      --accent: #48e5f4; --accent2: #de5f80; --accent3: #e8c26a;
+      --accent4: #8b6dd0;
+      --text: #e6f4f6; --muted: #85a5ab; --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--text); min-height: 100vh; padding: 2rem 1rem 5rem; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; top: -200px; left: -200px; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(72,229,244,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed; bottom: -150px; right: -150px; width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(139,109,208,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .container { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
+
+    /* ── BACK LINK ── */
+    .back-link {
+      position: fixed; top: 14px; left: 14px; z-index: 50;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.8rem; font-weight: 700;
+      color: var(--accent); text-decoration: none;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(72,229,244,0.3);
+      border-radius: 50px; padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .back-link:hover { background: rgba(72,229,244,0.12); border-color: var(--accent); transform: translateX(-2px); }
+    @media (max-width: 480px) {
+      .back-link { position: static; display: inline-flex; margin: 0 0 1rem; }
+    }
+
+    /* ── NAME SCREEN ── */
+    #nameScreen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 60vh; padding: 3rem 1rem;
+      animation: fadeIn 0.5s ease;
+    }
+    .name-card {
+      background: var(--card); border: 1px solid rgba(72,229,244,0.25);
+      border-radius: var(--radius); padding: 2.5rem 2.5rem 2rem;
+      max-width: 440px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(72,229,244,0.08);
+      text-align: center;
+    }
+    .name-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .name-title {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.7rem; font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    .name-subtitle { color: var(--muted); font-size: 0.9rem; font-weight: 600; margin-bottom: 1.8rem; line-height: 1.5; }
+    .name-label {
+      display: block; font-size: 0.82rem; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent); text-align: left; margin-bottom: 0.5rem;
+    }
+    #playerNameInput {
+      width: 100%; background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.12); border-radius: 12px;
+      color: var(--text); font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1.2rem; font-weight: 700; text-align: center;
+      padding: 0.5rem 1rem; outline: none; margin-bottom: 1.8rem;
+      transition: border-color 0.25s, background 0.25s;
+    }
+    #playerNameInput::placeholder { color: var(--muted); font-size: 1rem; font-weight: 400; }
+    #playerNameInput:focus { border-color: var(--accent); background: rgba(72,229,244,0.07); }
+    #startBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--accent); color: #0d1a1e; border: none;
+      border-radius: 50px; padding: 0.8rem 2.5rem; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(72,229,244,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #startBtn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(72,229,244,0.4); }
+
+    /* ── MAIN CONTENT ── */
+    #mainContent { display: none; }
+    #mainContent.show { display: block; animation: fadeIn 0.4s ease; }
+
+    /* HEADER */
+    header { position: relative; text-align: center; margin-bottom: 1.8rem; animation: fadeDown 0.6s ease both; }
+    .badge {
+      display: inline-block; background: rgba(72,229,244,0.15); border: 1px solid rgba(72,229,244,0.35);
+      color: var(--accent); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 0.35rem 1rem; border-radius: 50px; margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 800; line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.6rem;
+    }
+    .subtitle { color: var(--muted); font-size: 1rem; font-weight: 600; }
+    .header-student {
+      margin-top: 0.4rem; font-size: 0.92rem; font-weight: 700;
+      color: var(--muted);
+    }
+    .header-student em { color: var(--accent); font-style: normal; }
+
+    /* SCORE STAMP */
+    .score-stamp {
+      display: inline-flex; flex-direction: column; align-items: center;
+      justify-content: center;
+      width: 84px; height: 84px; border-radius: 50%;
+      border: 3px solid rgba(72,229,244,0.5);
+      color: var(--accent); font-family: 'Source Serif 4', Georgia, serif;
+      position: absolute; top: 0; right: 0;
+      transition: all 0.3s ease;
+    }
+    .score-stamp .stamp-label { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+    .score-stamp .stamp-score { display: flex; align-items: baseline; gap: 1px; }
+    .score-stamp .stamp-num { font-size: 2rem; font-weight: 800; line-height: 1; transition: all 0.3s ease; }
+    .score-stamp .stamp-denom { font-size: 0.85rem; font-weight: 700; opacity: 0.6; }
+    @keyframes stampBump { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 100%{transform:scale(1)} }
+    .score-stamp.bump { animation: stampBump 0.4s ease; }
+
+    /* PROGRESS DOTS */
+    #progressSection {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      animation: fadeDown 0.6s 0.05s ease both;
+    }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; }
+    .progress-label { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    #progressCount { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--accent); }
+    #dotsGrid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .dot-ball {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.12);
+      transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+      position: relative;
+    }
+    .dot-ball.done {
+      background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px rgba(72,229,244,0.5);
+    }
+    .dot-ball.done::after {
+      content: '✓'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #0d1a1e; font-weight: 900;
+    }
+    .dot-ball.wrong {
+      background: var(--accent2); border-color: var(--accent2); box-shadow: 0 0 8px rgba(222,95,128,0.5);
+    }
+    .dot-ball.wrong::after {
+      content: '✗'; position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #2a0f0f; font-weight: 900;
+    }
+    .dot-ball.pop { animation: popDot 0.4s ease; }
+
+    /* INSTRUCTIONS */
+    .instructions {
+      background: var(--card); border: 1px solid rgba(232,194,106,0.25);
+      border-left: 4px solid var(--accent3); border-radius: var(--radius);
+      padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+      display: flex; align-items: flex-start; gap: 0.9rem;
+      animation: fadeDown 0.6s 0.1s ease both;
+    }
+    .instructions .icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .instructions p { color: #c8dde8; font-size: 0.97rem; line-height: 1.6; }
+
+    /* ROUND LABEL */
+    #roundLabel {
+      text-align: center; margin-bottom: 1rem;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.95rem; font-weight: 700;
+      color: var(--muted); letter-spacing: 0.04em;
+    }
+
+    /* CARDS */
+    .exercises { display: flex; flex-direction: column; gap: 1.4rem; }
+    .card {
+      background: var(--card); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius); padding: 1.6rem 1.8rem;
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s, background 0.3s;
+    }
+    .card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+    .card.correct { border-color: rgba(72,229,244,0.5); background: linear-gradient(135deg, #14282e, #1a2e2a); }
+    .card.wrong   { border-color: rgba(222,95,128,0.5); background: linear-gradient(135deg, #14282e, #2e1a1a); }
+
+    .card-num {
+      position: absolute; top: 1.2rem; right: 1.5rem;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 2.5rem; font-weight: 800;
+      color: rgba(255,255,255,0.04); line-height: 1; user-select: none;
+    }
+
+    .card-tag-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+    .card-tag {
+      display: inline-block; font-size: 0.7rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.2rem 0.7rem; border-radius: 50px;
+    }
+    .card-difficulty { font-size: 0.8rem; color: var(--accent3); letter-spacing: 0.05em; }
+
+    /* tag colours cycle */
+    .card:nth-child(3n+1) .card-tag { background: rgba(72,229,244,0.15);   color: var(--accent);  }
+    .card:nth-child(3n+2) .card-tag { background: rgba(232,194,106,0.15); color: var(--accent3); }
+    .card:nth-child(3n+3) .card-tag { background: rgba(139,109,208,0.15); color: var(--accent4); }
+    .card.wrong   .card-tag { background: rgba(222,95,128,0.15); color: var(--accent2); }
+    .card.correct .card-tag { background: rgba(72,229,244,0.15);   color: var(--accent);  }
+
+    .sentence {
+      font-size: 1.05rem; font-weight: 600; color: var(--text);
+      line-height: 2.2; margin-bottom: 0.8rem;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+    }
+
+    input[type="text"] {
+      width: 90px; background: rgba(255,255,255,0.07);
+      border: 2px solid rgba(255,255,255,0.15); border-radius: 10px;
+      color: var(--text); font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 1rem; font-weight: 700; text-align: center;
+      padding: 0.35rem 0.5rem; outline: none;
+      transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent); background: rgba(72,229,244,0.08);
+      box-shadow: 0 0 0 3px rgba(72,229,244,0.12);
+    }
+    input.correct-input { border-color: var(--accent);  background: rgba(72,229,244,0.12); color: var(--accent); }
+    input.wrong-input   { border-color: var(--accent2); background: rgba(222,95,128,0.12); color: var(--accent2); }
+    input:disabled { opacity: 0.85; cursor: default; }
+
+    /* HINT */
+    .hint {
+      font-size: 0.82rem; color: var(--accent3); font-weight: 700;
+      margin-top: 0.6rem; padding: 0;
+      background: rgba(232,194,106,0.08); border-left: 3px solid var(--accent3);
+      border-radius: 6px;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, padding 0.35s ease;
+    }
+    .hint.visible { max-height: 120px; opacity: 1; padding: 0.45rem 0.8rem; }
+
+    .feedback {
+      margin-top: 0.7rem; font-size: 0.9rem; font-weight: 700;
+      min-height: 1.4rem; opacity: 0; transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.ok   { color: var(--accent); }
+    .feedback.err  { color: var(--accent2); }
+
+    /* BUTTONS */
+    .btn-row { margin-top: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+    #checkBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 700;
+      background: var(--accent); color: #0d1a1e; border: none;
+      border-radius: 50px; padding: 0.85rem 2.8rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 24px rgba(72,229,244,0.3);
+    }
+    #checkBtn:hover  { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(72,229,244,0.4); }
+    #checkBtn:active { transform: scale(0.97); }
+    #checkBtn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    #scoreBox {
+      text-align: center; font-family: 'Source Serif 4', Georgia, serif; font-size: 1.1rem; font-weight: 800;
+      opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s;
+    }
+    #scoreBox.show { opacity: 1; transform: translateY(0); }
+    #scoreBox .score-num { font-size: 2.2rem; color: var(--accent); display: block; }
+    #scoreBox .score-msg { color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-top: 0.2rem; }
+
+    #retryBtn {
+      display: none;
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 0.95rem; font-weight: 700;
+      background: transparent; color: var(--muted);
+      border: 2px solid rgba(255,255,255,0.1); border-radius: 50px;
+      padding: 0.6rem 2rem; cursor: pointer; transition: color 0.2s, border-color 0.2s;
+    }
+    #retryBtn:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+    /* CELEBRATION */
+    #celebration {
+      display: none; position: fixed; inset: 0; z-index: 999;
+      background: rgba(10,20,30,0.88);
+      justify-content: center; align-items: center; flex-direction: column; text-align: center;
+    }
+    #celebration.show { display: flex; animation: fadeIn 0.4s ease; }
+    .celeb-inner {
+      background: var(--card); border: 2px solid rgba(72,229,244,0.4);
+      border-radius: 28px; padding: 3rem 2.5rem; max-width: 440px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(72,229,244,0.15);
+    }
+    .celeb-emoji { font-size: 4rem; margin-bottom: 1rem; display: block; animation: bounce 0.7s ease infinite alternate; }
+    .celeb-name-txt { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 0.2rem; }
+    .celeb-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; }
+    .celeb-score-note { font-size: 0.9rem; font-weight: 700; color: var(--accent); margin-bottom: 0.3rem; }
+    .celeb-sub   { color: var(--muted); font-size: 0.97rem; font-weight: 600; margin-bottom: 2rem; line-height: 1.5; }
+    #celebCloseBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700;
+      background: var(--accent); color: #0d1a1e; border: none;
+      border-radius: 50px; padding: 0.8rem 2.2rem; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 18px rgba(72,229,244,0.35);
+    }
+    #celebCloseBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(72,229,244,0.5); }
+
+    /* CONFETTI */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 998; pointer-events: none; display: none; }
+    #confettiCanvas.show { display: block; }
+
+    /* FINAL */
+    #finalScreen { display: none; text-align: center; padding: 3rem 1rem; }
+    #finalScreen.show { display: block; animation: fadeUp 0.6s ease; }
+    .final-inner {
+      display: inline-block; background: var(--card);
+      border: 2px solid rgba(72,229,244,0.3); border-radius: 28px;
+      padding: 3rem 3rem 2.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 60px rgba(72,229,244,0.08);
+    }
+    .final-emoji { font-size: 5rem; display: block; margin-bottom: 1rem; }
+    .final-name-txt { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem; }
+    .final-grade {
+      width: 120px; height: 120px; border-radius: 50%;
+      border: 4px solid var(--accent);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+      box-shadow: 0 0 30px rgba(72,229,244,0.25);
+    }
+    .final-grade .grade-num { font-family: 'Source Serif 4', Georgia, serif; font-size: 3rem; font-weight: 800; color: var(--accent); line-height: 1; }
+    .final-grade .grade-denom { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--muted); }
+    .final-title { font-family: 'Source Serif 4', Georgia, serif; font-size: 2rem; font-weight: 800; color: #fff; }
+    .final-sub { color: var(--muted); font-size: 0.97rem; font-weight: 600; margin: 0.5rem 0 0.8rem; line-height: 1.6; }
+    .final-note { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; font-style: italic; }
+    #reloadBtn {
+      font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; font-weight: 700;
+      background: transparent; color: var(--accent);
+      border: 2px solid var(--accent); border-radius: 50px;
+      padding: 0.75rem 2rem; cursor: pointer; transition: background 0.2s, color 0.2s;
+    }
+    #reloadBtn:hover { background: var(--accent); color: #0d1a1e; }
+
+    /* KEYFRAMES */
+    @keyframes fadeDown  { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp    { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+    @keyframes popDot    { 0%{transform:scale(1)} 50%{transform:scale(1.6)} 100%{transform:scale(1)} }
+    @keyframes bounce    { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+
+    /* RESPONSIVE */
+    @media (max-width: 480px) {
+      .score-stamp {
+        position: static;
+        width: 64px; height: 64px;
+        margin: 0.8rem auto 0;
+      }
+      .score-stamp .stamp-num { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<a href="../fitxes.html" class="back-link" aria-label="Tornar a la llista de fitxes">← Fitxes</a>
+
+<canvas id="confettiCanvas"></canvas>
+
+<!-- Celebration overlay -->
+<div id="celebration">
+  <div class="celeb-inner">
+    <span class="celeb-emoji">🏆</span>
+    <div class="celeb-name-txt" id="celebName"></div>
+    <div class="celeb-title">Perfecte! 3/3!</div>
+    <div class="celeb-score-note" id="celebScoreNote"></div>
+    <div class="celeb-sub" id="celebSub"></div>
+    <button id="celebCloseBtn" onclick="nextRound()">Següent repte →</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ── NAME SCREEN ── -->
+  <div id="nameScreen">
+    <div class="name-card">
+      <span class="name-icon">🔢</span>
+      <div class="name-title">Aritmètica i Teoria de Nombres</div>
+      <div class="name-subtitle">Bloc 01 · Fitxa de síntesi<br>Primers, congruències, fraccions contínues, residus quadràtics i RSA</div>
+      <label class="name-label" for="playerNameInput">✏️ Escriu el teu nom:</label>
+      <input type="text" id="playerNameInput" placeholder="El teu nom aquí…" maxlength="30" autocomplete="off">
+      <button id="startBtn" onclick="startGame()">Comencem! →</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT ── -->
+  <div id="mainContent">
+
+    <header>
+      <div class="badge">🔢 Bloc 01 · Síntesi</div>
+      <h1>Aritmètica i Teoria de Nombres</h1>
+      <p class="subtitle">Trenta exercicis que travessen les cinc càpsules del bloc. Omple els buits amb la resposta correcta.</p>
+      <p class="header-student">Alumne/a: <em id="headerName"></em></p>
+      <div class="score-stamp" id="scoreStamp">
+        <div class="stamp-label">Nota</div>
+        <div class="stamp-score">
+          <div class="stamp-num" id="stampNum">0</div>
+          <div class="stamp-denom">/30</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="progressSection">
+      <div class="progress-header">
+        <span class="progress-label">⬤ Progrés total</span>
+        <span id="progressCount">0 / 30</span>
+      </div>
+      <div id="dotsGrid"></div>
+    </div>
+
+    <div class="instructions">
+      <span class="icon">💡</span>
+      <p>Omple els buits i fes clic a <strong>"Comprova respostes"</strong>. Si t'equivoques apareixerà una pista, però <strong>no se't donarà la resposta</strong>. Cada pregunta encertada a la primera suma <strong>1 punt</strong>. Pots reintentar les que has fallat sense perdre els encerts!</p>
+    </div>
+
+    <div id="roundLabel"></div>
+    <div class="exercises" id="exercises"></div>
+
+    <div class="btn-row">
+      <button id="checkBtn" onclick="checkAnswers()">✅ Comprova respostes</button>
+      <div id="scoreBox">
+        <span class="score-num" id="scoreNum"></span>
+        <span class="score-msg" id="scoreMsg"></span>
+      </div>
+      <button id="retryBtn" onclick="retryRound()">🔄 Torna-ho a intentar</button>
+    </div>
+
+    <!-- Final screen -->
+    <div id="finalScreen">
+      <div class="final-inner">
+        <span class="final-emoji">🌟</span>
+        <div class="final-name-txt" id="finalName"></div>
+        <div class="final-grade">
+          <div class="grade-num" id="finalGradeNum">—</div>
+          <div class="grade-denom">/ 30</div>
+        </div>
+        <div class="final-title" id="finalTitle">Excel·lent!</div>
+        <div class="final-sub" id="finalSub"></div>
+        <div class="final-note">* Cada pregunta encertada a la primera suma 1 punt. Màxim: 30 punts.</div>
+        <button id="reloadBtn" onclick="location.reload()">Tornar a començar 🔄</button>
+      </div>
+    </div>
+
+  </div><!-- /mainContent -->
+</div><!-- /container -->
+
+<script>
+
+// ═══════════════════════════════════════════════════════════════
+// MÒDUL DE REGISTRE — canvia només aquestes 2 constants per a cada fitxa
+// ═══════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuK48JmU0DOnR-TNC6Zi7KiF_7NC1lIyShw7WUfFhC6mcm89LzrgrQqCUOly4VoFolMQ/exec';
+const FITXA_NOM       = 'Avançat_Mat_Bloc1';
+
+const _startTime = Date.now();
+const _primeres_respostes = {};
+
+function _registrarPrimeraResposta(idxGlobal, valor, correcta) {
+  if (!(idxGlobal in _primeres_respostes)) {
+    _primeres_respostes[idxGlobal] = { valor, correcta };
+  }
+}
+
+function _enviarRegistre(nom, puntuacio, total) {
+  const respostes = Array.from({ length: total }, (_, i) => {
+    const r = _primeres_respostes[i];
+    if (!r) return '';
+    return (r.correcta ? '✓ ' : '✗ ') + r.valor;
+  });
+  const payload = {
+    fitxa:              FITXA_NOM,
+    timestamp:          new Date().toLocaleString('ca-ES', { timeZone: 'Europe/Madrid' }),
+    nom:                nom,
+    puntuacio:          puntuacio,
+    total:              total,
+    minuts:             Math.round((Date.now() - _startTime) / 60000),
+    primeres_respostes: respostes,
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// BANK — 30 exercicis de Sistemes de Numeració · 1r ESO
+//   s[]  → parts de la frase:
+//          string   = text pla
+//          ['x']    = negreta
+//          '_'      = camp d'entrada
+//   stars: 1=★ fàcil, 2=★★ mitjà, 3=★★★ complex
+//   answer: número (comparació numèrica) o text (comparació de text, p.ex. numerals romans)
+// ═══════════════════════════════════════════════════════════════
+const BANK = [
+
+  // ══ El sedàs i el ritme dels primers ═════════════════════════
+  {
+    tag:"El sedàs", stars:1,
+    s:['Hi ha ','_',' nombres primers menors o iguals que ',['30'],'.'],
+    answer:10,
+    hint:"Comença pel 2 i ves apuntant els que no siguin múltiples de cap altre. L'últim que hi cap és el 29."
+  },
+  {
+    tag:"La regla de l'arrel", stars:1,
+    s:['Sedassem fins a ',['100'],'. Un cop tatxats els múltiples del 7, el primer següent és l\'11 — i com que 11² = ','_',', que ja passa de 100, es pot parar.'],
+    answer:121,
+    hint:"Multiplica 11 per ell mateix."
+  },
+  {
+    tag:"El sedàs", stars:2,
+    s:['En tatxar els múltiples de ',['7'],', el primer que cap primer més petit no havia tatxat ja és el ','_','.'],
+    answer:49,
+    hint:"El 14, el 21, el 28, el 35 i el 42 ja els van tatxar el 2, el 3 i el 5. L'escombrada nova comença al quadrat de p."
+  },
+  {
+    tag:"La funció π(x)", stars:1,
+    s:['π(100) = ','_',': aquesta és la quantitat de primers que sobreviuen al sedàs de 100 caselles.'],
+    answer:25,
+    hint:"És una quarta part de la graella, just."
+  },
+  {
+    tag:"Els forats", stars:2,
+    s:['Entre els primers fins a 100, el forat més gran entre dos consecutius és de ','_',' unitats.'],
+    answer:8,
+    hint:"Mira el tram final de la graella: quin salt hi ha a partir del 89?"
+  },
+  {
+    tag:"Demostració d'Euclides", stars:3,
+    s:['El producte dels sis primers primers més 1 dona 2·3·5·7·11·13 + 1 = ',['30031'],', que ',['no'],' és primer: val 59 · ','_','.'],
+    answer:509,
+    hint:"Divideix 30031 entre 59. Aquest és el contraexemple que mostra que la demostració d'Euclides no diu que aquest número sigui primer, sinó que en té un de nou."
+  },
+
+  // ══ Rellotges que encaixen · teorema xinès del residu ════════
+  {
+    tag:"El problema de Sun Zi", stars:1,
+    s:['Un número deixa resta 2 en dividir-lo per 3, resta 3 per 5 i resta 2 per 7. El més petit que ho compleix és el ','_','.'],
+    answer:23,
+    hint:"Els que deixen resta 3 amb 5 són 3, 8, 13, 18, 23… mira quin d'aquests encaixa també amb el 3 i amb el 7."
+  },
+  {
+    tag:"El període", stars:1,
+    s:['Amb els mòduls ',['3, 5 i 7'],', coprimers dos a dos, la solució es repeteix cada ','_',' números.'],
+    answer:105,
+    hint:"Multiplica els tres mòduls entre ells."
+  },
+  {
+    tag:"Invers modular", stars:2,
+    s:['L\'invers de ',['3'],' mòdul ',['5'],' val ','_',': és el número que, multiplicat per 3, deixa resta 1 en dividir per 5.'],
+    answer:2,
+    hint:"Prova l'1, el 2, el 3 i el 4, i mira quin compleix 3·x ≡ 1 (mod 5)."
+  },
+  {
+    tag:"Substitució successiva", stars:2,
+    s:['Si n ≡ 1 (mod 4) i n ≡ 3 (mod 5), el valor més petit no negatiu és n = ','_','.'],
+    answer:13,
+    hint:"Els que deixen resta 1 amb 4 són 1, 5, 9, 13, 17… quin d'aquests deixa resta 3 amb 5?"
+  },
+  {
+    tag:"Coprimalitat", stars:1,
+    s:['Els mòduls ',['4 i 6'],' no són coprimers, així que el seu període no és el producte sinó el mcm, que val ','_','.'],
+    answer:12,
+    hint:"El mínim comú múltiple de 4 i de 6, que és més petit que 24."
+  },
+  {
+    tag:"Quan no hi ha solució", stars:3,
+    s:['El sistema n ≡ 1 (mod 4) i n ≡ 2 (mod 6) té exactament ','_',' solucions: la primera condició demana n senar i la segona el demana parell.'],
+    answer:0,
+    hint:"Si cap número pot complir les dues condicions alhora, quantes solucions hi ha?"
+  },
+
+  // ══ Fraccions contínues ══════════════════════════════════════
+  {
+    tag:"L'algorisme", stars:1,
+    s:['La fracció contínua de ',['√2'],' és [1; 2, 2, 2, …]. El terme a₀ val ','_','.'],
+    answer:1,
+    hint:"a₀ és sempre la part entera del número. I √2 ≈ 1,414."
+  },
+  {
+    tag:"L'algorisme", stars:1,
+    s:['La fracció contínua de ',['7/3'],' és [a₀; 3], on a₀ = ','_','.'],
+    answer:2,
+    hint:"És la part entera de 7/3, és a dir el quocient de dividir 7 entre 3."
+  },
+  {
+    tag:"Convergents", stars:2,
+    s:['Els convergents de √2 són 1, 3/2, 7/5, 17/12… Amb la regla pₙ = aₙ·pₙ₋₁ + pₙ₋₂ i aₙ = 2, el numerador següent és ','_','.'],
+    answer:41,
+    hint:"Fes 2 · 17 + 7."
+  },
+  {
+    tag:"Equació de Pell", stars:2,
+    s:['La solució més petita amb y > 0 de ',['x² − 2y² = 1'],' té y = 2 i x = ','_','.'],
+    answer:3,
+    hint:"Amb y = 2, l'equació queda x² − 8 = 1."
+  },
+  {
+    tag:"El nombre auri", stars:2,
+    s:['El nombre auri és [1; 1, 1, 1, …] i els seus convergents són quocients de Fibonacci. Després de 8/5 ve 13/','_','.'],
+    answer:8,
+    hint:"El denominador nou és el numerador del convergent anterior."
+  },
+  {
+    tag:"Equació de Pell", stars:2,
+    s:['La solució més petita amb y > 0 de ',['x² − 3y² = 1'],' té y = 1 i x = ','_','.'],
+    answer:2,
+    hint:"Amb y = 1, busques un quadrat que valgui 3 + 1."
+  },
+
+  // ══ Reciprocitat quadràtica ══════════════════════════════════
+  {
+    tag:"Residus quadràtics", stars:1,
+    s:['Mòdul un primer p hi ha exactament (p−1)/2 residus quadràtics no nuls. Per a p = ',['7'],' n\'hi ha ','_','.'],
+    answer:3,
+    hint:"Calcula (7 − 1) / 2."
+  },
+  {
+    tag:"Símbol de Legendre", stars:1,
+    s:['El 3 no és cap quadrat mòdul 7, així que el símbol de Legendre (3/7) val ','_',' (escriu 1 o −1).'],
+    answer:-1,
+    hint:"Quan el número NO és residu quadràtic, el símbol val −1. Escriu-ho amb el signe menys."
+  },
+  {
+    tag:"Residus quadràtics", stars:2,
+    s:['Mòdul ',['11'],' hi ha ','_',' residus quadràtics no nuls.'],
+    answer:5,
+    hint:"Torna a aplicar (p−1)/2, ara amb p = 11."
+  },
+  {
+    tag:"Criteri d'Euler", stars:2,
+    s:['Pel criteri d\'Euler, (5/11) té el mateix signe que 5⁵ mòdul 11. Com que 5⁵ = 3125 = 284·11 + 1, el símbol val ','_','.'],
+    answer:1,
+    hint:"Si la potència deixa resta 1, el símbol és +1. Escriu 1."
+  },
+  {
+    tag:"Llei de reciprocitat", stars:2,
+    s:['Els primers ',['3'],' i ',['7'],' són tots dos ≡ 3 (mod 4), l\'únic cas en què els dos símbols es giren. Per tant (3/7) · (7/3) = ','_','.'],
+    answer:-1,
+    hint:"Quan els dos primers són ≡ 3 (mod 4), el producte dels dos símbols val −1."
+  },
+  {
+    tag:"Amb el teorema xinès", stars:3,
+    s:['L\'equació x² ≡ 4 (mod 15) té ','_',' solucions: com que 15 = 3·5, cada factor n\'aporta dues i es combinen.'],
+    answer:4,
+    hint:"Dues possibilitats mòdul 3 i dues mòdul 5. Multiplica-les."
+  },
+
+  // ══ De Fermat a RSA ══════════════════════════════════════════
+  {
+    tag:"Petit teorema de Fermat", stars:1,
+    s:['Com que 11 és primer i el 2 no n\'és múltiple, 2¹⁰ mod 11 = ','_','.'],
+    answer:1,
+    hint:"El teorema diu que a elevat a (p−1) sempre deixa la mateixa resta."
+  },
+  {
+    tag:"La funció φ", stars:1,
+    s:['Si n = 5 · 11 = ',['55'],', aleshores φ(n) = (5−1)·(11−1) = ','_','.'],
+    answer:40,
+    hint:"Multiplica 4 per 10."
+  },
+  {
+    tag:"La clau privada", stars:2,
+    s:['Amb φ(n) = 40 i exponent públic e = 3, la clau privada compleix 3·d ≡ 1 (mod 40). Val d = ','_','.'],
+    answer:27,
+    hint:"Busca el múltiple de 3 que sigui una unitat més que un múltiple de 40: fixa't en el 81."
+  },
+  {
+    tag:"Xifrar", stars:2,
+    s:['Amb la clau pública (n = 55, e = 3), la lletra H — que val m = 8 — es xifra com 8³ mod 55 = ','_','.'],
+    answer:17,
+    hint:"8³ = 512, i 512 = 9·55 + la resta que busques."
+  },
+  {
+    tag:"Reduir l'exponent", stars:2,
+    s:['Per calcular 7¹⁰⁰⁰ mod 13, Fermat permet reduir l\'exponent: 1000 mod 12 = 4, i llavors 7⁴ mod 13 = ','_','.'],
+    answer:9,
+    hint:"7² = 49 ≡ 10 (mod 13). Ara eleva aquest 10 al quadrat i torna a reduir."
+  },
+  {
+    tag:"Nombres de Carmichael", stars:3,
+    s:['El número ',['561'],' = 3·11·17 és compost, però enganya el test de Fermat: 2⁵⁶⁰ mod 561 val ','_','.'],
+    answer:1,
+    hint:"Per això se'n diu pseudoprimer: es comporta exactament com si fos primer."
+  }
+
+];
+
+const TOTAL = 30, PER = 3;
+let order = [], solved = 0, score = 0, roundIdx = 0;
+let currentEx = [], checked = false;
+let canScore = [true, true, true];
+let locked   = [false, false, false];
+let playerName = '';
+
+const STARS = ['', '★', '★★', '★★★'];
+
+// ═══════════════════════════════════════════════════════════════
+// NOM I INICI
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('playerNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+
+function startGame() {
+  const raw = document.getElementById('playerNameInput').value.trim();
+  playerName = raw || 'Alumne/a';
+  document.getElementById('nameScreen').style.display  = 'none';
+  document.getElementById('mainContent').classList.add('show');
+  document.getElementById('headerName').textContent = playerName;
+  init();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init() {
+  order = [...Array(TOTAL).keys()];
+  for (let i = TOTAL - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  buildDots();
+  loadRound(0, false);
+}
+
+function buildDots() {
+  const g = document.getElementById('dotsGrid');
+  g.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-ball'; d.id = 'dot' + i;
+    g.appendChild(d);
+  }
+  updateCount();
+}
+
+function updateCount() {
+  document.getElementById('progressCount').textContent = solved + ' / ' + TOTAL;
+  document.getElementById('stampNum').textContent = score;
+}
+
+function markDots(indices) {
+  indices.forEach((gi, delay) => {
+    setTimeout(() => {
+      const el = document.getElementById('dot' + gi);
+      if (!el) return;
+      // Vermell si la primera resposta d'aquesta pregunta va ser incorrecta
+      // (encara que després s'hagi corregit reintentant); verd si es va
+      // encertar a la primera.
+      const r = _primeres_respostes[gi];
+      el.classList.add(r && !r.correcta ? 'wrong' : 'done', 'pop');
+      el.addEventListener('animationend', () => el.classList.remove('pop'), { once: true });
+    }, delay * 180);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CARREGAR REPTE
+// ═══════════════════════════════════════════════════════════════
+function loadRound(ri, animate) {
+  checked  = false;
+  canScore = [true, true, true];
+  locked   = [false, false, false];
+  roundIdx = ri;
+
+  const start = ri * PER;
+  currentEx = order.slice(start, start + PER).map(i => BANK[i]);
+
+  document.getElementById('roundLabel').textContent =
+    'Repte ' + (ri + 1) + ' de ' + (TOTAL / PER);
+
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('scoreNum').textContent = '';
+  document.getElementById('scoreMsg').textContent = '';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  document.getElementById('checkBtn').style.display = '';
+
+  const container = document.getElementById('exercises');
+
+  function renderCards() {
+    container.innerHTML = '';
+    currentEx.forEach((ex, i) => {
+      const card = document.createElement('div');
+      card.className = 'card'; card.id = 'card' + i;
+
+      let sentHTML = '';
+      ex.s.forEach(part => {
+        if (part === '_') {
+          sentHTML += '<input type="text" id="ans' + i +
+            '" placeholder="?" aria-label="Resposta" autocomplete="off" maxlength="12">';
+        } else if (Array.isArray(part)) {
+          sentHTML += '<strong>' + part[0] + '</strong>';
+        } else {
+          sentHTML += part;
+        }
+      });
+
+      card.innerHTML =
+        '<div class="card-num">' + (i + 1) + '</div>' +
+        '<div class="card-tag-row">' +
+          '<div class="card-tag">' + ex.tag + '</div>' +
+          '<div class="card-difficulty">' + (STARS[ex.stars || 1]) + '</div>' +
+        '</div>' +
+        '<div class="sentence">' + sentHTML + '</div>' +
+        '<div class="hint" id="hint' + i + '">📝 ' + ex.hint + '</div>' +
+        '<div class="feedback" id="fb' + i + '"></div>';
+
+      container.appendChild(card);
+
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(50px)';
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateX(0)';
+      }, 60 + i * 90);
+    });
+
+    currentEx.forEach((_, i) => {
+      document.getElementById('ans' + i).addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          let next = i + 1;
+          while (next < PER && locked[next]) next++;
+          const nxt = next < PER ? document.getElementById('ans' + next) : null;
+          if (nxt) nxt.focus(); else checkAnswers();
+        }
+      });
+    });
+
+    setTimeout(() => {
+      const f = document.getElementById('ans0');
+      if (f && !locked[0]) f.focus();
+    }, 350);
+  }
+
+  if (animate && container.children.length > 0) {
+    Array.from(container.children).forEach((card, i) => {
+      card.style.transition = 'opacity 0.28s ease, transform 0.28s ease';
+      card.style.transitionDelay = (i * 50) + 'ms';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(-55px)';
+    });
+    setTimeout(renderCards, 340);
+  } else {
+    renderCards();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPROVA — puntuació per exercici individual
+//   Suporta respostes numèriques (amb tolerància) i respostes de
+//   text (numerals romans), segons el tipus de ex.answer.
+// ═══════════════════════════════════════════════════════════════
+// Normalitza l'entrada abans de llegir-la com a número. L'enunciat escriu el
+// signe negatiu amb el menys tipogràfic (−, U+2212); si l'alumne el copia
+// d'allà, parseFloat retorna NaN i una resposta correcta es marcaria com a
+// «escriu un número». Acceptem també el guionet mitjà i el llarg, i un + al
+// davant. Això només fa el lector més tolerant: mai converteix en vàlida una
+// resposta que fos incorrecta.
+function _normalitzaNumero(s) {
+  return String(s)
+    .replace(/[\u2212\u2013\u2014\u2012]/g, '-')  // −, –, —, ‒  →  -
+    .replace(/^\s*\+/, '')
+    .replace(',', '.')
+    .replace(/\s/g, '');
+}
+
+function esValorCorrecte(valorInput, resposta) {
+  if (typeof resposta === 'string') {
+    const norm = s => s.trim().toUpperCase();
+    return norm(valorInput) === norm(resposta);
+  }
+  const TOL = 0.5; // tolerància per a respostes numèriques enteres
+  const val = parseFloat(_normalitzaNumero(valorInput));
+  return !isNaN(val) && Math.abs(val - resposta) <= TOL;
+}
+
+function checkAnswers() {
+  if (checked) return;
+  let okThisAttempt = 0;
+  let scoreGained   = 0;
+  let allDone       = true;
+
+  currentEx.forEach((ex, i) => {
+    if (locked[i]) { okThisAttempt++; return; }
+
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    const hint = document.getElementById('hint' + i);
+    const idxGlobal = roundIdx * PER + i;
+    const isText = typeof ex.answer === 'string';
+    const rawVal = inp.value.trim();
+    const esCorrecta = esValorCorrecte(rawVal, ex.answer);
+    _registrarPrimeraResposta(idxGlobal, rawVal, esCorrecta);
+
+    if (!isText) {
+      const val = parseFloat(_normalitzaNumero(rawVal));
+      if (isNaN(val)) {
+        inp.classList.remove('correct-input', 'wrong-input');
+        card.classList.remove('correct', 'wrong');
+        fb.className = 'feedback err show';
+        fb.textContent = '✗ Escriu un número.';
+        hint.classList.add('visible');
+        allDone = false;
+        canScore[i] = false;
+        return;
+      }
+    } else if (rawVal === '') {
+      inp.classList.remove('correct-input', 'wrong-input');
+      card.classList.remove('correct', 'wrong');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ Escriu una resposta.';
+      hint.classList.add('visible');
+      allDone = false;
+      canScore[i] = false;
+      return;
+    }
+
+    if (esCorrecta) {
+      okThisAttempt++;
+      locked[i] = true;
+      inp.classList.add('correct-input'); inp.classList.remove('wrong-input');
+      inp.disabled = true;
+      card.classList.add('correct'); card.classList.remove('wrong');
+      fb.className = 'feedback ok show';
+      const bonus = canScore[i] ? ' (+1 punt)' : '';
+      fb.textContent = '✓ Correcte!' + bonus;
+      hint.classList.remove('visible');
+      if (canScore[i]) scoreGained++;
+    } else {
+      allDone = false;
+      canScore[i] = false;
+      inp.classList.add('wrong-input'); inp.classList.remove('correct-input');
+      card.classList.add('wrong'); card.classList.remove('correct');
+      fb.className = 'feedback err show';
+      fb.textContent = '✗ No és correcte. Revisa la pista!';
+      hint.classList.add('visible');
+    }
+  });
+
+  if (scoreGained > 0) {
+    score += scoreGained;
+    updateCount();
+    const stamp = document.getElementById('scoreStamp');
+    stamp.classList.remove('bump');
+    void stamp.offsetWidth;
+    stamp.classList.add('bump');
+    stamp.addEventListener('animationend', () => stamp.classList.remove('bump'), { once: true });
+  }
+
+  const pendents = PER - okThisAttempt;
+  let msg = '';
+  if (allDone) {
+    msg = 'Perfecte! Totes encertades! 🏆';
+  } else if (pendents === 1) {
+    msg = 'Queda 1 per corregir. Torna-ho a provar! 💪';
+  } else {
+    msg = 'Queden ' + pendents + ' per corregir. Revisa les pistes! 💪';
+  }
+  document.getElementById('scoreNum').textContent = okThisAttempt + ' / ' + PER;
+  document.getElementById('scoreMsg').textContent = msg;
+  document.getElementById('scoreBox').classList.add('show');
+
+  if (allDone) {
+    checked = true;
+    document.getElementById('checkBtn').disabled = true;
+    for (let i = 0; i < PER; i++) {
+      const h = document.getElementById('hint' + i);
+      if (h) h.classList.remove('visible');
+    }
+    const dotStart = roundIdx * PER;
+    // Els punts (i _primeres_respostes) es numeren per POSICIÓ dins la
+    // partida (0..TOTAL-1), no per l'índex barrejat del banc — order[] només
+    // decideix QUIN exercici toca a cada posició, no com s'etiqueten els punts.
+    markDots(Array.from({ length: PER }, (_, k) => dotStart + k));
+    solved += PER;
+    updateCount();
+
+    const isLast = (roundIdx + 1) * PER >= TOTAL;
+    if (isLast) setTimeout(showFinal, 800);
+    else         setTimeout(showCelebration, 500);
+  } else {
+    document.getElementById('retryBtn').style.display = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RETRY — manté camps encertats blocats
+// ═══════════════════════════════════════════════════════════════
+function retryRound() {
+  for (let i = 0; i < PER; i++) {
+    if (locked[i]) continue;
+    const inp  = document.getElementById('ans'  + i);
+    const fb   = document.getElementById('fb'   + i);
+    const card = document.getElementById('card' + i);
+    if (inp)  { inp.value = ''; inp.classList.remove('correct-input', 'wrong-input'); }
+    if (card) card.classList.remove('correct', 'wrong');
+    if (fb)   { fb.className = 'feedback'; fb.textContent = ''; }
+  }
+  document.getElementById('scoreBox').classList.remove('show');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('checkBtn').disabled = false;
+  checked = false;
+  for (let i = 0; i < PER; i++) {
+    if (!locked[i]) { document.getElementById('ans' + i).focus(); break; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRACIÓ
+// ═══════════════════════════════════════════════════════════════
+function showCelebration() {
+  document.getElementById('celebName').textContent = playerName + ',';
+  document.getElementById('celebSub').textContent =
+    'Repte ' + (roundIdx + 1) + ' superat! Prepara\'t per al repte ' + (roundIdx + 2) + '.';
+  document.getElementById('celebScoreNote').textContent =
+    'Nota acumulada: ' + score + ' / 30';
+  document.getElementById('celebration').classList.add('show');
+  launchConfetti();
+}
+
+function nextRound() {
+  document.getElementById('celebration').classList.remove('show');
+  stopConfetti();
+  loadRound(roundIdx + 1, true);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FINAL
+// ═══════════════════════════════════════════════════════════════
+function showFinal() {
+  document.getElementById('exercises').style.display  = 'none';
+  document.getElementById('roundLabel').style.display = 'none';
+  document.querySelector('.btn-row').style.display    = 'none';
+
+  document.getElementById('finalName').textContent    = playerName;
+  document.getElementById('finalGradeNum').textContent = score;
+
+  const titles = [
+    [0,  9,  'Segueix practicant! 💪', 'No t\'amoïnis, la pràctica fa la perfecció. Torna a intentar-ho!'],
+    [10, 18, 'Bé, però pots millorar!', 'Has superat molts reptes. Amb una mica més d\'esforç arribaràs al màxim!'],
+    [19, 26, 'Notable! 🎉', 'Molt bon treball, ' + playerName + '! Quasi ho tens tot dominat.'],
+    [27, 30, 'Excel·lent! 🏅', 'Increïble, ' + playerName + '! Domines els sistemes de numeració: base 10, romans i binari!'],
+  ];
+  const [,, title, sub] = titles.find(([min, max]) => score >= min && score <= max) || titles[3];
+  document.getElementById('finalTitle').textContent = title;
+  document.getElementById('finalSub').textContent   = sub;
+
+  document.getElementById('finalScreen').classList.add('show');
+  _enviarRegistre(playerName, score, TOTAL);
+  launchConfetti();
+  setTimeout(stopConfetti, 6000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFETI
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('confettiCanvas');
+const ctx    = canvas.getContext('2d');
+let particles = [], confettiAF = null;
+
+function launchConfetti() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  canvas.classList.add('show');
+  particles = Array.from({ length: 90 }, makeP);
+  if (confettiAF) cancelAnimationFrame(confettiAF);
+  (function loop() { drawConfetti(); confettiAF = requestAnimationFrame(loop); })();
+}
+function stopConfetti() {
+  if (confettiAF) { cancelAnimationFrame(confettiAF); confettiAF = null; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.classList.remove('show');
+}
+function makeP() {
+  const cols = ['#48e5f4','#e8c26a','#de5f80','#8b6dd0','#5ce0a9','#f0d9a0'];
+  return {
+    x: Math.random() * window.innerWidth, y: Math.random() * -200,
+    w: 8 + Math.random() * 8, h: 4 + Math.random() * 5,
+    color: cols[Math.floor(Math.random() * cols.length)],
+    speed: 2 + Math.random() * 4, angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.2, drift: (Math.random() - 0.5) * 1.5,
+  };
+}
+function drawConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.y += p.speed; p.x += p.drift; p.angle += p.spin;
+    if (p.y > canvas.height) Object.assign(p, makeP(), { y: -20 });
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  });
+}
+</script>
+</body>
+</html>
