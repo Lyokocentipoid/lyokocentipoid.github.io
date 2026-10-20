@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lyokocentipoid</title>
+  <link rel="icon" type="image/x-icon" href="/assets/img/XANA.png">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+  <!-- Canvas per a les partícules (fons fix) -->
+  <canvas id="particles-canvas"></canvas>
+
+  <style>
+    /* ─── BOTONS LATERALS DEL HEADER ─────────────────────────────────── */
+
+    /* El header necessita position relative perquè els botons absoluts s'hi ancoren */
+    header {
+      position: relative;
+    }
+
+    .header-side-btn {
+      position: absolute;
+      top: calc(50% - 45px);
+      transform: translateY(-50%);
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      overflow: hidden;
+
+      /* Estat repòs: cercle */
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      padding: 0;
+
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-decoration: none;
+      white-space: nowrap;
+
+      /* Cristall */
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(12px) saturate(1.5);
+      -webkit-backdrop-filter: blur(12px) saturate(1.5);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.1);
+
+      transition: width 0.65s cubic-bezier(0.25, 1, 0.5, 1),
+                  padding 0.65s cubic-bezier(0.25, 1, 0.5, 1),
+                  box-shadow 0.5s ease,
+                  background 0.5s ease,
+                  border-color 0.5s ease;
+
+      animation: navFloat 7s ease-in-out infinite;
+      will-change: transform;
+      z-index: 10;
+    }
+
+    /* Botó esquerre: icona a la dreta (costat foto), text s'obre cap a l'esquerra.
+       Ancorem per "right" perquè la icona no es mogui en expandir-se. */
+    .header-side-btn--left {
+      right: calc(50% + 80px + 18px);
+      flex-direction: row-reverse;
+    }
+
+    /* Botó dret: icona a l'esquerra (costat foto), text s'obre cap a la dreta.
+       Ancorem per "left" perquè la icona no es mogui en expandir-se. */
+    .header-side-btn--right {
+      left: calc(50% + 80px + 18px);
+    }
+
+    .header-side-btn:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes navFloat {
+      0%   { transform: translateY(-50%) translate(0px, 0px); }
+      20%  { transform: translateY(-50%) translate(2px, -2px); }
+      45%  { transform: translateY(-50%) translate(-2px, -2px); }
+      65%  { transform: translateY(-50%) translate(0px, 2px); }
+      85%  { transform: translateY(-50%) translate(-2px, 0px); }
+      100% { transform: translateY(-50%) translate(0px, 0px); }
+    }
+
+    .header-side-btn__icon {
+      font-size: 1.2rem;
+      line-height: 1;
+      flex-shrink: 0;
+      -webkit-text-fill-color: initial;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header-side-btn__text {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      color: #00695c;
+      -webkit-text-fill-color: #00695c;
+      transition: max-width 0.65s cubic-bezier(0.25, 1, 0.5, 1),
+                  opacity 0.4s ease,
+                  margin 0.5s ease;
+    }
+
+    /* Expansió botó esquerre: el text apareix a l'esquerra de la icona */
+    .header-side-btn--left:hover {
+      width: auto;
+      padding: 0 0.8rem 0 1.1rem;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(18px) saturate(1.8);
+      -webkit-backdrop-filter: blur(18px) saturate(1.8);
+      box-shadow: 0 6px 22px rgba(2, 136, 193, 0.2), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-side-btn--left:hover .header-side-btn__text {
+      max-width: 200px;
+      opacity: 1;
+      margin-right: 0.45rem;
+    }
+
+    /* Expansió botó dret: el text apareix a la dreta de la icona */
+    .header-side-btn--right:hover {
+      width: auto;
+      padding: 0 1.1rem 0 0.8rem;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(18px) saturate(1.8);
+      -webkit-backdrop-filter: blur(18px) saturate(1.8);
+      box-shadow: 0 6px 22px rgba(2, 136, 193, 0.2), 0 2px 8px rgba(0,0,0,0.08);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .header-side-btn--right:hover .header-side-btn__text {
+      max-width: 200px;
+      opacity: 1;
+      margin-left: 0.45rem;
+    }
+
+    .header-side-btn:active {
+      transform: translateY(-50%) scale(0.95) !important;
+    }
+
+  </style>
+
+  <header>
+
+    <!-- Botó esquerre: Generador de Correus 
+    <a href="generador_mails.html" class="header-side-btn header-side-btn--left">
+      <span class="header-side-btn__icon">✉</span>
+      <span class="header-side-btn__text">Generador de Correus</span>
+    </a>
+    -->
+
+    <img src="/assets/img/foto-perfil.jpg" alt="Foto de Lyokocentipoid" class="foto-rodona">
+
+    <!-- Botó dret: Simulador Fiscal
+    <a href="simulador_fiscal/index.html" class="header-side-btn header-side-btn--right">
+      <span class="header-side-btn__icon">🌿</span>
+      <span class="header-side-btn__text">Simulador Fiscal</span>
+    </a>
+    -->
+    <h1 id="typewriter"></h1>
+    <p class="subtitle">Espai de projectes web educatius</p>
+    <br>
+    <!-- <p><a href="/assets/CAT - Guia Web Interactiu.pdf">Guia PDF Català</a> | <a href="/assets/GAL - Guia Web Interactivo.pdf">Guia PDF Galego</a></p> -->
+  </header>
+
+  <section id="projectes">
+    <h2 style="color: #8A0C18;">Projectes educatius - Matemàtiques</h2>
+    
+    <a href="/calcul1eso/" class="projecte-card">
+      <h3>Càlcul de 1r ESO</h3>
+      <p>Elements interactius</p>
+    </a>
+
+    <a href="/geometria1eso/" class="projecte-card">
+      <h3>Geometria de 1r ESO</h3>
+      <p>Web de conceptes bàsics de geometria</p>
+    </a>
+
+    <a href="/grafiques/" class="projecte-card">
+      <h3>Gràfiques de 1r ESO</h3>
+      <p>Web per treballar amb gràfiques i estadística bàsica</p>
+    </a>
+
+    <a href="/conceptes_matematics/" class="projecte-card">
+      <h3>Càpsules Avançades de Matemàtiques</h3>
+      <p>Conceptes Teòrics</p>
+    </a>
+    
+    <!-- Afegeix més cards aquí quan tinguis més projectes -->
+  </section>
+
+  <script>
+    // ─── 1. PARTÍCULES ────────────────────────────────────────────────────────
+    const canvas = document.getElementById('particles-canvas');
+    const ctx    = canvas.getContext('2d');
+    let particles = [];
+    const NUM_PARTICLES = 80;
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+    class Particle {
+      constructor() { this.reset(true); }
+
+      reset(initial = false) {
+        this.x           = randomBetween(0, canvas.width);
+        this.y           = initial ? randomBetween(0, canvas.height) : canvas.height + 5;
+        this.r           = randomBetween(0.8, 2.5);
+        this.speedX      = randomBetween(-0.4, 0.4);
+        this.speedY      = randomBetween(-0.6, -1.8);
+        this.angle       = randomBetween(0, Math.PI * 2);
+        this.twinkleSpeed = randomBetween(0.01, 0.04);
+        this.opacity     = 1;
+      }
+
+      update() {
+        this.x     += this.speedX;
+        this.y     += this.speedY;
+        this.angle += this.twinkleSpeed;
+        this.opacity = 0.3 + 0.7 * Math.abs(Math.sin(this.angle));
+
+        if (this.y + this.r < 0) this.reset();
+        if (this.x - this.r > canvas.width)  this.x = -this.r;
+        if (this.x + this.r < 0) this.x = canvas.width + this.r;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+
+        // Resplendor exterior (glow)
+        const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4);
+        glow.addColorStop(0,   'rgba(255, 255, 255, 0.9)');
+        glow.addColorStop(0.4, 'rgba(220, 240, 255, 0.4)');
+        glow.addColorStop(1,   'rgba(255, 255, 255, 0)');
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+
+        // Nucli brillant
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < NUM_PARTICLES; i++) particles.push(new Particle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+
+    // ─── 2. TYPEWRITER ────────────────────────────────────────────────────────
+    const TITLE = "Portfoli de Lyokocentipoid";
+    const typewriterEl = document.getElementById('typewriter');
+    let charIndex = 0;
+
+    function typeWriter() {
+      if (charIndex <= TITLE.length) {
+        // Inserim el text + cursor com a element independent
+        typewriterEl.textContent = TITLE.substring(0, charIndex);
+        charIndex++;
+        setTimeout(typeWriter, 100);
+      }
+      // Quan acaba, el cursor CSS segueix parpellejant via ::after o l'span injectat una sola vegada
+    }
+
+    window.addEventListener('load', () => {
+      // Afegim el cursor com a span fill permanent
+      const cursorSpan = document.createElement('span');
+      cursorSpan.className = 'cursor';
+      typewriterEl.appendChild(cursorSpan);
+      setTimeout(typeWriter, 400);
+    });
+
+
+    // ─── 3. ANIMACIÓ D'ENTRADA DE LES CARDS (Intersection Observer) ──────────
+    const cards = document.querySelectorAll('.projecte-card');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    cards.forEach(card => observer.observe(card));
+  </script>
+
+  <script data-goatcounter="https://lyokocentipoid.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js">
+  </script>
+
+</body>
+</html>
