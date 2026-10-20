@@ -1,0 +1,2019 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordenades</title>
+    <link rel="icon" type="image/x-icon" href="/assets/img/XANA.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        canvas {
+            touch-action: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Capçalera Principal -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <circle cx="19" cy="5" r="2" />
+                        <circle cx="5" cy="19" r="2" />
+                        <circle cx="5" cy="6" r="1.5" />
+                        <circle cx="18" cy="18" r="1.5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9V4m0 16v-5m-3-3H4m16 0h-5" stroke-dasharray="2 2"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Coordenades</h1>
+                        <span class="hidden sm:inline-block text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md border border-slate-200">1D · 2D · 3D · 4D</span>
+                    </div>
+                    <p class="text-xs text-slate-500">Generador de coordenades i Transformador lineal amb visor</p>
+                </div>
+            </div>
+
+            <!-- Navegació de Pestanyes + Enllaços GeoGebra -->
+            <div class="flex flex-wrap items-center justify-between md:justify-end gap-3">
+                <!-- Selector de Pestanyes -->
+                <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/80">
+                    <button type="button" id="tabBtnGen" 
+                        class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Generador</span>
+                    </button>
+                    <button type="button" id="tabBtnTrans" 
+                        class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                        <span>Transformador</span>
+                    </button>
+                </div>
+
+                <!-- Enllaços externs a GeoGebra i Descàrrega -->
+                <div class="flex items-center gap-1.5">
+                    <a href="https://www.geogebra.org/calculator" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors">
+                        <span>GeoGebra 2D</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                    <a href="https://www.geogebra.org/3d" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors">
+                        <span>GeoGebra 3D</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                    <!--
+                  <button type="button" id="downloadHtmlBtn" title="Descarrega aquest fitxer com a coordenades.html"
+                       class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span class="hidden sm:inline">.html</span>
+                    </button>
+                  -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contingut Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+        <!-- ========================================== -->
+        <!-- PESTANYA 1: GENERADOR DE COORDENADES       -->
+        <!-- ========================================== -->
+        <div id="tabPanelGen" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Columna Esquerra: Configuració del Generador (5 col) -->
+            <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="genOriginInput" class="block text-sm font-semibold text-slate-800">
+                            Coordenades d'origen
+                        </label>
+                        <span id="genDimensionBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                            2D detectat
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">
+                        Pots introduir punts línia per línia o una llista <code class="font-mono">{(x,y), ...}</code>. Tots els punts han de tenir la mateixa dimensió.
+                    </p>
+                    <textarea id="genOriginInput" rows="4" 
+                        class="w-full font-mono text-sm rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 p-3 text-slate-800 placeholder-slate-400 transition outline-none resize-y"
+                        placeholder="Exemples:&#10;(2, 3)&#10;(-4, 1)">(2, 3)</textarea>
+                    
+                    <!-- Botons d'exemple ràpid -->
+                    <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span class="text-xs text-slate-400 mr-1">Exemples:</span>
+                        <button type="button" data-gen-example="(5)" class="gen-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">1D: (5)</button>
+                        <button type="button" data-gen-example="(2, 3)" class="gen-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">2D: (2, 3)</button>
+                        <button type="button" data-gen-example="(2, 3)&#10;(-6, -2)" class="gen-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">2D (2 centres)</button>
+                        <button type="button" data-gen-example="(1, 2, 3)" class="gen-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">3D: (1, 2, 3)</button>
+                        <button type="button" data-gen-example="(0, 1, 2, 3)" class="gen-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">4D: (0, 1, 2, 3)</button>
+                    </div>
+
+                    <div id="genInputError" class="hidden mt-2.5 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-medium"></div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Paràmetres numèrics -->
+                <div class="space-y-3.5">
+                    <div>
+                        <label for="genCountInput" class="block text-sm font-medium text-slate-700 mb-1">
+                            Nombre de coordenades per cada origen
+                        </label>
+                        <input type="number" id="genCountInput" value="10" min="1" max="2000" step="1"
+                            class="w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 px-3.5 py-2 text-sm text-slate-800 outline-none transition">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="genDistanceInput" class="block text-sm font-medium text-slate-700 mb-1">
+                                Distància (<span class="font-mono">d</span>)
+                            </label>
+                            <input type="number" id="genDistanceInput" value="5" min="0" step="any"
+                                class="w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 px-3.5 py-2 text-sm text-slate-800 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label for="genVariationInput" class="block text-sm font-medium text-slate-700 mb-1">
+                                Variació (<span class="font-mono">v</span>)
+                            </label>
+                            <input type="number" id="genVariationInput" value="1" min="0" step="any"
+                                class="w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 px-3.5 py-2 text-sm text-slate-800 outline-none transition">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-xl px-3.5 py-2 border border-slate-200/80 flex items-center justify-between text-xs text-slate-600">
+                        <span>Interval de distància <span class="font-mono">[d - v, d + v]</span>:</span>
+                        <span id="genIntervalBadge" class="font-mono font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                            [4, 6]
+                        </span>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Opcions del Generador -->
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-3 cursor-pointer select-none">
+                        <input type="checkbox" id="genAllowDecimals" 
+                            class="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-medium text-slate-800">Permetre decimals</span>
+                            <span class="block text-xs text-slate-500">Desactivat per defecte (nombres enters). Si s'activa, màxim 1 decimal.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 cursor-pointer select-none">
+                        <input type="checkbox" id="genIncludeOrigins" 
+                            class="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-medium text-slate-800">Inclou els punts d'origen a la llista</span>
+                            <span class="block text-xs text-slate-500">Afegeix també les coordenades d'origen a la llista de sortida.</span>
+                        </div>
+                    </label>
+
+                    <label id="genOption1DContainer" class="hidden items-start gap-3 cursor-pointer select-none p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80">
+                        <input type="checkbox" id="genConvert1DTo2D" checked
+                            class="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-medium text-amber-900">Exporta 1D com a <span class="font-mono">(x, 0)</span></span>
+                            <span class="block text-xs text-amber-700">Permet enganxar els punts 1D directament a GeoGebra sobre l'eix X.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="button" id="genRegenerateBtn" 
+                    class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Genera nous punts aleatoris</span>
+                </button>
+            </section>
+
+            <!-- Columna Dreta: Sortida + Visor Gràfic del Generador (7 col) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Targeta de Llista Única -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <span>Llista única generada</span>
+                                <span id="genTotalBadge" class="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                                    10 punts
+                                </span>
+                            </h2>
+                            <p class="text-xs text-slate-500">Llesta per enganxar a GeoGebra o enviar al Transformador</p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="genSendToTransBtn" 
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs sm:text-sm font-semibold rounded-xl transition">
+                                <span>Transforma aquests punts</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                            </button>
+
+                            <button type="button" id="genCopyBtn" 
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-medium rounded-xl shadow-sm transition">
+                                <svg id="genCopyIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <svg id="genCheckIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span id="genCopyText">Copia la llista</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="genWarning" class="hidden mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800"></div>
+
+                    <textarea id="genOutputTextarea" rows="3" readonly
+                        class="w-full font-mono text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-300 p-3 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none transition resize-y selection:bg-indigo-200"></textarea>
+                </div>
+
+                <!-- Visor Gràfic Interactiu (Generador) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/60">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                            <h3 class="text-sm font-bold text-slate-800">Vista Gràfica Interactiva</h3>
+                            <span id="genCanvasModeLabel" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">Pla 2D</span>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <label id="genShowRingsLabel" class="inline-flex items-center gap-1.5 text-xs text-slate-600 mr-2 cursor-pointer select-none">
+                                <input type="checkbox" id="genShowRings" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Mostra anells <span class="font-mono">[d-v, d+v]</span></span>
+                            </label>
+                            <label id="genProject4DLabel" class="hidden items-center gap-1.5 text-xs text-amber-800 bg-amber-100/80 px-2 py-1 rounded-lg mr-1 cursor-pointer select-none">
+                                <input type="checkbox" id="genProject4D" checked class="rounded text-amber-600">
+                                <span>Projecta (X,Y,Z) en 3D</span>
+                            </label>
+                            <button type="button" id="genZoomInBtn" title="Apropa" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold">+</button>
+                            <button type="button" id="genZoomOutBtn" title="Allunya" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold">−</button>
+                            <button type="button" id="genResetViewBtn" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700">Centra</button>
+                        </div>
+                    </div>
+
+                    <div class="relative h-80 sm:h-96 w-full bg-slate-950/5">
+                        <canvas id="genCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+                        <!-- Llegenda flotant -->
+                        <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3 py-1.5 text-[11px] text-slate-700 flex flex-wrap items-center gap-3 shadow-sm pointer-events-none">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Origen</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span> Punts generats</span>
+                            <span id="genCanvasHint" class="text-slate-400">Arrossega per moure · Roda per zoom</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detall de distàncies -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1">Detall i comprovació de distàncies</h3>
+                    <p class="text-xs text-slate-500 mb-3">Distància euclidiana de cada punt respecte a la seva coordenada d'origen</p>
+                    <div id="genDetailsContainer" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- PESTANYA 2: TRANSFORMADOR LINEAL           -->
+        <!-- ========================================== -->
+        <div id="tabPanelTrans" class="hidden grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Columna Esquerra: Entrada i Configuració de Transformació (5 col) -->
+            <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
+                
+                <!-- Entrada de coordenades a transformar -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="transInput" class="block text-sm font-semibold text-slate-800">
+                            Coordenades d'entrada (<span class="font-mono">P</span>)
+                        </label>
+                        <span id="transDimensionBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                            2D detectat
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2">
+                        Enganxa qualsevol llista <code class="font-mono">{(x,y), ...}</code> o coordenades línia per línia (totes de la mateixa dimensió).
+                    </p>
+                    <textarea id="transInput" rows="3" 
+                        class="w-full font-mono text-xs sm:text-sm rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 p-3 text-slate-800 placeholder-slate-400 transition outline-none resize-y"
+                        placeholder="{(0, 0), (4, 0), (4, 3), (0, 3)}">{(0, 0), (4, 0), (4, 3), (0, 3)}</textarea>
+
+                    <!-- Botons d'importació i exemples geomètrics -->
+                    <div class="flex flex-wrap items-center justify-between gap-1.5 mt-2">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <span class="text-xs text-slate-400 mr-0.5">Exemples:</span>
+                            <button type="button" data-trans-example="{(-2), (1), (4)}" class="trans-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">1D</button>
+                            <button type="button" data-trans-example="{(0, 0), (4, 0), (4, 3), (0, 3)}" class="trans-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Rectangle 2D</button>
+                            <button type="button" data-trans-example="{(0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0), (0, 0, 2), (2, 0, 2), (2, 2, 2), (0, 2, 2)}" class="trans-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Cub 3D</button>
+                            <button type="button" data-trans-example="{(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)}" class="trans-example-btn text-xs px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Base 4D</button>
+                        </div>
+                        <button type="button" id="transImportFromGenBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline">
+                            Importa del Generador
+                        </button>
+                    </div>
+
+                    <div id="transInputError" class="hidden mt-2.5 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-medium"></div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Selector de Mode: Guiat vs Matriu Personalitzada -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Mode de Transformació</span>
+                        <button type="button" id="transResetParamsBtn" class="text-xs text-slate-500 hover:text-indigo-600 font-medium flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Restableix al "no canvi"</span>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                        <button type="button" id="modeGuidedBtn" 
+                            class="py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm">
+                            Paràmetres guiats
+                        </button>
+                        <button type="button" id="modeMatrixBtn" 
+                            class="py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900">
+                            Matriu de canvi (N×N)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PANELL MODE A: PARÀMETRES GUIATS (Escalar + Rotació) -->
+                <div id="guidedModePanel" class="space-y-4">
+                    <!-- 1. Escalar (Canvi de magnitud) -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="transScaleInput" class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                                1. Canvi de magnitud (Escalar <span class="font-mono">k</span>)
+                            </label>
+                            <span class="text-[11px] font-mono text-slate-400">Per defecte: 1</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="transScaleInput" value="1" step="any"
+                                class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 px-3 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                            <button type="button" data-scale="0.5" class="scale-preset-btn px-2 py-1 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">×0.5</button>
+                            <button type="button" data-scale="1" class="scale-preset-btn px-2 py-1 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">×1</button>
+                            <button type="button" data-scale="2" class="scale-preset-btn px-2 py-1 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">×2</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Rotació (adaptativa segons 1D, 2D, 3D o 4D) -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                                2. Rotació
+                            </span>
+                            <span id="rotSubtitle" class="text-[11px] font-mono text-slate-400">Per defecte: 0°</span>
+                        </div>
+
+                        <!-- Rotació 1D: Invertir -->
+                        <div id="rot1DContainer" class="hidden">
+                            <label class="flex items-center gap-2.5 cursor-pointer select-none py-1">
+                                <input type="checkbox" id="rot1DInvert" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-slate-800">Invertir sentit respecte l'origen (<span class="font-mono">x → -x</span>)</span>
+                            </label>
+                        </div>
+
+                        <!-- Rotació 2D: Angle únic -->
+                        <div id="rot2DContainer" class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="rot2DAngle" value="0" step="any"
+                                    class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 px-3 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                                <span class="text-sm font-mono text-slate-500">graus (°)</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button type="button" data-angle2d="0" class="angle2d-btn px-2 py-0.5 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">0°</button>
+                                <button type="button" data-angle2d="45" class="angle2d-btn px-2 py-0.5 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">45°</button>
+                                <button type="button" data-angle2d="90" class="angle2d-btn px-2 py-0.5 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">90°</button>
+                                <button type="button" data-angle2d="180" class="angle2d-btn px-2 py-0.5 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">180°</button>
+                                <button type="button" data-angle2d="-90" class="angle2d-btn px-2 py-0.5 text-xs font-mono bg-white border border-slate-200 rounded hover:bg-slate-100">-90°</button>
+                            </div>
+                        </div>
+
+                        <!-- Rotació 3D: Angles al voltant d'eixos X, Y, Z -->
+                        <div id="rot3DContainer" class="hidden grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[11px] font-mono text-rose-600 font-semibold mb-1">Eix X (°)</label>
+                                <input type="number" id="rot3DX" value="0" step="any"
+                                    class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 px-2.5 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-mono text-emerald-600 font-semibold mb-1">Eix Y (°)</label>
+                                <input type="number" id="rot3DY" value="0" step="any"
+                                    class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 px-2.5 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-mono text-blue-600 font-semibold mb-1">Eix Z (°)</label>
+                                <input type="number" id="rot3DZ" value="0" step="any"
+                                    class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 px-2.5 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                            </div>
+                        </div>
+
+                        <!-- Rotació 4D: Deshabilitada per especificació -->
+                        <div id="rot4DContainer" class="hidden p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                            La rotació guiada per angle no està habilitada en 4D. Si vols aplicar una transformació d'eixos en 4D, utilitza el mode <strong>Matriu de canvi (4×4)</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANELL MODE B: MATRIU DE CANVI PERSONALITZADA (N×N) -->
+                <div id="matrixModePanel" class="hidden space-y-3">
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-700 uppercase tracking-wide block">
+                                    Matriu de transformació lineal (<span id="matrixDimLabel" class="font-mono">2×2</span>)
+                                </span>
+                                <span class="text-[11px] text-slate-500">S'aplica com a producte matricial <span class="font-mono">M · P</span></span>
+                            </div>
+                            <button type="button" id="resetIdentityBtn" class="text-xs px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium shadow-sm">
+                                Identitat (<span class="font-mono">I</span>)
+                            </button>
+                        </div>
+
+                        <!-- Graella dinàmica N x N -->
+                        <div class="flex items-center justify-center py-1">
+                            <div class="border-l-2 border-r-2 border-slate-700 px-3 py-2 rounded-sm bg-white shadow-inner">
+                                <div id="customMatrixGrid" class="grid gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Translació per un vector (Comú a tots dos modes, aplicat al final) -->
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                            3. Vector de Translació (<span class="font-mono">+ v⃗</span>)
+                        </span>
+                        <span class="text-[11px] font-mono text-slate-400">Aplicat al final · Per defecte: 0</span>
+                    </div>
+                    <div id="translationInputsContainer" class="grid grid-cols-2 gap-2">
+                        <!-- Generat dinàmicament segons dimensió N -->
+                    </div>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Opcions de Sortida del Transformador -->
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-3 cursor-pointer select-none">
+                        <input type="checkbox" id="transAllowDecimals" checked
+                            class="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <div>
+                            <span class="block text-sm font-medium text-slate-800">Permetre decimals (activat per defecte)</span>
+                            <span class="block text-xs text-slate-500">Arrodoneix com a màxim a 1 decimal. Desactiva-ho per forçar enters.</span>
+                        </div>
+                    </label>
+                </div>
+
+            </section>
+
+            <!-- Columna Dreta: Resultat Transformat + Visor Gràfic Comparatiu (7 col) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Targeta de Llista Única Transformada -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                <span>Coordenades transformades (<span class="font-mono">P'</span>)</span>
+                                <span id="transTotalBadge" class="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                    4 punts
+                                </span>
+                            </h2>
+                            <p id="transFormulaSummary" class="text-xs font-mono text-slate-500 mt-0.5">
+                                P' = 1 · R(0°) · P + (0, 0)
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="transChainBtn" title="Substitueix les coordenades d'entrada pel resultat per encadenar una altra transformació"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Usa P' com a nova entrada</span>
+                            </button>
+
+                            <button type="button" id="transCopyBtn" 
+                                class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-medium rounded-xl shadow-sm transition">
+                                <svg id="transCopyIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <svg id="transCheckIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span id="transCopyText">Copia la llista</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <textarea id="transOutputTextarea" rows="3" readonly
+                        class="w-full font-mono text-xs sm:text-sm bg-slate-50 rounded-xl border border-slate-300 p-3 text-slate-800 focus:bg-white focus:border-indigo-500 outline-none transition resize-y selection:bg-indigo-200"></textarea>
+                </div>
+
+                <!-- Visor Gràfic Interactiu (Transformador: Abans vs Després) -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/60">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                            <h3 class="text-sm font-bold text-slate-800">Visor Comparatiu (<span class="font-mono">P → P'</span>)</h3>
+                            <span id="transCanvasModeLabel" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">Pla 2D</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+                                <input type="checkbox" id="transShowVectors" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Fletxes <span class="font-mono">P→P'</span></span>
+                            </label>
+                            <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 mr-1 cursor-pointer select-none">
+                                <input type="checkbox" id="transConnectPolygon" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>Connecta figura</span>
+                            </label>
+                            <button type="button" id="transZoomInBtn" title="Apropa" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold">+</button>
+                            <button type="button" id="transZoomOutBtn" title="Allunya" class="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold">−</button>
+                            <button type="button" id="transResetViewBtn" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700">Centra</button>
+                        </div>
+                    </div>
+
+                    <div class="relative h-80 sm:h-96 w-full bg-slate-950/5">
+                        <canvas id="transCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+                        <!-- Llegenda flotant -->
+                        <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm border border-slate-200/80 rounded-xl px-3 py-1.5 text-[11px] text-slate-700 flex flex-wrap items-center gap-3 shadow-sm pointer-events-none">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span> Original (<span class="font-mono">P</span>)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span> Transformat (<span class="font-mono">P'</span>)</span>
+                            <span id="transCanvasHint" class="text-slate-400">Arrossega per moure · Roda per zoom</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Taula de correspondència P -> P' -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1">Taula de correspondència (<span class="font-mono">P → P'</span>)</h3>
+                    <p class="text-xs text-slate-500 mb-3">Comparativa punt per punt abans i després de la transformació</p>
+                    <div id="transDetailsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1"></div>
+                </div>
+
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Peu de pàgina -->
+    <footer class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 text-center text-xs text-slate-400 border-t border-slate-200/60 mt-auto">
+        coordenades.html — Generador i Transformador Lineal (1D · 2D · 3D · 4D) amb previsualització estil GeoGebra
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- SCRIPT PRINCIPAL DE L'APLICACIÓ            -->
+    <!-- ========================================== -->
+    <script>
+        /* =========================================================
+         * 1. UTILITATS MATEMÀTIQUES I D'ANÀLISI D'ENTRADA (1D-4D)
+         * ========================================================= */
+
+        function roundCoord(val, allowDecimals) {
+            if (!allowDecimals) {
+                const r = Math.round(val);
+                return Object.is(r, -0) ? 0 : r;
+            }
+            const r = Math.round(val * 10) / 10;
+            return Object.is(r, -0) ? 0 : r;
+        }
+
+        function formatNum(n) {
+            if (Object.is(n, -0) || Math.abs(n) < 1e-9) n = 0;
+            return Number(n.toFixed(1)).toString();
+        }
+
+        function formatPointTuple(coords) {
+            return `(${coords.map(formatNum).join(', ')})`;
+        }
+
+        function euclideanDistance(p1, p2) {
+            let sum = 0;
+            for (let i = 0; i < p1.length; i++) {
+                const d = p1[i] - p2[i];
+                sum += d * d;
+            }
+            return Math.sqrt(sum);
+        }
+
+        /**
+         * Analitzador universal: accepta tant coordenades línia per línia com
+         * llistes úniques de GeoGebra `{(2,3), (4,5)}` o `{1, 2, 3}`.
+         * Verifica estrictament que TOTES les coordenades tinguin la mateixa dimensió (1D..4D).
+         */
+        function parseCoordinatesUniversal(rawText) {
+            const trimmed = rawText.trim();
+            if (!trimmed) {
+                return { error: "Introdueix almenys una coordenada." };
+            }
+
+            let rawItems = [];
+
+            // Cas 1: Conté grups entre parèntesis (p. ex. `{(2, 3), (4, 5)}` o `(2,3)\n(4,5)`)
+            const parenMatches = [...trimmed.matchAll(/\(([^()]+)\)/g)];
+            if (parenMatches.length > 0) {
+                // Comprovem si queda text solt amb números fora dels parèntesis (per detectar barreges com `(2,3) 5`)
+                const leftover = trimmed.replace(/\([^()]+\)/g, '').replace(/[\{\}\[\],;\s]+/g, '');
+                if (leftover.length > 0) {
+                    return { error: `Format invàlid: s'han trobat caràcters fora dels parèntesis ("${leftover}").` };
+                }
+                rawItems = parenMatches.map(m => m[1]);
+            } else {
+                // Cas 2: Sense parèntesis. Si està envoltat de claus `{1, 2, 3}`, és una llista 1D
+                if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                    const inner = trimmed.slice(1, -1).trim();
+                    rawItems = inner.split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+                } else {
+                    // Cas 3: Línia per línia sense parèntesis
+                    rawItems = trimmed.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                }
+            }
+
+            if (rawItems.length === 0) {
+                return { error: "No s'ha detectat cap coordenada vàlida." };
+            }
+
+            const points = [];
+            let detectedDim = null;
+
+            for (let i = 0; i < rawItems.length; i++) {
+                const item = rawItems[i].trim();
+                const parts = item.includes(',') || item.includes(';')
+                    ? item.split(/[,;]+/).map(s => s.trim()).filter(Boolean)
+                    : item.split(/\s+/).filter(Boolean);
+
+                if (parts.length < 1 || parts.length > 4) {
+                    return {
+                        error: `Coordenada #${i + 1} ("${item}"): té ${parts.length} components. Només s'admeten dimensions 1D, 2D, 3D o 4D.`
+                    };
+                }
+
+                const coords = [];
+                for (const part of parts) {
+                    const num = Number(part);
+                    if (isNaN(num) || !isFinite(num)) {
+                        return {
+                            error: `Coordenada #${i + 1}: el valor "${part}" no és un número vàlid.`
+                        };
+                    }
+                    coords.push(num);
+                }
+
+                if (detectedDim === null) {
+                    detectedDim = coords.length;
+                } else if (coords.length !== detectedDim) {
+                    return {
+                        error: `Incoherència de dimensions: la coordenada #1 és ${detectedDim}D però la coordenada #${i + 1} (${formatPointTuple(coords)}) és ${coords.length}D. Totes les coordenades han de ser de la mateixa dimensió.`
+                    };
+                }
+
+                points.push(coords);
+            }
+
+            return { points, dimension: detectedDim };
+        }
+
+
+        /* =========================================================
+         * 2. VISOR INTERACTIU ESTIL GEOGEBRA (2D I 3D EN CANVAS)
+         * ========================================================= */
+
+        class InteractiveViewer {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                // Estat de càmera 2D
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.scale2D = 32; // píxels per unitat
+                // Estat de càmera 3D
+                this.yaw = -0.65;
+                this.pitch = 0.45;
+                this.scale3D = 28;
+                // Interacció
+                this.isDragging = false;
+                this.lastMouseX = 0;
+                this.lastMouseY = 0;
+                this.mode = '2D'; // '2D' o '3D'
+                this.sceneData = null;
+
+                this.initEvents();
+            }
+
+            initEvents() {
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.isDragging = true;
+                    this.lastMouseX = e.clientX;
+                    this.lastMouseY = e.clientY;
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!this.isDragging) return;
+                    const dx = e.clientX - this.lastMouseX;
+                    const dy = e.clientY - this.lastMouseY;
+                    this.lastMouseX = e.clientX;
+                    this.lastMouseY = e.clientY;
+
+                    if (this.mode === '3D') {
+                        this.yaw += dx * 0.01;
+                        this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch + dy * 0.01));
+                    } else {
+                        this.offsetX += dx;
+                        this.offsetY += dy;
+                    }
+                    this.render();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    this.isDragging = false;
+                });
+
+                // Suport tàctil
+                this.canvas.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        this.isDragging = true;
+                        this.lastMouseX = e.touches[0].clientX;
+                        this.lastMouseY = e.touches[0].clientY;
+                    }
+                }, { passive: true });
+
+                this.canvas.addEventListener('touchmove', (e) => {
+                    if (!this.isDragging || e.touches.length !== 1) return;
+                    const dx = e.touches[0].clientX - this.lastMouseX;
+                    const dy = e.touches[0].clientY - this.lastMouseY;
+                    this.lastMouseX = e.touches[0].clientX;
+                    this.lastMouseY = e.touches[0].clientY;
+
+                    if (this.mode === '3D') {
+                        this.yaw += dx * 0.01;
+                        this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch + dy * 0.01));
+                    } else {
+                        this.offsetX += dx;
+                        this.offsetY += dy;
+                    }
+                    this.render();
+                }, { passive: true });
+
+                this.canvas.addEventListener('touchend', () => {
+                    this.isDragging = false;
+                });
+
+                // Roda del ratolí per fer zoom
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const factor = e.deltaY < 0 ? 1.15 : (1 / 1.15);
+                    this.zoom(factor);
+                }, { passive: false });
+
+                window.addEventListener('resize', () => this.render());
+            }
+
+            zoom(factor) {
+                if (this.mode === '3D') {
+                    this.scale3D = Math.max(4, Math.min(300, this.scale3D * factor));
+                } else {
+                    this.scale2D = Math.max(3, Math.min(400, this.scale2D * factor));
+                }
+                this.render();
+            }
+
+            autoFit(allPoints) {
+                if (!allPoints || allPoints.length === 0) {
+                    this.offsetX = 0;
+                    this.offsetY = 0;
+                    this.scale2D = 32;
+                    this.scale3D = 28;
+                    this.render();
+                    return;
+                }
+
+                const rect = this.canvas.getBoundingClientRect();
+                const w = rect.width || 500;
+                const h = rect.height || 360;
+
+                if (this.mode === '2D') {
+                    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                    // Incloem sempre el (0,0) o el rang dels punts
+                    allPoints.forEach(p => {
+                        const x = p[0] || 0;
+                        const y = p.length > 1 ? p[1] : 0;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    });
+                    minX = Math.min(minX, 0);
+                    maxX = Math.max(maxX, 0);
+                    minY = Math.min(minY, 0);
+                    maxY = Math.max(maxY, 0);
+
+                    const spanX = Math.max(4, (maxX - minX) * 1.4);
+                    const spanY = Math.max(4, (maxY - minY) * 1.4);
+                    this.scale2D = Math.max(4, Math.min(180, Math.min(w / spanX, h / spanY)));
+
+                    const midX = (minX + maxX) / 2;
+                    const midY = (minY + maxY) / 2;
+                    this.offsetX = -midX * this.scale2D;
+                    this.offsetY = midY * this.scale2D;
+                } else {
+                    let maxCoord = 4;
+                    allPoints.forEach(p => {
+                        maxCoord = Math.max(maxCoord, Math.abs(p[0] || 0), Math.abs(p[1] || 0), Math.abs(p[2] || 0));
+                    });
+                    this.scale3D = Math.max(6, Math.min(160, (Math.min(w, h) * 0.34) / maxCoord));
+                }
+                this.render();
+            }
+
+            setScene(sceneData, autoFitNow = false) {
+                this.sceneData = sceneData;
+                this.mode = sceneData.renderMode; // '2D', '3D' o '4D-blocked'
+                if (autoFitNow && sceneData.allPointsForFit) {
+                    this.autoFit(sceneData.allPointsForFit);
+                } else {
+                    this.render();
+                }
+            }
+
+            project3D(x, y, z, cx, cy) {
+                // Eixos estil GeoGebra 3D: X i Y al pla horitzontal, Z vertical cap amunt
+                const cosY = Math.cos(this.yaw);
+                const sinY = Math.sin(this.yaw);
+                const cosP = Math.cos(this.pitch);
+                const sinP = Math.sin(this.pitch);
+
+                const x1 = x * cosY - y * sinY;
+                const y1 = x * sinY + y * cosY;
+
+                const z2 = z * cosP - y1 * sinP;
+                const depth = z * sinP + y1 * cosP;
+
+                return {
+                    sx: cx + x1 * this.scale3D,
+                    sy: cy - z2 * this.scale3D,
+                    depth
+                };
+            }
+
+            render() {
+                const rect = this.canvas.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+
+                const dpr = window.devicePixelRatio || 1;
+                this.canvas.width = rect.width * dpr;
+                this.canvas.height = rect.height * dpr;
+
+                const ctx = this.ctx;
+                ctx.save();
+                ctx.scale(dpr, dpr);
+
+                const w = rect.width;
+                const h = rect.height;
+
+                // Fons net estil GeoGebra
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, w, h);
+
+                if (!this.sceneData) {
+                    ctx.restore();
+                    return;
+                }
+
+                if (this.sceneData.renderMode === '4D-blocked') {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '500 13px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Coordenades 4D: Activa "Projecta (X,Y,Z) en 3D" a dalt per visualitzar-les.', w / 2, h / 2);
+                    ctx.restore();
+                    return;
+                }
+
+                if (this.mode === '2D') {
+                    this.render2D(ctx, w, h);
+                } else {
+                    this.render3D(ctx, w, h);
+                }
+
+                ctx.restore();
+            }
+
+            render2D(ctx, w, h) {
+                const cx = w / 2 + this.offsetX;
+                const cy = h / 2 + this.offsetY;
+                const scale = this.scale2D;
+
+                // Càlcul del pas de quadrícula òptim
+                const rawStep = 70 / scale;
+                const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+                let gridStep = mag;
+                if (rawStep / mag > 5) gridStep = 10 * mag;
+                else if (rawStep / mag > 2) gridStep = 5 * mag;
+                else if (rawStep / mag > 1) gridStep = 2 * mag;
+
+                // Quadrícula secundària
+                ctx.strokeStyle = '#f1f5f9';
+                ctx.lineWidth = 1;
+                const startX = Math.floor((-cx / scale) / gridStep) * gridStep;
+                const endX = Math.ceil(((w - cx) / scale) / gridStep) * gridStep;
+                for (let x = startX; x <= endX; x += gridStep) {
+                    const sx = cx + x * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, 0);
+                    ctx.lineTo(sx, h);
+                    ctx.stroke();
+                }
+
+                const startY = Math.floor(((cy - h) / scale) / gridStep) * gridStep;
+                const endY = Math.ceil((cy / scale) / gridStep) * gridStep;
+                for (let y = startY; y <= endY; y += gridStep) {
+                    const sy = cy - y * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(0, sy);
+                    ctx.lineTo(w, sy);
+                    ctx.stroke();
+                }
+
+                // Eixos X i Y principals
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, cy);
+                ctx.lineTo(w, cy);
+                ctx.moveTo(cx, 0);
+                ctx.lineTo(cx, h);
+                ctx.stroke();
+
+                // Números dels eixos
+                ctx.fillStyle = '#64748b';
+                ctx.font = '10px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                for (let x = startX; x <= endX; x += gridStep) {
+                    if (Math.abs(x) < 1e-9) continue;
+                    const sx = cx + x * scale;
+                    ctx.fillText(Number(x.toFixed(2)).toString(), sx, Math.min(h - 6, Math.max(14, cy + 14)));
+                }
+                ctx.textAlign = 'right';
+                for (let y = startY; y <= endY; y += gridStep) {
+                    if (Math.abs(y) < 1e-9) continue;
+                    const sy = cy - y * scale;
+                    ctx.fillText(Number(y.toFixed(2)).toString(), Math.min(w - 6, Math.max(24, cx - 6)), sy + 3);
+                }
+
+                const s = this.sceneData;
+
+                // 1. Anells de distància [minDist, maxDist] (pestanya Generador)
+                if (s.showRings && s.origins && s.maxDist > 0) {
+                    s.origins.forEach(orig => {
+                        const ox = cx + (orig[0] || 0) * scale;
+                        const oy = cy - (orig[1] || 0) * scale;
+                        const rOuter = s.maxDist * scale;
+                        const rInner = Math.max(0, s.minDist * scale);
+
+                        if (s.is1D) {
+                            // En 1D pintem els intervals sobre l'eix X
+                            ctx.fillStyle = 'rgba(79, 70, 229, 0.14)';
+                            ctx.fillRect(ox - rOuter, cy - 10, rOuter - rInner, 20);
+                            ctx.fillRect(ox + rInner, cy - 10, rOuter - rInner, 20);
+                        } else {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(ox, oy, rOuter, 0, Math.PI * 2, false);
+                            if (rInner > 0) {
+                                ctx.arc(ox, oy, rInner, 0, Math.PI * 2, true);
+                            }
+                            ctx.fillStyle = 'rgba(79, 70, 229, 0.09)';
+                            ctx.fill();
+
+                            ctx.strokeStyle = 'rgba(79, 70, 229, 0.35)';
+                            ctx.setLineDash([4, 4]);
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(ox, oy, rOuter, 0, Math.PI * 2);
+                            ctx.stroke();
+                            if (rInner > 0) {
+                                ctx.beginPath();
+                                ctx.arc(ox, oy, rInner, 0, Math.PI * 2);
+                                ctx.stroke();
+                            }
+                            ctx.restore();
+                        }
+                    });
+                }
+
+                // 2. Polígons connectats (pestanya Transformador)
+                if (s.connectPolygon && s.originalPoints && s.originalPoints.length > 1) {
+                    this.drawPolygon2D(ctx, s.originalPoints, cx, cy, scale, 'rgba(148, 163, 184, 0.6)', 'rgba(148, 163, 184, 0.12)', true);
+                }
+                if (s.connectPolygon && s.transformedPoints && s.transformedPoints.length > 1) {
+                    this.drawPolygon2D(ctx, s.transformedPoints, cx, cy, scale, 'rgba(5, 150, 105, 0.85)', 'rgba(16, 185, 129, 0.15)', false);
+                }
+
+                // 3. Vectors de desplaçament P -> P'
+                if (s.showVectors && s.originalPoints && s.transformedPoints) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(99, 102, 241, 0.55)';
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.75)';
+                    ctx.lineWidth = 1.25;
+                    ctx.setLineDash([3, 3]);
+                    for (let i = 0; i < s.originalPoints.length; i++) {
+                        const p1 = s.originalPoints[i];
+                        const p2 = s.transformedPoints[i];
+                        const x1 = cx + (p1[0] || 0) * scale;
+                        const y1 = cy - (p1[1] || 0) * scale;
+                        const x2 = cx + (p2[0] || 0) * scale;
+                        const y2 = cy - (p2[1] || 0) * scale;
+                        if (Math.hypot(x2 - x1, y2 - y1) < 2) continue;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+
+                        // Punta de fletxa
+                        const angle = Math.atan2(y2 - y1, x2 - x1);
+                        ctx.setLineDash([]);
+                        ctx.beginPath();
+                        ctx.moveTo(x2, y2);
+                        ctx.lineTo(x2 - 7 * Math.cos(angle - 0.4), y2 - 7 * Math.sin(angle - 0.4));
+                        ctx.lineTo(x2 - 7 * Math.cos(angle + 0.4), y2 - 7 * Math.sin(angle + 0.4));
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.setLineDash([3, 3]);
+                    }
+                    ctx.restore();
+                }
+
+                // 4. Dibuix de punts (Generador o Transformador)
+                if (s.generatedPoints) {
+                    s.generatedPoints.forEach(pt => {
+                        this.drawDot2D(ctx, cx + (pt[0] || 0) * scale, cy - (pt[1] || 0) * scale, 4.5, '#4f46e5', '#ffffff');
+                    });
+                }
+                if (s.origins) {
+                    s.origins.forEach(orig => {
+                        const sx = cx + (orig[0] || 0) * scale;
+                        const sy = cy - (orig[1] || 0) * scale;
+                        this.drawDot2D(ctx, sx, sy, 6, '#f43f5e', '#ffffff');
+                        ctx.fillStyle = '#be123c';
+                        ctx.font = '600 11px JetBrains Mono, monospace';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(formatPointTuple(orig), sx + 8, sy - 6);
+                    });
+                }
+                if (s.originalPoints) {
+                    s.originalPoints.forEach(pt => {
+                        this.drawDot2D(ctx, cx + (pt[0] || 0) * scale, cy - (pt[1] || 0) * scale, 4.5, '#94a3b8', '#ffffff');
+                    });
+                }
+                if (s.transformedPoints) {
+                    s.transformedPoints.forEach((pt, idx) => {
+                        const sx = cx + (pt[0] || 0) * scale;
+                        const sy = cy - (pt[1] || 0) * scale;
+                        this.drawDot2D(ctx, sx, sy, 5.5, '#059669', '#ffffff');
+                        if (s.transformedPoints.length <= 16) {
+                            ctx.fillStyle = '#065f46';
+                            ctx.font = '600 10px JetBrains Mono, monospace';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(formatPointTuple(pt), sx + 7, sy - 5);
+                        }
+                    });
+                }
+            }
+
+            drawPolygon2D(ctx, pts, cx, cy, scale, strokeColor, fillColor, dashed) {
+                ctx.save();
+                ctx.beginPath();
+                pts.forEach((p, idx) => {
+                    const sx = cx + (p[0] || 0) * scale;
+                    const sy = cy - (p[1] || 0) * scale;
+                    if (idx === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                });
+                if (pts.length > 2) ctx.closePath();
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                if (dashed) ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            drawDot2D(ctx, x, y, r, fill, stroke) {
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fillStyle = fill;
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = stroke;
+                ctx.stroke();
+            }
+
+            render3D(ctx, w, h) {
+                const cx = w / 2;
+                const cy = h / 2;
+
+                // Quadrícula del pla XY (z=0)
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1;
+                const gridRange = 5;
+                for (let i = -gridRange; i <= gridRange; i++) {
+                    const p1 = this.project3D(i, -gridRange, 0, cx, cy);
+                    const p2 = this.project3D(i, gridRange, 0, cx, cy);
+                    ctx.beginPath();
+                    ctx.moveTo(p1.sx, p1.sy);
+                    ctx.lineTo(p2.sx, p2.sy);
+                    ctx.stroke();
+
+                    const q1 = this.project3D(-gridRange, i, 0, cx, cy);
+                    const q2 = this.project3D(gridRange, i, 0, cx, cy);
+                    ctx.beginPath();
+                    ctx.moveTo(q1.sx, q1.sy);
+                    ctx.lineTo(q2.sx, q2.sy);
+                    ctx.stroke();
+                }
+
+                // Eixos 3D: X (vermell), Y (verd), Z (blau)
+                const axisLen = 6;
+                const axes = [
+                    { end: [axisLen, 0, 0], color: '#ef4444', label: 'X' },
+                    { end: [0, axisLen, 0], color: '#10b981', label: 'Y' },
+                    { end: [0, 0, axisLen], color: '#3b82f6', label: 'Z' }
+                ];
+                const origProj = this.project3D(0, 0, 0, cx, cy);
+                axes.forEach(ax => {
+                    const endProj = this.project3D(ax.end[0], ax.end[1], ax.end[2], cx, cy);
+                    ctx.strokeStyle = ax.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(origProj.sx, origProj.sy);
+                    ctx.lineTo(endProj.sx, endProj.sy);
+                    ctx.stroke();
+
+                    ctx.fillStyle = ax.color;
+                    ctx.font = 'bold 11px JetBrains Mono, monospace';
+                    ctx.fillText(ax.label, endProj.sx + 5, endProj.sy + 4);
+                });
+
+                const s = this.sceneData;
+
+                // Connectar figura en 3D si està actiu
+                if (s.connectPolygon && s.originalPoints && s.originalPoints.length > 1) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    s.originalPoints.forEach((p, idx) => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        if (idx === 0) ctx.moveTo(pr.sx, pr.sy);
+                        else ctx.lineTo(pr.sx, pr.sy);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (s.connectPolygon && s.transformedPoints && s.transformedPoints.length > 1) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(5, 150, 105, 0.75)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    s.transformedPoints.forEach((p, idx) => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        if (idx === 0) ctx.moveTo(pr.sx, pr.sy);
+                        else ctx.lineTo(pr.sx, pr.sy);
+                    });
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Línies P -> P' en 3D
+                if (s.showVectors && s.originalPoints && s.transformedPoints) {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+                    ctx.setLineDash([3, 3]);
+                    for (let i = 0; i < s.originalPoints.length; i++) {
+                        const p1 = s.originalPoints[i];
+                        const p2 = s.transformedPoints[i];
+                        const pr1 = this.project3D(p1[0] || 0, p1[1] || 0, p1[2] || 0, cx, cy);
+                        const pr2 = this.project3D(p2[0] || 0, p2[1] || 0, p2[2] || 0, cx, cy);
+                        ctx.beginPath();
+                        ctx.moveTo(pr1.sx, pr1.sy);
+                        ctx.lineTo(pr2.sx, pr2.sy);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+
+                // Recollim tots els punts 3D per ordenar-los per profunditat (painter's algorithm)
+                const renderQueue = [];
+
+                if (s.generatedPoints) {
+                    s.generatedPoints.forEach(p => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        renderQueue.push({ ...pr, r: 4.5, color: '#4f46e5', label: null });
+                    });
+                }
+                if (s.origins) {
+                    s.origins.forEach(p => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        renderQueue.push({ ...pr, r: 6.5, color: '#f43f5e', label: formatPointTuple(p) });
+                    });
+                }
+                if (s.originalPoints) {
+                    s.originalPoints.forEach(p => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        renderQueue.push({ ...pr, r: 4.5, color: '#94a3b8', label: null });
+                    });
+                }
+                if (s.transformedPoints) {
+                    s.transformedPoints.forEach(p => {
+                        const pr = this.project3D(p[0] || 0, p[1] || 0, p[2] || 0, cx, cy);
+                        renderQueue.push({
+                            ...pr,
+                            r: 5.5,
+                            color: '#059669',
+                            label: s.transformedPoints.length <= 12 ? formatPointTuple(p) : null
+                        });
+                    });
+                }
+
+                renderQueue.sort((a, b) => b.depth - a.depth);
+                renderQueue.forEach(item => {
+                    this.drawDot2D(ctx, item.sx, item.sy, item.r, item.color, '#ffffff');
+                    if (item.label) {
+                        ctx.fillStyle = '#1e293b';
+                        ctx.font = '600 10px JetBrains Mono, monospace';
+                        ctx.fillText(item.label, item.sx + 7, item.sy - 5);
+                    }
+                });
+            }
+        }
+
+        const genViewer = new InteractiveViewer('genCanvas');
+        const transViewer = new InteractiveViewer('transCanvas');
+
+
+        /* =========================================================
+         * 3. LÒGICA PESTANYA 1: GENERADOR DE COORDENADES
+         * ========================================================= */
+
+        const genOriginInput = document.getElementById('genOriginInput');
+        const genDimensionBadge = document.getElementById('genDimensionBadge');
+        const genInputError = document.getElementById('genInputError');
+        const genCountInput = document.getElementById('genCountInput');
+        const genDistanceInput = document.getElementById('genDistanceInput');
+        const genVariationInput = document.getElementById('genVariationInput');
+        const genIntervalBadge = document.getElementById('genIntervalBadge');
+        const genAllowDecimals = document.getElementById('genAllowDecimals');
+        const genIncludeOrigins = document.getElementById('genIncludeOrigins');
+        const genOption1DContainer = document.getElementById('genOption1DContainer');
+        const genConvert1DTo2D = document.getElementById('genConvert1DTo2D');
+        const genRegenerateBtn = document.getElementById('genRegenerateBtn');
+        const genOutputTextarea = document.getElementById('genOutputTextarea');
+        const genTotalBadge = document.getElementById('genTotalBadge');
+        const genWarning = document.getElementById('genWarning');
+        const genDetailsContainer = document.getElementById('genDetailsContainer');
+        const genShowRings = document.getElementById('genShowRings');
+        const genShowRingsLabel = document.getElementById('genShowRingsLabel');
+        const genProject4D = document.getElementById('genProject4D');
+        const genProject4DLabel = document.getElementById('genProject4DLabel');
+        const genCanvasModeLabel = document.getElementById('genCanvasModeLabel');
+        const genCanvasHint = document.getElementById('genCanvasHint');
+
+        let lastGeneratedRawPoints = [];
+
+        function randomStandardNormal() {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function randomUnitVector(dim) {
+            if (dim === 1) return [Math.random() < 0.5 ? -1 : 1];
+            const vec = [];
+            let normSq = 0;
+            for (let i = 0; i < dim; i++) {
+                const c = randomStandardNormal();
+                vec.push(c);
+                normSq += c * c;
+            }
+            const norm = Math.sqrt(normSq) || 1;
+            return vec.map(c => c / norm);
+        }
+
+        function generatePointAroundOrigin(origin, minDist, maxDist, allowDecimals) {
+            const dim = origin.length;
+            const EPS = 1e-7;
+            let bestCandidate = null;
+            let bestError = Infinity;
+
+            for (let attempt = 0; attempt < 350; attempt++) {
+                const r = minDist + Math.random() * (maxDist - minDist);
+                const dir = randomUnitVector(dim);
+                const candidate = origin.map((c, idx) => roundCoord(c + r * dir[idx], allowDecimals));
+                const dist = euclideanDistance(origin, candidate);
+
+                if (dist >= minDist - EPS && dist <= maxDist + EPS) {
+                    return { point: candidate, distance: dist, exact: true };
+                }
+
+                const err = dist < minDist ? (minDist - dist) : (dist - maxDist);
+                if (err < bestError) {
+                    bestError = err;
+                    bestCandidate = { point: candidate, distance: dist, exact: false };
+                }
+            }
+
+            // Cerca en quadrícula si l'interval és molt estret
+            const step = allowDecimals ? 0.1 : 1;
+            const stepsPerAxis = Math.ceil(maxDist / step) * 2 + 1;
+            if (Math.pow(stepsPerAxis, dim) <= 35000) {
+                const validCandidates = [];
+                const current = new Array(dim);
+
+                function explore(axis) {
+                    if (axis === dim) {
+                        const dist = euclideanDistance(origin, current);
+                        if (dist >= minDist - EPS && dist <= maxDist + EPS) {
+                            validCandidates.push({ point: [...current], distance: dist, exact: true });
+                        }
+                        return;
+                    }
+                    const minC = roundCoord(origin[axis] - maxDist, allowDecimals);
+                    const maxC = roundCoord(origin[axis] + maxDist, allowDecimals);
+                    const countSteps = Math.round((maxC - minC) / step);
+                    for (let s = 0; s <= countSteps; s++) {
+                        current[axis] = roundCoord(minC + s * step, allowDecimals);
+                        explore(axis + 1);
+                    }
+                }
+                explore(0);
+                if (validCandidates.length > 0) {
+                    return validCandidates[Math.floor(Math.random() * validCandidates.length)];
+                }
+            }
+
+            return bestCandidate;
+        }
+
+        function formatGeoGebraItem(coords, dimension, convert1DTo2D) {
+            if (dimension === 1) {
+                return convert1DTo2D ? `(${formatNum(coords[0])}, 0)` : `${formatNum(coords[0])}`;
+            }
+            return formatPointTuple(coords);
+        }
+
+        function runGenerator(autoFitCanvas = false) {
+            let count = parseInt(genCountInput.value, 10);
+            if (isNaN(count) || count < 1) count = 1;
+            if (count > 2000) count = 2000;
+
+            let d = parseFloat(genDistanceInput.value);
+            if (isNaN(d) || d < 0) d = 0;
+
+            let v = parseFloat(genVariationInput.value);
+            if (isNaN(v) || v < 0) v = 0;
+
+            const minDist = Math.max(0, roundCoord(d - v, true));
+            const maxDist = roundCoord(d + v, true);
+            genIntervalBadge.textContent = `[${formatNum(minDist)}, ${formatNum(maxDist)}]`;
+
+            const allowDecimals = genAllowDecimals.checked;
+            const includeOrigins = genIncludeOrigins.checked;
+            const convert1DTo2D = genConvert1DTo2D.checked;
+
+            const parsed = parseCoordinatesUniversal(genOriginInput.value);
+            if (parsed.error) {
+                genInputError.textContent = parsed.error;
+                genInputError.classList.remove('hidden');
+                genDimensionBadge.textContent = "Error d'entrada";
+                genDimensionBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800";
+                genOutputTextarea.value = "";
+                genDetailsContainer.innerHTML = "";
+                return;
+            }
+
+            genInputError.classList.add('hidden');
+            const { points: origins, dimension } = parsed;
+
+            genDimensionBadge.textContent = `${dimension}D (${origins.length} ${origins.length === 1 ? 'origen' : 'orígens'})`;
+            genDimensionBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800";
+
+            genOption1DContainer.classList.toggle('hidden', dimension !== 1);
+            genOption1DContainer.classList.toggle('flex', dimension === 1);
+
+            const allStrings = [];
+            const rawGenerated = [];
+            const groups = [];
+            let anyInexact = false;
+
+            for (const origin of origins) {
+                if (includeOrigins) {
+                    allStrings.push(formatGeoGebraItem(origin, dimension, convert1DTo2D));
+                    rawGenerated.push([...origin]);
+                }
+                const list = [];
+                for (let k = 0; k < count; k++) {
+                    const res = generatePointAroundOrigin(origin, minDist, maxDist, allowDecimals);
+                    if (!res.exact) anyInexact = true;
+                    list.push(res);
+                    rawGenerated.push(res.point);
+                    allStrings.push(formatGeoGebraItem(res.point, dimension, convert1DTo2D));
+                }
+                groups.push({ origin, generated: list });
+            }
+
+            lastGeneratedRawPoints = rawGenerated;
+
+            if (anyInexact) {
+                genWarning.textContent = `Atenció: Amb distància ${formatNum(d)}, variació ${formatNum(v)} i sense decimals, no existeixen coordenades enteres exactes dins [${formatNum(minDist)}, ${formatNum(maxDist)}]. S'han triat les coordenades enteres més properes.`;
+                genWarning.classList.remove('hidden');
+            } else {
+                genWarning.classList.add('hidden');
+            }
+
+            genOutputTextarea.value = `{${allStrings.join(', ')}}`;
+            genTotalBadge.textContent = `${allStrings.length} ${allStrings.length === 1 ? 'punt' : 'punts'}`;
+
+            // Renderitzar detall de distàncies
+            genDetailsContainer.innerHTML = '';
+            groups.forEach((g, idx) => {
+                const box = document.createElement('div');
+                box.className = "rounded-xl border border-slate-200 overflow-hidden";
+                box.innerHTML = `
+                    <div class="bg-slate-50 px-3 py-1.5 border-b border-slate-200 flex items-center justify-between text-xs">
+                        <span class="font-semibold text-slate-700">Origen #${idx + 1}: <span class="font-mono text-rose-600">${formatPointTuple(g.origin)}</span></span>
+                        <span class="text-slate-400">${g.generated.length} punts</span>
+                    </div>
+                    <div class="p-2.5 flex flex-wrap gap-1.5 bg-white">
+                        ${g.generated.map(item => `
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-mono ${item.exact ? 'bg-slate-50 text-slate-700 border-slate-200' : 'bg-amber-50 text-amber-800 border-amber-200'}">
+                                <b>${formatPointTuple(item.point)}</b>
+                                <span class="text-[10px] text-slate-400">d=${Number(item.distance.toFixed(2))}</span>
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+                genDetailsContainer.appendChild(box);
+            });
+
+            updateGeneratorCanvas(origins, rawGenerated, dimension, minDist, maxDist, autoFitCanvas);
+        }
+
+        function updateGeneratorCanvas(origins, generatedPoints, dimension, minDist, maxDist, autoFit) {
+            genShowRingsLabel.classList.toggle('hidden', dimension > 2);
+            genProject4DLabel.classList.toggle('hidden', dimension !== 4);
+            genProject4DLabel.classList.toggle('inline-flex', dimension === 4);
+
+            let renderMode = '2D';
+            if (dimension === 3) renderMode = '3D';
+            else if (dimension === 4) {
+                renderMode = genProject4D.checked ? '3D' : '4D-blocked';
+            }
+
+            genCanvasModeLabel.textContent = dimension === 1 ? 'Recta 1D (Eix X)' : (dimension === 2 ? 'Pla 2D' : (dimension === 3 ? 'Espai 3D' : 'Projecció 4D→3D'));
+            genCanvasHint.textContent = renderMode === '3D' ? 'Arrossega per girar en 3D · Roda per zoom' : 'Arrossega per moure · Roda per zoom';
+
+            const allPointsForFit = [...origins, ...generatedPoints];
+            genViewer.setScene({
+                renderMode,
+                is1D: dimension === 1,
+                origins,
+                generatedPoints,
+                minDist,
+                maxDist,
+                showRings: genShowRings.checked,
+                allPointsForFit
+            }, autoFit);
+        }
+
+
+        /* =========================================================
+         * 4. LÒGICA PESTANYA 2: TRANSFORMADOR LINEAL
+         * ========================================================= */
+
+        const transInput = document.getElementById('transInput');
+        const transDimensionBadge = document.getElementById('transDimensionBadge');
+        const transInputError = document.getElementById('transInputError');
+        const modeGuidedBtn = document.getElementById('modeGuidedBtn');
+        const modeMatrixBtn = document.getElementById('modeMatrixBtn');
+        const guidedModePanel = document.getElementById('guidedModePanel');
+        const matrixModePanel = document.getElementById('matrixModePanel');
+        const transScaleInput = document.getElementById('transScaleInput');
+        const rot1DContainer = document.getElementById('rot1DContainer');
+        const rot1DInvert = document.getElementById('rot1DInvert');
+        const rot2DContainer = document.getElementById('rot2DContainer');
+        const rot2DAngle = document.getElementById('rot2DAngle');
+        const rot3DContainer = document.getElementById('rot3DContainer');
+        const rot3DX = document.getElementById('rot3DX');
+        const rot3DY = document.getElementById('rot3DY');
+        const rot3DZ = document.getElementById('rot3DZ');
+        const rot4DContainer = document.getElementById('rot4DContainer');
+        const rotSubtitle = document.getElementById('rotSubtitle');
+        const matrixDimLabel = document.getElementById('matrixDimLabel');
+        const customMatrixGrid = document.getElementById('customMatrixGrid');
+        const resetIdentityBtn = document.getElementById('resetIdentityBtn');
+        const translationInputsContainer = document.getElementById('translationInputsContainer');
+        const transAllowDecimals = document.getElementById('transAllowDecimals');
+        const transOutputTextarea = document.getElementById('transOutputTextarea');
+        const transTotalBadge = document.getElementById('transTotalBadge');
+        const transFormulaSummary = document.getElementById('transFormulaSummary');
+        const transDetailsContainer = document.getElementById('transDetailsContainer');
+        const transShowVectors = document.getElementById('transShowVectors');
+        const transConnectPolygon = document.getElementById('transConnectPolygon');
+        const transCanvasModeLabel = document.getElementById('transCanvasModeLabel');
+        const transCanvasHint = document.getElementById('transCanvasHint');
+
+        let transformMode = 'guided'; // 'guided' o 'matrix'
+        let currentTransDim = 2;
+        // Estat de la matriu N x N (fins a 4x4), inicialitzada a la identitat
+        let matrixState = [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ];
+        let translationState = [0, 0, 0, 0];
+
+        function buildDynamicControlsForDimension(dim) {
+            currentTransDim = dim;
+            const axisNames = ['X', 'Y', 'Z', 'W'];
+
+            // 1. Controls de rotació segons dimensió
+            rot1DContainer.classList.toggle('hidden', dim !== 1);
+            rot2DContainer.classList.toggle('hidden', dim !== 2);
+            rot3DContainer.classList.toggle('hidden', dim !== 3);
+            rot3DContainer.classList.toggle('grid', dim === 3);
+            rot4DContainer.classList.toggle('hidden', dim !== 4);
+
+            if (dim === 1) rotSubtitle.textContent = "1D: Inversió opcional";
+            else if (dim === 2) rotSubtitle.textContent = "Gir antihorari (graus)";
+            else if (dim === 3) rotSubtitle.textContent = "Angles Euler X, Y, Z";
+            else rotSubtitle.textContent = "Deshabilitat en 4D";
+
+            // 2. Graella de la matriu N x N
+            matrixDimLabel.textContent = `${dim}×${dim}`;
+            customMatrixGrid.style.gridTemplateColumns = `repeat(${dim}, minmax(0, 1fr))`;
+            customMatrixGrid.innerHTML = '';
+
+            for (let r = 0; r < dim; r++) {
+                for (let c = 0; c < dim; c++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'number';
+                    inp.step = 'any';
+                    inp.value = matrixState[r][c];
+                    inp.className = "w-16 sm:w-20 text-center font-mono text-sm rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-300 py-1 px-1.5 outline-none";
+                    inp.addEventListener('input', () => {
+                        const val = parseFloat(inp.value);
+                        matrixState[r][c] = isNaN(val) ? 0 : val;
+                        runTransformer(false);
+                    });
+                    customMatrixGrid.appendChild(inp);
+                }
+            }
+
+            // 3. Camps del vector de translació
+            translationInputsContainer.style.gridTemplateColumns = `repeat(${Math.min(dim, 4)}, minmax(0, 1fr))`;
+            translationInputsContainer.innerHTML = '';
+            for (let i = 0; i < dim; i++) {
+                const wrap = document.createElement('div');
+                wrap.innerHTML = `
+                    <label class="block text-[11px] font-mono text-slate-500 mb-0.5">Δ${axisNames[i]}</label>
+                    <input type="number" step="any" value="${translationState[i]}" data-trans-axis="${i}"
+                        class="w-full rounded-lg border border-slate-300 focus:border-indigo-500 px-2.5 py-1.5 text-sm font-mono text-slate-800 outline-none bg-white">
+                `;
+                const inputEl = wrap.querySelector('input');
+                inputEl.addEventListener('input', () => {
+                    const val = parseFloat(inputEl.value);
+                    translationState[i] = isNaN(val) ? 0 : val;
+                    runTransformer(false);
+                });
+                translationInputsContainer.appendChild(wrap);
+            }
+        }
+
+        function resetIdentityMatrix() {
+            matrixState = [
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]
+            ];
+            buildDynamicControlsForDimension(currentTransDim);
+            runTransformer(false);
+        }
+
+        function resetAllTransformParams() {
+            transScaleInput.value = "1";
+            rot1DInvert.checked = false;
+            rot2DAngle.value = "0";
+            rot3DX.value = "0";
+            rot3DY.value = "0";
+            rot3DZ.value = "0";
+            translationState = [0, 0, 0, 0];
+            resetIdentityMatrix();
+        }
+
+        /**
+         * Aplica la transformació lineal (Mode Guiat o Mode Matriu) a un punt P de dimensió `dim`.
+         * Ordre: P' = (Escalat * Rotació)(P) + Translació  [o bé M * P + Translació]
+         */
+        function transformSinglePoint(p, dim, allowDecimals) {
+            let v = [...p];
+
+            if (transformMode === 'guided') {
+                // 1. Escalar k
+                let k = parseFloat(transScaleInput.value);
+                if (isNaN(k)) k = 1;
+                v = v.map(coord => coord * k);
+
+                // 2. Rotació segons dimensió
+                if (dim === 1) {
+                    if (rot1DInvert.checked) {
+                        v[0] = -v[0];
+                    }
+                } else if (dim === 2) {
+                    let deg = parseFloat(rot2DAngle.value);
+                    if (isNaN(deg)) deg = 0;
+                    const rad = (deg * Math.PI) / 180;
+                    const cosA = Math.cos(rad);
+                    const sinA = Math.sin(rad);
+                    const x = v[0], y = v[1];
+                    v[0] = x * cosA - y * sinA;
+                    v[1] = x * sinA + y * cosA;
+                } else if (dim === 3) {
+                    const ax = ((parseFloat(rot3DX.value) || 0) * Math.PI) / 180;
+                    const ay = ((parseFloat(rot3DY.value) || 0) * Math.PI) / 180;
+                    const az = ((parseFloat(rot3DZ.value) || 0) * Math.PI) / 180;
+
+                    // Rotació eix X
+                    let y1 = v[1] * Math.cos(ax) - v[2] * Math.sin(ax);
+                    let z1 = v[1] * Math.sin(ax) + v[2] * Math.cos(ax);
+                    v[1] = y1; v[2] = z1;
+
+                    // Rotació eix Y
+                    let x2 = v[0] * Math.cos(ay) + v[2] * Math.sin(ay);
+                    let z2 = -v[0] * Math.sin(ay) + v[2] * Math.cos(ay);
+                    v[0] = x2; v[2] = z2;
+
+                    // Rotació eix Z
+                    let x3 = v[0] * Math.cos(az) - v[1] * Math.sin(az);
+                    let y3 = v[0] * Math.sin(az) + v[1] * Math.cos(az);
+                    v[0] = x3; v[1] = y3;
+                }
+                // En 4D no hi ha rotació guiada
+            } else {
+                // Mode Matriu N x N: v = M * p
+                const result = new Array(dim).fill(0);
+                for (let r = 0; r < dim; r++) {
+                    let sum = 0;
+                    for (let c = 0; c < dim; c++) {
+                        sum += (matrixState[r][c] || 0) * p[c];
+                    }
+                    result[r] = sum;
+                }
+                v = result;
+            }
+
+            // 3. Translació al final (+ v⃗)
+            for (let i = 0; i < dim; i++) {
+                v[i] = roundCoord(v[i] + (translationState[i] || 0), allowDecimals);
+            }
+
+            return v;
+        }
+
+        function runTransformer(autoFitCanvas = false) {
+            const parsed = parseCoordinatesUniversal(transInput.value);
+            if (parsed.error) {
+                transInputError.textContent = parsed.error;
+                transInputError.classList.remove('hidden');
+                transDimensionBadge.textContent = "Error d'entrada";
+                transDimensionBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800";
+                transOutputTextarea.value = "";
+                transDetailsContainer.innerHTML = "";
+                return;
+            }
+
+            transInputError.classList.add('hidden');
+            const { points: originalPoints, dimension } = parsed;
+
+            if (dimension !== currentTransDim) {
+                buildDynamicControlsForDimension(dimension);
+            }
+
+            transDimensionBadge.textContent = `${dimension}D (${originalPoints.length} ${originalPoints.length === 1 ? 'punt' : 'punts'})`;
+            transDimensionBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+
+            const allowDecimals = transAllowDecimals.checked;
+            const transformedPoints = originalPoints.map(p => transformSinglePoint(p, dimension, allowDecimals));
+
+            // Resum de la fórmula aplicada
+            const tVecStr = `(${translationState.slice(0, dimension).map(formatNum).join(', ')})`;
+            if (transformMode === 'guided') {
+                const k = formatNum(parseFloat(transScaleInput.value) || 1);
+                let rotStr = "I";
+                if (dimension === 1) rotStr = rot1DInvert.checked ? "Invertit(-1)" : "I";
+                else if (dimension === 2) rotStr = `R(${formatNum(parseFloat(rot2DAngle.value) || 0)}°)`;
+                else if (dimension === 3) rotStr = `R(${formatNum(parseFloat(rot3DX.value) || 0)}°, ${formatNum(parseFloat(rot3DY.value) || 0)}°, ${formatNum(parseFloat(rot3DZ.value) || 0)}°)`;
+                transFormulaSummary.textContent = `P' = ${k} · ${rotStr} · P + ${tVecStr}`;
+            } else {
+                transFormulaSummary.textContent = `P' = M(${dimension}×${dimension}) · P + ${tVecStr}`;
+            }
+
+            // Format de sortida en llista única
+            const outStrings = transformedPoints.map(pt => dimension === 1 ? `(${formatNum(pt[0])}, 0)` : formatPointTuple(pt));
+            transOutputTextarea.value = `{${outStrings.join(', ')}}`;
+            transTotalBadge.textContent = `${transformedPoints.length} ${transformedPoints.length === 1 ? 'punt' : 'punts'}`;
+
+            // Renderitzar taula comparativa P -> P'
+            transDetailsContainer.innerHTML = '';
+            originalPoints.forEach((orig, idx) => {
+                const tr = transformedPoints[idx];
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs font-mono";
+                row.innerHTML = `
+                    <span class="text-slate-500">P<sub>${idx + 1}</sub> ${formatPointTuple(orig)}</span>
+                    <span class="text-slate-400">→</span>
+                    <span class="font-semibold text-emerald-700">P'<sub>${idx + 1}</sub> ${formatPointTuple(tr)}</span>
+                `;
+                transDetailsContainer.appendChild(row);
+            });
+
+            // Actualitzar visor gràfic comparatiu
+            let renderMode = '2D';
+            if (dimension === 3 || dimension === 4) renderMode = '3D';
+            transCanvasModeLabel.textContent = dimension === 1 ? 'Recta 1D (Eix X)' : (dimension === 2 ? 'Pla 2D' : (dimension === 3 ? 'Espai 3D' : 'Projecció 4D→3D'));
+            transCanvasHint.textContent = renderMode === '3D' ? 'Arrossega per girar en 3D · Roda per zoom' : 'Arrossega per moure · Roda per zoom';
+
+            transViewer.setScene({
+                renderMode,
+                is1D: dimension === 1,
+                originalPoints,
+                transformedPoints,
+                showVectors: transShowVectors.checked,
+                connectPolygon: transConnectPolygon.checked,
+                allPointsForFit: [...originalPoints, ...transformedPoints]
+            }, autoFitCanvas);
+        }
+
+
+        /* =========================================================
+         * 5. ESDEVENIMENTS, NAVEGACIÓ DE PESTANYES I COPIAT
+         * ========================================================= */
+
+        const tabBtnGen = document.getElementById('tabBtnGen');
+        const tabBtnTrans = document.getElementById('tabBtnTrans');
+        const tabPanelGen = document.getElementById('tabPanelGen');
+        const tabPanelTrans = document.getElementById('tabPanelTrans');
+
+        function switchTab(target) {
+            if (target === 'gen') {
+                tabPanelGen.classList.remove('hidden');
+                tabPanelGen.classList.add('grid');
+                tabPanelTrans.classList.add('hidden');
+                tabPanelTrans.classList.remove('grid');
+
+                tabBtnGen.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+                tabBtnTrans.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+                setTimeout(() => genViewer.render(), 20);
+            } else {
+                tabPanelGen.classList.add('hidden');
+                tabPanelGen.classList.remove('grid');
+                tabPanelTrans.classList.remove('hidden');
+                tabPanelTrans.classList.add('grid');
+
+                tabBtnTrans.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm";
+                tabBtnGen.className = "px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 text-slate-600 hover:text-slate-900";
+                setTimeout(() => runTransformer(true), 20);
+            }
+        }
+
+        tabBtnGen.addEventListener('click', () => switchTab('gen'));
+        tabBtnTrans.addEventListener('click', () => switchTab('trans'));
+
+        // Enviar punts del Generador al Transformador
+        document.getElementById('genSendToTransBtn').addEventListener('click', () => {
+            if (lastGeneratedRawPoints.length > 0) {
+                const formatted = `{${lastGeneratedRawPoints.map(formatPointTuple).join(', ')}}`;
+                transInput.value = formatted;
+            } else if (genOutputTextarea.value) {
+                transInput.value = genOutputTextarea.value;
+            }
+            switchTab('trans');
+        });
+
+        document.getElementById('transImportFromGenBtn').addEventListener('click', () => {
+            if (lastGeneratedRawPoints.length > 0) {
+                transInput.value = `{${lastGeneratedRawPoints.map(formatPointTuple).join(', ')}}`;
+                runTransformer(true);
+            }
+        });
+
+        // Encadenar transformació (usar P' com a nova entrada P)
+        document.getElementById('transChainBtn').addEventListener('click', () => {
+            const parsed = parseCoordinatesUniversal(transInput.value);
+            if (!parsed.error) {
+                const allowDecimals = transAllowDecimals.checked;
+                const transformed = parsed.points.map(p => transformSinglePoint(p, parsed.dimension, allowDecimals));
+                transInput.value = `{${transformed.map(formatPointTuple).join(', ')}}`;
+                runTransformer(true);
+            }
+        });
+
+        // Canvi entre Mode Guiat i Mode Matriu
+        modeGuidedBtn.addEventListener('click', () => {
+            transformMode = 'guided';
+            guidedModePanel.classList.remove('hidden');
+            matrixModePanel.classList.add('hidden');
+            modeGuidedBtn.className = "py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm";
+            modeMatrixBtn.className = "py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900";
+            runTransformer(false);
+        });
+
+        modeMatrixBtn.addEventListener('click', () => {
+            transformMode = 'matrix';
+            guidedModePanel.classList.add('hidden');
+            matrixModePanel.classList.remove('hidden');
+            modeMatrixBtn.className = "py-2 px-3 rounded-lg text-xs font-semibold transition bg-white text-indigo-700 shadow-sm";
+            modeGuidedBtn.className = "py-2 px-3 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900";
+            runTransformer(false);
+        });
+
+        // Funció genèrica de copiat al porta-retalls
+        function copyTextarea(textareaEl, btnTextEl, copyIconEl, checkIconEl) {
+            const text = textareaEl.value;
+            if (!text) return;
+            textareaEl.select();
+            textareaEl.setSelectionRange(0, 999999);
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                if (navigator.clipboard) navigator.clipboard.writeText(text);
+            }
+            const origLabel = btnTextEl.textContent;
+            btnTextEl.textContent = "Copiat!";
+            copyIconEl.classList.add('hidden');
+            checkIconEl.classList.remove('hidden');
+            setTimeout(() => {
+                btnTextEl.textContent = origLabel;
+                copyIconEl.classList.remove('hidden');
+                checkIconEl.classList.add('hidden');
+            }, 1800);
+        }
+
+        document.getElementById('genCopyBtn').addEventListener('click', () => {
+            copyTextarea(genOutputTextarea, document.getElementById('genCopyText'), document.getElementById('genCopyIcon'), document.getElementById('genCheckIcon'));
+        });
+
+        document.getElementById('transCopyBtn').addEventListener('click', () => {
+            copyTextarea(transOutputTextarea, document.getElementById('transCopyText'), document.getElementById('transCopyIcon'), document.getElementById('transCheckIcon'));
+        });
+
+        // Botó per descarregar el propi fitxer com a coordenades.html
+        document.getElementById('downloadHtmlBtn').addEventListener('click', () => {
+            const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'coordenades.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Esdeveniments del Generador
+        [genOriginInput, genCountInput, genDistanceInput, genVariationInput].forEach(el => {
+            el.addEventListener('input', () => runGenerator(false));
+        });
+        [genAllowDecimals, genIncludeOrigins, genConvert1DTo2D, genShowRings, genProject4D].forEach(el => {
+            el.addEventListener('change', () => runGenerator(false));
+        });
+        genRegenerateBtn.addEventListener('click', () => runGenerator(false));
+
+        document.querySelectorAll('.gen-example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                genOriginInput.value = btn.getAttribute('data-gen-example');
+                runGenerator(true);
+            });
+        });
+
+        document.getElementById('genZoomInBtn').addEventListener('click', () => genViewer.zoom(1.25));
+        document.getElementById('genZoomOutBtn').addEventListener('click', () => genViewer.zoom(0.8));
+        document.getElementById('genResetViewBtn').addEventListener('click', () => runGenerator(true));
+
+        // Esdeveniments del Transformador
+        transInput.addEventListener('input', () => runTransformer(false));
+        [transScaleInput, rot2DAngle, rot3DX, rot3DY, rot3DZ].forEach(el => {
+            el.addEventListener('input', () => runTransformer(false));
+        });
+        [rot1DInvert, transAllowDecimals, transShowVectors, transConnectPolygon].forEach(el => {
+            el.addEventListener('change', () => runTransformer(false));
+        });
+
+        document.querySelectorAll('.trans-example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                transInput.value = btn.getAttribute('data-trans-example');
+                runTransformer(true);
+            });
+        });
+
+        document.querySelectorAll('.scale-preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                transScaleInput.value = btn.getAttribute('data-scale');
+                runTransformer(false);
+            });
+        });
+
+        document.querySelectorAll('.angle2d-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                rot2DAngle.value = btn.getAttribute('data-angle2d');
+                runTransformer(false);
+            });
+        });
+
+        resetIdentityBtn.addEventListener('click', resetIdentityMatrix);
+        document.getElementById('transResetParamsBtn').addEventListener('click', resetAllTransformParams);
+
+        document.getElementById('transZoomInBtn').addEventListener('click', () => transViewer.zoom(1.25));
+        document.getElementById('transZoomOutBtn').addEventListener('click', () => transViewer.zoom(0.8));
+        document.getElementById('transResetViewBtn').addEventListener('click', () => runTransformer(true));
+
+        // Inicialització en carregar la pàgina
+        window.addEventListener('DOMContentLoaded', () => {
+            buildDynamicControlsForDimension(2);
+            runGenerator(true);
+            runTransformer(true);
+        });
+    </script>
+</body>
+</html>
